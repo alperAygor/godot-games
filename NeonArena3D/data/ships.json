@@ -1,0 +1,129 @@
+[
+  {
+    "id": "vektor",
+    "name": "VEKTÖR",
+    "name_en": "VECTOR",
+    "desc": "Dengeli avcı. Hızlı, isabetli tek atışlar.",
+    "desc_en": "Balanced fighter. Fast, accurate single shots.",
+    "weapon_name": "ATIŞ TOPU",
+    "weapon_name_en": "BLASTER",
+    "model": "res://assets/models/ship.glb",
+    "color": "#5ce1ff",
+    "cost": 0,
+    "bars": {
+      "armor": 3,
+      "speed": 3,
+      "power": 3,
+      "range": 4
+    },
+    "effect": {},
+    "weapon": {
+      "type": "blaster",
+      "interval": 0.135,
+      "damage": 1.0,
+      "speed": 980,
+      "life": 0.85,
+      "size": 1.0,
+      "spread": 0.035
+    }
+  },
+  {
+    "id": "kasirga",
+    "name": "KASIRGA",
+    "name_en": "CYCLONE",
+    "desc": "Kalın zırh. Yakından yıkıcı saçma yaylımı.",
+    "desc_en": "Thick armor. Devastating close-range scatter.",
+    "weapon_name": "SAÇMA YAYLIMI",
+    "weapon_name_en": "SCATTER CANNON",
+    "model": "res://assets/models/ship_storm.glb",
+    "color": "#ff9a3c",
+    "cost": 250,
+    "bars": {
+      "armor": 5,
+      "speed": 2,
+      "power": 4,
+      "range": 1
+    },
+    "effect": {
+      "max_hp_bonus": 35,
+      "speed_mult": -0.08
+    },
+    "weapon": {
+      "type": "scatter",
+      "interval": 0.36,
+      "damage": 0.55,
+      "speed": 860,
+      "life": 0.5,
+      "size": 0.9,
+      "spread": 0.06,
+      "pellets": 6,
+      "arc": 0.62
+    }
+  },
+  {
+    "id": "mizrak",
+    "name": "MIZRAK",
+    "name_en": "LANCE",
+    "desc": "Hafif gövde. Hattaki her şeyi delen raylı top.",
+    "desc_en": "Light hull. A railgun that pierces everything in line.",
+    "weapon_name": "RAYLI TOP",
+    "weapon_name_en": "RAILGUN",
+    "model": "res://assets/models/ship_lance.glb",
+    "color": "#c77dff",
+    "cost": 450,
+    "bars": {
+      "armor": 2,
+      "speed": 4,
+      "power": 5,
+      "range": 5
+    },
+    "effect": {
+      "max_hp_bonus": -15,
+      "speed_mult": 0.06
+    },
+    "weapon": {
+      "type": "rail",
+      "interval": 0.5,
+      "damage": 3.6,
+      "speed": 2300,
+      "life": 0.5,
+      "size": 1.3,
+      "spread": 0.0,
+      "pierce": 4
+    }
+  },
+  {
+    "id": "sahin",
+    "name": "ŞAHİN",
+    "name_en": "HAWK",
+    "desc": "Güdümlü roketler hedefi kendi bulur, çarpınca patlar.",
+    "desc_en": "Homing rockets find their own target and explode on impact.",
+    "weapon_name": "GÜDÜMLÜ ROKET",
+    "weapon_name_en": "HOMING ROCKETS",
+    "model": "res://assets/models/ship_hawk.glb",
+    "color": "#5cff9a",
+    "cost": 700,
+    "bars": {
+      "armor": 3,
+      "speed": 3,
+      "power": 4,
+      "range": 4
+    },
+    "effect": {
+      "max_hp_bonus": -5
+    },
+    "weapon": {
+      "type": "rocket",
+      "interval": 0.4,
+      "damage": 1.9,
+      "speed": 480,
+      "max_speed": 980,
+      "accel": 1400,
+      "life": 1.6,
+      "size": 1.15,
+      "spread": 0.05,
+      "homing": 6.0,
+      "blast": 72
+    }
+  }
+]

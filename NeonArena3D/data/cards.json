@@ -1,0 +1,340 @@
+[
+  {
+    "id": "guc",
+    "name": "GÜÇ ÇEKİRDEĞİ",
+    "desc": "Hasar +%18",
+    "tier": "common",
+    "effect": {
+      "damage_mult": 0.18
+    },
+    "icon": "damage",
+    "name_en": "POWER CORE",
+    "desc_en": "Damage +18%"
+  },
+  {
+    "id": "tetik",
+    "name": "HIZLI TETİK",
+    "desc": "Ateş hızı +%14",
+    "tier": "common",
+    "effect": {
+      "fire_rate_mult": 0.14
+    },
+    "icon": "rate",
+    "name_en": "HAIR TRIGGER",
+    "desc_en": "Fire rate +14%"
+  },
+  {
+    "id": "cevik",
+    "name": "ÇEVİKLİK",
+    "desc": "Hareket hızı +%10",
+    "tier": "common",
+    "effect": {
+      "speed_mult": 0.1
+    },
+    "icon": "speed",
+    "name_en": "AGILITY",
+    "desc_en": "Move speed +10%"
+  },
+  {
+    "id": "zirh",
+    "name": "ZIRH PLAKASI",
+    "desc": "+25 maksimum can, +25 can",
+    "tier": "common",
+    "effect": {
+      "max_hp_bonus": 25
+    },
+    "icon": "armor",
+    "name_en": "ARMOR PLATING",
+    "desc_en": "+25 max HP, +25 HP"
+  },
+  {
+    "id": "atilma",
+    "name": "KISA DEVRE",
+    "desc": "Atılma beklemesi -%18",
+    "tier": "common",
+    "effect": {
+      "dash_cd_mult": -0.18
+    },
+    "icon": "dash",
+    "name_en": "SHORT CIRCUIT",
+    "desc_en": "Dash cooldown -18%"
+  },
+  {
+    "id": "miknatis",
+    "name": "MIKNATIS",
+    "desc": "Toplama menzili +%70",
+    "tier": "common",
+    "effect": {
+      "magnet": 0.7
+    },
+    "icon": "magnet",
+    "name_en": "MAGNET",
+    "desc_en": "Pickup range +70%"
+  },
+  {
+    "id": "devmermi",
+    "name": "AĞIR MERMİ",
+    "desc": "Mermi boyutu +%25, hasar +%10",
+    "tier": "common",
+    "effect": {
+      "bullet_size": 0.25,
+      "damage_mult": 0.1
+    },
+    "icon": "heavy",
+    "name_en": "HEAVY ROUNDS",
+    "desc_en": "Bullet size +25%, damage +10%"
+  },
+  {
+    "id": "coklu",
+    "name": "ÇOKLU ATIŞ",
+    "desc": "+1 mermi (en fazla 3)",
+    "tier": "rare",
+    "effect": {
+      "projectiles": 1
+    },
+    "icon": "multi",
+    "name_en": "MULTI SHOT",
+    "desc_en": "+1 projectile (max 3)"
+  },
+  {
+    "id": "delici",
+    "name": "DELİCİ",
+    "desc": "Mermiler +1 düşmanı deler",
+    "tier": "rare",
+    "effect": {
+      "pierce": 1
+    },
+    "icon": "pierce",
+    "name_en": "PIERCING",
+    "desc_en": "Bullets pierce +1 enemy"
+  },
+  {
+    "id": "vampir",
+    "name": "VAMPİR",
+    "desc": "Her öldürmede +7 can",
+    "tier": "rare",
+    "effect": {
+      "vampire": 7
+    },
+    "icon": "vampire",
+    "name_en": "VAMPIRE",
+    "desc_en": "+7 HP on every kill"
+  },
+  {
+    "id": "kritik",
+    "name": "KRİTİK VURUŞ",
+    "desc": "+%10 kritik şansı (x2 hasar)",
+    "tier": "rare",
+    "effect": {
+      "crit": 0.1
+    },
+    "icon": "crit",
+    "name_en": "CRITICAL HIT",
+    "desc_en": "+10% crit chance (×2 damage)"
+  },
+  {
+    "id": "yenilenme",
+    "name": "YENİLENME",
+    "desc": "Saniyede +1 can",
+    "tier": "rare",
+    "effect": {
+      "regen": 1
+    },
+    "icon": "regen",
+    "name_en": "REGENERATION",
+    "desc_en": "+1 HP per second"
+  },
+  {
+    "id": "diken",
+    "name": "DİKEN ZIRH",
+    "desc": "Temas eden düşmana 16 hasar",
+    "tier": "rare",
+    "effect": {
+      "thorns": 16
+    },
+    "icon": "thorns",
+    "name_en": "THORN ARMOR",
+    "desc_en": "Deal 16 damage to enemies that touch you"
+  },
+  {
+    "id": "drone",
+    "name": "REFAKAT DRONE",
+    "desc": "Yörüngede ateş eden drone (en fazla 2)",
+    "tier": "epic",
+    "effect": {
+      "drones": 1
+    },
+    "icon": "drone",
+    "name_en": "ESCORT DRONE",
+    "desc_en": "Orbiting drone that fires (max 2)"
+  },
+  {
+    "id": "zincir",
+    "name": "ZİNCİR ŞİMŞEK",
+    "desc": "İsabetler yakındaki +1 düşmana sıçrar (en fazla 3)",
+    "tier": "rare",
+    "icon": "chain",
+    "effect": {
+      "chain": 1
+    },
+    "name_en": "CHAIN LIGHTNING",
+    "desc_en": "Hits arc to +1 nearby enemy (max 3)"
+  },
+  {
+    "id": "sok",
+    "name": "ŞOK ATILMASI",
+    "desc": "Atılırken değdiğin düşmanlara 45 hasar",
+    "tier": "rare",
+    "icon": "shock",
+    "effect": {
+      "dash_damage": 45
+    },
+    "name_en": "SHOCK DASH",
+    "desc_en": "Dashing through enemies deals 45 damage"
+  },
+  {
+    "id": "novacekirdek",
+    "name": "NOVA ÇEKİRDEĞİ",
+    "desc": "Nova %35 daha hızlı dolar",
+    "tier": "rare",
+    "icon": "nova",
+    "effect": {
+      "nova_rate_mult": 0.35
+    },
+    "name_en": "NOVA CORE",
+    "desc_en": "Nova charges 35% faster"
+  },
+  {
+    "id": "patlayici",
+    "name": "PATLAYICI MERMİ",
+    "desc": "Ölen düşmanlar patlar, çevresine hasar verir",
+    "tier": "epic",
+    "icon": "explosive",
+    "effect": {
+      "explosive": 1
+    },
+    "name_en": "VOLATILE ROUNDS",
+    "desc_en": "Killed enemies explode, damaging those nearby"
+  },
+  {
+    "id": "kalkan",
+    "name": "KALKAN ÜRETECİ",
+    "desc": "Her 18 saniyede bir darbe emen kalkan",
+    "tier": "epic",
+    "icon": "shield",
+    "effect": {
+      "shield_regen": 1
+    },
+    "name_en": "SHIELD GENERATOR",
+    "desc_en": "A shield that absorbs one hit, every 18 seconds"
+  },
+  {
+    "id": "ikincisans",
+    "name": "İKİNCİ ŞANS",
+    "desc": "Ölünce bir kez yarı canla dirilirsin",
+    "tier": "epic",
+    "icon": "revive",
+    "effect": {
+      "revive": 1
+    },
+    "name_en": "SECOND CHANCE",
+    "desc_en": "Revive once at half health"
+  },
+  {
+    "id": "s_firtina",
+    "name": "FIRTINA AĞI",
+    "name_en": "STORM NET",
+    "desc": "Kritik isabetler 2 düşmana daha sıçrar, zincir hasarı ×2",
+    "desc_en": "Crits arc to 2 more enemies, chain damage ×2",
+    "tier": "synergy",
+    "icon": "chain",
+    "requires": [
+      "zincir",
+      "kritik"
+    ],
+    "effect": {
+      "storm": 1
+    }
+  },
+  {
+    "id": "s_hasat",
+    "name": "KAN HASADI",
+    "name_en": "BLOOD HARVEST",
+    "desc": "Can doluyken iyileşme birikir; her 50 fazla can bir kalkan olur",
+    "desc_en": "Healing past full HP builds up; every 50 overflow becomes a shield",
+    "tier": "synergy",
+    "icon": "vampire",
+    "requires": [
+      "vampir",
+      "yenilenme"
+    ],
+    "effect": {
+      "harvest": 1
+    }
+  },
+  {
+    "id": "s_kiyamet",
+    "name": "KIYAMET NOVASI",
+    "name_en": "DOOM NOVA",
+    "desc": "Nova %50 daha geniş ve ardından 3 artçı patlama bırakır",
+    "desc_en": "Nova is 50% wider and leaves 3 aftershock blasts",
+    "tier": "synergy",
+    "icon": "nova",
+    "requires": [
+      "novacekirdek",
+      "patlayici"
+    ],
+    "effect": {
+      "doom_nova": 1
+    }
+  },
+  {
+    "id": "s_yildirim",
+    "name": "YILDIRIM KOŞUSU",
+    "name_en": "BLITZ RUN",
+    "desc": "Atılma hasarı ×2; atılırken öldürmek beklemeyi sıfırlar",
+    "desc_en": "Dash damage ×2; killing while dashing resets the cooldown",
+    "tier": "synergy",
+    "icon": "shock",
+    "requires": [
+      "sok",
+      "atilma"
+    ],
+    "effect": {
+      "blitz": 1
+    }
+  },
+  {
+    "id": "s_kovan",
+    "name": "KOVAN ZİHNİ",
+    "name_en": "HIVE MIND",
+    "desc": "+1 drone (en fazla 3), dronlar iki kat hızlı ateş eder",
+    "desc_en": "+1 drone (max 3), drones fire twice as fast",
+    "tier": "synergy",
+    "icon": "drone",
+    "requires": [
+      "drone",
+      "coklu"
+    ],
+    "effect": {
+      "hive": 1,
+      "drones": 1
+    }
+  },
+  {
+    "id": "s_kale",
+    "name": "DİKEN KALESİ",
+    "name_en": "THORN FORTRESS",
+    "desc": "Hasar alınca çevrene 12 mermi saçarsın, diken hasarı ×3",
+    "desc_en": "Taking damage fires 12 bullets around you, thorn damage ×3",
+    "tier": "synergy",
+    "icon": "thorns",
+    "requires": [
+      "diken",
+      "zirh"
+    ],
+    "effect": {
+      "fortress": 1
+    }
+  }
+]

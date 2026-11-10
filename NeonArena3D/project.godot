@@ -1,0 +1,62 @@
+; NEON ARENA 3D — Godot 4.7
+config_version=5
+
+[application]
+
+config/name="Neon Arena 3D"
+config/description="3B neon arenada dalga tabanlı hayatta kalma."
+config/version="1.2.0"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.7", "Mobile")
+boot_splash/bg_color=Color(0.015, 0.025, 0.055, 1)
+boot_splash/show_image=true
+boot_splash/image="res://assets/icons/splash.png"
+boot_splash/fullsize=false
+config/icon="res://assets/icons/icon_512.png"
+
+[autoload]
+
+GameData="*res://scripts/autoload/game_data.gd"
+Settings="*res://scripts/autoload/settings.gd"
+I18n="*res://scripts/autoload/i18n.gd"
+Fx="*res://scripts/autoload/fx.gd"
+Sound="*res://scripts/autoload/sound.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=4
+window/energy_saving/keep_screen_on=true
+
+[internationalization]
+
+locale/fallback="tr"
+
+[gui]
+
+theme/custom_font="res://assets/fonts/Exo2.ttf"
+
+[importer_defaults]
+
+wav={
+"compress/mode": 2
+}
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=false
+pointing/emulate_mouse_from_touch=true
+
+[rendering]
+
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+textures/vram_compression/import_etc2_astc=true
+anti_aliasing/quality/msaa_3d=1
+lights_and_shadows/directional_shadow/size=2048
+lights_and_shadows/directional_shadow/size.mobile=2048
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality=1
+environment/defaults/default_clear_color=Color(0.01, 0.013, 0.03, 1)

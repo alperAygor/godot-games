@@ -1,0 +1,11 @@
+[
+  {"id": "zirh", "name": "GÖVDE ZIRHI", "name_en": "HULL ARMOR", "desc": "Her seviye +12 maksimum can", "desc_en": "+12 max HP per level", "icon": "armor", "costs": [30, 60, 110, 180, 280], "effect": {"max_hp_bonus": 12}},
+  {"id": "silah", "name": "SİLAH AYARI", "name_en": "WEAPON TUNING", "desc": "Her seviye +%6 hasar", "desc_en": "+6% damage per level", "icon": "damage", "costs": [40, 80, 140, 220, 340], "effect": {"damage_mult": 0.06}},
+  {"id": "itici", "name": "İTİCİ AYARI", "name_en": "THRUSTER TUNING", "desc": "Her seviye +%4 hareket hızı", "desc_en": "+4% move speed per level", "icon": "speed", "costs": [35, 80, 150], "effect": {"speed_mult": 0.04}},
+  {"id": "nova", "name": "NOVA ÖN YÜKÜ", "name_en": "NOVA PRECHARGE", "desc": "Koşuya +%25 dolu nova ile başla, nova +%8 hızlı dolar", "desc_en": "Start runs with +25% nova, nova charges 8% faster", "icon": "nova", "costs": [50, 120, 220], "effect": {"nova_start": 25, "nova_rate_mult": 0.08}},
+  {"id": "sans", "name": "ŞANS MODÜLÜ", "name_en": "LUCK MODULE", "desc": "Her seviye +1 kart yenileme hakkı", "desc_en": "+1 card reroll per level", "icon": "reroll", "costs": [60, 160], "effect": {"rerolls": 1}},
+  {"id": "cekim", "name": "ÇEKİM ALANI", "name_en": "TRACTOR FIELD", "desc": "Her seviye +%20 toplama menzili", "desc_en": "+20% pickup range per level", "icon": "magnet", "costs": [25, 60, 120], "effect": {"magnet": 0.2}},
+  {"id": "veri", "name": "VERİ BANKASI", "name_en": "DATA BANK", "desc": "Her seviye +%8 XP kazancı", "desc_en": "+8% XP gain per level", "icon": "xp", "costs": [60, 140, 260], "effect": {"xp_mult": 0.08}},
+  {"id": "kalkan", "name": "ÖN KALKAN", "name_en": "PRE-SHIELD", "desc": "Her koşuya bir darbe emen kalkanla başla", "desc_en": "Start every run with a one-hit shield", "icon": "shield", "costs": [150], "effect": {"start_shield": 1}},
+  {"id": "toplayici", "name": "ÇEKİRDEK TOPLAYICI", "name_en": "CORE HARVESTER", "desc": "Her seviye +%10 çekirdek kazancı", "desc_en": "+10% cores earned per level", "icon": "core", "costs": [80, 180, 320], "effect": {"core_mult": 0.1}}
+]
