@@ -28,16 +28,16 @@ Bir işi bitirince `[ ]` → `[x]` yap ve `CHANGELOG.md`'ye ekle. Faz bitti krit
 
 **Hedef:** Proje Godot 4.7.2'de hatasız açılsın, boş bir sahne çalışsın, test altyapısı koşsun.
 
-- [ ] `project.godot`: ad `CantaFizigi`, ana sahne `res://scenes/main.tscn`, renderer `gl_compatibility`
-- [ ] Ekran: 1080x1920, `stretch/mode=canvas_items`, `aspect=expand`, `handheld/orientation=1` (portrait)
-- [ ] `pointing/emulate_touch_from_mouse=true`
-- [ ] `debug/gdscript/warnings/untyped_declaration=1` (error), `unused_parameter=1`
+- [x] `project.godot`: ad `CantaFizigi`, ana sahne `res://scenes/Main.tscn`, renderer `gl_compatibility`
+- [x] Ekran: 1080x1920, `stretch/mode=canvas_items`, `aspect=expand`, `handheld/orientation=1` (portrait)
+- [x] `pointing/emulate_touch_from_mouse=true`
+- [x] `debug/gdscript/warnings/untyped_declaration=2` (error), `unused_parameter=1`
 - [ ] Autoload kaydı (sırayla): `GameManager`, `AudioService`, `AdManager`
 - [ ] `scripts/autoload/GameManager.gd` — `Phase` enum'u, `_set_phase`, `goto_scene`, boş `save/load`
 - [ ] `scripts/autoload/AudioService.gd` — bus volume API'si, headless guard
 - [ ] `scripts/autoload/AdManager.gd` — `Placement` enum, `can_offer`, `reset_run_limits` (sağlayıcı `NoAdsProvider`)
 - [ ] `scripts/services/ads_provider.gd`, `no_ads_provider.gd`, `mock_ads_provider.gd`
-- [ ] `scenes/main.tscn` — `Main` + `SceneHost` + `UILayer/Fade` + `SafeArea`
+- [x] `scenes/Main.tscn` — `Main` + `UILayer/Safe` (SceneHost/Fade autoload'larla birlikte gelecek)
 - [ ] `scenes/boot.tscn` — logo, 0.4 sn bekleme, menüye geçiş
 - [ ] `tests/test_case.gd` + `tests/run_tests.gd` (çıkış kodu 0/1/2)
 - [ ] `tools/verify.sh` — `--import` + 5 kare smoke + testler, `SCRIPT ERROR` taraması
@@ -59,8 +59,10 @@ Bir işi bitirince `[ ]` → `[x]` yap ve `CHANGELOG.md`'ye ekle. Faz bitti krit
 - [ ] `scenes/gameplay.tscn` — `Bag` düğümü, iç duvarlar (5 ayrı `CollisionShape3D`)
 - [ ] `scripts/gameplay/bag.gd` — paket listesi, `damage_changed`, `package_broken`
 - [ ] `scripts/gameplay/package.gd` — `RigidBody3D`, `_integrate_forces` ile temas impulsu
-- [ ] Sürükle-bırak: `Camera3D.project_ray_normal` + `move_and_collide` benzeri taşıma; `Phase.PACKING` dışında kilitli
+- [x] Sürükle-bırak: `InputEventScreenDrag` + kameraya paralel düzlem, hücreye snap, **squash & stretch** tween, geçersiz bırakmada geri dönüş (`scripts/gameplay/GridController.gd`)
+- [x] Hücre parıltısı: boş = yeşil, dolu = kırmızı, hedef hücrede taşan halo
 - [ ] Paket döndürme (90° adım), köpük/bant uygulama (görsel placeholder)
+- [ ] Fizik: paketler `RigidBody3D` olacak (şu an sadece görsel/tween — kırılma Faz 3'te)
 - [ ] `assets/models/package_standard.glb` (Blender) — geçici küp de kabul
 - [ ] Test: kırılabilir paket 4.0 m/s üstünde kırılır, altında kırılmaz; yaylı paket sekme katsayısı
 
@@ -195,7 +197,7 @@ Bir işi bitirince `[ ]` → `[x]` yap ve `CHANGELOG.md`'ye ekle. Faz bitti krit
 | Faz | Durum | Not |
 |---|---|---|
 | 0 | ✅ Bitti | Dokümanlar + dizinler |
-| 1 | ⬜ Bekliyor | Sıradaki iş: `project.godot` ve autoload iskeleti |
+| 1 | 🟡 Kısmi | `project.godot` + sahneler hazır; autoload'lar ve boot/test altyapısı kaldı |
 | 2–9 | ⬜ Bekliyor | |
 | 7 (varlık) | 🟡 Kısmi | 5 model hazır; araç/yol ve ses kaldı |
 

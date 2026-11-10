@@ -1,0 +1,192 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/BackpackGrid.tscn" id="1_grid"]
+[ext_resource type="Script" path="res://scripts/gameplay/Package.gd" id="2_pkg"]
+[ext_resource type="PackedScene" path="res://assets/models/pkg_ice_1x1.glb" id="3_ice"]
+[ext_resource type="PackedScene" path="res://assets/models/pkg_spring_1x1.glb" id="4_spring"]
+[ext_resource type="PackedScene" path="res://assets/models/pkg_glass_1x2.glb" id="5_glass"]
+[ext_resource type="PackedScene" path="res://assets/models/pkg_iron_2x2.glb" id="6_iron"]
+[ext_resource type="Shader" path="res://assets/shaders/color_correction.gdshader" id="7_grade"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat_warm"]
+sky_top_color = Color(0.42, 0.56, 0.86, 1)
+sky_horizon_color = Color(1, 0.84, 0.7, 1)
+sky_curve = 0.13
+sky_energy_multiplier = 0.45
+ground_bottom_color = Color(0.9, 0.84, 0.82, 1)
+ground_horizon_color = Color(1, 0.87, 0.76, 1)
+ground_curve = 0.04
+ground_energy_multiplier = 0.45
+sun_angle_max = 24.0
+sun_curve = 0.12
+
+[sub_resource type="Sky" id="Sky_warm"]
+sky_material = SubResource("SkyMat_warm")
+radiance_size = 3
+
+[sub_resource type="Environment" id="Env_stylized"]
+background_mode = 2
+sky = SubResource("Sky_warm")
+ambient_light_source = 3
+ambient_light_color = Color(1, 0.92, 0.85, 1)
+ambient_light_sky_contribution = 0.15
+ambient_light_energy = 0.15
+reflected_light_source = 2
+tonemap_mode = 0
+tonemap_exposure = 0.95
+tonemap_white = 1.0
+glow_enabled = true
+glow_normalized = true
+glow_intensity = 0.7
+glow_strength = 1.0
+glow_bloom = 0.15
+glow_blend_mode = 1
+glow_hdr_threshold = 0.78
+glow_hdr_scale = 2.0
+glow_levels/2 = 0.9
+glow_levels/3 = 0.6
+ssao_enabled = true
+ssao_radius = 0.55
+ssao_intensity = 1.6
+ssao_power = 1.4
+ssao_detail = 0.6
+ssao_light_affect = 0.15
+adjustment_enabled = true
+adjustment_brightness = 1.0
+adjustment_contrast = 1.02
+adjustment_saturation = 1.05
+
+[sub_resource type="StandardMaterial3D" id="Mat_table"]
+albedo_color = Color(0.74, 0.71, 0.68, 1)
+roughness = 0.92
+
+[sub_resource type="PlaneMesh" id="Mesh_table"]
+size = Vector2(6, 6)
+
+[sub_resource type="ShaderMaterial" id="Mat_grade"]
+shader = ExtResource("7_grade")
+shader_parameter/lift = Vector3(0.02, 0.009, 0.002)
+shader_parameter/gain = Vector3(1.03, 1.0, 0.965)
+shader_parameter/exposure = 0.92
+shader_parameter/saturation = 1.14
+shader_parameter/contrast = 1.07
+shader_parameter/vignette_strength = 0.28
+shader_parameter/vignette_start = 0.55
+
+[node name="Main" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env_stylized")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.7893, -0.5041, 0.3505, 0, 0.5708, 0.8211, -0.6139, -0.6481, 0.4506, 0, 2, 1.5)
+light_color = Color(1, 0.97, 0.92, 1)
+light_energy = 0.5
+light_angular_distance = 2.0
+shadow_enabled = true
+shadow_bias = 0.02
+directional_shadow_max_distance = 3.0
+
+[node name="KeyFill" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 1.0)
+light_color = Color(1, 0.9, 0.8, 1)
+light_energy = 0.18
+omni_range = 3.0
+omni_attenuation = 1.0
+
+[node name="BagFill" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.19, 0.33)
+light_color = Color(1, 0.93, 0.85, 1)
+light_energy = 0.42
+omni_range = 0.95
+omni_attenuation = 1.0
+
+[node name="Rim" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.52, 0.6, -0.3)
+light_color = Color(0.64, 0.78, 1, 1)
+light_energy = 0.16
+omni_range = 1.6
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7749, 0.6322, 0, -0.6322, 0.7749, 0, 0.78, 0.8)
+current = true
+fov = 52.0
+near = 0.01
+far = 20.0
+
+[node name="Table" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.002, 0)
+mesh = SubResource("Mesh_table")
+material_override = SubResource("Mat_table")
+
+[node name="BackpackGrid" parent="." instance=ExtResource("1_grid")]
+
+[node name="Packages" type="Node3D" parent="."]
+
+[node name="PkgIce" type="Node3D" parent="Packages"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.168, 0, 0.255)
+script = ExtResource("2_pkg")
+footprint = Vector2i(1, 1)
+display_label = "Buz"
+
+[node name="Model" parent="Packages/PkgIce" instance=ExtResource("3_ice")]
+
+[node name="PkgSpring" type="Node3D" parent="Packages"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.077, 0, 0.255)
+script = ExtResource("2_pkg")
+footprint = Vector2i(1, 1)
+display_label = "Yay"
+
+[node name="Model" parent="Packages/PkgSpring" instance=ExtResource("4_spring")]
+
+[node name="PkgGlass" type="Node3D" parent="Packages"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.013, 0, 0.255)
+script = ExtResource("2_pkg")
+footprint = Vector2i(1, 2)
+display_label = "Cam"
+
+[node name="Model" parent="Packages/PkgGlass" instance=ExtResource("5_glass")]
+
+[node name="PkgIron" type="Node3D" parent="Packages"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.136, 0, 0.255)
+script = ExtResource("2_pkg")
+footprint = Vector2i(2, 2)
+display_label = "Demir"
+
+[node name="Model" parent="Packages/PkgIron" instance=ExtResource("6_iron")]
+
+[node name="Grade" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="ColorCorrection" type="ColorRect" parent="Grade"]
+material = SubResource("Mat_grade")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="UI" type="CanvasLayer" parent="."]
+layer = 2
+
+[node name="Safe" type="MarginContainer" parent="UI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+offset_top = 120.0
+offset_right = -48.0
+offset_bottom = -80.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Hint" type="Label" parent="UI/Safe"]
+layout_mode = 2
+size_flags_vertical = 0
+text = "Paketi sürükle, çantadaki boş cebe bırak"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(1, 0.97, 0.92, 1)
+theme_override_colors/font_outline_color = Color(0.38, 0.24, 0.18, 0.55)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 42

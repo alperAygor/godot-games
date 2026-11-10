@@ -175,6 +175,12 @@ Main (Node)                       scripts/main.gd
 
 > Not: `GameManager` autoload olarak `/root` altında yaşar; `Main`'in çocuğu değildir.
 
+> **v0.2.0'da kurulan (bu belgedeki hedeften erken sapmalar):** `scenes/Main.tscn` + `scenes/BackpackGrid.tscn`.
+> `Main` içinde `WorldEnvironment`, `Sun`/`KeyFill`/`BagFill`/`Rim` ışıkları, `Camera3D`, `Table`,
+> `BackpackGrid`, `Packages` ve iki `CanvasLayer` var: `Grade` (renk düzeltme `ColorRect`'i, layer 1) ve
+> `UI` (layer 2, renk düzeltmesinden etkilenmez). `SceneHost`/`Fade` autoload'larla birlikte (Faz 1 kalanı) gelecek.
+> `GridController` paketleri `draggable` grubundan bulur — nerede durduklarını bilmez, bu yüzden sahne yeniden düzenlense de çalışır.
+
 ### 3.2 `scenes/boot.tscn`
 
 ```
@@ -422,3 +428,6 @@ godot --headless --path . --import
 | A3 | Autoload sayısı 3 ile sınırlı | Başlangıçta küçük tutmak, bağımlılık karmaşasını önlemek; `GameData` Faz 3'te | 2026-11-10 |
 | A4 | Ödül yalnızca sinyalle | Reklam SDK'sının oyun mantığına sızmasını engellemek | 2026-11-10 |
 | A5 | Tek yazar kayıt (`GameManager`) | Kayıt çakışması ve bozulma riski | 2026-11-10 |
+| A6 | Renk düzeltme **ekran shader'ı** ile | `adjustment_color_correction` LUT'u `gl_compatibility`'de bozuk örnekliyor (kimlik LUT bile sahneyi kırmızıya boyadı). Tam ekran `screen_texture` shader'ı taşınabilir, aynı sonucu veriyor ve `gl_compatibility`'de çalışıyor | 2026-11-10 |
+| A7 | Bloom + SSAO `gl_compatibility`'de açık | Godot 4.7.2'de ikisi de çalışıyor; A/B render + determinizm kontrolü ile doğrulandı (bkz. CHANGELOG) | 2026-11-10 |
+| A8 | Paketler şimdilik `Node3D` + tween | Faz 2'nin ilk dilimi görsel; fizik (`RigidBody3D`, kırılma) Faz 3'te devreye girecek | 2026-11-10 |

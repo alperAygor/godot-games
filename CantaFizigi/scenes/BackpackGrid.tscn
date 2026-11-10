@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/GridController.gd" id="1_ctrl"]
+[ext_resource type="PackedScene" path="res://assets/models/backpack_base.glb" id="2_model"]
+
+[node name="BackpackGrid" type="Node3D"]
+script = ExtResource("1_ctrl")
+
+[node name="Model" parent="." instance=ExtResource("2_model")]
+
+[node name="Cells" type="Node3D" parent="."]

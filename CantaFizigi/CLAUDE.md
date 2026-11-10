@@ -73,7 +73,7 @@ Kurallar:
 7. **Sinyal imzaları tipli** yazılır: `signal package_broken(package: Node3D, damage: float)`.
 8. `Variant` yalnızca JSON/save sınırlarında; kullanıcıya açık fonksiyonlarda değil.
 9. `null` kontrolü zorunlu: fizik gövdeleri serbest bırakılabilir (`is_instance_valid()`).
-10. `project.godot` içinde `debug/gdscript/warnings/untyped_declaration=1` (error) açık kalır. Uyarıyı susturmak için `@warning_ignore` kullanma; kodu düzelt.
+10. `project.godot` içinde `debug/gdscript/warnings/untyped_declaration=2` (error) açık kalır. Uyarıyı susturmak için `@warning_ignore` kullanma; kodu düzelt.
 
 ---
 
@@ -105,6 +105,8 @@ Kurallar:
 - Yorum, kodu tekrar etmez; **neden**'i yazar. Türkçe yorum serbest, kod tanımlayıcıları İngilizce.
 - `print()` üretim kodunda yasak → `push_warning` / `push_error` veya `Debug` yardımcısı.
 - Her `RigidBody3D` için `physics_material_override` açıkça atanır (sürtünme varsayılana bırakılmaz).
+
+**Renk düzeltme:** Environment'ın `adjustment_color_correction` LUT'unu kullanma — Godot 4.7 `gl_compatibility`'de bozuk sonuç veriyor (ölçüldü). Sıcak ton `assets/shaders/color_correction.gdshader` üzerinden, `CanvasLayer` (layer 1) içindeki tam ekran `ColorRect` ile uygulanır. UI katmanı onun **üstünde** (layer 2) olmalı, yoksa arayüz de renk düzeltmesinden geçer.
 
 ---
 

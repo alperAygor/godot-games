@@ -8,7 +8,25 @@ Tarihler `YYYY-AA-GG` biçimindedir.
 
 ## [Unreleased]
 
-### Eklendi
+### Eklendi — sahne kurulumu ve stylized atmosfer
+- **`project.godot`** — Android portrait **1080x1920** (`canvas_items`/`expand`), **`gl_compatibility`** renderer, dokunmatik emülasyonu (`pointing/emulate_touch_from_mouse`), 60 Hz fizik, `untyped_declaration=2` (statik tip hatası).
+- **`scenes/Main.tscn`** — `WorldEnvironment` + güneş/dolgu/rim ışıkları + kamera + masa + 4 paket + `UI` katmanı.
+- **`scenes/BackpackGrid.tscn`** — çanta modeli + 20 hücre parıltı düğümü.
+- **`scripts/gameplay/GridController.gd`** — 4x5 ızgara, dokunmatik **sürükle-bırak** (`InputEventScreenDrag`), çok hücreli footprint (1x1, 1x2, 2x2), hücre doluluk takibi, **squash & stretch** tween'i ve hücre parıltısı.
+- **`scripts/gameplay/Package.gd`** — paket verisi (footprint, ana konum).
+- **`assets/shaders/color_correction.gdshader`** — sıcak renk düzeltme: lift/gain, doygunluk, kontrast, vinyet (tek tam ekran geçişi).
+- **`tools/screenshot.gd`** — QA aracı: sahneyi açar, sürükleme senaryosu uygular, PNG kaydeder (`--mode=idle|placed|drag`, `--tweak=...`).
+
+### Görsel atmosfer
+- **Bloom**: `glow_enabled`, normalize, eşik 0.78, 2 ve 3. seviye ağırlıklı — ölçüldü, ekranın %60'ında fark üretiyor.
+- **SSAO**: `ssao_enabled`, yarıçap 0.55, şiddet 1.6 — A/B testinde %2.7 pikselde fark; determinizm kontrolü 0 fark verdiği için etki gerçek.
+- **ColorCorrection**: sıcak lift/gain + doygunluk + kontrast + vinyet, `ColorRect` üzerinde `screen_texture` shader'ı ile.
+
+### Bulgular (ölçümlü)
+- **Environment `adjustment_color_correction` LUT'u `gl_compatibility`'de çalışmıyor.** 512x512 / 8x8 karo formatında üretilen LUT, sahneyi tamamen kırmızıya boyadı; **kimlik (identity) LUT ile de aynı sonuç** alındı — yani örnekleme bozuk. Bu yüzden sıcak ton, tam ekran shader ile yapıldı; LUT ve üreticisi repodan kaldırıldı.
+- Sahne ilk denemede 2 kata kadar fazla pozlanmıştı (piksel örneklemesi 255'te kırpılıyordu); ışık şiddetleri ve tonemap ölçümle ayarlandı.
+
+### Eklendi — 3D varlık hattı
 - **3D varlık hattı** — `tools/blender/make_models.py`: beş modeli prosedürel üreten Blender 5.2 betiği. Girinti/örgü yerine kod; model değişikliği = script değişikliği.
 - **`assets/models/backpack_base.glb`** — ön yüzü açık kurye çantası, 4×5 = 20 cep ızgarası, pastel palet (nane/krem/pudra/lavanta). 1.412 üçgen, 4 materyal, 0,346 × 0,470 × 0,138 m.
 - **`assets/models/pkg_glass_1x2.glb`** — 1×2 yarı saydam mavi cam kargo kutusu, köşe dikmeleri ve kapak. 308 üçgen, `alphaMode = BLEND` (alfa 0,42).
