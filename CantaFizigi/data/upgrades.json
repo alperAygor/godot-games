@@ -1,0 +1,23 @@
+{
+  "bag_capacity": {
+    "label": "Çanta Kapasitesi",
+    "description": "Başlangıç ızgarasına sütun ekler (4'ten 6'ya kadar).",
+    "base_cost": 300,
+    "cost_growth": 1.8,
+    "max_level": 2
+  },
+  "tape": {
+    "label": "Bant Stoğu",
+    "description": "Her turda kullanılabilen bant sayısını artırır.",
+    "base_cost": 250,
+    "cost_growth": 1.7,
+    "max_level": 3
+  },
+  "insurance": {
+    "label": "Kasko",
+    "description": "Turda ilk kırılmayı bir kez engeller.",
+    "base_cost": 600,
+    "cost_growth": 2.0,
+    "max_level": 1
+  }
+}

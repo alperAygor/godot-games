@@ -1,3 +1,4 @@
 {
-  "delivery_base_fee": 120
+  "delivery_base_fee": 120,
+  "starting_currency": 500
 }

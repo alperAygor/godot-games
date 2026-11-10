@@ -32,6 +32,13 @@ func _ready() -> void:
 	grid.package_broken.connect(_on_package_broken)
 	GameManager.back_requested.connect(_on_back_requested)
 
+	# "Çanta Kapasitesi" yükseltmesi başlangıç ızgarasını büyütür (4 -> 6 sütun).
+	var base_cols: int = clampi(
+		GridController.BASE_COLS + GameManager.profile.upgrade_level("bag_capacity"),
+		GridController.BASE_COLS, GridController.MAX_COLS)
+	if base_cols > GridController.BASE_COLS:
+		grid.expand_to(base_cols)
+
 	_refresh_hud()
 
 

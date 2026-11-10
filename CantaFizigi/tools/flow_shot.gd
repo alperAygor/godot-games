@@ -24,6 +24,10 @@ func _initialize() -> void:
 		{"at": 2.40, "press": "StartButton"},
 		{"at": 4.00, "shot": "03_game"},
 		{"at": 9.00, "shot": "04_result"},
+		{"at": 9.30, "press": "MenuButton"},
+		{"at": 9.90, "shot": "05_menu_after"},
+		{"at": 10.10, "press": "UpgradesButton"},
+		{"at": 10.70, "shot": "06_upgrades"},
 	]
 	var packed: PackedScene = load("res://scenes/Boot.tscn")
 	if packed == null:
@@ -35,18 +39,34 @@ func _initialize() -> void:
 	current_scene = scene
 
 
+## Sabit zamanlama yerine kosul bekleme: sahne gecisi gecikirse adim ertelenir.
+## Boylece arac makine hizina gore kararsizlasmaz.
 func _process(delta: float) -> bool:
 	_elapsed += delta
-	while _index < _plan.size() and _elapsed >= float(_plan[_index]["at"]):
+	while _index < _plan.size():
 		var step: Dictionary = _plan[_index]
-		_index += 1
+		var due: float = float(step["at"])
+		if _elapsed < due:
+			break
 		if step.has("shot"):
 			_capture(String(step["shot"]))
-		elif step.has("press"):
-			_press(String(step["press"]))
+			_index += 1
+			continue
+		var ready_ok: bool = true
+		if step.has("press"):
+			ready_ok = _press(String(step["press"]))
 		elif step.has("place"):
 			var args: Array = step["place"]
-			_place(String(args[0]), Vector2i(int(args[1]), int(args[2])))
+			ready_ok = _place(String(args[0]), Vector2i(int(args[1]), int(args[2])))
+		if ready_ok:
+			_index += 1
+			continue
+		# Henuz hazir degil: son tarihe kadar sonraki karede tekrar dene.
+		if _elapsed > due + 4.0:
+			push_error("flow: adim zaman asimi (%s)" % str(step))
+			_index += 1
+			continue
+		break
 	if not _done and _index >= _plan.size():
 		_done = true
 		quit(0)
@@ -60,27 +80,27 @@ func _capture(name: String) -> void:
 	print("SHOT %s" % path)
 
 
-func _press(node_name: String) -> void:
+func _press(node_name: String) -> bool:
 	if current_scene == null:
-		push_error("flow: aktif sahne yok")
-		return
+		return false
 	var node: Node = current_scene.find_child(node_name, true, false)
 	if node == null:
-		push_error("flow: dugum yok: " + node_name)
-		return
-	if node is Button:
-		(node as Button).pressed.emit()
+		return false
+	if not (node is Button):
+		push_error("flow: dugum buton degil: " + node_name)
+		return true
+	(node as Button).pressed.emit()
+	return true
 
 
-func _place(node_name: String, cell: Vector2i) -> void:
+func _place(node_name: String, cell: Vector2i) -> bool:
 	if current_scene == null:
-		return
+		return false
 	var pkg: Node3D = current_scene.get_node_or_null("ShakeRoot/Packages/" + node_name) as Node3D
 	var camera: Camera3D = current_scene.get_node_or_null("Camera3D") as Camera3D
 	var grid: Node3D = current_scene.get_node_or_null("ShakeRoot/BackpackGrid") as Node3D
 	if pkg == null or camera == null or grid == null:
-		push_error("flow: yerlesim icin dugum eksik (" + node_name + ")")
-		return
+		return false
 	var start: Vector2 = camera.unproject_position(pkg.global_position)
 	var target_world: Vector3 = grid.to_global(
 		Vector3(-0.15 + (float(cell.x) + 0.5) * 0.075, (float(cell.y) + 0.5) * 0.075, 0.048))
@@ -89,3 +109,4 @@ func _place(node_name: String, cell: Vector2i) -> void:
 	grid.call("_update_drag", start.lerp(target, 0.5))
 	grid.call("_update_drag", target)
 	grid.call("_end_drag", target)
+	return true

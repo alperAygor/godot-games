@@ -15,7 +15,7 @@ signal package_broken(package: PackagePhysics)
 
 const BASE_COLS: int = 4
 const BASE_ROWS: int = 5
-const MAX_COLS: int = 5
+const MAX_COLS: int = 6
 const CELL: float = 0.075
 const GRID_ORIGIN_X: float = -0.15          # çantanın iç sol kenarı (sabit)
 const CELL_PLANE_Z: float = 0.048

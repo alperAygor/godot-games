@@ -6,6 +6,42 @@ Tarihler `YYYY-AA-GG` biçimindedir.
 
 ---
 
+## [1.3.0] — 2026-11-10
+
+**Faz 3 — kalıcılık ve ekonomi.** Oyun artık kapanıp açıldığında ilerlemeyi korur.
+
+### Eklendi
+- **`scripts/core/player_profile.gd`** — şema **v1**, `_migrate()` ile v0 (`coins`) → v1 (`currency`)
+  yükseltmesi; ayarlar, yükseltmeler, istatistikler. Saf sınıf, 5 test.
+- **`scripts/core/economy.gd`** — yükseltme fiyat eğrisi (`base_cost × growth^level`), limit,
+  satın alınabilirlik. 4 test.
+- **`data/upgrades.json`** — Çanta Kapasitesi / Bant Stoğu / Kasko tanımları.
+- **`scenes/Upgrades.tscn`** — satırlar JSON'dan üretilir; para göstergesi, satın alma, geri.
+- **`data/balance.json`** → `starting_currency: 500` (ilk açılış sermayesi).
+
+### Kalıcılık
+- `GameManager.save_profile()` **atomik** yazar: önce `profile.save.tmp`, sonra rename.
+  Yarıda kalan yazma kaydı bozmaz.
+- `load_profile()` bozuk JSON'da dosyayı `profile.save.bak` olarak yedekler ve sıfırdan başlar.
+- Odak kaybı / pencere kapanışında otomatik kayıt; her tur sonunda (`finish_run`) kayıt.
+- `add_currency` / `spend_currency` / `add_reputation` + `currency_changed` sinyali.
+
+### Değişti
+- `GridController.MAX_COLS` 5 → 6; **Çanta Kapasitesi** yükseltmesi başlangıç ızgarasını
+  4 → 5 → 6 sütuna çıkarır (ölçüldü).
+- Menüde para göstergesi ve "Yükseltmeler" girişi.
+- `GameData` tabloları **tembel** yükleniyor: `GameManager` (ilk autoload) `_ready` çalışırken
+  `GameData` henüz hazır değildi ve `starting_currency` 0 okunuyordu — düzeltildi.
+- `tools/flow_shot.gd` sabit zamanlama yerine **koşul bekleme** kullanıyor; iki ardışık koşuda
+  aynı altı kareyi üretti (kararlı).
+- Sürüm `1.3.0`.
+
+### Doğrulama
+- `tools/verify.sh` → **48 test / 138 doğrulama**, 0 başarısız.
+- Akış testi: para 432 → teslimat (+72) → **504**; kayıt dosyasında kalıcı.
+
+---
+
 ## [1.2.0] — 2026-11-10
 
 **Faz 2 — oyun kabuğu.** Uygulama artık doğrudan oyuna açılmıyor:

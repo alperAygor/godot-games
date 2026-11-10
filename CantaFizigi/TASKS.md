@@ -5,8 +5,9 @@
 | v1.0.0 dikey dilim (oynanabilir oyun) | ✅ Tamam |
 | **Faz 1 — Sağlamlaştırma** | ✅ **Tamam** |
 | **Faz 2 — Oyun kabuğu** | ✅ **Tamam** |
-| Faz 3 — Kalıcılık ve ekonomi | ⬜ Sırada |
-| Faz 4–8 | ⬜ Bekliyor |
+| **Faz 3 — Kalıcılık ve ekonomi** | ✅ **Tamam** |
+| Faz 4 — Oyun döngüsü derinliği (görev üretimi, güzergâh) | ⬜ Sırada |
+| Faz 5–8 | ⬜ Bekliyor |
 
 ---
 
@@ -68,14 +69,21 @@ Oyun baştan sona oynanıyor: paketle → sarsıntılı teslimat → kırılma/e
 
 ## Faz 3 — Kalıcılık ve ekonomi
 
-- [ ] `scripts/core/player_profile.gd` — şema v1 + `_migrate()`
-- [ ] `GameManager.save()/load()` — atomik yazma, bozuk dosya kurtarma
-- [ ] Odak kaybında otomatik kayıt
-- [ ] `scripts/core/economy.gd` — para, itibar
-- [ ] `data/upgrades.json` + yükseltme ekranı (kapasite, bant stoğu, kasko)
-- [ ] Testler: round-trip, bozuk JSON, migrasyon
+- [x] `scripts/core/player_profile.gd` — şema v1, `_migrate()` (v0 `coins` → `currency`), 5 test
+- [x] `GameManager.save_profile()/load_profile()` — **atomik** yazma (.tmp → rename), bozuk dosyada
+      `.bak` yedekleyip sıfırlama, 5 test
+- [x] Odak kaybı / pencere kapanışında otomatik kayıt (`NOTIFICATION_APPLICATION_FOCUS_OUT`)
+- [x] `scripts/core/economy.gd` — fiyat eğrisi, limit, satın alınabilirlik (saf mantık) + 4 test
+- [x] `data/upgrades.json` + **`scenes/Upgrades.tscn`** — satırlar tablodan üretilir, elle yazılmaz
+- [x] `Çanta Kapasitesi` oyun içi etkisi bağlandı: başlangıç ızgarası 4 → 5 → 6 sütun (ölçüldü)
+- [x] Testler: round-trip, bozuk JSON, migrasyon, atomik yazma, bakiye kontrolü
 
-**Bitti kriteri:** Kapatıp açınca para/yükseltme/ayarlar korunur; bozuk kayıt oyunu kilitlemez.
+**Bitti kriteri:** Kapatıp açınca para/yükseltme/ayarlar korunur; bozuk kayıt oyunu kilitlemez. ✅
+**Doğrulama:** 48 test / 138 doğrulama geçti; kayıt dosyası okundu (`currency`, `stats.deliveries` doğru);
+akış testinde para 432 → 504 olarak kalıcılaştı.
+
+**Not:** `Bant Stoğu` ve `Kasko` satın alınabiliyor ve kaydediliyor, ancak oyun içi etkileri
+**Faz 5**'te bağlanacak (şu an yalnızca `Çanta Kapasitesi` etkili).
 
 ---
 

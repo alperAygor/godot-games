@@ -13,11 +13,20 @@ func _ready() -> void:
 	_load_all()
 
 
+## GameManager (ilk autoload) _ready calisirken GameData henuz _ready gormemis olur;
+## bu yuzden tablolar tembel yuklenir. Sira degisirse de dogru calisir.
+func _ensure_loaded() -> void:
+	if _tables.is_empty():
+		_load_all()
+
+
 func has_table(table_name: String) -> bool:
+	_ensure_loaded()
 	return _tables.has(table_name)
 
 
 func table(table_name: String) -> Dictionary:
+	_ensure_loaded()
 	var found: Variant = _tables.get(table_name)
 	if found is Dictionary:
 		return found as Dictionary
