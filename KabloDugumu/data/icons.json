@@ -1,0 +1,16 @@
+{
+  "lucide/arrow-left": "res://assets/icons/lucide/arrow-left.svg",
+  "lucide/check": "res://assets/icons/lucide/check.svg",
+  "lucide/heart": "res://assets/icons/lucide/heart.svg",
+  "lucide/package": "res://assets/icons/lucide/package.svg",
+  "lucide/pause": "res://assets/icons/lucide/pause.svg",
+  "lucide/play": "res://assets/icons/lucide/play.svg",
+  "lucide/settings": "res://assets/icons/lucide/settings.svg",
+  "lucide/shield": "res://assets/icons/lucide/shield.svg",
+  "lucide/star": "res://assets/icons/lucide/star.svg",
+  "lucide/trophy": "res://assets/icons/lucide/trophy.svg",
+  "lucide/truck": "res://assets/icons/lucide/truck.svg",
+  "lucide/volume-2": "res://assets/icons/lucide/volume-2.svg",
+  "lucide/x": "res://assets/icons/lucide/x.svg",
+  "lucide/zap": "res://assets/icons/lucide/zap.svg"
+}
