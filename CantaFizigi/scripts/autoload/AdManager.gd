@@ -83,6 +83,13 @@ func reset_run_limits() -> void:
 	_pending = -1
 
 
+## Oturum limitlerini de sıfırlar (testler ve "yeni oyun" için).
+func reset_session_limits() -> void:
+	_used_run.clear()
+	_used_session.clear()
+	_pending = -1
+
+
 func used_in_run(placement: Placement) -> int:
 	return int(_used_run.get(PLACEMENT_KEYS.get(placement, ""), 0))
 

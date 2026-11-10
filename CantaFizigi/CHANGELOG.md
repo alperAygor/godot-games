@@ -6,6 +6,41 @@ Tarihler `YYYY-AA-GG` biçimindedir.
 
 ---
 
+## [1.1.0] — 2026-11-10
+
+**Faz 1 — sağlamlaştırma.** Kullanıcıya görünen değişiklik yok; proje artık
+regresyona karşı korumalı ve denge sayıları veride.
+
+### Eklendi
+- **`tests/test_case.gd`** — assert tabanı, runner'ın doldurduğu `tree` ve autoload erişimi.
+- **`tests/run_tests.gd`** — test koşucusu: `--filter=`, çıkış kodu 0/1/2, bozuk script atlanır,
+  beklenmedik hatada süreç kilitlenmez (`_process` içinde çalışır, `_initialize` askıda kalmaz).
+- **27 test / 78 doğrulama**, dört dosyada:
+  `test_package_physics` (9), `test_grid` (7), `test_shake` (6), `test_ad_limits` (6).
+- **`tools/verify.sh`** — içe aktarma + açılış dumanı + testler; Godot hata verse de 0
+  dönebildiği için çıktı `SCRIPT ERROR` için ayrıca taranır. Loglar `tests/results/` (git dışı).
+- **`scripts/autoload/GameData.gd`** — `res://data/*.json` tablolarını yükler.
+- **`data/packages.json`** — cam/buz/demir/yay/standart için `break_threshold`, `fragility`, `melt_seconds`.
+
+### Değişti
+- `PackagePhysics` denge değerlerini artık `data/packages.json`'dan okur (`use_data_tuning`
+  kapatılabilir). `Main.tscn`'deki gömülü eşikler kaldırıldı.
+- `GridController._nudge()` ve `AudioService` pitch varyasyonu **sabit tohumlu**
+  `RandomNumberGenerator` kullanıyor (CLAUDE.md §5).
+- `AdManager.reset_session_limits()` eklendi (testler ve "yeni oyun" için).
+- Sürüm `1.1.0`.
+
+### Düzeltildi
+- **`melt_seconds` belgesiyle kod çelişiyordu:** alan "tam erime süresi" diyordu ama formül
+  0.5 taban yüzünden iki katını veriyordu. Formül artık `(1.0 + intensity * 1.5) / melt_seconds`;
+  sarsıntı erimeyi en fazla 2.5 kat hızlandırıyor.
+
+### Doğrulama
+`tools/verify.sh` → `SONUÇ: geçti` (27 test, 0 başarısız); açılış dumanı temiz; hata ekranı
+görsel olarak yeniden kontrol edildi (davranış değişmedi).
+
+---
+
 ## [1.0.0] — 2026-11-10
 
 **Dikey dilim tamamlandı.** Oyun baştan sona oynanabilir: paketle → sarsıntılı
@@ -102,6 +137,7 @@ birim testleri, IAP, gerçek AdMob eklentisi, Play Store yayını, müzik. Ayrı
   `pkg_ice_1x1.glb` (176), `pkg_iron_2x2.glb` (452), `pkg_spring_1x1.glb` (316).
   Toplam **2.664 üçgen / 13 yüzey**; hepsinde transformlar uygulanmış, origin alt-merkez.
 
+[1.1.0]: https://github.com/alperAygor/godot-games/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/alperAygor/godot-games/compare/v0.2.0...v1.0.0
 [0.2.0]: https://github.com/alperAygor/godot-games/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/alperAygor/godot-games/releases/tag/v0.1.0

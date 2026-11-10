@@ -134,7 +134,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.168, 0, 0.255)
 script = ExtResource("2_pkg")
 footprint = Vector2i(1, 1)
 kind = 2
-melt_seconds = 3.0
 display_label = "Buz"
 
 [node name="Model" parent="ShakeRoot/Packages/PkgIce" instance=ExtResource("3_ice")]
@@ -153,7 +152,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.013, 0, 0.255)
 script = ExtResource("2_pkg")
 footprint = Vector2i(1, 2)
 kind = 1
-break_threshold = 2.2
 display_label = "Cam"
 
 [node name="Model" parent="ShakeRoot/Packages/PkgGlass" instance=ExtResource("5_glass")]

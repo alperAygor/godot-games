@@ -47,6 +47,7 @@ var _mat_by_cell: Dictionary[Vector2i, StandardMaterial3D] = {}
 var _occupancy: Dictionary[Vector2i, PackagePhysics] = {}
 var _tweens: Dictionary[int, Tween] = {}
 var _glow_texture: GradientTexture2D = null
+var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _bonus_pocket: MeshInstance3D = null
 
 var _dragging: Package = null
@@ -57,6 +58,7 @@ var _hover_valid: bool = false
 
 
 func _ready() -> void:
+	_rng.seed = 20261110
 	_build_cells()
 	_refresh_glows()
 	_connect_packages()
@@ -285,7 +287,7 @@ func _on_package_melted(pkg: PackagePhysics) -> void:
 
 func _nudge(pkg: PackagePhysics) -> void:
 	_kill_tween(pkg)
-	var axis: Vector3 = Vector3(randf_range(-0.012, 0.012), 0.0, randf_range(-0.012, 0.012))
+	var axis: Vector3 = Vector3(_rng.randf_range(-0.012, 0.012), 0.0, _rng.randf_range(-0.012, 0.012))
 	var base: Vector3 = pkg.global_position
 	var t: Tween = create_tween().set_trans(Tween.TRANS_SINE)
 	_tweens[pkg.get_instance_id()] = t

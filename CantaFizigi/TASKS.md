@@ -1,102 +1,142 @@
 # TASKS — Çanta Fiziği
 
-Durum: **v1.0.0 dikey dilim tamamlandı.**
-Bu dosya yalnızca **gerçekten yapılmış** işleri listeler. Kapsam dışı kalan işler
-listenin sonunda, işaretlenmeden durur — tamamlanmış gibi gösterilmez.
+| Bölüm | Durum |
+|---|---|
+| v1.0.0 dikey dilim (oynanabilir oyun) | ✅ Tamam |
+| **Faz 1 — Sağlamlaştırma** | ✅ **Tamam** |
+| Faz 2 — Oyun kabuğu | ⬜ Sırada |
+| Faz 3–8 | ⬜ Bekliyor |
 
 ---
 
-## Faz 0 — Dokümantasyon ve klasör iskeleti ✅
+## Tamamlanan — v1.0.0 dikey dilim
 
-- [x] `scenes/`, `scripts/autoload/`, `assets/models/`, `assets/audio/` dizinleri
-- [x] `CLAUDE.md` — Godot 4.x, `gl_compatibility`, 1080x1920 portrait, statik tip kuralları
-- [x] `PROJECT_SPEC.md` — konsept, core loop, ödüllü reklam kancaları
-- [x] `ARCHITECTURE.md` — autoload'lar ve sahne ağacı
-- [x] `TASKS.md` — faz listesi
-- [x] `CHANGELOG.md` — sürüm notları
-- [x] `.gitignore` — Godot çıktıları, build, keystore, `.env`
+Oyun baştan sona oynanıyor: paketle → sarsıntılı teslimat → kırılma/erime →
+ödüllü kurtarma. Ayrıntılı kayıt `CHANGELOG.md`'de.
 
-## Faz 1 — Proje iskeleti ve autoload'lar ✅
-
-- [x] `project.godot`: ad, ana sahne `res://scenes/Main.tscn`, `gl_compatibility`
-- [x] Ekran 1080x1920, `canvas_items`/`expand`, `handheld/orientation=1` (portrait)
-- [x] `pointing/emulate_touch_from_mouse=true`, 60 Hz fizik
-- [x] `debug/gdscript/warnings/untyped_declaration=2` (hata seviyesi)
-- [x] Autoload kaydı ve sırası: `GameManager` → `AudioService` → `AdManager`
-- [x] `scripts/autoload/GameManager.gd` — faz makinesi, `fail_run`/`revive`, duraklatma
-- [x] `scripts/autoload/AudioService.gd` — SFX havuzu, bus yönetimi, headless koruması
-- [x] `scripts/autoload/AdManager.gd` — yerleşim enum'u, limitler, idempotent ödül
-- [x] `scripts/services/ads_provider.gd`, `mock_ads_provider.gd`, `no_ads_provider.gd`
-- [x] `data/ads.json` — yerleşim limitleri
-- [x] `assets/audio/default_bus_layout.tres` — Master / SFX / Music
-
-## Faz 2 — Çanta, ızgara ve yerleştirme ✅
-
-- [x] `scenes/BackpackGrid.tscn` — çanta modeli + hücre düğümleri
-- [x] `scripts/gameplay/GridController.gd` — 4x5 ızgara, doluluk takibi
-- [x] `InputEventScreenDrag` ile sürükle-bırak, kameraya paralel taşıma düzlemi
-- [x] Çok hücreli footprint desteği (1x1, 1x2, 2x2)
-- [x] Hücreye snap + **squash & stretch** tween'i (ezilme → ters yaylanma → elastic durulma)
-- [x] Hücre parıltısı: boş = yeşil, dolu = kırmızı, hedefte taşan halo
-- [x] Geçersiz bırakmada paketin ana konumuna geri dönüşü
-
-## Faz 3 — Fizik: sarsıntı, kırılma, erime ✅
-
-- [x] `scripts/gameplay/ShakeSimulator.gd` — "Teslimata Başla" ile 5 sn sinüs tabanlı sarsıntı
-- [x] Zarf eğrisi (rampa-in / tümsek ritmi / rampa-out) + dönme bileşeni
-- [x] Sarsıntı tek bir `ShakeRoot` düğümüne biner: çanta ve paketler birlikte sallanır
-- [x] `scripts/gameplay/PackagePhysics.gd` — şiddete göre biriken stres
-- [x] **Cam kutusu** eşiği aşınca kırılır → oyun **duraklatılır** ve hata tetiklenir
-- [x] **Buz paketi** sarsıntıyla erir, küçülür ve komşularına stres yükleyip onları sarsar
-- [x] Yalnızca çantaya yerleştirilmiş paketler sarsıntıdan etkilenir (tepsidekiler değil)
-- [x] `revive` sonrası sarsıntı kaldığı yerden devam eder
-
-## Faz 4 — Ses: ElevenLabs ✅
-
-- [x] `tools/make_sfx.py` — ElevenLabs Sound Generation API + deterministik yedek sentez
-- [x] `package_drop.wav` — paket bırakma tok sesi (0,60 sn)
-- [x] `glass_break.wav` — cam kırılma sesi (1,36 sn)
-- [x] `ice_clink.wav` — buz tıkırtısı (0,80 sn)
-- [x] `success.wav` — başarı melodisi (2,00 sn)
-- [x] Tepe normalizasyonu (kırpılma yok) + 44.1 kHz mono 16-bit
-- [x] Anahtar yalnızca `.env`/ortam değişkeninden; repoya **hiç** yazılmadı
-
-## Faz 5 — Ödüllü reklam kancaları ✅
-
-- [x] **"Ekstra Cep Aç"**: ızgarayı **4x5 → 5x5** yapar, ek sütun çantanın sağına takılır
-- [x] Yeni sütun gerçekten kullanılabilir (paket yerleştirme testiyle doğrulandı)
-- [x] **"Paketi Bandıyla Kurtar"**: kırılan ilk paketi onarır ve teslimatı sürdürür (revive)
-- [x] Ödül yalnızca `rewarded_finished` doğrulandıktan sonra verilir; limitler `data/ads.json`
-- [x] Reklam yüklenemezse sessiz geçilir, oyun bozulmaz
-- [x] Mock sağlayıcı ile uçtan uca akış + "Reklam oynatılıyor" katmanı
-
-## Faz 6 — HUD ve görsel atmosfer ✅
-
-- [x] `scenes/HUD.tscn` + `scripts/ui/HUD.gd` — başlık, durum, sarsıntı barı, 3 buton
-- [x] Hata katmanı (ÇANTA HASARLI) + kurtarma/baştan dene
-- [x] Butonlar duraklatılmış sahnede de çalışır (`process_mode = ALWAYS`)
-- [x] `WorldEnvironment`: bloom, SSAO, ayarlamalar (A/B render ile doğrulandı)
-- [x] Sıcak renk düzeltme (lift/gain + doygunluk + vinyet) tam ekran shader ile
-- [x] Stylized ışık kurulumu, masa, pastel palet, 3D modeller
-
-## Faz 7 — Doğrulama ✅
-
-- [x] `godot --headless --path . --import` temiz
-- [x] `godot --headless --path . --quit` hatasız (0 çıkış)
-- [x] `tools/screenshot.gd` ile 8 senaryo görsel olarak doğrulandı
-      (idle, placed, shake, fail, revive, success, pocket, pocket_place)
-- [x] Ses dosyaları dalga analiziyle doğrulandı (sessiz değil, süreler doğru)
+| Alan | Ne var |
+|---|---|
+| Proje | `gl_compatibility`, 1080x1920 portrait, dokunmatik, 60 Hz, statik tip hataları açık |
+| Sahneler | `Main.tscn`, `BackpackGrid.tscn`, `HUD.tscn` |
+| Autoload | `GameManager`, `AudioService`, `AdManager` |
+| Oynanış | 4x5 ızgara, sürükle-bırak, squash & stretch, hücre parıltısı |
+| Fizik | 5 sn sinüs sarsıntısı, cam kırılması, buz erimesi + komşu etkisi |
+| Ses | ElevenLabs ile 4 SFX (drop / cam / buz / başarı) |
+| Reklam | "Ekstra Cep Aç" (4x5→5x5), "Paketi Bandıyla Kurtar" (revive) |
+| Görsel | Bloom, SSAO, sıcak renk düzeltme shader'ı, stylized ışıklar |
 
 ---
 
-## Kapsam dışı — v1 sonrası (yapılmadı, yapılmış gibi gösterilmiyor)
+## Faz 1 — Sağlamlaştırma ✅
 
-Bunlar `PROJECT_SPEC.md`'nin yol haritasında var; bu sürümde **yok**:
+**Hedef:** Yeni özellik eklemeden önce mevcut dilimi kilitle.
 
-- Sürüş fazı: kamyonet, yol segmentleri, tümsek/çukur yerleşimi
-- Paketlerin `RigidBody3D` ile gerçek fizik simülasyonu (şu an tween + birikimli stres modeli)
-- Paket döndürme (90°), köpük/bant uygulama
-- `scenes/boot.tscn`, `tests/` (birim testleri), `tools/verify.sh`
-- Ekonomi, yükseltmeler, kalıcı kayıt (`PlayerProfile`)
-- IAP mağazası, gerçek AdMob eklentisi, Play Store yayını
-- Müzik (`Music` bus'ı hazır, parça yok), TR/EN çeviri dosyaları
+- [x] `tests/test_case.gd` — assert tabanı (`assert_true/eq/almost_eq/greater/not_null`)
+- [x] `tests/run_tests.gd` — koşucu; çıkış kodu 0/1/2, `--filter=` desteği
+- [x] `tests/unit/test_package_physics.gd` — 9 test: cam eşiği, kırılma sonrası stres kilidi, buz erimesi, sarsıntının erimeyi hızlandırması, komşu stresi, onarım
+- [x] `tests/unit/test_shake.gd` — 6 test: süre, şiddet aralığı, zarf rampası, eve dönüş, stop/resume ilerleme koruması
+- [x] `tests/unit/test_ad_limits.gd` — 6 test: limitler, idempotent ödül, yerleşim bağımsızlığı, tur sıfırlama
+- [x] `tests/unit/test_grid.gd` — 7 test: footprint taşması, doluluk, genişlemenin hücre kaydırmaması, yeni sütuna yerleştirme
+- [x] `tools/verify.sh` — içe aktarma + açılış dumanı + testler, `SCRIPT ERROR` taraması
+- [x] Tohumsuz rastgelelik kaldırıldı (`GridController._nudge`, `AudioService` pitch) — `RandomNumberGenerator`, sabit tohum
+- [x] Denge sayıları `data/packages.json`'a taşındı + `GameData` autoload'u
+- [x] **Bulunan gerçek hata:** `melt_seconds` "tam erime süresi" diye belgelenmişti ama formül 2 katını veriyordu; formül belgeye uyduruldu
+
+**Bitti kriteri:** `tools/verify.sh` 0 döner; 27 test / 78 doğrulama geçer; `.gd` dosyalarında çıplak `randf_range` kalmaz. ✅
+**Doğrulama:** `tools/verify.sh` → `SONUÇ: geçti`, 27 test, 0 başarısız.
+
+---
+
+## Faz 2 — Oyun kabuğu
+
+**Hedef:** Uygulama doğrudan oyuna açılmasın; tur döngüsü kapansın.
+
+- [ ] `scenes/boot.tscn` — logo, 0.4 sn, menüye geçiş
+- [ ] `scenes/menu.tscn` — Oyna / Yükselt / Ayarlar
+- [ ] `scenes/result.tscn` — yıldızlar, paket bazında hasar raporu, ödül
+- [ ] `scripts/core/scoring.gd` — hasar → yıldız + ücret (`PROJECT_SPEC.md` §2 tablosu) + test
+- [ ] `GameManager.goto_scene()` — sahne geçişi tek yerden
+- [ ] Android geri tuşu: popup kapatır, menüde çıkış onayı
+
+**Bitti kriteri:** boot → menü → oyun → sonuç → menü tam turu; her adımda geri tuşu doğru; yıldız hesabı testle sabit.
+
+---
+
+## Faz 3 — Kalıcılık ve ekonomi
+
+- [ ] `scripts/core/player_profile.gd` — şema v1 + `_migrate()`
+- [ ] `GameManager.save()/load()` — atomik yazma, bozuk dosya kurtarma
+- [ ] Odak kaybında otomatik kayıt
+- [ ] `scripts/core/economy.gd` — para, itibar
+- [ ] `data/upgrades.json` + yükseltme ekranı (kapasite, bant stoğu, kasko)
+- [ ] Testler: round-trip, bozuk JSON, migrasyon
+
+**Bitti kriteri:** Kapatıp açınca para/yükseltme/ayarlar korunur; bozuk kayıt oyunu kilitlemez.
+
+---
+
+## Faz 4 — Karar noktası: gerçek fizik
+
+**4A — `RigidBody3D`'ye geç:** paketler fizik gövdesi, çanta içi 6 `StaticBody3D` duvar,
+sürükleme `freeze` ile, hasar temas impulsundan, 12 gövde için performans bütçesi.
+Ayrı dalda çalışmalı; snap/squash mantığı yeniden yazılır.
+
+**4B — Mevcut stres modeliyle devam:** daha hızlı yayın, ama "fizik komedisi" vaadi zayıf.
+
+**Bitti kriteri:** Seçilen yol `ARCHITECTURE.md` karar kaydına yazılır; Faz 1 testleri yeni modelde de geçer.
+
+---
+
+## Faz 5 — Oynanış derinliği
+
+- [ ] Sürükleme sırasında 90° döndürme (2x2 kasa bir yöne sığmaz)
+- [ ] Bant/köpük: kırılgan camın eşiğini yükseltir, stok tüketir
+- [ ] Eriyen buzun komşu etkisini mekanikleştir (kaygan hücre)
+- [ ] HUD'da ağırlık merkezi / inklinometre
+- [ ] Testler: döndürmeden 2x2 sığmaz, bantlı cam bir turu atlatır
+
+**Bitti kriteri:** Tur, yalnızca paket seçimiyle değil yön ve bant kararıyla kazanılır.
+
+---
+
+## Faz 6 — Sürüş fazı
+
+- [ ] `truck_01.glb` + 3 yol segmenti (düz / tümsekli / virajlı)
+- [ ] `truck.gd` — gaz/fren/şerit, tümsek teması → sarsıntı girdisi
+- [ ] `ShakeSimulator` sabit sinüs yerine fiziksel olayla beslenir
+- [ ] `road.gd` — segment havuzu
+- [ ] Kamera takip ritmi + sarsıntı azaltma ayarı
+
+**Bitti kriteri:** Turun tamamı (paketle → sür → teslim) oynanır; hızlı tümsek geçişi ölçülebilir hasar verir.
+
+---
+
+## Faz 7 — Yayın hattı
+
+- [ ] `export_presets.cfg` — `com.alperaygor.cantafizigi`, minSdk 24, targetSdk 36
+- [ ] Debug APK → emülatör → gerçek cihazda fizik/perf
+- [ ] Gizlilik politikası, veri güvenliği formu, yaş derecelendirmesi
+- [ ] Gerçek `AdMobProvider` (`AdsProvider` arayüzü sayesinde tek dosya)
+- [ ] Internal → closed testing
+
+**Bitti kriteri:** APK cihazda 10 dakika çökmeden oynanır; crash-free ≥ %99.
+
+---
+
+## Faz 8 — Cila
+
+- [ ] `assets/translations/strings.csv` TR/EN + `locale/translations`
+- [ ] Müzik döngüsü (`Music` bus'ı hazır, parça yok)
+- [ ] Haptik + kamera sarsıntısı azaltma seçeneği
+- [ ] Güvenli alan (çentik) — HUD şu an sabit offset kullanıyor
+- [ ] Dokunma hedefi ≥ 88 px denetimi
+
+**Bitti kriteri:** Ekranda sabit metin kalmaz; müzik geçişinde pop yok; çentikli cihazda buton kesilmez.
+
+---
+
+## Bilinçli olarak yapılmayanlar
+
+IAP, gerçek AdMob SDK'sı, Play Console yayını ve cihaz üstü performans ölçümü bu
+makinede mümkün değil (hesap/imzalama/cihaz kullanıcıya ait). Ayrıca `scripts/core/`
+katmanı ilk fazlarda boş bırakıldı; Faz 2–3 ile birlikte saf mantık oraya taşınacak.

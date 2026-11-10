@@ -7,6 +7,15 @@ extends Package
 
 enum Kind { STANDARD, GLASS, ICE, IRON, SPRING }
 
+## `data/packages.json` anahtarları — denge sayıları orada durur.
+const KIND_KEYS: Dictionary = {
+	Kind.STANDARD: "standard",
+	Kind.GLASS: "glass",
+	Kind.ICE: "ice",
+	Kind.IRON: "iron",
+	Kind.SPRING: "spring",
+}
+
 signal broken(package: PackagePhysics)
 signal melted(package: PackagePhysics)
 signal repaired(package: PackagePhysics)
@@ -15,13 +24,42 @@ signal repaired(package: PackagePhysics)
 ## Birikmiş stres bu eşiğe ulaşınca cam kırılır (stres = şiddet x süre x kırılganlık).
 @export var break_threshold: float = 2.2
 @export var fragility: float = 1.0
-## Buzun tamamen erimesi için gereken saniye (şiddetle hızlanır).
-@export var melt_seconds: float = 3.2
+## Buzun SARSINTISIZ tamamen erime süresi (saniye). Sarsıntı en fazla 2.5 kat hızlandırır.
+@export var melt_seconds: float = 3.0
+## Testler ve özel durumlar için: kapatılırsa data tablosu uygulanmaz.
+@export var use_data_tuning: bool = true
 
 var stress: float = 0.0
 var melt: float = 0.0
 var is_broken: bool = false
 var is_melted: bool = false
+
+
+func _ready() -> void:
+	super._ready()
+	if use_data_tuning:
+		_apply_tuning()
+
+
+func kind_key() -> String:
+	return String(KIND_KEYS.get(kind, "standard"))
+
+
+## Denge değerleri `data/packages.json`. Tablo yoksa `@export` varsayılanları kalır.
+func _apply_tuning() -> void:
+	var row_variant: Variant = GameData.table("packages").get(kind_key())
+	if not (row_variant is Dictionary):
+		return
+	var row: Dictionary = row_variant
+	var threshold: Variant = row.get("break_threshold", null)
+	if threshold is float or threshold is int:
+		break_threshold = float(threshold)
+	var frag: Variant = row.get("fragility", null)
+	if frag is float or frag is int:
+		fragility = float(frag)
+	var melt: Variant = row.get("melt_seconds", null)
+	if melt is float or melt is int:
+		melt_seconds = float(melt)
 
 
 func apply_shake(intensity: float, delta: float) -> void:
@@ -35,7 +73,8 @@ func apply_shake(intensity: float, delta: float) -> void:
 		Kind.ICE:
 			if is_melted:
 				return
-			melt = minf(1.0, melt + delta * (0.5 + intensity * 0.9) / maxf(melt_seconds, 0.1))
+			# taban 1.0: melt_seconds gerçekten "tam erime süresi" olsun; sarsıntı hızlandırır
+			melt = minf(1.0, melt + delta * (1.0 + intensity * 1.5) / maxf(melt_seconds, 0.1))
 			_update_melt_visual()
 			if melt >= 1.0:
 				_melt()

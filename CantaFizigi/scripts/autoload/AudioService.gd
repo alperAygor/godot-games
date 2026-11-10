@@ -15,10 +15,12 @@ const POOL_SIZE: int = 8
 var _pool: Array[AudioStreamPlayer] = []
 var _next: int = 0
 var _silent: bool = false
+var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_rng.seed = 20261110
 	# Görselsiz/başsız çalıştırmada ses aygıtı yok: hiçbir şey çalma, hata da verme.
 	_silent = DisplayServer.get_name() == "headless"
 	for i: int in POOL_SIZE:
@@ -62,5 +64,5 @@ func _play(stream: AudioStream, pitch_variance: float) -> void:
 	var player: AudioStreamPlayer = _pool[_next]
 	_next = (_next + 1) % _pool.size()
 	player.stream = stream
-	player.pitch_scale = 1.0 + randf_range(-pitch_variance, pitch_variance)
+	player.pitch_scale = 1.0 + _rng.randf_range(-pitch_variance, pitch_variance)
 	player.play()

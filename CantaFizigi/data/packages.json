@@ -1,0 +1,7 @@
+{
+  "standard": { "break_threshold": 0.0, "fragility": 1.0, "melt_seconds": 0.0 },
+  "glass":    { "break_threshold": 2.2, "fragility": 1.0, "melt_seconds": 0.0 },
+  "ice":      { "break_threshold": 0.0, "fragility": 1.0, "melt_seconds": 3.0 },
+  "iron":     { "break_threshold": 0.0, "fragility": 1.0, "melt_seconds": 0.0 },
+  "spring":   { "break_threshold": 0.0, "fragility": 1.0, "melt_seconds": 0.0 }
+}
