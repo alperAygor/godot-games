@@ -6,66 +6,102 @@ Tarihler `YYYY-AA-GG` biçimindedir.
 
 ---
 
-## [Unreleased]
+## [1.0.0] — 2026-11-10
 
-### Eklendi — sahne kurulumu ve stylized atmosfer
-- **`project.godot`** — Android portrait **1080x1920** (`canvas_items`/`expand`), **`gl_compatibility`** renderer, dokunmatik emülasyonu (`pointing/emulate_touch_from_mouse`), 60 Hz fizik, `untyped_declaration=2` (statik tip hatası).
-- **`scenes/Main.tscn`** — `WorldEnvironment` + güneş/dolgu/rim ışıkları + kamera + masa + 4 paket + `UI` katmanı.
-- **`scenes/BackpackGrid.tscn`** — çanta modeli + 20 hücre parıltı düğümü.
-- **`scripts/gameplay/GridController.gd`** — 4x5 ızgara, dokunmatik **sürükle-bırak** (`InputEventScreenDrag`), çok hücreli footprint (1x1, 1x2, 2x2), hücre doluluk takibi, **squash & stretch** tween'i ve hücre parıltısı.
-- **`scripts/gameplay/Package.gd`** — paket verisi (footprint, ana konum).
-- **`assets/shaders/color_correction.gdshader`** — sıcak renk düzeltme: lift/gain, doygunluk, kontrast, vinyet (tek tam ekran geçişi).
-- **`tools/screenshot.gd`** — QA aracı: sahneyi açar, sürükleme senaryosu uygular, PNG kaydeder (`--mode=idle|placed|drag`, `--tweak=...`).
+**Dikey dilim tamamlandı.** Oyun baştan sona oynanabilir: paketle → sarsıntılı
+teslimat → kırılma/erime → ödüllü kurtarma. Sürüş fazı ve mağaza yayını kapsam dışı.
 
-### Görsel atmosfer
-- **Bloom**: `glow_enabled`, normalize, eşik 0.78, 2 ve 3. seviye ağırlıklı — ölçüldü, ekranın %60'ında fark üretiyor.
-- **SSAO**: `ssao_enabled`, yarıçap 0.55, şiddet 1.6 — A/B testinde %2.7 pikselde fark; determinizm kontrolü 0 fark verdiği için etki gerçek.
-- **ColorCorrection**: sıcak lift/gain + doygunluk + kontrast + vinyet, `ColorRect` üzerinde `screen_texture` shader'ı ile.
+### Eklendi — Fizik ve sarsıntı
+- **`ShakeSimulator.gd`** — "Teslimata Başla" ile **5 saniyelik** sinüs tabanlı sarsıntı.
+  Zarf eğrisi (rampa-in → tümsek ritmi → rampa-out), dönme bileşeni ve kaldığı yerden
+  devam edebilen `stop()`/`resume()`. Sarsıntı tek bir `ShakeRoot`'a biner; çanta ve
+  paketler birlikte sallanır, paketlerin kendi tween'leri bozulmaz.
+- **`PackagePhysics.gd`** — şiddete göre biriken stres modeli.
+  - **Cam kutusu**: eşik aşılırsa kırılır → `GameManager.fail_run()` **oyunu duraklatır** ve
+    hata ekranını açar. Kırılma animasyonu duraklatılmış sahnede de oynar.
+  - **Buz paketi**: sarsıntıyla erir, küçülür; tamamen eridiğinde komşularına stres yükler
+    ve onları sarsar (komşu camı çatlatabilir).
+  - Yalnızca çantaya yerleştirilmiş paketler etkilenir; tepsidekiler sürüşe katılmaz.
 
-### Bulgular (ölçümlü)
-- **Environment `adjustment_color_correction` LUT'u `gl_compatibility`'de çalışmıyor.** 512x512 / 8x8 karo formatında üretilen LUT, sahneyi tamamen kırmızıya boyadı; **kimlik (identity) LUT ile de aynı sonuç** alındı — yani örnekleme bozuk. Bu yüzden sıcak ton, tam ekran shader ile yapıldı; LUT ve üreticisi repodan kaldırıldı.
-- Sahne ilk denemede 2 kata kadar fazla pozlanmıştı (piksel örneklemesi 255'te kırpılıyordu); ışık şiddetleri ve tonemap ölçümle ayarlandı.
+### Eklendi — ElevenLabs ses
+- **`tools/make_sfx.py`** — ElevenLabs Sound Generation API ile üretim; anahtar yoksa
+  deterministik yedek sentez. Tepe normalizasyonu (clipping yok), 44.1 kHz mono 16-bit.
+- **`assets/audio/sfx/`**: `package_drop.wav` (0,60 sn), `glass_break.wav` (1,36 sn),
+  `ice_clink.wav` (0,80 sn), `success.wav` (2,00 sn) — dördü de API'den üretildi,
+  dalga analiziyle doğrulandı (sessiz değil, süreler doğru).
+- **`AudioService.gd`** — 8 kanallı SFX havuzu, pitch varyasyonu, `Master/SFX/Music`
+  bus düzeni, headless koruması. Sahne kodundan çağrı: `play_drop()`, `play_glass_break()`,
+  `play_ice_clink()`, `play_success()`.
+- Anahtar yalnızca `.env`/ortam değişkeninden okunur; **repoya hiçbir zaman yazılmadı**.
 
-### Eklendi — 3D varlık hattı
-- **3D varlık hattı** — `tools/blender/make_models.py`: beş modeli prosedürel üreten Blender 5.2 betiği. Girinti/örgü yerine kod; model değişikliği = script değişikliği.
-- **`assets/models/backpack_base.glb`** — ön yüzü açık kurye çantası, 4×5 = 20 cep ızgarası, pastel palet (nane/krem/pudra/lavanta). 1.412 üçgen, 4 materyal, 0,346 × 0,470 × 0,138 m.
-- **`assets/models/pkg_glass_1x2.glb`** — 1×2 yarı saydam mavi cam kargo kutusu, köşe dikmeleri ve kapak. 308 üçgen, `alphaMode = BLEND` (alfa 0,42).
-- **`assets/models/pkg_ice_1x1.glb`** — 1×1 açık camgöbeği buz paketi, kristal kesimli gövde + üstte buz dikenleri. 176 üçgen.
-- **`assets/models/pkg_iron_2x2.glb`** — 2×2 ağır demir kasa, köşe dikmeleri, çift bant ve 8 perçin. 452 üçgen, metalik 0,85.
-- **`assets/models/pkg_spring_1x1.glb`** — 1×1 darbe emici kutu, açık üstlü tekne + 3 sarım helezon yay. 316 üçgen.
-- **`assets/models/README.md`** — varlık sözleşmesi: ızgara birimi, boyutlar, üçgen bütçeleri, palet ve Godot kullanım notları.
+### Eklendi — Ödüllü reklam kancaları
+- **`AdManager.gd`** — `Placement` enum'u, `data/ads.json` limitleri, tek uçuş koruması,
+  idempotent ödül. Ödül yalnızca `rewarded_finished` sonrası verilir.
+- **`AdsProvider`** arayüzü + `MockAdsProvider` (1,2 sn simülasyon, %8 başarısızlık) +
+  `NoAdsProvider`. Reklam yüklenemezse oyun sessizce devam eder.
+- **"Ekstra Cep Aç"** — ızgarayı **4x5 → 5x5** yapar. Ek sütun çantanın sağına takılan
+  yarı saydam bir ceptir ve **gerçekten kullanılabilir** (paket yerleştirme testiyle doğrulandı).
+- **"Paketi Bandıyla Kurtar"** — kırılan ilk paketi onarır, teslimatı kaldığı yerden sürdürür.
+
+### Eklendi — HUD
+- **`scenes/HUD.tscn`** + **`HUD.gd`** — başlık, durum satırı, sarsıntı barı, üç buton
+  (Ekstra Cep / Teslimata Başla / Bandıyla Kurtar), hata katmanı ve reklam katmanı.
+- Butonlar hem pasif hem aktif durumda okunur; duraklatılmış sahnede çalışır.
+- **`Main.gd`** — sahne kablolaması; karar mantığı autoload'larda kalır.
+
+### Değişti
+- `GridController` yeniden yazıldı: sabit 4x5 yerine **genişleyebilir** ızgara
+  (sol kenar sabit, ek sütunlar sağa büyür), doluluk artık hücre→paket sözlüğü,
+  paket olayları (kırılma/erime/onarım) bağlandı.
+- `Main.tscn` yeniden kuruldu: `ShakeRoot` altında çanta + paketler, `ShakeSimulator`,
+  `HUD`, renk düzeltme katmanı.
+- Sürüm `1.0.0`.
+
+### Düzeltildi
+- Cam kırılınca oyun yalnızca sarsıntı sonunda değil, **kırılma anında** duraklıyor.
+- Tepsideki paketler de sarsıntı hasarı alıyordu; bu yüzden "başarı" yolu ulaşılamazdı —
+  artık yalnızca çantadaki paketler etkileniyor.
+- Ekstra cep kutusu hücre parıltılarını kapatıyordu; kutu parıltı düzleminin gerisine alındı.
+- Pasif butonların yazıları okunmuyordu; ayrı pasif stil ve yazı rengi tanımlandı.
 
 ### Doğrulama
-- Beş dosya da `minY = 0`, `centerX = centerZ = 0`, node'da TRS yok (transformlar uygulanmış).
-- Godot 4.7.2 `gl_compatibility` projesinde içe aktarma hatasız; toplam **2.664 üçgen / 13 yüzey**.
-- Görsel kontrol: EEVEE ile üç açıdan render edilip incelendi.
+- `--import` ve `--quit` hatasız (0 çıkış, statik tip hataları açıkken).
+- Sekiz senaryo gerçek pencerede render edilerek görsel kontrol: idle, placed, shake,
+  fail, revive, success, pocket, pocket_place.
+- Ses dosyaları dalga analizi (süre, tepe, RMS) ile doğrulandı.
 
-### Eklenecek
-- Faz 1: `project.godot`, autoload iskeletleri, boot/menu sahneleri
-- Faz 2: çanta ve paket fizik prototipi
+### Kapsam dışı (yapılmadı)
+Sürüş fazı (kamyonet/yol), `RigidBody3D` tabanlı gerçek simülasyon, ekonomi/yükseltme/kayıt,
+birim testleri, IAP, gerçek AdMob eklentisi, Play Store yayını, müzik. Ayrıntı: `TASKS.md`.
 
 ---
 
-## [0.1.0] - 2026-11-10
+## [0.2.0] — 2026-11-10
 
-İlk sürüm: proje iskeleti ve dokümantasyon. Oynanabilir içerik yok.
+### Eklendi — sahne kurulumu ve stylized atmosfer
+- **`project.godot`** — Android portrait 1080x1920, `gl_compatibility`, dokunmatik emülasyonu.
+- **`scenes/Main.tscn`**, **`scenes/BackpackGrid.tscn`**.
+- **`GridController.gd`** — sürükle-bırak, squash & stretch, hücre parıltısı.
+- **`color_correction.gdshader`** — sıcak renk düzeltme (lift/gain, doygunluk, vinyet).
+- **Bloom** ve **SSAO** `gl_compatibility`'de A/B render + determinizm kontrolüyle doğrulandı.
+
+### Bulgular
+- Environment'ın `adjustment_color_correction` LUT'u `gl_compatibility`'de bozuk sonuç veriyor
+  (kimlik LUT bile sahneyi kırmızıya boyadı) → renk düzeltme tam ekran shader ile yapıldı.
+
+---
+
+## [0.1.0] — 2026-11-10
+
+İlk sürüm: proje iskeleti ve dokümantasyon.
 
 ### Eklendi
-- **Dizin yapısı:** `scenes/`, `scripts/autoload/`, `assets/models/`, `assets/audio/` (boş dizinler `.gitkeep` ile korunur).
-- **`CLAUDE.md`** — ajan çalışma kuralları: Godot 4.7.2, `gl_compatibility` renderer, 1080x1920 portrait, tam statik tipli GDScript zorunluluğu, klasör sorumlulukları, fizik kuralları, commit/doğrulama akışı.
-- **`PROJECT_SPEC.md`** — kurye çantasına kırılabilir/yaylı paket dizme konsepti, 5 adımlı core loop, paket tipleri tablosu, puanlama, ekonomi, ödüllü reklam kancaları:
-  - *Ekstra Cep Aç* (`EXTRA_POCKET`) — tur boyunca +1 dayanıklı cep.
-  - *Paketi Bandıyla Kurtar* (`TAPE_RESCUE`) — kırılmak üzere olan paketi kurtarır.
-- **`ARCHITECTURE.md`** — autoload mimarisi (`GameManager`, `AudioService`, `AdManager`), sahne ağaçları, sinyal akışı, fizik katmanları, kayıt şeması, performans bütçesi, karar kaydı.
-- **`TASKS.md`** — Faz 0–9 yol haritası ve faz bitti kriterleri.
-- **`.gitignore`** — Godot önbelleği, build çıktıları, keystore ve `.env`.
+- Dizin yapısı, `CLAUDE.md`, `PROJECT_SPEC.md`, `ARCHITECTURE.md`, `TASKS.md`, `.gitignore`.
+- **3D varlık hattı** (`tools/blender/make_models.py` ile prosedürel):
+  `backpack_base.glb` (1.412 tris, 4x5 = 20 cep), `pkg_glass_1x2.glb` (308),
+  `pkg_ice_1x1.glb` (176), `pkg_iron_2x2.glb` (452), `pkg_spring_1x1.glb` (316).
+  Toplam **2.664 üçgen / 13 yüzey**; hepsinde transformlar uygulanmış, origin alt-merkez.
 
-### Notlar
-- Proje henüz `project.godot` içermez; Godot editöründe açılamaz. Bu Faz 1'in ilk işidir.
-- Autoload dosyaları (`GameManager.gd`, `AudioService.gd`, `AdManager.gd`) henüz yoktur; yalnızca mimarisi tanımlıdır.
-- Repo ilk kez bu commit ile başlatıldı.
-
----
-
-[Unreleased]: https://github.com/alperAygor/godot-games/compare/v0.1.0...HEAD
+[1.0.0]: https://github.com/alperAygor/godot-games/compare/v0.2.0...v1.0.0
+[0.2.0]: https://github.com/alperAygor/godot-games/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/alperAygor/godot-games/releases/tag/v0.1.0

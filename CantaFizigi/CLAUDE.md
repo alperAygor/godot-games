@@ -157,6 +157,8 @@ Model üretiminde hedef: **düşük poligon** (paket ≤ 500 tris, çanta ≤ 2.
 
 Varlıklar **elle değil** kodla üretilir: `tools/blender/make_models.py`. Model değişecekse script düzenlenir ve `--out assets/models` ile yeniden üretilir; `.blend` kaynak repoya girmez.
 
+Sesler de kodla üretilir: `python3 tools/make_sfx.py` (ElevenLabs, anahtar `.env` veya `ELEVENLABS_API_KEY`). Anahtar yoksa aynı isimlerle deterministik yedek sentez üretilir; oyun her durumda sesli çalışır. Yeni ses eklerken `SOUNDS` sözlüğüne yaz ve `AudioService`'e bir `play_` metodu ekle.
+
 ---
 
 ## 9. Tanım: "bitti"

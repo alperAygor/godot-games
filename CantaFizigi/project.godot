@@ -6,9 +6,20 @@ config_version=5
 [application]
 
 config/name="CantaFizigi"
-config/version="0.2.0"
+config/version="1.0.0"
 run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
+
+[audio]
+
+buses/default_bus_layout="res://assets/audio/default_bus_layout.tres"
+
+[autoload]
+
+; Sıra korunur (CLAUDE.md §6): GameManager -> AudioService -> AdManager
+GameManager="*res://scripts/autoload/GameManager.gd"
+AudioService="*res://scripts/autoload/AudioService.gd"
+AdManager="*res://scripts/autoload/AdManager.gd"
 
 [debug]
 

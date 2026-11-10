@@ -1,12 +1,15 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=17 format=3]
 
+[ext_resource type="Script" path="res://scripts/gameplay/Main.gd" id="0_main"]
 [ext_resource type="PackedScene" path="res://scenes/BackpackGrid.tscn" id="1_grid"]
-[ext_resource type="Script" path="res://scripts/gameplay/Package.gd" id="2_pkg"]
+[ext_resource type="Script" path="res://scripts/gameplay/PackagePhysics.gd" id="2_pkg"]
 [ext_resource type="PackedScene" path="res://assets/models/pkg_ice_1x1.glb" id="3_ice"]
 [ext_resource type="PackedScene" path="res://assets/models/pkg_spring_1x1.glb" id="4_spring"]
 [ext_resource type="PackedScene" path="res://assets/models/pkg_glass_1x2.glb" id="5_glass"]
 [ext_resource type="PackedScene" path="res://assets/models/pkg_iron_2x2.glb" id="6_iron"]
 [ext_resource type="Shader" path="res://assets/shaders/color_correction.gdshader" id="7_grade"]
+[ext_resource type="Script" path="res://scripts/gameplay/ShakeSimulator.gd" id="8_shake"]
+[ext_resource type="PackedScene" path="res://scenes/HUD.tscn" id="9_hud"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat_warm"]
 sky_top_color = Color(0.42, 0.56, 0.86, 1)
@@ -74,6 +77,7 @@ shader_parameter/vignette_strength = 0.28
 shader_parameter/vignette_start = 0.55
 
 [node name="Main" type="Node3D"]
+script = ExtResource("0_main")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Env_stylized")
@@ -119,41 +123,57 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.002, 0)
 mesh = SubResource("Mesh_table")
 material_override = SubResource("Mat_table")
 
-[node name="BackpackGrid" parent="." instance=ExtResource("1_grid")]
+[node name="ShakeRoot" type="Node3D" parent="."]
 
-[node name="Packages" type="Node3D" parent="."]
+[node name="BackpackGrid" parent="ShakeRoot" instance=ExtResource("1_grid")]
 
-[node name="PkgIce" type="Node3D" parent="Packages"]
+[node name="Packages" type="Node3D" parent="ShakeRoot"]
+
+[node name="PkgIce" type="Node3D" parent="ShakeRoot/Packages"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.168, 0, 0.255)
 script = ExtResource("2_pkg")
 footprint = Vector2i(1, 1)
+kind = 2
+melt_seconds = 3.0
 display_label = "Buz"
 
-[node name="Model" parent="Packages/PkgIce" instance=ExtResource("3_ice")]
+[node name="Model" parent="ShakeRoot/Packages/PkgIce" instance=ExtResource("3_ice")]
 
-[node name="PkgSpring" type="Node3D" parent="Packages"]
+[node name="PkgSpring" type="Node3D" parent="ShakeRoot/Packages"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.077, 0, 0.255)
 script = ExtResource("2_pkg")
 footprint = Vector2i(1, 1)
+kind = 4
 display_label = "Yay"
 
-[node name="Model" parent="Packages/PkgSpring" instance=ExtResource("4_spring")]
+[node name="Model" parent="ShakeRoot/Packages/PkgSpring" instance=ExtResource("4_spring")]
 
-[node name="PkgGlass" type="Node3D" parent="Packages"]
+[node name="PkgGlass" type="Node3D" parent="ShakeRoot/Packages"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.013, 0, 0.255)
 script = ExtResource("2_pkg")
 footprint = Vector2i(1, 2)
+kind = 1
+break_threshold = 2.2
 display_label = "Cam"
 
-[node name="Model" parent="Packages/PkgGlass" instance=ExtResource("5_glass")]
+[node name="Model" parent="ShakeRoot/Packages/PkgGlass" instance=ExtResource("5_glass")]
 
-[node name="PkgIron" type="Node3D" parent="Packages"]
+[node name="PkgIron" type="Node3D" parent="ShakeRoot/Packages"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.136, 0, 0.255)
 script = ExtResource("2_pkg")
 footprint = Vector2i(2, 2)
+kind = 3
 display_label = "Demir"
 
-[node name="Model" parent="Packages/PkgIron" instance=ExtResource("6_iron")]
+[node name="Model" parent="ShakeRoot/Packages/PkgIron" instance=ExtResource("6_iron")]
+
+[node name="ShakeSimulator" type="Node" parent="."]
+script = ExtResource("8_shake")
+target_path = NodePath("../ShakeRoot")
+duration = 5.0
+amplitude = 0.032
+rotation_amplitude = 2.4
+frequency = 6.0
 
 [node name="Grade" type="CanvasLayer" parent="."]
 layer = 1
@@ -167,26 +187,4 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="UI" type="CanvasLayer" parent="."]
-layer = 2
-
-[node name="Safe" type="MarginContainer" parent="UI"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 48.0
-offset_top = 120.0
-offset_right = -48.0
-offset_bottom = -80.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Hint" type="Label" parent="UI/Safe"]
-layout_mode = 2
-size_flags_vertical = 0
-text = "Paketi sürükle, çantadaki boş cebe bırak"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(1, 0.97, 0.92, 1)
-theme_override_colors/font_outline_color = Color(0.38, 0.24, 0.18, 0.55)
-theme_override_constants/outline_size = 10
-theme_override_font_sizes/font_size = 42
+[node name="HUD" parent="." instance=ExtResource("9_hud")]
