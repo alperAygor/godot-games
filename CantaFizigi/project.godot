@@ -6,8 +6,8 @@ config_version=5
 [application]
 
 config/name="CantaFizigi"
-config/version="1.1.0"
-run/main_scene="res://scenes/Main.tscn"
+config/version="1.2.0"
+run/main_scene="res://scenes/Boot.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 
 [audio]
@@ -37,6 +37,10 @@ window/size/window_height_override=960
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=1
+
+[gui]
+
+theme/custom="res://assets/theme/ui_theme.tres"
 
 [input_devices]
 

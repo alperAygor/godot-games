@@ -4,8 +4,9 @@
 |---|---|
 | v1.0.0 dikey dilim (oynanabilir oyun) | ✅ Tamam |
 | **Faz 1 — Sağlamlaştırma** | ✅ **Tamam** |
-| Faz 2 — Oyun kabuğu | ⬜ Sırada |
-| Faz 3–8 | ⬜ Bekliyor |
+| **Faz 2 — Oyun kabuğu** | ✅ **Tamam** |
+| Faz 3 — Kalıcılık ve ekonomi | ⬜ Sırada |
+| Faz 4–8 | ⬜ Bekliyor |
 
 ---
 
@@ -51,14 +52,17 @@ Oyun baştan sona oynanıyor: paketle → sarsıntılı teslimat → kırılma/e
 
 **Hedef:** Uygulama doğrudan oyuna açılmasın; tur döngüsü kapansın.
 
-- [ ] `scenes/boot.tscn` — logo, 0.4 sn, menüye geçiş
-- [ ] `scenes/menu.tscn` — Oyna / Yükselt / Ayarlar
-- [ ] `scenes/result.tscn` — yıldızlar, paket bazında hasar raporu, ödül
-- [ ] `scripts/core/scoring.gd` — hasar → yıldız + ücret (`PROJECT_SPEC.md` §2 tablosu) + test
-- [ ] `GameManager.goto_scene()` — sahne geçişi tek yerden
-- [ ] Android geri tuşu: popup kapatır, menüde çıkış onayı
+- [x] `scenes/Boot.tscn` — 0.4 sn bekleme, menüye geçiş
+- [x] `scenes/Menu.tscn` — Oyna + sürüm etiketi (`project.godot`'dan okunur)
+- [x] `scenes/Result.tscn` — yıldız, hasar, ücret, **paket bazında hasar raporu**
+- [x] `scripts/core/run_scoring.gd` — hasar → yıldız/ücret (`PROJECT_SPEC.md` §2) + 7 test
+- [x] `GameManager.goto_scene()` + `finish_run()` + `last_result`
+- [x] Android geri tuşu (`NOTIFICATION_WM_GO_BACK_REQUEST`) + Esc: menüde çıkış, oyunda menüye dön, sonuçta menü
+- [x] `assets/theme/ui_theme.tres` + Baloo 2 (OFL) — `tools/build_theme.py` üretir
+- [x] `data/balance.json` — teslimat taban ücreti
 
-**Bitti kriteri:** boot → menü → oyun → sonuç → menü tam turu; her adımda geri tuşu doğru; yıldız hesabı testle sabit.
+**Bitti kriteri:** boot → menü → oyun → sonuç → menü tam turu; her adımda geri tuşu doğru; yıldız hesabı testle sabit. ✅
+**Doğrulama:** `tools/verify.sh` → 34 test / 96 doğrulama geçti; `tools/flow_shot.gd` ile dört ekran gerçek pencerede render edildi.
 
 ---
 

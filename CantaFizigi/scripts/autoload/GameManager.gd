@@ -3,21 +3,67 @@ extends Node
 ## Oyun akışının tek sahibi: faz makinesi, başarısızlık/revive ve duraklatma.
 ## Sahneler kendi başlarına `get_tree().paused` değiştirmez; buradan geçer.
 
-enum Phase { PACKING, DELIVERING, FAILED, DELIVERED }
+## Yeni degerler SONA eklenir: mevcut sayisal degerler korunur (testler ve
+## araclar FAILED=2 varsayimini kullanir).
+enum Phase { PACKING, DELIVERING, FAILED, DELIVERED, BOOT, MENU }
+
+const SCENES: Dictionary = {
+	&"boot": "res://scenes/Boot.tscn",
+	&"menu": "res://scenes/Menu.tscn",
+	&"game": "res://scenes/Main.tscn",
+	&"result": "res://scenes/Result.tscn",
+}
 
 var phase: Phase = Phase.PACKING
+## Son turun sonucu; Result sahnesi buradan okur.
+var last_result: Dictionary = {}
 
 signal phase_changed(from: Phase, to: Phase)
 signal run_started()
 signal run_failed(reason: StringName)
 signal run_revived()
 signal run_delivered()
+signal back_requested()
 
 var _failed_reason: StringName = &""
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+
+
+func _notification(what: int) -> void:
+	# Android donanim geri tusu
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		back_requested.emit()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	# Masaustunde Esc — geri tusunun test edilebilir esi
+	if event.is_action_pressed("ui_cancel"):
+		back_requested.emit()
+		get_viewport().set_input_as_handled()
+
+
+## Sahne gecisi tek yerden. Sahneler change_scene_to_file cagirmaz.
+func goto_scene(scene_key: StringName) -> void:
+	var path: Variant = SCENES.get(scene_key)
+	if not (path is String):
+		push_error("GameManager: bilinmeyen sahne '%s'" % scene_key)
+		return
+	get_tree().paused = false
+	var error: Error = get_tree().change_scene_to_file(path as String)
+	if error != OK:
+		push_error("GameManager: sahne yuklenemedi (%s), hata %d" % [path, error])
+
+
+## Turu bitirir: sonucu saklar ve sonuc ekranina gecer.
+func finish_run(result: Dictionary) -> void:
+	last_result = result
+	get_tree().paused = false
+	_set_phase(Phase.DELIVERED)
+	run_delivered.emit()
+	goto_scene(&"result")
 
 
 func start_delivery() -> void:

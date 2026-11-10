@@ -30,6 +30,7 @@ func _ready() -> void:
 
 	grid.package_placed.connect(_on_package_placed)
 	grid.package_broken.connect(_on_package_broken)
+	GameManager.back_requested.connect(_on_back_requested)
 
 	_refresh_hud()
 
@@ -77,7 +78,40 @@ func _on_revive_pressed() -> void:
 func _on_retry_pressed() -> void:
 	GameManager.reset_run()
 	hud.hide_fail()
-	get_tree().reload_current_scene()
+	GameManager.goto_scene(&"game")
+
+
+## Geri tusu (Android) / Esc: turu birak ve menuye don.
+func _on_back_requested() -> void:
+	GameManager.reset_run()
+	GameManager.goto_scene(&"menu")
+
+
+## Tur sonucunu toplar: paket bazli hasar + yildiz/odul hesabi.
+func _build_result(success: bool) -> Dictionary:
+	var placed: int = 0
+	var damage_sum: float = 0.0
+	var report: Array = []
+	for node: Node in get_tree().get_nodes_in_group(Package.GROUP_DRAGGABLE):
+		var pkg: PackagePhysics = node as PackagePhysics
+		if pkg == null or not pkg.has_meta("cell"):
+			continue
+		placed += 1
+		var damage: float = 0.0
+		if pkg.is_broken:
+			damage = 1.0
+		elif pkg.kind == PackagePhysics.Kind.ICE:
+			damage = pkg.melt_ratio()
+		damage_sum += damage
+		report.append({"label": pkg.display_label, "damage": damage})
+
+	var average: float = 0.0 if placed == 0 else damage_sum / float(placed)
+	var base_fee: int = int(GameData.value("balance", "delivery_base_fee", 120))
+	var result: Dictionary = RunScoring.compute(average, base_fee)
+	result["success"] = success
+	result["placed"] = placed
+	result["report"] = report
+	return result
 
 
 # --------------------------------------------------------------------------
@@ -98,10 +132,8 @@ func _on_shake_finished() -> void:
 		return
 	hud.set_shake_bar(0.0)
 	if grid.broken_count() == 0:
-		GameManager.complete_run()
-		AudioService.play_success()
-		hud.set_status("Teslimat tamamlandı!")
-		hud.show_success()
+		# Basarili tur: sonuc ekranina gec (odul/yildiz orada gosterilir).
+		GameManager.finish_run(_build_result(true))
 	else:
 		GameManager.fail_run(&"damaged_delivery")
 

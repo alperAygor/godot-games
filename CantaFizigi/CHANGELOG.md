@@ -6,6 +6,40 @@ Tarihler `YYYY-AA-GG` biçimindedir.
 
 ---
 
+## [1.2.0] — 2026-11-10
+
+**Faz 2 — oyun kabuğu.** Uygulama artık doğrudan oyuna açılmıyor:
+**boot → menü → oyun → sonuç → menü** döngüsü kapandı.
+
+### Eklendi
+- **`scenes/Boot.tscn`** — 0.4 sn bekleme (flash önlemi), menüye geçiş.
+- **`scenes/Menu.tscn`** — Oyna; sürüm etiketi `project.godot`'dan okunur (elle güncellenmez).
+- **`scenes/Result.tscn`** — yıldız, toplam hasar, ücret ve **paket bazında hasar raporu**
+  (`Buz — %100 hasar`, `Demir — %0 hasar`), "Tekrar Oyna" + "Ana Menü".
+- **`scripts/core/run_scoring.gd`** — hasar → yıldız/ücret/itibar (`PROJECT_SPEC.md` §2 tablosu),
+  saf `RefCounted`, **7 birim test**.
+- **`data/balance.json`** — `delivery_base_fee`.
+- **`assets/theme/ui_theme.tres`** + **Baloo 2 (OFL)** + `tools/build_theme.py`:
+  tema artık palette'ten üretilir (`data/theme.json`), elle yazılmaz.
+- **`tools/flow_shot.gd`** — boot→menü→oyun→sonuç akışını sürüp dört ekranı kaydeden kabul aracı.
+
+### Değişti
+- **`GameManager`**: `SCENES` kaydı, `goto_scene()` (tek geçiş noktası), `finish_run()`,
+  `last_result`, `back_requested` sinyali; `Phase`'e `BOOT`/`MENU` eklendi
+  (mevcut sayısal değerler korundu — testler ve araçlar `FAILED = 2` varsayımını kullanıyor).
+- **`Main.gd`**: başarılı tur → `GameManager.finish_run(_build_result(true))` → sonuç ekranı;
+  geri tuşu → menü; "Baştan Dene" → `goto_scene(&"game")`; `_build_result()` paket bazlı hasarı toplar.
+- Ana sahne `res://scenes/Boot.tscn`.
+- Tüm arayüz Baloo 2 ile çiziliyor (önce varsayılan font).
+- Sürüm `1.2.0`.
+
+### Doğrulama
+- `tools/verify.sh` → **34 test / 96 doğrulama**, 0 başarısız.
+- `tools/flow_shot.gd` → boot, menü, oyun (sarsıntı ortası), sonuç ekranları gerçek pencerede
+  render edilip görsel kontrol yapıldı.
+
+---
+
 ## [1.1.0] — 2026-11-10
 
 **Faz 1 — sağlamlaştırma.** Kullanıcıya görünen değişiklik yok; proje artık
