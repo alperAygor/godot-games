@@ -13,6 +13,9 @@ Tarifler \`data/sfx_recipes.json\`:
       "ui_tap": {"prompt": "...", "seconds": 0.4, "synth": "blip", "freq": 880}
     }
 
+Yedek sentez tipleri (anahtar yoksa deterministik üretim):
+    blip, thud, crackle, chime, whoosh, clack, pop, buzz, hum
+
 Üretilen dosya \`assets/audio/sfx/<ad>.wav\` (44.1 kHz mono 16-bit, tepe 0.89) ve
 \`data/sounds.json\` tablosuna \`"<ad>": "res://assets/audio/sfx/<ad>.wav"\` kaydı eklenir.
 
@@ -160,12 +163,66 @@ def synth_whoosh(seconds, freq):
     return normalize((noise * 0.7 + tone) * shape)
 
 
+def synth_clack(seconds, freq):
+    """Keskin metal-tokmak: kısa gürültü atağı + inharmonik metal kısmi tonları."""
+    rng = np.random.default_rng(31)
+    t = np.arange(int(RATE * seconds)) / RATE
+    click = rng.normal(0, 1, t.size) * envelope(t, 0.0004, 0.006)
+    out = click * 0.45
+    for partial, weight in ((1.0, 0.8), (2.37, 0.5), (3.71, 0.3), (5.43, 0.16)):
+        out += weight * np.sin(2 * math.pi * freq * partial * t) * envelope(t, 0.0008, 0.035)
+    return normalize(out)
+
+
+def synth_pop(seconds, freq):
+    """Kısa bas pop: hızlı düşen sinüs + tok bir gövde; sigorta patlaması."""
+    t = np.arange(int(RATE * seconds)) / RATE
+    fall = np.exp(-t / max(seconds * 0.18, 1e-6))
+    sweep = np.sin(2 * math.pi * freq * np.exp(-t / max(seconds * 0.5, 1e-6)) * t)
+    click = np.sin(2 * math.pi * freq * 6.0 * t) * envelope(t, 0.0005, 0.012) * 0.35
+    return normalize((sweep * fall) + click)
+
+
+def synth_buzz(seconds, freq):
+    """Alçak testere (saw) vurgusu: yanlış priz / sigorta hatası hissi."""
+    t = np.arange(int(RATE * seconds)) / RATE
+    cycle = (freq * t) % 1.0
+    saw = 2.0 * cycle - 1.0
+    out = saw.copy()
+    for harmonic in (2, 3, 4):
+        out += saw_harmonic(cycle, harmonic) / harmonic
+    # Yavaş tremolo "vızıltı" ve sondaki sönüm; başta 8 ms fade ile tık önlenir.
+    tremolo = 1.0 + 0.18 * np.sin(2 * math.pi * 7.0 * t)
+    body = envelope(t, 0.008, seconds * 0.55)
+    # Son 40 ms'i sıfıra indir: kesik kuyruk duyulmasın (tık).
+    body *= np.clip((seconds - t) / 0.04, 0.0, 1.0)
+    return normalize(out * tremolo * body)
+
+
+def saw_harmonic(cycle, harmonic):
+    """Testere dalgasının n. harmoniği (faz kaymasız toplam için)."""
+    return 2.0 * ((cycle * harmonic) % 1.0) - 1.0
+
+
+def synth_hum(seconds, freq):
+    """Dikişsiz elektrik hum'u: 50 Hz + 100 Hz. Süre * frekans tam sayı olduğundan
+    döngüde baş/son örnekleri uyumludur; fade eklenmez (döngüyü bozar)."""
+    t = np.arange(int(RATE * seconds)) / RATE
+    tone = np.sin(2 * math.pi * freq * t) + 0.5 * np.sin(2 * math.pi * 2.0 * freq * t)
+    tone += 0.18 * np.sin(2 * math.pi * 3.0 * freq * t)
+    return normalize(tone)
+
+
 SYNTHS = {
     "blip": synth_blip,
     "thud": synth_thud,
     "crackle": synth_crackle,
     "chime": synth_chime,
     "whoosh": synth_whoosh,
+    "clack": synth_clack,
+    "pop": synth_pop,
+    "buzz": synth_buzz,
+    "hum": synth_hum,
 }
 
 

@@ -1,6 +1,22 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/boot.gd" id="1_boot"]
+[ext_resource type="Script" path="res://scripts/ui/circuit_background.gd" id="2_bg"]
+[ext_resource type="Texture2D" path="res://assets/icons/lucide/zap.svg" id="3_zap"]
+
+[sub_resource type="StyleBoxFlat" id="SB_bar_bg"]
+bg_color = Color(0.0784, 0.1137, 0.1373, 1)
+corner_radius_top_left = 13
+corner_radius_top_right = 13
+corner_radius_bottom_right = 13
+corner_radius_bottom_left = 13
+
+[sub_resource type="StyleBoxFlat" id="SB_bar_fill"]
+bg_color = Color(0.2039, 0.9059, 0.7686, 1)
+corner_radius_top_left = 13
+corner_radius_top_right = 13
+corner_radius_bottom_right = 13
+corner_radius_bottom_left = 13
 
 [node name="Boot" type="Control"]
 layout_mode = 3
@@ -18,7 +34,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.96, 0.93, 0.88, 1)
+color = Color(0.0431, 0.0588, 0.0784, 1)
+
+[node name="Circuit" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_bg")
 
 [node name="Center" type="CenterContainer" parent="."]
 layout_mode = 1
@@ -29,19 +55,59 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Column" type="VBoxContainer" parent="Center"]
-custom_minimum_size = Vector2(620, 0)
+custom_minimum_size = Vector2(820, 0)
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 14
 
-[node name="Title" type="Label" parent="Center/Column"]
+[node name="BootLogo" type="TextureRect" parent="Center/Column"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 96)
 layout_mode = 2
-theme_override_font_sizes/font_size = 64
-text = "Kablo Düğümü: Akım Ustası"
+size_flags_horizontal = 4
+mouse_filter = 2
+modulate = Color(1, 0.7882, 0.2902, 1)
+texture = ExtResource("3_zap")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BootTitle" type="Label" parent="Center/Column"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9137, 0.949, 0.9647, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.03, 0.04, 0.9)
+theme_override_constants/outline_size = 14
+theme_override_font_sizes/font_size = 76
+text = "KABLO DÜĞÜMÜ"
 horizontal_alignment = 1
 
-[node name="Sub" type="Label" parent="Center/Column"]
+[node name="BootSubtitle" type="Label" parent="Center/Column"]
+unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.42, 0.38, 0.34, 1)
-theme_override_font_sizes/font_size = 30
-text = "yükleniyor..."
+theme_override_colors/font_color = Color(1, 0.7882, 0.2902, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.03, 0.04, 0.9)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 40
+text = "/ AKIM USTASI"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="Center/Column"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="PowerBar" type="ProgressBar" parent="Center/Column"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(720, 26)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/background = SubResource("SB_bar_bg")
+theme_override_styles/fill = SubResource("SB_bar_fill")
+value = 0.0
+show_percentage = false
+
+[node name="LoadingLabel" type="Label" parent="Center/Column"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5608, 0.6392, 0.6902, 1)
+theme_override_font_sizes/font_size = 24
+text = "GÜÇ AKTARILIYOR..."
 horizontal_alignment = 1

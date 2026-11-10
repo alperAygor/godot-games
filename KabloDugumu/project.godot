@@ -1,5 +1,5 @@
-; Kablo Düğümü: Akım Ustası — studio-kit iskeleti.
-; Yeni oyun: new_game.sh bu dosyadaki adı/sürümü değiştirir.
+; Kablo Düğümü: Akım Ustası — proje ayarları (Godot 4.7).
+; Renderer gl_compatibility: Android düşük segment uyumluluğu için bilinçli seçim (CLAUDE.md §1).
 
 config_version=5
 
@@ -12,6 +12,7 @@ config/features=PackedStringArray("4.7", "Mobile")
 
 [autoload]
 
+; Sıra korunur (CLAUDE.md §4): GameManager -> AudioService -> AdManager -> GameData
 GameManager="*res://scripts/autoload/GameManager.gd"
 AudioService="*res://scripts/autoload/AudioService.gd"
 AdManager="*res://scripts/autoload/AdManager.gd"
@@ -19,7 +20,7 @@ GameData="*res://scripts/autoload/GameData.gd"
 
 [debug]
 
-; Tipsiz değişken = hata (GOTCHAS.md yok; CLAUDE.md §2)
+; CLAUDE.md §2 — tipsiz değişken = hata
 gdscript/warnings/untyped_declaration=2
 gdscript/warnings/unused_parameter=1
 
@@ -39,6 +40,7 @@ theme/custom="res://assets/theme/ui_theme.tres"
 
 [input_devices]
 
+; Masaüstünde fare, dokunma olarak taklit edilir; oyun sadece ScreenTouch/ScreenDrag dinler.
 pointing/emulate_touch_from_mouse=true
 
 [physics]
@@ -49,3 +51,5 @@ common/physics_ticks_per_second=60
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
+anti_aliasing/quality/msaa_3d=0

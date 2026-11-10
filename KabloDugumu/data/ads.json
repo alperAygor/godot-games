@@ -1,5 +1,14 @@
 {
-  "EXTRA_POCKET": { "per_run": 1, "per_session": 3 },
-  "TAPE_RESCUE": { "per_run": 1, "per_session": 5 },
-  "DOUBLE_REWARD": { "per_run": 1, "per_session": 3 }
+  "FUSE_RESCUE": {
+    "per_run": 1,
+    "per_session": 5
+  },
+  "GOLDEN_CUTTER": {
+    "per_run": 1,
+    "per_session": 3
+  },
+  "INSULATION_SPRAY": {
+    "per_run": 1,
+    "per_session": 3
+  }
 }

@@ -68,7 +68,7 @@ fi
 echo "proje: $PROJECT_DIR"
 echo "godot: $($GODOT --version 2>/dev/null | head -1)"
 
-echo "== 1/3 ice aktarma =="
+echo "== 1/4 ice aktarma =="
 # İki geçiş: ilk geçişte henüz içe aktarılmamış bir varlığa (font/glb/ses) referans
 # veren .tres çözülemez ve "non-existent resource" hatası basar (GOTCHAS.md #15).
 # İkinci geçiş otoritedir; hata taraması onun üzerinden yapılır.
@@ -82,7 +82,7 @@ fi
 scan_errors "$LOG_DIR/import.log" "import"
 
 if [ -f "$PROJECT_DIR/scenes/Boot.tscn" ] || [ -n "$(ls "$PROJECT_DIR"/scenes/*.tscn 2>/dev/null | head -1)" ]; then
-    echo "== 2/3 acilis dumani =="
+    echo "== 2/4 acilis dumani =="
     if run_godot "smoke" "$STEP_TIMEOUT" "$GODOT" --headless --path "$PROJECT_DIR" --quit; then
         echo "  + sahne yuklendi"
     else
@@ -91,23 +91,40 @@ if [ -f "$PROJECT_DIR/scenes/Boot.tscn" ] || [ -n "$(ls "$PROJECT_DIR"/scenes/*.
     fi
     scan_errors "$LOG_DIR/smoke.log" "acilis"
 else
-    echo "== 2/3 acilis dumani = atlandi (scenes/*.tscn yok) =="
+    echo "== 2/4 acilis dumani = atlandi (scenes/*.tscn yok) =="
 fi
 
 if [ -f "$PROJECT_DIR/tests/run_tests.gd" ]; then
-    echo "== 3/3 birim testleri =="
+    echo "== 3/4 birim testleri =="
     run_godot "tests" "$STEP_TIMEOUT" "$GODOT" --headless --path "$PROJECT_DIR" -s res://tests/run_tests.gd
     tests_code=$?
     grep -E "^(PASS|FAIL)|^[0-9]+ test|^(YÜKLENEMEDİ|ÖRNEKLENEMEDİ)" "$LOG_DIR/tests.log" 2>/dev/null | sed 's/^/  /'
     if [ "$tests_code" -ne 0 ]; then
-        echo "  x testler basarisiz (cikis $local_tests_code)"
+        echo "  x testler basarisiz (cikis $tests_code)"
         FAILED=1
     else
         echo "  + testler gecti"
     fi
     scan_errors "$LOG_DIR/tests.log" "testler"
 else
-    echo "== 3/3 birim testleri = atlandi (tests/run_tests.gd yok) =="
+    echo "== 3/4 birim testleri = atlandi (tests/run_tests.gd yok) =="
+fi
+
+# Oyun sahnesi dumanı: Game.tscn/game.gd hazır olduğunda debug_state + force_snap
+# sözleşmesini headless doğrular (signal-qa). Dosya yoksa adım atlanır; probe
+# API henüz yoksa kendisi SKIP döner (Game.tscn gelmeden verify'ı kırmaz).
+if [ -f "$PROJECT_DIR/tools/game_probe.gd" ]; then
+    echo "== 4/4 oyun dumani =="
+    if run_godot "game_probe" "$STEP_TIMEOUT" "$GODOT" --headless --path "$PROJECT_DIR" -s res://tools/game_probe.gd; then
+        echo "  + oyun sahnesi dogrulandi"
+    else
+        echo "  x oyun dumani basarisiz"
+        FAILED=1
+    fi
+    grep -E "^PROBE " "$LOG_DIR/game_probe.log" 2>/dev/null | sed 's/^/  /'
+    scan_errors "$LOG_DIR/game_probe.log" "oyun dumani"
+else
+    echo "== 4/4 oyun dumani = atlandi (tools/game_probe.gd yok) =="
 fi
 
 echo

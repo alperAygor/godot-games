@@ -1,1 +1,48 @@
-{ "base_fee": 100 }
+{
+  "board": {
+    "width": 1.7,
+    "height": 3.1,
+    "source_y": 1.18,
+    "socket_y": -1.22,
+    "source_x_span": 0.64,
+    "socket_x_span": 0.6,
+    "plug_x_span": 0.64,
+    "knot_y_top": 0.68,
+    "knot_y_bottom": -0.55,
+    "board_surface_z": 0.055,
+    "cable_radius": 0.035,
+    "cable_points": 18,
+    "drag_lift": 0.3
+  },
+  "cable": {
+    "length_factor": 1.0,
+    "length_min_slack": 0.2,
+    "rest_gap": 0.24,
+    "grab_radius": 0.17
+  },
+  "contact": {
+    "distance": 0.078,
+    "spark_cooldown": 0.25,
+    "requires_drag": true
+  },
+  "overload": {
+    "fill_per_second": 0.55,
+    "drain_per_second": 0.32,
+    "extra_per_contact": 0.3,
+    "wrong_socket_penalty": 0.12,
+    "shield_seconds": 10,
+    "revive_shield_seconds": 15
+  },
+  "snap": {
+    "radius": 0.16,
+    "reject_bounce": 0.25
+  },
+  "scoring": {
+    "two_star_time_factor": 1.6,
+    "two_star_max_shorts": 2,
+    "score_base": 1000,
+    "score_per_second_left": 10,
+    "score_short_penalty": 50,
+    "score_peak_penalty": 200
+  }
+}

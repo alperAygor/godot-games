@@ -1,4 +1,15 @@
 {
+  "cable_pull": "res://assets/audio/sfx/cable_pull.wav",
+  "clack": "res://assets/audio/sfx/clack.wav",
+  "cutter": "res://assets/audio/sfx/cutter.wav",
+  "fail": "res://assets/audio/sfx/fail.wav",
+  "fuse_pop": "res://assets/audio/sfx/fuse_pop.wav",
+  "hum": "res://assets/audio/sfx/hum.wav",
+  "level_start": "res://assets/audio/sfx/level_start.wav",
+  "shield_on": "res://assets/audio/sfx/shield_on.wav",
+  "spark": "res://assets/audio/sfx/spark.wav",
   "success": "res://assets/audio/sfx/success.wav",
-  "ui_tap": "res://assets/audio/sfx/ui_tap.wav"
+  "ui_tap": "res://assets/audio/sfx/ui_tap.wav",
+  "win": "res://assets/audio/sfx/win.wav",
+  "wrong_socket": "res://assets/audio/sfx/wrong_socket.wav"
 }

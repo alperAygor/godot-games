@@ -2,23 +2,23 @@
   "font": "res://assets/fonts/Baloo2.ttf",
   "base_font_size": 34,
   "palette": {
-    "background": "#F5EDE2",
-    "primary": "#8DE0B4",
-    "primary_dark": "#55B085",
-    "accent": "#FFE9C9",
-    "accent_dark": "#D9BD93",
-    "danger": "#FF8F7A",
-    "text": "#2A2522",
-    "text_muted": "#6B625B",
-    "on_primary": "#142F20",
-    "on_accent": "#4A3418"
+    "background": "#0B0F14",
+    "primary": "#34E7C4",
+    "primary_dark": "#17A78F",
+    "accent": "#FFC94A",
+    "accent_dark": "#C99A22",
+    "danger": "#FF5566",
+    "text": "#E9F2F6",
+    "text_muted": "#8FA3B0",
+    "on_primary": "#032420",
+    "on_accent": "#2B2100"
   },
   "metrics": {
-    "radius": 28,
-    "border": 7,
+    "radius": 26,
+    "border": 6,
     "padding_x": 28,
     "padding_y": 20,
-    "button_font_size": 40,
+    "button_font_size": 44,
     "secondary_button_font_size": 34
   }
 }

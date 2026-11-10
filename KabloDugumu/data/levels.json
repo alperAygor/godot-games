@@ -1,0 +1,213 @@
+{
+  "version": 1,
+  "colors": {
+    "red": {
+      "hex": "#FF5566",
+      "voltage": 220
+    },
+    "blue": {
+      "hex": "#4DA6FF",
+      "voltage": 110
+    },
+    "yellow": {
+      "hex": "#FFD447",
+      "voltage": 50
+    },
+    "green": {
+      "hex": "#5CE6A0",
+      "voltage": 24
+    },
+    "purple": {
+      "hex": "#C77DFF",
+      "voltage": 12
+    },
+    "orange": {
+      "hex": "#FF9640",
+      "voltage": 380
+    },
+    "white": {
+      "hex": "#E8F4FF",
+      "voltage": 6
+    }
+  },
+  "levels": [
+    {
+      "id": 1,
+      "name": "İlk Kıvılcım",
+      "cables": 3,
+      "colors": [
+        "red",
+        "blue",
+        "yellow"
+      ],
+      "seed": 1103,
+      "par_seconds": 45,
+      "hint": "Fişi tut, kendi rengindeki prizin üstüne bırak. Farklı renge değme!"
+    },
+    {
+      "id": 2,
+      "name": "Sarı Hat",
+      "cables": 3,
+      "colors": [
+        "yellow",
+        "green",
+        "blue"
+      ],
+      "seed": 2207,
+      "par_seconds": 45,
+      "hint": "Kablo önce gerginleşir, sonra yumuşar. Sakin çek."
+    },
+    {
+      "id": 3,
+      "name": "Üç Faz",
+      "cables": 4,
+      "colors": [
+        "red",
+        "yellow",
+        "blue",
+        "green"
+      ],
+      "seed": 3313,
+      "par_seconds": 52,
+      "hint": "Kısa devre barı boşalır — teması hemen kes."
+    },
+    {
+      "id": 4,
+      "name": "Voltaj Düşümü",
+      "cables": 4,
+      "colors": [
+        "blue",
+        "green",
+        "red",
+        "yellow"
+      ],
+      "seed": 4409,
+      "par_seconds": 55,
+      "hint": "Önce hangi kabloyu çekeceğini düşün."
+    },
+    {
+      "id": 5,
+      "name": "Karışık Hatlar",
+      "cables": 4,
+      "colors": [
+        "purple",
+        "red",
+        "blue",
+        "yellow"
+      ],
+      "seed": 5501,
+      "par_seconds": 58,
+      "hint": "Aynı renk teması güvenli; farklı renk kıvılcım çıkarır."
+    },
+    {
+      "id": 6,
+      "name": "Yüksek Gerilim",
+      "cables": 5,
+      "colors": [
+        "green",
+        "purple",
+        "red",
+        "yellow",
+        "blue"
+      ],
+      "seed": 6607,
+      "par_seconds": 65,
+      "hint": "Kablovu panonun kenarından dolaştır."
+    },
+    {
+      "id": 7,
+      "name": "Sigorta Paneli",
+      "cables": 5,
+      "colors": [
+        "yellow",
+        "orange",
+        "blue",
+        "red",
+        "green"
+      ],
+      "seed": 7703,
+      "par_seconds": 70,
+      "hint": "Altın Yan Keski sıkıştığında bir fişi senin yerine bağlar."
+    },
+    {
+      "id": 8,
+      "name": "Kıvılcım Yağmuru",
+      "cables": 5,
+      "colors": [
+        "red",
+        "purple",
+        "green",
+        "orange",
+        "blue"
+      ],
+      "seed": 8809,
+      "par_seconds": 74,
+      "hint": "Yalıtım Spreyi 10 saniye dokunulmazlık verir."
+    },
+    {
+      "id": 9,
+      "name": "Aşırı Yük",
+      "cables": 6,
+      "colors": [
+        "red",
+        "blue",
+        "yellow",
+        "green",
+        "purple",
+        "orange"
+      ],
+      "seed": 9901,
+      "par_seconds": 82,
+      "hint": "Aynı anda iki temastan kaçın; bar iki kat hızlı dolar."
+    },
+    {
+      "id": 10,
+      "name": "Yalıtım Ustası",
+      "cables": 6,
+      "colors": [
+        "orange",
+        "green",
+        "blue",
+        "white",
+        "red",
+        "purple"
+      ],
+      "seed": 10103,
+      "par_seconds": 88,
+      "hint": "Beyaz kablo 6V — düşük gerilim ama yine de yalıtımlı."
+    },
+    {
+      "id": 11,
+      "name": "Şebeke Düğümü",
+      "cables": 6,
+      "colors": [
+        "white",
+        "red",
+        "yellow",
+        "blue",
+        "orange",
+        "green"
+      ],
+      "seed": 11113,
+      "par_seconds": 94,
+      "hint": "Panonun üstündeki analog voltmetre yükü gösterir."
+    },
+    {
+      "id": 12,
+      "name": "Akım Ustası",
+      "cables": 7,
+      "colors": [
+        "red",
+        "blue",
+        "yellow",
+        "green",
+        "purple",
+        "orange",
+        "white"
+      ],
+      "seed": 12101,
+      "par_seconds": 105,
+      "hint": "Son bölüm: yedi hat, tek şans. Sigortayı koru."
+    }
+  ]
+}

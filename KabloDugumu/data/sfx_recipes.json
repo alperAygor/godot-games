@@ -1,14 +1,80 @@
 {
   "ui_tap": {
     "prompt": "soft gentle UI tap click for a cozy mobile game, very short, clean, no reverb",
-    "seconds": 0.5,
+    "seconds": 0.35,
     "synth": "blip",
     "freq": 880
+  },
+  "cable_pull": {
+    "prompt": "short fabric cable drag whoosh, close microphone, soft friction, no music",
+    "seconds": 0.6,
+    "synth": "whoosh",
+    "freq": 180
+  },
+  "spark": {
+    "prompt": "electric short circuit spark crackle, high voltage arc, crisp and dry, 0.3 seconds",
+    "seconds": 0.35,
+    "synth": "crackle",
+    "freq": 1400
+  },
+  "clack": {
+    "prompt": "sharp metallic plug snapping into a socket, single clack, satisfying and dry",
+    "seconds": 0.22,
+    "synth": "clack",
+    "freq": 320
+  },
+  "wrong_socket": {
+    "prompt": "low electrical error buzz, wrong connection, short angry hum, no voice",
+    "seconds": 0.35,
+    "synth": "buzz",
+    "freq": 90
+  },
+  "fuse_pop": {
+    "prompt": "electrical fuse blowing pop, short bass thump with a tiny click, no debris",
+    "seconds": 0.3,
+    "synth": "pop",
+    "freq": 120
+  },
+  "level_start": {
+    "prompt": "short level start transition whoosh, rising air, optimistic, mobile puzzle game",
+    "seconds": 0.75,
+    "synth": "whoosh",
+    "freq": 300
+  },
+  "shield_on": {
+    "prompt": "insulation shield activating, clean bright glassy chime, short and positive",
+    "seconds": 0.9,
+    "synth": "chime",
+    "freq": 660
+  },
+  "cutter": {
+    "prompt": "golden wire cutter snip with a fast metallic whoosh, satisfying, short",
+    "seconds": 0.5,
+    "synth": "whoosh",
+    "freq": 900
   },
   "success": {
     "prompt": "short cheerful success jingle for a mobile game, bright marimba arpeggio with a soft glockenspiel shimmer, uplifting",
     "seconds": 1.8,
     "synth": "chime",
     "freq": 523
+  },
+  "win": {
+    "prompt": "victory fanfare for a puzzle game, warm bright chimes, celebratory but short",
+    "seconds": 2.4,
+    "synth": "chime",
+    "freq": 784
+  },
+  "fail": {
+    "prompt": "low sad power down buzz, electrical failure, short descending hum, no voice",
+    "seconds": 1.2,
+    "synth": "buzz",
+    "freq": 70
+  },
+  "hum": {
+    "prompt": "steady 50 hz electrical mains hum with 100 hz harmonic, seamless ambient loop",
+    "seconds": 2.0,
+    "synth": "hum",
+    "freq": 50
   }
 }

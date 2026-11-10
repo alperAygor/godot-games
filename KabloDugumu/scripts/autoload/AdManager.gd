@@ -2,22 +2,27 @@ extends Node
 
 ## Ödüllü reklam orkestrasyonu. SDK bilmez; `AdsProvider` ile konuşur.
 ## Ödül YALNIZCA sağlayıcıdan `rewarded` geldikten sonra verilir (idempotent).
+## Sözleşme: ARCHITECTURE.md §3 — Placement, can_offer, show_rewarded,
+## reset_run_limits, rewarded_finished(placement, success).
 
-enum Placement { EXTRA_POCKET, TAPE_RESCUE, DOUBLE_REWARD }
+## Yerleşimler PROJECT_SPEC.md §6. Sıra sabittir; panel-ui/panel-world bu
+## değerleri `AdManager.Placement.X` olarak okur.
+enum Placement { FUSE_RESCUE, GOLDEN_CUTTER, INSULATION_SPRAY }
 
 const PLACEMENT_KEYS: Dictionary = {
-	Placement.EXTRA_POCKET: "EXTRA_POCKET",
-	Placement.TAPE_RESCUE: "TAPE_RESCUE",
-	Placement.DOUBLE_REWARD: "DOUBLE_REWARD",
+	Placement.FUSE_RESCUE: "FUSE_RESCUE",
+	Placement.GOLDEN_CUTTER: "GOLDEN_CUTTER",
+	Placement.INSULATION_SPRAY: "INSULATION_SPRAY",
 }
 
 const LIMITS_PATH: String = "res://data/ads.json"
 
-## Tur içi kullanım (GameManager.reset_run_limits() ile sıfırlanır).
+## Tur içi kullanım (GameManager.start_level -> reset_run_limits() ile sıfırlanır).
+## `data/ads.json` yoksa/bozuksa bu değerler geçerlidir.
 const DEFAULT_LIMITS: Dictionary = {
-	"EXTRA_POCKET": {"per_run": 1, "per_session": 3},
-	"TAPE_RESCUE": {"per_run": 1, "per_session": 5},
-	"DOUBLE_REWARD": {"per_run": 1, "per_session": 3},
+	"FUSE_RESCUE": {"per_run": 1, "per_session": 5},
+	"GOLDEN_CUTTER": {"per_run": 1, "per_session": 3},
+	"INSULATION_SPRAY": {"per_run": 1, "per_session": 3},
 }
 
 signal ad_started(placement: Placement)
@@ -29,6 +34,7 @@ var provider: AdsProvider = null
 var _limits: Dictionary = {}
 var _used_run: Dictionary = {}
 var _used_session: Dictionary = {}
+## Gösterimi süren yerleşim; -1 = boşta. Aynı anda ikinci reklamı engeller.
 var _pending: int = -1
 
 
@@ -40,12 +46,7 @@ func _ready() -> void:
 
 func set_provider(new_provider: AdsProvider) -> void:
 	if provider != null:
-		if provider.shown.is_connected(_on_provider_shown):
-			provider.shown.disconnect(_on_provider_shown)
-		if provider.rewarded.is_connected(_on_provider_rewarded):
-			provider.rewarded.disconnect(_on_provider_rewarded)
-		if provider.failed.is_connected(_on_provider_failed):
-			provider.failed.disconnect(_on_provider_failed)
+		_disconnect_provider(provider)
 	provider = new_provider
 	if provider != null:
 		provider.shown.connect(_on_provider_shown)
@@ -54,6 +55,8 @@ func set_provider(new_provider: AdsProvider) -> void:
 		provider.initialize()
 
 
+## Bu yerleşim şu anda ödüllü reklamla sunulabilir mi? (sağlayıcı hazır +
+## limit var + başka reklam gösterilmiyor)
 func can_offer(placement: Placement) -> bool:
 	if provider == null or not provider.is_ready(placement):
 		return false
@@ -66,6 +69,7 @@ func can_offer(placement: Placement) -> bool:
 	return used_run < int(limit.get("per_run", 1)) and used_session < int(limit.get("per_session", 1))
 
 
+## Ödüllü reklamı başlatır. Ödül buradan DEĞİL, `rewarded_finished` sinyalinden verilir.
 func show_rewarded(placement: Placement) -> void:
 	if _pending != -1:
 		ad_failed.emit(placement, "already_pending")
@@ -74,10 +78,12 @@ func show_rewarded(placement: Placement) -> void:
 		ad_failed.emit(placement, "not_available")
 		return
 	_pending = placement
-	provider.show(placement)
 	ad_started.emit(placement)
+	provider.show(placement)
 
 
+## Yeni bölüm: tur içi sayaçlar sıfırlanır. Yarım kalmış reklam akışı da iptal edilir
+## (sağlayıcı geç gelen sonucu gönderirse `_pending` boş olduğu için yok sayılır).
 func reset_run_limits() -> void:
 	_used_run.clear()
 	_pending = -1
@@ -94,10 +100,29 @@ func used_in_run(placement: Placement) -> int:
 	return int(_used_run.get(PLACEMENT_KEYS.get(placement, ""), 0))
 
 
+func used_in_session(placement: Placement) -> int:
+	return int(_used_session.get(PLACEMENT_KEYS.get(placement, ""), 0))
+
+
+## Reklam akışı sürüyor mu? HUD butonlarını kilitlemek için.
+func has_pending() -> bool:
+	return _pending != -1
+
+
+func _disconnect_provider(target: AdsProvider) -> void:
+	if target.shown.is_connected(_on_provider_shown):
+		target.shown.disconnect(_on_provider_shown)
+	if target.rewarded.is_connected(_on_provider_rewarded):
+		target.rewarded.disconnect(_on_provider_rewarded)
+	if target.failed.is_connected(_on_provider_failed):
+		target.failed.disconnect(_on_provider_failed)
+
+
 func _on_provider_shown() -> void:
 	pass
 
 
+## Ödül yolu tek: _pending boşsa geç gelen/çift gelen provider sinyali yok sayılır.
 func _on_provider_rewarded() -> void:
 	if _pending == -1:
 		return
@@ -114,18 +139,30 @@ func _on_provider_failed(reason: String) -> void:
 		return
 	var placement: Placement = _pending
 	_pending = -1
+	# Başarısız reklam limit tüketmez; yalnızca başarılı ödül sayaç artırır.
 	rewarded_finished.emit(placement, false)
 	ad_failed.emit(placement, reason)
 
 
+## `data/ads.json` varsayılanların üzerine bindirilir; eksik alan varsayılanda kalır.
 func _load_limits() -> void:
 	_limits = DEFAULT_LIMITS.duplicate(true)
 	if not FileAccess.file_exists(LIMITS_PATH):
 		push_warning("AdManager: %s yok, varsayılan limitler kullanılıyor" % LIMITS_PATH)
 		return
-	var text: String = FileAccess.get_file_as_string(LIMITS_PATH)
-	var parsed: Variant = JSON.parse_string(text)
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(LIMITS_PATH))
 	if not (parsed is Dictionary):
 		push_warning("AdManager: %s okunamadı, varsayılan limitler" % LIMITS_PATH)
 		return
-	_limits = (parsed as Dictionary).duplicate(true)
+	var table: Dictionary = parsed as Dictionary
+	for key: Variant in table.keys():
+		var key_text: String = String(key)
+		if not DEFAULT_LIMITS.has(key_text) or not (table[key] is Dictionary):
+			continue
+		var source: Dictionary = table[key] as Dictionary
+		var merged: Dictionary = (_limits[key_text] as Dictionary).duplicate()
+		if source.has("per_run"):
+			merged["per_run"] = maxi(0, int(source["per_run"]))
+		if source.has("per_session"):
+			merged["per_session"] = maxi(0, int(source["per_session"]))
+		_limits[key_text] = merged
