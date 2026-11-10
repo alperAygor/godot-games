@@ -145,7 +145,8 @@ Bir işi bitirince `[ ]` → `[x]` yap ve `CHANGELOG.md`'ye ekle. Faz bitti krit
 
 **Hedef:** Oyun "hissedilsin": model, doku, ses, efekt.
 
-- [ ] Blender: `bag_01.glb`, `package_standard/fragile/springy.glb`, `truck_01.glb` (≤ 2k tris, metre ölçek, +Z ileri)
+- [x] Blender — çanta ve paketler: `backpack_base.glb`, `pkg_glass_1x2.glb`, `pkg_ice_1x1.glb`, `pkg_iron_2x2.glb`, `pkg_spring_1x1.glb` (toplam 2.664 üçgen, metre ölçek, +Z ileri, alt-merkez origin). Detay: `assets/models/README.md`
+- [ ] Blender — `truck_01.glb` ve yol parçaları (Faz 3 ile birlikte)
 - [ ] Malzeme atlası + 512 px dokular; `gl_compatibility` ile doğrula
 - [ ] ElevenLabs SFX: çarpma (3 malzeme), kırılma, bant, motor, UI tık
 - [ ] Müzik döngüsü (≤ 60 sn, `.ogg`)
@@ -196,5 +197,8 @@ Bir işi bitirince `[ ]` → `[x]` yap ve `CHANGELOG.md`'ye ekle. Faz bitti krit
 | 0 | ✅ Bitti | Dokümanlar + dizinler |
 | 1 | ⬜ Bekliyor | Sıradaki iş: `project.godot` ve autoload iskeleti |
 | 2–9 | ⬜ Bekliyor | |
+| 7 (varlık) | 🟡 Kısmi | 5 model hazır; araç/yol ve ses kaldı |
 
 **Sıradaki somut adım:** Faz 1 — `project.godot` oluştur, üç autoload'u boş iskeletle ekle, `main.tscn` + `boot.tscn` kur, `tools/verify.sh` ile doğrula.
+
+> Not: Faz 7'nin model üretimi bilinçli olarak öne çekildi — Faz 2 prototipinin gerçek varlıklarla kurulabilmesi için paketler erken üretildi.

@@ -151,7 +151,9 @@ Kurallar:
 | **ElevenLabs** | SFX/müzik üretimi (`assets/audio/`, `.ogg` 128 kbps). Anahtar `.env`'den, asla repoya yazılmaz. |
 | **Bash/Git** | Build, doğrulama, push. Yıkıcı komut öncesi hedefi doğrula. |
 
-Model üretiminde hedef: **düşük poligon** (paket ≤ 300 tris, çanta ≤ 2.000 tris), tek malzeme atlası, doku ≤ 512 px. Bu sınırı aşan model sahneye girmez.
+Model üretiminde hedef: **düşük poligon** (paket ≤ 500 tris, çanta ≤ 2.000 tris), doku ≤ 512 px. Bugünkü beş modelin toplamı 2.664 tris / 13 yüzey (`assets/models/README.md`). Model eklerken bu bütçeyi aşan varlık sahneye girmez.
+
+Varlıklar **elle değil** kodla üretilir: `tools/blender/make_models.py`. Model değişecekse script düzenlenir ve `--out assets/models` ile yeniden üretilir; `.blend` kaynak repoya girmez.
 
 ---
 

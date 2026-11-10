@@ -8,6 +8,20 @@ Tarihler `YYYY-AA-GG` biçimindedir.
 
 ## [Unreleased]
 
+### Eklendi
+- **3D varlık hattı** — `tools/blender/make_models.py`: beş modeli prosedürel üreten Blender 5.2 betiği. Girinti/örgü yerine kod; model değişikliği = script değişikliği.
+- **`assets/models/backpack_base.glb`** — ön yüzü açık kurye çantası, 4×5 = 20 cep ızgarası, pastel palet (nane/krem/pudra/lavanta). 1.412 üçgen, 4 materyal, 0,346 × 0,470 × 0,138 m.
+- **`assets/models/pkg_glass_1x2.glb`** — 1×2 yarı saydam mavi cam kargo kutusu, köşe dikmeleri ve kapak. 308 üçgen, `alphaMode = BLEND` (alfa 0,42).
+- **`assets/models/pkg_ice_1x1.glb`** — 1×1 açık camgöbeği buz paketi, kristal kesimli gövde + üstte buz dikenleri. 176 üçgen.
+- **`assets/models/pkg_iron_2x2.glb`** — 2×2 ağır demir kasa, köşe dikmeleri, çift bant ve 8 perçin. 452 üçgen, metalik 0,85.
+- **`assets/models/pkg_spring_1x1.glb`** — 1×1 darbe emici kutu, açık üstlü tekne + 3 sarım helezon yay. 316 üçgen.
+- **`assets/models/README.md`** — varlık sözleşmesi: ızgara birimi, boyutlar, üçgen bütçeleri, palet ve Godot kullanım notları.
+
+### Doğrulama
+- Beş dosya da `minY = 0`, `centerX = centerZ = 0`, node'da TRS yok (transformlar uygulanmış).
+- Godot 4.7.2 `gl_compatibility` projesinde içe aktarma hatasız; toplam **2.664 üçgen / 13 yüzey**.
+- Görsel kontrol: EEVEE ile üç açıdan render edilip incelendi.
+
 ### Eklenecek
 - Faz 1: `project.godot`, autoload iskeletleri, boot/menu sahneleri
 - Faz 2: çanta ve paket fizik prototipi
