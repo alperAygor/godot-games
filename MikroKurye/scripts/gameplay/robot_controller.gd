@@ -34,6 +34,8 @@ var _move_input: Vector2 = Vector2.ZERO
 var _smoothed_input: Vector2 = Vector2.ZERO
 var _grounded: bool = false
 var _top_speed: float = DEFAULT_MAX_SPEED
+## Batarya/modül etkisi: hedef hızı ölçekler, `max_speed()` tavanını değiştirmez.
+var _speed_factor: float = 1.0
 var _accel: float = DEFAULT_ACCEL
 var _brake: float = DEFAULT_BRAKE
 var _turn_rate: float = DEFAULT_TURN_RATE
@@ -100,6 +102,12 @@ func set_move_input(v: Vector2) -> void:
 	_move_input = v.limit_length(1.0)
 
 
+## Hedef hızı çarpar (batarya boşaldıkça yavaşlar). Negatif değer 0 sayılır;
+## `max_speed()` raporlanan tavan olarak değişmez (§5.2).
+func set_speed_factor(f: float) -> void:
+	_speed_factor = maxf(f, 0.0)
+
+
 func speed() -> float:
 	return Vector2(linear_velocity.x, linear_velocity.z).length()
 
@@ -155,7 +163,7 @@ func _physics_process(delta: float) -> void:
 		return
 	var forward: Vector3 = -global_basis.z.slide(desired_up).normalized()
 	var longitudinal_speed: float = linear_velocity.dot(forward)
-	var target_speed: float = _smoothed_input.y * _top_speed
+	var target_speed: float = _smoothed_input.y * _top_speed * _speed_factor
 	var acceleration: float = clampf((target_speed - longitudinal_speed) * _speed_response,
 		-_accel, _accel)
 	if is_zero_approx(_move_input.y):

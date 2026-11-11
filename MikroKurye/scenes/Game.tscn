@@ -1,44 +1,260 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=31 format=3]
 
-[ext_resource type="Script" path="res://scripts/ui/game.gd" id="1_game"]
-[ext_resource type="PackedScene" path="res://assets/third_party/polyhaven/crate_wood.glb" id="2_crate"]
+[ext_resource type="Script" path="res://scripts/gameplay/game_controller.gd" id="1_game"]
+[ext_resource type="Script" path="res://scripts/gameplay/robot_controller.gd" id="2_robot"]
+[ext_resource type="Script" path="res://scripts/gameplay/suspension_wheel.gd" id="3_wheel"]
+[ext_resource type="Script" path="res://scripts/gameplay/camera_rig.gd" id="4_camera"]
+[ext_resource type="Script" path="res://scripts/gameplay/input_service.gd" id="5_input"]
+[ext_resource type="Script" path="res://scripts/gameplay/cargo_basket.gd" id="6_cargo"]
+[ext_resource type="PackedScene" path="res://scenes/HUD.tscn" id="7_hud"]
 
-[sub_resource type="Environment" id="Env"]
+[sub_resource type="Environment" id="Environment"]
 background_mode = 1
-background_color = Color(0.96, 0.93, 0.88, 1)
+background_color = Color(0.48, 0.74, 0.86, 1)
 ambient_light_source = 2
-ambient_light_color = Color(1, 0.95, 0.9, 1)
-ambient_light_energy = 0.55
+ambient_light_color = Color(0.8, 0.88, 1, 1)
+ambient_light_energy = 0.85
 
-[sub_resource type="StandardMaterial3D" id="Mat_box"]
-albedo_color = Color(0.55, 0.88, 0.7, 1)
-roughness = 0.7
+[sub_resource type="StandardMaterial3D" id="FloorMaterial"]
+albedo_color = Color(0.3, 0.54, 0.58, 1)
+roughness = 1.0
 
-[sub_resource type="BoxMesh" id="Mesh_box"]
-size = Vector3(0.8, 0.8, 0.8)
+[sub_resource type="StandardMaterial3D" id="LaneMaterial"]
+albedo_color = Color(1, 0.62, 0.2, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="RobotMaterial"]
+albedo_color = Color(0.12, 0.8, 0.65, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="DarkMaterial"]
+albedo_color = Color(0.035, 0.055, 0.075, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="BasketMaterial"]
+albedo_color = Color(1, 0.45, 0.09, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="ParcelMaterial"]
+albedo_color = Color(1, 0.86, 0.48, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="DeliveryMaterial"]
+transparency = 1
+albedo_color = Color(0.55, 0.88, 0.7, 0.45)
+roughness = 1.0
+
+[sub_resource type="BoxShape3D" id="FloorShape"]
+size = Vector3(12, 0.4, 90)
+
+[sub_resource type="BoxShape3D" id="RobotShape"]
+size = Vector3(0.82, 0.32, 1.15)
+
+[sub_resource type="BoxShape3D" id="BasketShape"]
+size = Vector3(0.66, 0.36, 0.5)
+
+[sub_resource type="BoxShape3D" id="DeliveryShape"]
+size = Vector3(7, 3, 4)
+
+[sub_resource type="BoxMesh" id="FloorMesh"]
+material = SubResource("FloorMaterial")
+size = Vector3(12, 0.4, 90)
+
+[sub_resource type="BoxMesh" id="LaneMesh"]
+material = SubResource("LaneMaterial")
+size = Vector3(0.08, 0.01, 84)
+
+[sub_resource type="BoxMesh" id="RobotMesh"]
+material = SubResource("RobotMaterial")
+size = Vector3(0.82, 0.32, 1.15)
+
+[sub_resource type="BoxMesh" id="HeadMesh"]
+material = SubResource("RobotMaterial")
+size = Vector3(0.56, 0.26, 0.34)
+
+[sub_resource type="BoxMesh" id="VisorMesh"]
+material = SubResource("DarkMaterial")
+size = Vector3(0.46, 0.1, 0.025)
+
+[sub_resource type="CylinderMesh" id="WheelMesh"]
+material = SubResource("DarkMaterial")
+top_radius = 0.18
+bottom_radius = 0.18
+height = 0.16
+radial_segments = 12
+
+[sub_resource type="BoxMesh" id="BasketBase"]
+material = SubResource("BasketMaterial")
+size = Vector3(0.66, 0.1, 0.5)
+
+[sub_resource type="BoxMesh" id="BasketRail"]
+material = SubResource("BasketMaterial")
+size = Vector3(0.66, 0.18, 0.06)
+
+[sub_resource type="BoxMesh" id="ParcelMesh"]
+material = SubResource("ParcelMaterial")
+size = Vector3(0.38, 0.32, 0.3)
+
+[sub_resource type="BoxMesh" id="DeliveryPadMesh"]
+material = SubResource("DeliveryMaterial")
+size = Vector3(7, 0.04, 4)
+
+[sub_resource type="PhysicsMaterial" id="BodyPhysics"]
+friction = 0.0
+bounce = 0.0
 
 [node name="Game" type="Node3D"]
 script = ExtResource("1_game")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Env")
+environment = SubResource("Environment")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.781, -0.461, 0.4216, 0, 0.6751, 0.7378, -0.6249, -0.5763, 0.527, 0, 2, 1.5)
-light_energy = 1.1
+rotation_degrees = Vector3(-55, -25, 0)
+light_energy = 1.2
 
-[node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.9965, 0.083, 0, -0.083, 0.9965, 0, 0.75, 3.0)
+[node name="Floor" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.2, -30)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("FloorShape")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("FloorMesh")
+
+[node name="LeftLane" type="MeshInstance3D" parent="."]
+position = Vector3(-3.2, 0.006, -30)
+mesh = SubResource("LaneMesh")
+
+[node name="RightLane" type="MeshInstance3D" parent="."]
+position = Vector3(3.2, 0.006, -30)
+mesh = SubResource("LaneMesh")
+
+[node name="RobotStart" type="Marker3D" parent="."]
+position = Vector3(0, 0.58, 4)
+
+[node name="Checkpoint_1" type="Marker3D" parent="."]
+position = Vector3(0, 0.58, -10)
+
+[node name="Checkpoint_2" type="Marker3D" parent="."]
+position = Vector3(0, 0.58, -20)
+
+[node name="DeliveryZone" type="Area3D" parent="."]
+position = Vector3(0, 1, -30)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DeliveryZone"]
+shape = SubResource("DeliveryShape")
+
+[node name="Pad" type="MeshInstance3D" parent="DeliveryZone"]
+position = Vector3(0, -0.98, 0)
+mesh = SubResource("DeliveryPadMesh")
+
+[node name="Robot" type="RigidBody3D" parent="."]
+position = Vector3(0, 0.58, 4)
+physics_material_override = SubResource("BodyPhysics")
+continuous_cd = true
+script = ExtResource("2_robot")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Robot"]
+shape = SubResource("RobotShape")
+
+[node name="Chassis" type="MeshInstance3D" parent="Robot"]
+mesh = SubResource("RobotMesh")
+
+[node name="Head" type="MeshInstance3D" parent="Robot"]
+position = Vector3(0, 0.28, -0.28)
+mesh = SubResource("HeadMesh")
+
+[node name="Visor" type="MeshInstance3D" parent="Robot"]
+position = Vector3(0, 0.3, -0.46)
+mesh = SubResource("VisorMesh")
+
+[node name="FrontLeft" type="Node3D" parent="Robot"]
+position = Vector3(-0.48, 0, -0.48)
+script = ExtResource("3_wheel")
+
+[node name="RayCast3D" type="RayCast3D" parent="Robot/FrontLeft"]
+
+[node name="Visual" type="MeshInstance3D" parent="Robot/FrontLeft"]
+rotation_degrees = Vector3(0, 0, 90)
+mesh = SubResource("WheelMesh")
+
+[node name="FrontRight" type="Node3D" parent="Robot"]
+position = Vector3(0.48, 0, -0.48)
+script = ExtResource("3_wheel")
+
+[node name="RayCast3D" type="RayCast3D" parent="Robot/FrontRight"]
+
+[node name="Visual" type="MeshInstance3D" parent="Robot/FrontRight"]
+rotation_degrees = Vector3(0, 0, 90)
+mesh = SubResource("WheelMesh")
+
+[node name="RearLeft" type="Node3D" parent="Robot"]
+position = Vector3(-0.48, 0, 0.48)
+script = ExtResource("3_wheel")
+
+[node name="RayCast3D" type="RayCast3D" parent="Robot/RearLeft"]
+
+[node name="Visual" type="MeshInstance3D" parent="Robot/RearLeft"]
+rotation_degrees = Vector3(0, 0, 90)
+mesh = SubResource("WheelMesh")
+
+[node name="RearRight" type="Node3D" parent="Robot"]
+position = Vector3(0.48, 0, 0.48)
+script = ExtResource("3_wheel")
+
+[node name="RayCast3D" type="RayCast3D" parent="Robot/RearRight"]
+
+[node name="Visual" type="MeshInstance3D" parent="Robot/RearRight"]
+rotation_degrees = Vector3(0, 0, 90)
+mesh = SubResource("WheelMesh")
+
+[node name="CargoBasket" type="RigidBody3D" parent="Robot"]
+position = Vector3(0, 0.44, 0.24)
+script = ExtResource("6_cargo")
+continuous_cd = true
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Robot/CargoBasket"]
+shape = SubResource("BasketShape")
+
+[node name="Base" type="MeshInstance3D" parent="Robot/CargoBasket"]
+position = Vector3(0, -0.13, 0)
+mesh = SubResource("BasketBase")
+
+[node name="FrontRail" type="MeshInstance3D" parent="Robot/CargoBasket"]
+position = Vector3(0, 0.02, -0.22)
+mesh = SubResource("BasketRail")
+
+[node name="BackRail" type="MeshInstance3D" parent="Robot/CargoBasket"]
+position = Vector3(0, 0.02, 0.22)
+mesh = SubResource("BasketRail")
+
+[node name="LeftRail" type="MeshInstance3D" parent="Robot/CargoBasket"]
+position = Vector3(-0.3, 0.02, 0)
+rotation_degrees = Vector3(0, 90, 0)
+scale = Vector3(0.67, 1, 1)
+mesh = SubResource("BasketRail")
+
+[node name="RightRail" type="MeshInstance3D" parent="Robot/CargoBasket"]
+position = Vector3(0.3, 0.02, 0)
+rotation_degrees = Vector3(0, 90, 0)
+scale = Vector3(0.67, 1, 1)
+mesh = SubResource("BasketRail")
+
+[node name="Parcel" type="MeshInstance3D" parent="Robot/CargoBasket"]
+position = Vector3(0, 0.08, 0)
+mesh = SubResource("ParcelMesh")
+
+[node name="CameraRig" type="Node3D" parent="."]
+script = ExtResource("4_camera")
+target_path = NodePath("../Robot")
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig"]
 current = true
-fov = 50.0
 
-[node name="Spinner" parent="." instance=ExtResource("2_crate")]
-unique_name_in_owner = true
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.18, 0)
+[node name="HUD" parent="." instance=ExtResource("7_hud")]
 
-[node name="HUD" type="CanvasLayer" parent="."]
-
-[node name="Root" type="Control" parent="HUD"]
+[node name="InputService" type="Control" parent="HUD"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -46,57 +262,5 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-
-[node name="Top" type="VBoxContainer" parent="HUD/Root"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 60.0
-offset_top = 90.0
-offset_right = -60.0
-offset_bottom = 220.0
-grow_horizontal = 2
-mouse_filter = 2
-
-[node name="Status" type="Label" parent="HUD/Root/Top"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 38
-theme_override_colors/font_outline_color = Color(1, 0.98, 0.94, 0.9)
-theme_override_constants/outline_size = 8
-text = "Yer tutucu oyun sahnesi"
-horizontal_alignment = 1
-
-[node name="Bottom" type="VBoxContainer" parent="HUD/Root"]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 80.0
-offset_top = -420.0
-offset_right = -80.0
-offset_bottom = -80.0
-grow_horizontal = 2
-grow_vertical = 0
-mouse_filter = 2
-theme_override_constants/separation = 18
-
-[node name="SuccessButton" type="Button" parent="HUD/Root/Bottom"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 120)
-layout_mode = 2
-text = "Başarıyla Bitir"
-
-[node name="DamageButton" type="Button" parent="HUD/Root/Bottom"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 120)
-layout_mode = 2
-theme_type_variation = &"SecondaryButton"
-text = "Hasarlı Bitir"
-
-[node name="MenuButton" type="Button" parent="HUD/Root/Bottom"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 100)
-layout_mode = 2
-theme_type_variation = &"SecondaryButton"
-text = "Menüye Dön"
+script = ExtResource("5_input")
+robot_path = NodePath("../../Robot")
