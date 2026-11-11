@@ -94,18 +94,21 @@ Fizik işlerinde **best-of-N** (`solve.sh --workers "dsh:sol dsh"`) ve görsel d
 - [x] **F6.2** SFX seti (ElevenLabs `make_sfx.py` ya da yedek sentez): çarpma, klavye tıkı, teslimat, satın alma, UI; ASMR hissi [O]
 - [x] **F6.3** İlk açılış rehberi (3 kısa ipucu), ayarlar (ses açık/kapalı), geri tuşu davranışı [O]
 
-## Faz 7 — GÖRSEL FAZ (ayrı faz; kullanıcı görselleri beğenmedi)
+## Faz 7 — GÖRSEL FAZ (ayrı faz; kullanıcı geri bildirimi: pikselimsi/basit; daha detaylı, modern UI, animasyonlar)
 
-Hedef: "yer tutucu prototip" görünümünden **ürün kalitesinde stilize low-poly** görünüme. Her adım ekran görüntüsüyle denetlenir (`scene_shot.gd`, `shots.sh`); son onay kullanıcıdadır [U].
+Hedef: **low-poly'nin üstü**, pürüzsüz ve ürün kalitesinde stilize görünüm. Her adım ekran görüntüsüyle denetlenir (`scene_shot.gd`); son onay kullanıcıdadır [U]. Fizik/oynanış probe sayıları değişmez.
 
-- [x] **F7.1** Sanat yönü yeniden tanımı: PROJECT_SPEC §13 güncellenir (referans, palet, malzeme dili, ışık); kısa bir "stil kılavuzu" sahnesi (`scenes/StyleGuide.tscn`) [O]
-- [x] **F7.2** Shader sistemi: toon/cel gölgelendirme + rim ışık, anahatlar (outline), ahşap masa dokusu (prosedürel), düşük maliyetli (mobil/Compatibility) [Z]
-- [x] **F7.3** Robot yeniden tasarımı: karakterli yüz/gözler, kurye detayları, tekerlek ve süspansiyon görselleri, idle/hız animasyonları (squash & stretch, anten) [Z]
-- [ ] **F7.4** Ortam: oda (duvar, pencere ışığı, uzakta dev objeler), masa kenarı derinliği, yumuşak gölge, bloom/renk düzeltme, hafif toz parçacığı [Z]
-- [ ] **F7.5** Efektler: çarpma kıvılcımı, hız çizgileri, kırılma, kontrol noktası/teslimat konfeti, klavye tuşu uyarı parıltısı [O]
-- [ ] **F7.6** UI teması: HUD, menü, sipariş kartları, garaj, sonuç; ikonlar (Lucide/Kenney), yazı tipi, düğme animasyonları [O]
-- [ ] **F7.7** Kamera: hız bağımlı FOV, hafif sarsıntı, geçişler [K]
-- [ ] **F7.8** Görsel QA turu: tüm ekranların ekran görüntüleri, tutarlılık düzeltmeleri; kullanıcı onayı [U]
+- [x] **F7.1** Stil laboratuvarı; stil A seçildi
+- [x] **F7.2** Malzeme/shader sistemi, ışık, ahşap masa
+- [x] **F7.3** Robot/kargo/eşya modellerinin oyuna girişi (ilk sürüm, basit modellerle)
+- [ ] **F7.4** Kamera + ortam (oda derinliği, pencere ışığı, toz) — çalışıyor
+- [ ] **F7.9** **Render kalitesi:** MSAA/FXAA ile kenar tırtığı yok, doku/mip filtreleme, yumuşak toon bantları ve anti-aliased anahat, ölçek [O]
+- [ ] **F7.10a** **Model v2 — robot, tekerlek, sepet, 3 kargo:** hero kalite (kavisli formlar, bevel, yumuşak normal, yüz/detaylar) [Z]
+- [ ] **F7.10b** **Model v2 — masa eşyaları ve oda/çevre kiti:** monitör, lamba, bitki, kitap yığını, kulaklık, defter, kalemlik, yapışkan not, pencere/raf/perde, klavye/kupa/kalem/cetvel/kitap yenileme [Z]
+- [ ] **F7.10c** Model v2 sahne entegrasyonu (Game/Proto/level/menü vitrini) [O]
+- [ ] **F7.6b** **Modern, nazik, sade UI/UX** + ikon sistemi (HUD, menü, sipariş, garaj, sonuç, ayarlar, rehber) [Z]
+- [ ] **F7.11** **Animasyon ve "juice":** robot (idle, sürüş, iniş squash, anten, yüz ifadeleri), dünya (tuş, fan, kalem, buhar, toz), UI (geçişler, sayaç, yıldız, düğme), kamera, parçacıklar, ses-senkron [Z]
+- [ ] **F7.8** Görsel QA turu + kullanıcı onayı [U]
 
 ## Faz 8 — Final
 

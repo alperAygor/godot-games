@@ -66,7 +66,7 @@ bash tools/verify.sh
 - **Fizik hasar kararı vermez; ölçer.** Darbe impulsu, açısal ivme, düşüş yüksekliği `core`'a (`DamageModel`, `CargoHealth`) beslenir.
 - **Sihirli sayı yok:** fizik ve denge değerleri `data/balance.json` / `data/cargo.json`'da; koda yazma. Okuma `GameData.value(...)` ile (yalnız gameplay/ui katmanında; `core` değeri parametre olarak alır).
 - **Fizik 60 Hz sabit adım.** `_physics_process` içinde allocation yok (yeni `Array`/`Dictionary`/vektör dizisi üretme); çarpışma şekilleri basit (kutu/kapsül/küre); robot başına 4 raycast.
-- **Düşük çokgen, düz renk:** PBR/ağır doku yok; GLB sözleşmesi (`studio-kit/tools/validate_glb.py`, ≤3000 üçgen).
+- **Stilize orta-detay (mid-poly), pürüzsüz gölgelemeli:** kırık/köşeli "low-poly" görünüm HEDEF DEĞİL (kullanıcı beğenmedi). Kavisli formlar, bevel, yumuşak normaller, vertex-renk gradyanı/AO; PBR/ağır doku yok. GLB bütçesi: hero robot ≤ 12000 üçgen, tekerlek ≤ 2000, sepet ≤ 4000, kargo ≤ 2500, masa eşyaları ≤ 6000, uzak ortam silüetleri ≤ 4000; sahnede aynı anda görünen toplam ≤ ~150k üçgen (`studio-kit/tools/validate_glb.py`, `ACCEPT_MAX_TRIS` ile).
 - Yeni dosya her zaman tipli GDScript; `class_name` ile adlandır, dosya adı `snake_case`.
 - Girdi: dokunma (`InputEventScreenTouch/Drag`); masaüstünde fare dokunma taklidi (`emulate_touch_from_mouse`).
 

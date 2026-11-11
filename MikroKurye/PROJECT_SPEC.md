@@ -195,3 +195,5 @@ Sıklık limitleri `AdManager` içinde, veriler `data/` altında. Reklam SDK ça
 
 > **Karar (2026-11-11, kullanıcı): görsel stil A — Toon + Outline.** 3 bant hücre gölgelendirme, rim ışık, koyu renkli ters-kabuk anahat (yalnızca robot ve etkileşimli nesnelerde; mobil maliyet), doygun palet, tek sıcak ana ışık, yumuşak gerçek gölge, açık gökyüzü/oda arka planı.
 > Referans: `docs/art/style_lab_sheet.png` (A sütunu) ve `assets/shaders/style_lab/`, `scenes/styles/style_a.tscn`. B ve C varyantları referans olarak kalır, kullanılmaz.
+
+> **Kalite hedefi güncellemesi (2026-11-12, kullanıcı geri bildirimi):** Görseller "pikselimsi" ve fazla basit bulundu. Yön: **low-poly'nin üstü** — stilize ama detaylı, pürüzsüz (kenar tırtığı yok: MSAA/FXAA, yumuşak toon bantları), daha zengin modeller (robot, kargo, masa eşyaları, oda/çevre), **modern, nazik, sade UI/UX** (çok ikon, yumuşak kartlar, bol boşluk, ince gölge, tutarlı ikon seti) ve ardından **animasyon/juice** (robot, dünya, UI, kamera, parçacık). Palet ve stil A (toon + anahat) korunur ama daha rafine uygulanır. Çokgen bütçeleri `CLAUDE.md` §8'de.
