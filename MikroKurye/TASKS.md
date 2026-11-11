@@ -29,8 +29,8 @@ Etiketler: **[K]** kolay/mekanik · **[O]** orta · **[Z]** zor · **[T]** önce
 **Hedef:** Oyunun sayısal kuralları sahne olmadan, testle sabit. Fizik prototipi bu sınıflara ölçüm besler.
 
 - [ ] **F1.1** `data/cargo.json` + şema testi (zorunlu anahtarlar, aralıklar) [K][T]
-- [ ] **F1.2** `DamageModel` (statik) — eşikler, sınırlar, kırpma [O][T]
-- [ ] **F1.3** `CargoHealth` — birikim, Şok Jeli koruması (0.95 kuralı), kırık kargo [O][T]
+- [x] **F1.2** `DamageModel` (statik) — eşikler, sınırlar, kırpma [O][T]
+- [x] **F1.3** `CargoHealth` — birikim, Şok Jeli koruması (0.95 kuralı), kırık kargo [O][T]
 - [ ] **F1.4** `BatteryModel` — tüketim, hız faktörü, boost, doldurma [O][T]
 - [ ] **F1.5** `DeliveryReward` — altın/hurda, `RunScoring` ile uyum [O][T]
 - [ ] **F1.6** `CheckpointTracker` — yalnız ileri ilerleme [K][T]

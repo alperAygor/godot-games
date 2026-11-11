@@ -4,8 +4,11 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/), sürümleme [Se
 
 ## [Unreleased]
 
+### Eklendi
+- `DamageModel` (darbe/çalkalanma/düşme → 0..1 hasar) ve `CargoHealth` (birikim, Şok Jeli koruması, kırık kargo) + 25 birim test.
+
 ### Eklenecek
-- Oyun mekaniği
+- Oyun mekaniği (Faz 1 kalanı, Faz 2 fizik prototipi)
 
 ---
 
