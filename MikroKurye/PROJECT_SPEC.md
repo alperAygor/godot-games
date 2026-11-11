@@ -164,3 +164,28 @@ Sıklık limitleri `AdManager` içinde, veriler `data/` altında. Reklam SDK ça
 3. **MVP'deki tek modül: Şok Emici Jel** (mantığı `CargoHealth` içinde hazır; fizik gerektirmez). Kanca/Drone sonra.
 4. **Ad:** mağaza ve oyun içi görünen ad **Micro Courier** (İngilizce). Klasör/dosya adı `MikroKurye` kalır; Türkçe metinler yerelleştirme anahtarlarıyla gelir.
 5. Kullanıcı süreci otomatik yürütmemi istedi; yalnızca **kendi onayı gerektirenler** (oyun hissi onayı, mağaza/yayın, ücretli API, geri alınamaz işlemler) ona kalır.
+
+---
+
+## 13. Görsel yön (bağlayıcı; "neden kötü görünüyor" cevabı: prototip yer tutucuydu, sanat henüz başlamadı)
+
+**Stil:** Overcooked / Moving Out tarzı **stylized low-poly**: yuvarlatılmış (bevel) basit formlar, düz ve **doygun** renkler, dokusuz ya da çok hafif gradyan, belirgin silüet. Hedef: telefonda küçükken bile okunaklı, reklam videosunda nesneler hemen anlaşılır.
+
+**Palet (başlangıç; `data/theme.json` ile uyumlu tutulur):**
+| Rol | Renk | Kullanım |
+|---|---|---|
+| Robot ana | `#2EE6C5` (turkuaz) | gövde |
+| Robot vurgu | `#FFC83D` (sarı) | kafa lambası, şerit, antenler |
+| Tekerlek / lastik | `#2B2F3A` | lastik; jant `#B8C0CC` |
+| Masa (ahşap) | `#D9A066` | zemin yüzeyi; kenarda koyu `#B07A45` |
+| Masa üstü eşyalar | `#F25F5C` kırmızı, `#4D9DE0` mavi, `#F7B801` sarı, `#7BC86C` yeşil | kupa, kitap, kalem, cetvel |
+| Gökyüzü/arka plan | sıcak açık gradyan `#FFE8C7` → `#BFE3F2` | oda duvarı hissi, koyu renk YOK |
+| Tehlike işareti | `#FF4D4D` + sarı-siyah çizgi | klavye tuşu, fan |
+
+**Işık:** tek sıcak yön ışığı (yumuşak gölge, `gl_compatibility`'de açık), açık renkli ortam ışığı (yüksek enerji), hafif bloom (GOTCHAS #4: Compatibility'de çalışıyor). Sert siyah gölge yok.
+
+**Ölçek ve çokgen:** robot ~0.8 m; masa eşyaları robota göre dev (kupa ≈ 3× robot boyu). Her model ≤ 3000 üçgen. GLB sözleşmesi (`studio-kit/tools/validate_glb.py`): TRS yok, origin alt-merkez.
+
+**Üretim:** modeller Blender ile `tools/blender/*.py` betiklerinden (kaynak = betik, GLB üretilmiş çıktı; `studio-kit/tools/blender_kit.py`). Önizleme PNG'leri `build/previews/` (Blender workbench render).
+
+**Aşamalar:** V1 model seti (robot, tekerlek, sepet, 3 kargo, masa eşyaları) → V2 sahne entegrasyonu (palet, ışık, ortam, Proto.tscn'de modeller) → V3 cila (parçacık, kamera sarsıntısı, UI teması).
