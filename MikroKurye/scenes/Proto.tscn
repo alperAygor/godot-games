@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3]
+[gd_scene load_steps=31 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/robot_controller.gd" id="1_robot"]
 [ext_resource type="Script" path="res://scripts/gameplay/suspension_wheel.gd" id="2_wheel"]
@@ -6,95 +6,91 @@
 [ext_resource type="Script" path="res://scripts/gameplay/input_service.gd" id="4_input"]
 
 [ext_resource type="Script" path="res://scripts/gameplay/cargo_basket.gd" id="5_cargo"]
+[ext_resource type="Material" path="res://assets/materials/floor.tres" id="6_floor"]
+[ext_resource type="Material" path="res://assets/materials/robot_turquoise.tres" id="7_robot"]
+[ext_resource type="Material" path="res://assets/materials/robot_dark.tres" id="8_dark"]
+[ext_resource type="Material" path="res://assets/materials/ramp.tres" id="9_ramp"]
+[ext_resource type="Material" path="res://assets/materials/basket_yellow.tres" id="10_basket"]
+[ext_resource type="Material" path="res://assets/materials/cargo_parcel.tres" id="11_parcel"]
+[ext_resource type="Material" path="res://assets/materials/route_blue.tres" id="12_route"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
+sky_top_color = Color(0.749, 0.8902, 0.949, 1)
+sky_horizon_color = Color(1, 0.9098, 0.7804, 1)
+ground_bottom_color = Color(1, 0.9098, 0.7804, 1)
+ground_horizon_color = Color(1, 0.9098, 0.7804, 1)
+
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMaterial")
 
 [sub_resource type="Environment" id="Environment"]
-background_mode = 1
-background_color = Color(0.48, 0.74, 0.86, 1)
+background_mode = 2
+sky = SubResource("Sky")
 ambient_light_source = 2
-ambient_light_color = Color(0.8, 0.88, 1, 1)
-ambient_light_energy = 0.85
-
-[sub_resource type="StandardMaterial3D" id="FloorMaterial"]
-albedo_color = Color(0.3, 0.54, 0.58, 1)
-roughness = 1.0
-
-[sub_resource type="StandardMaterial3D" id="RobotMaterial"]
-albedo_color = Color(0.12, 0.8, 0.65, 1)
-roughness = 1.0
-
-[sub_resource type="StandardMaterial3D" id="DarkMaterial"]
-albedo_color = Color(0.035, 0.055, 0.075, 1)
-roughness = 1.0
-
-[sub_resource type="StandardMaterial3D" id="RampMaterial"]
-albedo_color = Color(1, 0.62, 0.2, 1)
-roughness = 1.0
+ambient_light_color = Color(0.83, 0.9, 0.95, 1)
+ambient_light_energy = 0.3
+tonemap_mode = 0
+glow_enabled = true
+glow_intensity = 0.05
+glow_hdr_threshold = 1.1
 
 [sub_resource type="BoxShape3D" id="FloorShape"]
 size = Vector3(80, 0.4, 160)
 
 [sub_resource type="BoxMesh" id="FloorMesh"]
-material = SubResource("FloorMaterial")
+material = ExtResource("6_floor")
 size = Vector3(80, 0.4, 160)
 
 [sub_resource type="BoxShape3D" id="RampShape"]
 size = Vector3(6, 0.2, 2.4)
 
 [sub_resource type="BoxMesh" id="RampMesh"]
-material = SubResource("RampMaterial")
+material = ExtResource("9_ramp")
 size = Vector3(6, 0.2, 2.4)
 
 [sub_resource type="BoxShape3D" id="RobotShape"]
 size = Vector3(0.82, 0.32, 1.15)
 
 [sub_resource type="BoxMesh" id="RobotMesh"]
-material = SubResource("RobotMaterial")
+material = ExtResource("7_robot")
 size = Vector3(0.82, 0.32, 1.15)
 
 [sub_resource type="BoxMesh" id="HeadMesh"]
-material = SubResource("RobotMaterial")
+material = ExtResource("7_robot")
 size = Vector3(0.56, 0.26, 0.34)
 
 [sub_resource type="BoxMesh" id="VisorMesh"]
-material = SubResource("DarkMaterial")
+material = ExtResource("8_dark")
 size = Vector3(0.46, 0.1, 0.025)
 
 [sub_resource type="CylinderMesh" id="WheelMesh"]
-material = SubResource("DarkMaterial")
+material = ExtResource("8_dark")
 top_radius = 0.18
 bottom_radius = 0.18
 height = 0.16
 radial_segments = 12
 
 [sub_resource type="BoxMesh" id="LineMesh"]
-material = SubResource("RampMaterial")
+material = ExtResource("12_route")
 size = Vector3(0.08, 0.01, 110)
 
 [sub_resource type="PhysicsMaterial" id="BodyPhysics"]
 friction = 0.0
 bounce = 0.0
 
-[sub_resource type="StandardMaterial3D" id="BasketMaterial"]
-albedo_color = Color(1, 0.45, 0.09, 1)
-roughness = 1.0
-
-[sub_resource type="StandardMaterial3D" id="ParcelMaterial"]
-albedo_color = Color(1, 0.86, 0.48, 1)
-roughness = 1.0
-
 [sub_resource type="BoxShape3D" id="BasketShape"]
 size = Vector3(0.66, 0.36, 0.5)
 
 [sub_resource type="BoxMesh" id="BasketBase"]
-material = SubResource("BasketMaterial")
+material = ExtResource("10_basket")
 size = Vector3(0.66, 0.1, 0.5)
 
 [sub_resource type="BoxMesh" id="BasketRail"]
-material = SubResource("BasketMaterial")
+material = ExtResource("10_basket")
 size = Vector3(0.66, 0.18, 0.06)
 
 [sub_resource type="BoxMesh" id="ParcelMesh"]
-material = SubResource("ParcelMaterial")
+material = ExtResource("11_parcel")
 size = Vector3(0.38, 0.32, 0.3)
 
 [node name="Proto" type="Node3D"]
@@ -104,7 +100,11 @@ environment = SubResource("Environment")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
 rotation_degrees = Vector3(-55, -25, 0)
-light_energy = 1.2
+light_color = Color(1, 0.9412, 0.8275, 1)
+light_energy = 1.0
+shadow_enabled = true
+shadow_blur = 1.5
+directional_shadow_max_distance = 30.0
 
 [node name="Floor" type="StaticBody3D" parent="."]
 position = Vector3(0, -0.2, -65)

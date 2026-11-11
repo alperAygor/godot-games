@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/toon.gdshader" id="1_toon"]
+[ext_resource type="Material" path="res://assets/materials/outline.tres" id="2_outline"]
+
+[resource]
+shader = ExtResource("1_toon")
+next_pass = ExtResource("2_outline")
+shader_parameter/base_color = Color(0.1804, 0.902, 0.7725, 1)
+shader_parameter/shadow_color = Color(0.2667, 0.2667, 0.4196, 1)

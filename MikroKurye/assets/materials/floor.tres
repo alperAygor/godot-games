@@ -1,0 +1,8 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/toon.gdshader" id="1_toon"]
+
+[resource]
+shader = ExtResource("1_toon")
+shader_parameter/base_color = Color(0.851, 0.6275, 0.4, 1)
+shader_parameter/shadow_color = Color(0.2667, 0.2667, 0.4196, 1)
