@@ -10,6 +10,9 @@ uniform vec4 shadow_color : source_color = vec4(0.267, 0.267, 0.42, 1.0);
 uniform float middle_threshold : hint_range(0.0, 1.0) = 0.28;
 uniform float bright_threshold : hint_range(0.0, 1.0) = 0.70;
 uniform float middle_level : hint_range(0.0, 1.0) = 0.48;
+// Bant kenarı yumuşatma: geçişin yarım genişliği ekran pikseli cinsinden.
+// 1.0 ≈ tek piksel geçiş; keskin merdiveni kaldırır, toon bantlarını korur.
+uniform float band_smoothness : hint_range(0.0, 8.0) = 1.0;
 uniform vec4 rim_color : source_color = vec4(1.0, 0.87, 0.63, 1.0);
 uniform float rim_strength : hint_range(0.0, 1.0) = 0.12;
 uniform float rim_power : hint_range(1.0, 8.0) = 3.0;
@@ -53,7 +56,13 @@ void fragment() {
 
 void light() {
 	float illumination = max(dot(NORMAL, LIGHT), 0.0) * ATTENUATION;
-	float band = mix(0.0, middle_level, step(middle_threshold, illumination));
-	band = mix(band, 1.0, step(bright_threshold, illumination));
+	// Ekran-türevi tabanlı yarım genişlik: bant sınırı her çözünürlükte ~1px
+	// yumuşak geçer. Keskin `step` merdiven üretiyordu; smoothstep araya geçiş
+	// pikselleri koyarak tırtığı bitirir (stil A üç bant kimliği korunur).
+	float edge = fwidth(illumination) * band_smoothness;
+	float band = mix(0.0, middle_level,
+		smoothstep(middle_threshold - edge, middle_threshold + edge, illumination));
+	band = mix(band, 1.0,
+		smoothstep(bright_threshold - edge, bright_threshold + edge, illumination));
 	DIFFUSE_LIGHT += (vec3(1.0) - shadow_color.rgb) * band * LIGHT_COLOR / PI;
 }
