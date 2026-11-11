@@ -23,12 +23,16 @@ const DEFAULT_CHECKPOINT_RADIUS: float = 2.0
 const DEFAULT_BATTERY_CAPACITY: float = 100.0
 const DEFAULT_RECHARGE_THRESHOLD: float = 0.15
 const DEFAULT_RECHARGE_BOOST_SECONDS: float = 10.0
+const DEFAULT_HEAVY_IMPULSE: float = 8.0
+const DEFAULT_LIGHT_IMPULSE: float = 2.0
 
 ## §5.4 yükseltme anahtarları; `SaveService.mods()` toplamları bu adlarla gelir.
 const MOD_CARGO_DAMPING: String = "cargo_damping_bonus"
 const MOD_WHEEL_GRIP: String = "wheel_grip_bonus"
 const MOD_BATTERY_CAPACITY: String = "battery_capacity_bonus"
-const MOD_KEYS: Array[String] = [MOD_CARGO_DAMPING, MOD_WHEEL_GRIP, MOD_BATTERY_CAPACITY]
+const MOD_JELLY_CHARGES: String = "jelly_charges"
+const MOD_KEYS: Array[String] = [MOD_CARGO_DAMPING, MOD_WHEEL_GRIP,
+	MOD_BATTERY_CAPACITY, MOD_JELLY_CHARGES]
 
 const PERCENT_SCALE: float = 100.0
 
@@ -51,6 +55,8 @@ var _respawn_drop_height: float = DEFAULT_RESPAWN_DROP_HEIGHT
 var _checkpoint_radius_sq: float = DEFAULT_CHECKPOINT_RADIUS * DEFAULT_CHECKPOINT_RADIUS
 var _recharge_threshold: float = DEFAULT_RECHARGE_THRESHOLD
 var _recharge_boost_seconds: float = DEFAULT_RECHARGE_BOOST_SECONDS
+var _heavy_impulse: float = DEFAULT_HEAVY_IMPULSE
+var _light_impulse: float = DEFAULT_LIGHT_IMPULSE
 
 ## Reklam akışı AdManager üzerinden yürür; burada yalnız niyet ve sonuç tutulur.
 var _ad_manager: Node = null
@@ -188,10 +194,13 @@ func _load_balance() -> void:
 		"recharge_threshold", DEFAULT_RECHARGE_THRESHOLD)), 0.0, 1.0)
 	_recharge_boost_seconds = maxf(float(game_params.get(
 		"recharge_boost_seconds", DEFAULT_RECHARGE_BOOST_SECONDS)), 0.0)
+	var audio_params: Dictionary = balance.get("audio", {}) as Dictionary
+	_heavy_impulse = maxf(float(audio_params.get("heavy_impulse", DEFAULT_HEAVY_IMPULSE)), 0.0)
+	_light_impulse = maxf(float(audio_params.get("light_impulse", DEFAULT_LIGHT_IMPULSE)), 0.0)
 
 
 func _build_models() -> void:
-	_health = CargoHealth.new(_profile)
+	_health = CargoHealth.new(_profile, _jelly_charges())
 	# Batarya kapasitesi yükseltmesi model kurulmadan önce eklenir; aksi hâlde
 	# `set_battery_level` eski kapasiteyle oran hesaplar.
 	_battery_capacity = maxf(_battery_capacity
@@ -317,6 +326,7 @@ func _respawn() -> void:
 func _on_cargo_impact(impulse: float) -> void:
 	if _finished:
 		return
+	_play_impact_sound(impulse)
 	_health.apply_impact(impulse)
 	_refresh_hud()
 	if _health.is_broken():
@@ -346,6 +356,7 @@ func _on_delivery_body_entered(body: Node3D) -> void:
 func _handle_broken() -> void:
 	if _finished or _revive_offered:
 		return
+	AudioService.play("break_sound")
 	if not _revive_used and _can_offer(AdManager.Placement.CARGO_INSURANCE):
 		_revive_offered = true
 		_set_ad_wait(true)
@@ -447,7 +458,9 @@ func _close_revive(success: bool) -> void:
 		return
 	_revive_used = true
 	_broken = false
+	AudioService.play("revive")
 	# CargoHealth'te setter yok; temiz bir model aynı sözleşmeyi (hasar 0) verir.
+	# Jel revive ile yeniden dolmaz: onu tüketen vuruş zaten kırılmaya yol açmıştı.
 	_health = CargoHealth.new(_profile)
 	var target: Vector3 = _tracker.last_position()
 	if _tracker.last_id() < 0:
@@ -458,6 +471,7 @@ func _close_revive(success: bool) -> void:
 
 func _apply_recharge() -> void:
 	_recharge_used = true
+	AudioService.play("boost")
 	set_battery_level(1.0)
 	if _battery != null:
 		_battery.start_boost(_recharge_boost_seconds)
@@ -488,6 +502,21 @@ func _set_ad_wait(waiting: bool) -> void:
 	# ağaç genelinde pause edilmez, dolayısıyla servis callback'leri devam eder.
 	_robot.freeze = waiting
 	_cargo.freeze = waiting
+
+
+## `jelly_charges` JSON'dan float gelebilir (GOTCHAS #20); tamsayıya çevrilir.
+func _jelly_charges() -> int:
+	var raw: float = float(_mods.get(MOD_JELLY_CHARGES, 0.0))
+	if not is_finite(raw):
+		return 0
+	return maxi(int(roundf(raw)), 0)
+
+
+func _play_impact_sound(impulse: float) -> void:
+	if impulse >= _heavy_impulse:
+		AudioService.play("impact_heavy")
+	elif impulse >= _light_impulse:
+		AudioService.play("impact_light")
 
 
 func _clear_trial() -> void:
@@ -529,6 +558,8 @@ func _finish_run(delivered: bool) -> void:
 		and _golden_box_collected
 	result["doubled"] = false
 	_delivered = delivered
+	if delivered and bool(result.get("success", false)):
+		AudioService.play("delivery")
 	_broken = _health.is_broken()
 	_finished = true
 	_revive_offered = false
@@ -571,6 +602,7 @@ func state() -> Dictionary:
 		"finished": _finished,
 		"elapsed": _elapsed,
 		"mods": _mods.duplicate(),
+		"jelly_left": _health.jelly_left(),
 		"revive_offered": _revive_offered,
 		"revive_used": _revive_used,
 		"recharge_available": _recharge_available,
@@ -588,7 +620,7 @@ func restart() -> void:
 	_battery_capacity = maxf(_battery_capacity + float(_mods.get(MOD_BATTERY_CAPACITY, 0.0)), 0.0)
 	_apply_mods()
 	_clear_trial()
-	_health = CargoHealth.new(_profile)
+	_health = CargoHealth.new(_profile, _jelly_charges())
 	_battery = BatteryModel.new(_battery_capacity, _battery_params)
 	_tracker.reset()
 	_tracker.reach(0)

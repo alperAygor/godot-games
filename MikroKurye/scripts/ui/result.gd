@@ -56,6 +56,7 @@ func _ready() -> void:
 	(%RetryButton as Button).pressed.connect(_on_retry)
 	(%MenuButton as Button).pressed.connect(_on_menu)
 	GameManager.back_requested.connect(_on_menu)
+	UiSfx.bind(self)
 
 
 func _setup_reward_buttons() -> void:

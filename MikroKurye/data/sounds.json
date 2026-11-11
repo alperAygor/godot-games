@@ -1,4 +1,12 @@
 {
+  "boost": "res://assets/audio/sfx/boost.wav",
+  "break_sound": "res://assets/audio/sfx/break_sound.wav",
+  "delivery": "res://assets/audio/sfx/delivery.wav",
+  "impact_heavy": "res://assets/audio/sfx/impact_heavy.wav",
+  "impact_light": "res://assets/audio/sfx/impact_light.wav",
+  "key_press": "res://assets/audio/sfx/key_press.wav",
+  "purchase": "res://assets/audio/sfx/purchase.wav",
+  "revive": "res://assets/audio/sfx/revive.wav",
   "success": "res://assets/audio/sfx/success.wav",
   "ui_tap": "res://assets/audio/sfx/ui_tap.wav"
 }

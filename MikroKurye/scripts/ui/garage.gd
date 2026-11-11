@@ -42,6 +42,8 @@ func _ready() -> void:
 			_ad.connect("ad_failed", _on_ad_failed)
 	_build_rows()
 	_refresh()
+	# Dinamik kategori düğmeleri kurulduktan sonra tek yerden tıklama sesi.
+	UiSfx.bind(self)
 
 
 func _build_rows() -> void:
@@ -109,7 +111,6 @@ func _on_upgrade_pressed(category: String) -> void:
 	if cost.is_empty() or not SaveService.profile().wallet().can_afford(cost):
 		return
 	if SaveService.purchase(category):
-		AudioService.play("ui_tap")
 		_refresh()
 
 
@@ -137,7 +138,6 @@ func _on_ad_rewarded(placement: int, success: bool) -> void:
 	_trial_pending = ""
 	if success and not category.is_empty():
 		SaveService.set_trial(category)
-		AudioService.play("ui_tap")
 	_refresh()
 
 
@@ -150,7 +150,6 @@ func _on_ad_failed(placement: int, _reason: String) -> void:
 func _on_back() -> void:
 	if not _trial_pending.is_empty():
 		return
-	AudioService.play("ui_tap")
 	GameManager.goto_scene(&"menu")
 
 

@@ -108,7 +108,7 @@ func test_missing_file_loads_default_profile() -> void:
 	var profile: ProfileData = save.call("profile") as ProfileData
 	assert_not_null(profile)
 	assert_eq(_wallet(save), {"gold": 0, "scrap": 0})
-	assert_eq(profile.levels(), {"chassis": 0, "wheels": 0, "battery": 0})
+	assert_eq(profile.levels(), {"chassis": 0, "wheels": 0, "battery": 0, "shock_gel": 0})
 	assert_false(FileAccess.file_exists(_corrupt_path()), "eksik dosya bozuk sayılmamalı")
 
 
@@ -212,3 +212,23 @@ func test_mods_sum_owned_levels() -> void:
 	assert_almost_eq(float(mods.get("battery_capacity_bonus", -1.0)), 15.0)
 	assert_false(mods.has("cargo_damping_bonus"),
 		"satın alınmayan kategori mod üretmemeli")
+
+
+func test_settings_default_persist_and_unknown_ignored() -> void:
+	var save: Node = _service()
+	if save == null:
+		return
+	assert_true(bool(save.call("setting", "sound_on")), "varsayılan ses açık olmalı")
+	assert_false(bool(save.call("setting", "tutorial_done")), "varsayılan rehber gösterilmemiş olmalı")
+
+	save.call("set_setting", "sound_on", false)
+	assert_false(bool(save.call("setting", "sound_on")))
+	save.call("load_profile")
+	assert_false(bool(save.call("setting", "sound_on")), "ses ayarı diskten korunmalı")
+
+	save.call("set_setting", "tutorial_done", true)
+	save.call("load_profile")
+	assert_true(bool(save.call("setting", "tutorial_done")), "rehber işareti diskten korunmalı")
+
+	save.call("set_setting", "bilinmeyen", true)
+	assert_false(bool(save.call("setting", "bilinmeyen")), "bilinmeyen ayar okunmamalı")

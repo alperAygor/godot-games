@@ -1,7 +1,7 @@
 class_name ProfileData
 extends RefCounted
 
-## Saf veri modeli: cüzdan, yükseltme seviyeleri ve istatistikler.
+## Saf veri modeli: cüzdan, yükseltme seviyeleri, istatistikler ve ayarlar.
 ## Dosya/IO YOK; kaydı `SaveService` sarar. Sözleşme: ARCHITECTURE.md §4.8.
 ##
 ## Kayıt JSON olduğu için bütün sayılar float gelebilir (GOTCHAS #20);
@@ -12,13 +12,17 @@ const VERSION: int = 1
 
 ## Bilinen yükseltme kategorileri. Kayıt yalnız bunları taşır; tabloya yeni
 ## kategori eklenirse burası da güncellenmelidir.
-const CATEGORIES: Array[String] = ["chassis", "wheels", "battery"]
+const CATEGORIES: Array[String] = ["chassis", "wheels", "battery", "shock_gel"]
+
+## Ayarlar yalnız bilinen anahtarları taşır; eksik/yanlış tip varsayılana döner.
+const DEFAULT_SETTINGS: Dictionary = {"sound_on": true, "tutorial_done": false}
 
 var _wallet: Wallet
 var _levels: Dictionary
 var _deliveries: int
 var _breaks: int
 var _best_stars: Dictionary
+var _settings: Dictionary
 
 
 func _init() -> void:
@@ -29,6 +33,7 @@ func _init() -> void:
 	_deliveries = 0
 	_breaks = 0
 	_best_stars = {}
+	_settings = DEFAULT_SETTINGS.duplicate()
 
 
 ## Canlı referans: çağıranın cüzdanı değiştirmesi profile yansır.
@@ -93,12 +98,25 @@ func stats() -> Dictionary:
 	}
 
 
+## Ayarların kopyası; çağıranın değiştirmesi profili etkilemez.
+func settings() -> Dictionary:
+	return _settings.duplicate()
+
+
+## Yalnız bilinen ayar anahtarları yazılır; bilinmeyen anahtar yok sayılır.
+func set_setting(key: String, value: bool) -> void:
+	if not DEFAULT_SETTINGS.has(key):
+		return
+	_settings[key] = value
+
+
 func to_dict() -> Dictionary:
 	return {
 		"version": VERSION,
 		"wallet": _wallet.to_dict(),
 		"levels": levels(),
 		"stats": stats(),
+		"settings": settings(),
 	}
 
 
@@ -115,6 +133,16 @@ static func from_dict(d: Dictionary) -> ProfileData:
 		var levels_dict: Dictionary = levels_raw as Dictionary
 		for category: String in CATEGORIES:
 			profile._levels[category] = _whole_or_zero(levels_dict.get(category, 0))
+
+	var settings_raw: Variant = d.get("settings")
+	if settings_raw is Dictionary:
+		var settings_dict: Dictionary = settings_raw as Dictionary
+		for key: Variant in DEFAULT_SETTINGS.keys():
+			var key_name: String = String(key)
+			var value_raw: Variant = settings_dict.get(key_name)
+			# Eksik ya da bool olmayan ayar, varsayılanı korur (tolerans kuralı).
+			if value_raw is bool:
+				profile._settings[key_name] = bool(value_raw)
 
 	var stats_raw: Variant = d.get("stats")
 	if stats_raw is Dictionary:

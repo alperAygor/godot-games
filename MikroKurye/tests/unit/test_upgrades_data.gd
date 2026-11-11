@@ -11,20 +11,29 @@ extends TestCase
 
 const UPGRADES_PATH: String = "res://data/upgrades.json"
 
-## §3 tablosundaki kategoriler ve maksimum seviye.
-const EXPECTED_CATEGORIES: Array[String] = ["chassis", "wheels", "battery"]
+## §3 tablosundaki kategoriler + §5.6 Şok Jeli kategorisi ve maksimum seviyeler.
+const EXPECTED_CATEGORIES: Array[String] = ["chassis", "wheels", "battery", "shock_gel"]
+
+const EXPECTED_MAX_LEVELS: Dictionary = {
+	"chassis": 5,
+	"wheels": 5,
+	"battery": 5,
+	"shock_gel": 1,
+}
 
 ## Her kategorinin seviye başına tek mod anahtarı ve sabit katkısı.
 const EXPECTED_MOD_KEYS: Dictionary = {
 	"chassis": "cargo_damping_bonus",
 	"wheels": "wheel_grip_bonus",
 	"battery": "battery_capacity_bonus",
+	"shock_gel": "jelly_charges",
 }
 
 const EXPECTED_MOD_VALUES: Dictionary = {
 	"chassis": 1.0,
 	"wheels": 0.6,
 	"battery": 15.0,
+	"shock_gel": 1.0,
 }
 
 ## ARCHITECTURE.md §3'teki NİHAİ TABLO (birebir).
@@ -49,6 +58,9 @@ const EXPECTED_UPGRADES: Dictionary = {
 		{"cost": {"gold": 300, "scrap": 14}, "mods": {"battery_capacity_bonus": 15.0}},
 		{"cost": {"gold": 480, "scrap": 22}, "mods": {"battery_capacity_bonus": 15.0}},
 		{"cost": {"gold": 700, "scrap": 32}, "mods": {"battery_capacity_bonus": 15.0}},
+	]},
+	"shock_gel": {"max_level": 1, "levels": [
+		{"cost": {"gold": 400, "scrap": 20}, "mods": {"jelly_charges": 1}},
 	]},
 }
 
@@ -94,11 +106,12 @@ func test_file_exists_and_is_a_json_object() -> void:
 	assert_true(not upgrades.is_empty(), "upgrades tablosu boş olmamalı")
 
 
-func test_exactly_three_expected_categories() -> void:
+func test_categories_match_contract() -> void:
 	var upgrades: Dictionary = _upgrades()
 	if upgrades.is_empty():
 		return
-	assert_eq(upgrades.size(), 3, "tam olarak üç yükseltme kategorisi olmalı")
+	assert_eq(upgrades.size(), EXPECTED_CATEGORIES.size(),
+		"kategori sayısı sözleşmeyle aynı olmalı")
 	for category: String in EXPECTED_CATEGORIES:
 		assert_true(upgrades.has(category), "kategori eksik: %s" % category)
 	for key: Variant in upgrades.keys():
@@ -118,7 +131,8 @@ func test_max_level_equals_number_of_levels() -> void:
 		var is_whole: bool = (max_level_raw is int) or (max_level_raw is float and is_equal_approx(float(max_level_raw), roundf(float(max_level_raw))))
 		assert_true(is_whole, "%s.max_level tamsayı olmalı (gelen: %s)" % [category, str(max_level_raw)])
 		var max_level: int = int(max_level_raw)
-		assert_eq(max_level, 5, "%s.max_level 5 olmalı" % category)
+		assert_eq(max_level, int(EXPECTED_MAX_LEVELS[category]),
+			"%s.max_level sözleşme değeri olmalı" % category)
 		var levels: Array = _levels(entry, category)
 		assert_eq(levels.size(), max_level, "%s.levels boyutu max_level'a eşit olmalı" % category)
 

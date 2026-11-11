@@ -1,6 +1,9 @@
 class_name KeyboardKey
 extends AnimatableBody3D
 
+## Tuşun basma başlangıcı; ses olayı bu sinyale bağlanır (ARCHITECTURE.md §5.6).
+signal pressed()
+
 @export var phase_offset_seconds: float = 0.0
 
 var _parameters: Dictionary[String, Variant] = {}
@@ -16,6 +19,7 @@ var _phase: float = 0.0
 var _rest_position: Vector3 = Vector3.ZERO
 var _telegraphing: bool = false
 var _pressed: bool = false
+var _was_pressed: bool = false
 var _normal_color: Color = Color.WHITE
 var _warning_color: Color = Color.WHITE
 var _pressed_color: Color = Color.WHITE
@@ -51,6 +55,9 @@ func _ready() -> void:
 	if visual != null:
 		_override_visual_material(visual)
 	_update_phase()
+	# İlk karede basılı başlayan tuş, sahne kurulurken yanlışlıkla "basıldı"
+	# olayı üretmesin; kenar yalnızca sonraki geçişlerde algılanır.
+	_was_pressed = _pressed
 
 
 func is_telegraphing() -> bool:
@@ -64,6 +71,10 @@ func is_pressed() -> bool:
 func _physics_process(delta: float) -> void:
 	_phase = fposmod(_phase + delta, _period)
 	_update_phase()
+	if _pressed and not _was_pressed:
+		pressed.emit()
+		AudioService.play("key_press")
+	_was_pressed = _pressed
 
 
 func _update_phase() -> void:

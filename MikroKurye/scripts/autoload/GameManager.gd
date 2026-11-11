@@ -3,13 +3,14 @@ extends Node
 ## Oyun akışının tek sahibi: faz, sahne yönlendirme, tur sonucu, geri tuşu.
 ## Sahneler `change_scene_to_file` çağırmaz; hepsi buradan geçer.
 
-enum Phase { BOOT, MENU, GARAGE, GAME, RESULT }
+enum Phase { BOOT, MENU, GARAGE, SETTINGS, GAME, RESULT }
 
 const SCENES: Dictionary = {
 	&"boot": "res://scenes/Boot.tscn",
 	&"menu": "res://scenes/Menu.tscn",
 	&"order": "res://scenes/OrderSelect.tscn",
 	&"garage": "res://scenes/Garage.tscn",
+	&"settings": "res://scenes/Settings.tscn",
 	&"game": "res://scenes/Game.tscn",
 	&"result": "res://scenes/Result.tscn",
 }
