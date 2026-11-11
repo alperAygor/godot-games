@@ -4,5 +4,5 @@
 
 [resource]
 shader = ExtResource("1_outline")
-shader_parameter/width = 0.005
+shader_parameter/width = 0.008
 shader_parameter/ink_color = Color(0.1255, 0.1569, 0.2431, 1)

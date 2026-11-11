@@ -31,8 +31,19 @@ void fragment() {
 	ALBEDO = base_color.rgb;
 	if (wood_grain) {
 		// Sıfır doku örneği; gölge içinde de damar okunsun diye ALBEDO'dan önce uygulanır.
-		float streak = sin(UV.x * wood_freq + sin(UV.y * 6.2831853) * wood_wobble);
-		ALBEDO = mix(ALBEDO, wood_dark.rgb, (streak * 0.5 + 0.5) * wood_strength);
+		// Kalaslar UV.x boyunca ayrılır: kalas kenarında ince koyu çizgi, kalas içinde
+		// ince damar, kalas başına hafif ton farkı (deterministik).
+		float plank_uv = UV.x * wood_freq;
+		float plank_id = floor(plank_uv);
+		float within = fract(plank_uv);
+		// Kalas başına ton farkı merkezlenir: bazı kalaslar hafif açık, bazıları koyu.
+		float tone = fract(sin(plank_id * 127.1 + 311.7) * 43758.5453) - 0.5;
+		float grain = sin(within * 6.2831853 * 5.0 + sin(UV.y * 6.2831853) * wood_wobble);
+		float seam = (1.0 - smoothstep(0.0, 0.1, within))
+			+ (1.0 - smoothstep(0.9, 1.0, within));
+		float darken = wood_strength * (0.7 * seam + 0.3 * (grain * 0.5 + 0.5));
+		ALBEDO = mix(ALBEDO, wood_dark.rgb, clamp(darken, 0.0, 1.0));
+		ALBEDO *= 1.0 + tone * 0.35;
 	}
 	ROUGHNESS = 1.0;
 	float rim = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), rim_power);
