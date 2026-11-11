@@ -239,6 +239,34 @@ func restart() -> void                       # sağlık, batarya, kontrol noktas
 - HUD çubukları her karede `integrity()*100` ve `battery.level()*100` ile güncellenir.
 - Parametreler: `balance.json` → `game.kill_y`, `game.respawn_drop_height`, `game.checkpoint_radius`.
 
+### 5.3 Seviye ve tehlike sözleşmesi (Faz 3; `tools/level_probe.gd` denetler)
+
+**Seviye sahnesi:** `res://scenes/levels/desk_01.tscn` (Çalışma Masası). Kök `Node3D`, `scripts/gameplay/level_root.gd`, `class_name LevelRoot`, `@export var level_id: String = "desk_01"`.
+- Tek başına yüklenebilir (Game/GameController olmadan): tehlikeler kendi içinde çalışır.
+- Marker3D'ler: `RobotStart`, `Checkpoint_1`, `Checkpoint_2`, `Checkpoint_3`; `DeliveryZone` (Area3D). Hepsi −Z yönünde sıralı (daha büyük numara = daha uzakta). `RobotStart`→`DeliveryZone` uzaklığı ≥ 60 m, genişlik ≥ 8 m. Masa SONLUDUR (kenarlardan düşülebilir; zemin dışında boşluk).
+- Zemin y=0 civarı; masa üstü eşyaları (kupa, kitap, cetvel, kalem, klavye) `assets/models/*.glb` modelleri hazırsa onlarla, değilse basit düz renkli kutu/silindirlerle yerleştirilir (model entegrasyonu Görsel V2'de).
+- Seçim: `GameManager.selected_level_id` (varsayılan `desk_01`); `Game.tscn` seviyeyi buradan yükler (`scenes/levels/<id>.tscn`).
+
+**Tehlikeler** (`scripts/gameplay/hazards/`, hepsi seviyede yer alır, kendi grubuna ve `hazard` grubuna girer; zamanlama fizik karesi ile **deterministik**, rastgelelik yok ya da sabit tohumlu):
+```gdscript
+class_name KeyboardKey  # extends AnimatableBody3D, grup "keyboard_key"
+func is_telegraphing() -> bool   # bastırmadan ÖNCE uyarı (renk/titreme); en az 0.5 sn (balance.hazards.key_warn_seconds)
+func is_pressed() -> bool        # tuş aşağıda (robotu fırlatabilir/sarsabilir)
+# Döngü: bekle -> uyar -> bas -> bırak; periyot balance.hazards.key_period_seconds
+
+class_name FanWind      # extends Area3D, grup "fan_wind"
+func is_blowing() -> bool
+func wind_direction() -> Vector3  # birim vektör
+# Alandaki HER RigidBody3D'ye merkezî kuvvet uygular (kütleyle ölçeklenmez: ivme balance.hazards.fan_accel); üflemeli/sakin döngü
+
+class_name RollingPencil # extends RigidBody3D, grup "rolling_pencil"
+# Yolu keserek yuvarlanır (periyodik başlatma), bir mesafe sonra başlangıca döner; kenara düşmez
+```
+Kargo hasarı, tehlikelerin robota/sepete uyguladığı çarpmalardan zaten `impact_reported` ile akar; tehlikelere özel hasar kodu YOK.
+Parametreler: `balance.json` → `hazards.*` (`key_period_seconds`, `key_warn_seconds`, `key_press_depth`, `fan_accel`, `fan_cycle_seconds`, `pencil_period_seconds`, `pencil_speed`).
+
+**Probe (headless, 60 Hz kare sayımı):** yapı (marker'lar, uzunluk, ≥1 klavye tuşu, ≥1 fan, ≥1 kalem), klavye uyarı→basma sırası (uyarı ≥ 20 kare önce), fan alanındaki test küresi üflerken ≥0.3 m/s kazanır, kalem 600 karede ≥1 m hareket eder.
+
 ## 6. UI
 
 `HUD` (kargo sağlığı çubuğu, batarya, modül düğmesi), `OrderSelect` (3 kargo kartı), `Garage` (Faz 4), `Result` (mevcut genişletilir). Sunum katmanı yalnızca gösterir; hesap `core`'dadır.
