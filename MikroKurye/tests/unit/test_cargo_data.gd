@@ -109,7 +109,9 @@ func test_difficulty_is_integer_between_1_and_3() -> void:
 		if profile.is_empty():
 			continue
 		var difficulty: Variant = profile.get("difficulty")
-		assert_true(difficulty is int, "%s.difficulty tamsayı olmalı (gelen: %s)" % [id, str(difficulty)])
+		# Godot JSON her sayıyı float döndürür (GOTCHAS #20): "tamsayı" = küsuratsız değer.
+		var is_whole: bool = (difficulty is int) or (difficulty is float and is_equal_approx(float(difficulty), roundf(float(difficulty))))
+		assert_true(is_whole, "%s.difficulty tamsayı olmalı (gelen: %s)" % [id, str(difficulty)])
 		var value: int = int(difficulty)
 		assert_true(value >= 1 and value <= 3, "%s.difficulty 1..3 dışında: %d" % [id, value])
 
@@ -187,7 +189,9 @@ func test_profiles_match_architecture_values_exactly() -> void:
 	var cargo: Dictionary = _cargo()
 	if cargo.is_empty():
 		return
-	assert_eq(cargo, EXPECTED_CARGO, "cargo.json ARCHITECTURE.md §3 ile birebir örtüşmeli")
+	# Beklenen değerleri de JSON'dan geçir: tamsayılar float'a normalleşir (GOTCHAS #20).
+	var expected: Variant = JSON.parse_string(JSON.stringify(EXPECTED_CARGO))
+	assert_eq(cargo, expected, "cargo.json ARCHITECTURE.md §3 ile birebir örtüşmeli")
 
 
 func test_damage_model_returns_in_range_for_each_profile() -> void:
