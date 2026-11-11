@@ -30,6 +30,21 @@
     "camera_look_height": 0.7,
     "camera_follow_speed": 8.0,
     "camera_look_speed": 10.0,
-    "camera_fov": 65.0
+    "camera_fov": 65.0,
+    "cargo_mass": 4.5,
+    "cargo_spring": 24.0,
+    "cargo_damping": 5.0,
+    "cargo_joint_limit_deg": 28.0,
+    "cargo_attach_distance": 1.2,
+    "cargo_attach_angle_margin_deg": 8.0,
+    "cargo_teleport_distance": 2.0,
+    "cargo_teleport_angle_deg": 45.0,
+    "cargo_velocity_reset_threshold": 6.0,
+    "cargo_impact_rearm_seconds": 0.2,
+    "cargo_impact_min_impulse": 0.1,
+    "cargo_accel_response": 0.6,
+    "cargo_angular_response": 0.35,
+    "flip_recovery_angle_deg": 100.0,
+    "flip_recovery_seconds": 1.5
   }
 }
