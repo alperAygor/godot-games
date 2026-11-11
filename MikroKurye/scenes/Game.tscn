@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/game_controller.gd" id="1_game"]
 [ext_resource type="Script" path="res://scripts/gameplay/robot_controller.gd" id="2_robot"]
@@ -7,21 +7,6 @@
 [ext_resource type="Script" path="res://scripts/gameplay/input_service.gd" id="5_input"]
 [ext_resource type="Script" path="res://scripts/gameplay/cargo_basket.gd" id="6_cargo"]
 [ext_resource type="PackedScene" path="res://scenes/HUD.tscn" id="7_hud"]
-
-[sub_resource type="Environment" id="Environment"]
-background_mode = 1
-background_color = Color(0.48, 0.74, 0.86, 1)
-ambient_light_source = 2
-ambient_light_color = Color(0.8, 0.88, 1, 1)
-ambient_light_energy = 0.85
-
-[sub_resource type="StandardMaterial3D" id="FloorMaterial"]
-albedo_color = Color(0.3, 0.54, 0.58, 1)
-roughness = 1.0
-
-[sub_resource type="StandardMaterial3D" id="LaneMaterial"]
-albedo_color = Color(1, 0.62, 0.2, 1)
-roughness = 1.0
 
 [sub_resource type="StandardMaterial3D" id="RobotMaterial"]
 albedo_color = Color(0.12, 0.8, 0.65, 1)
@@ -39,30 +24,11 @@ roughness = 1.0
 albedo_color = Color(1, 0.86, 0.48, 1)
 roughness = 1.0
 
-[sub_resource type="StandardMaterial3D" id="DeliveryMaterial"]
-transparency = 1
-albedo_color = Color(0.55, 0.88, 0.7, 0.45)
-roughness = 1.0
-
-[sub_resource type="BoxShape3D" id="FloorShape"]
-size = Vector3(12, 0.4, 90)
-
 [sub_resource type="BoxShape3D" id="RobotShape"]
 size = Vector3(0.82, 0.32, 1.15)
 
 [sub_resource type="BoxShape3D" id="BasketShape"]
 size = Vector3(0.66, 0.36, 0.5)
-
-[sub_resource type="BoxShape3D" id="DeliveryShape"]
-size = Vector3(7, 3, 4)
-
-[sub_resource type="BoxMesh" id="FloorMesh"]
-material = SubResource("FloorMaterial")
-size = Vector3(12, 0.4, 90)
-
-[sub_resource type="BoxMesh" id="LaneMesh"]
-material = SubResource("LaneMaterial")
-size = Vector3(0.08, 0.01, 84)
 
 [sub_resource type="BoxMesh" id="RobotMesh"]
 material = SubResource("RobotMaterial")
@@ -95,59 +61,12 @@ size = Vector3(0.66, 0.18, 0.06)
 material = SubResource("ParcelMaterial")
 size = Vector3(0.38, 0.32, 0.3)
 
-[sub_resource type="BoxMesh" id="DeliveryPadMesh"]
-material = SubResource("DeliveryMaterial")
-size = Vector3(7, 0.04, 4)
-
 [sub_resource type="PhysicsMaterial" id="BodyPhysics"]
 friction = 0.0
 bounce = 0.0
 
 [node name="Game" type="Node3D"]
 script = ExtResource("1_game")
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment")
-
-[node name="Sun" type="DirectionalLight3D" parent="."]
-rotation_degrees = Vector3(-55, -25, 0)
-light_energy = 1.2
-
-[node name="Floor" type="StaticBody3D" parent="."]
-position = Vector3(0, -0.2, -30)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
-shape = SubResource("FloorShape")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor"]
-mesh = SubResource("FloorMesh")
-
-[node name="LeftLane" type="MeshInstance3D" parent="."]
-position = Vector3(-3.2, 0.006, -30)
-mesh = SubResource("LaneMesh")
-
-[node name="RightLane" type="MeshInstance3D" parent="."]
-position = Vector3(3.2, 0.006, -30)
-mesh = SubResource("LaneMesh")
-
-[node name="RobotStart" type="Marker3D" parent="."]
-position = Vector3(0, 0.58, 4)
-
-[node name="Checkpoint_1" type="Marker3D" parent="."]
-position = Vector3(0, 0.58, -10)
-
-[node name="Checkpoint_2" type="Marker3D" parent="."]
-position = Vector3(0, 0.58, -20)
-
-[node name="DeliveryZone" type="Area3D" parent="."]
-position = Vector3(0, 1, -30)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="DeliveryZone"]
-shape = SubResource("DeliveryShape")
-
-[node name="Pad" type="MeshInstance3D" parent="DeliveryZone"]
-position = Vector3(0, -0.98, 0)
-mesh = SubResource("DeliveryPadMesh")
 
 [node name="Robot" type="RigidBody3D" parent="."]
 position = Vector3(0, 0.58, 4)

@@ -11,7 +11,8 @@ extends Node3D
 signal finished(result: Dictionary)
 
 const DEFAULT_CARGO_ID: String = "pencil_battery"
-const LEVEL_ID: String = "level_1"
+const DEFAULT_LEVEL_ID: String = "desk_01"
+const LEVEL_PATH_TEMPLATE: String = "res://scenes/levels/%s.tscn"
 
 ## `balance.json` okunamazsa kullanılan makul varsayılanlar (ARCHITECTURE §5.2).
 const DEFAULT_KILL_Y: float = -5.0
@@ -23,10 +24,12 @@ const PERCENT_SCALE: float = 100.0
 
 @onready var _robot: RobotController = $Robot as RobotController
 @onready var _cargo: CargoBasket = $Robot/CargoBasket as CargoBasket
-@onready var _robot_start: Marker3D = $RobotStart as Marker3D
-@onready var _delivery_zone: Area3D = $DeliveryZone as Area3D
 @onready var _hud: Hud = $HUD as Hud
 
+var _level: LevelRoot = null
+var _level_id: String = DEFAULT_LEVEL_ID
+var _robot_start: Marker3D = null
+var _delivery_zone: Area3D = null
 var _cargo_id: String = DEFAULT_CARGO_ID
 var _profile: Dictionary = {}
 var _battery_params: Dictionary = {}
@@ -38,7 +41,8 @@ var _checkpoint_radius_sq: float = DEFAULT_CHECKPOINT_RADIUS * DEFAULT_CHECKPOIN
 var _health: CargoHealth = null
 var _battery: BatteryModel = null
 var _tracker: CheckpointTracker = null
-var _checkpoints: Array[Marker3D] = []
+var _checkpoints: Dictionary[int, Marker3D] = {}
+var _checkpoint_ids: Array[int] = []
 
 var _respawns: int = 0
 var _elapsed: float = 0.0
@@ -52,10 +56,66 @@ func _ready() -> void:
 	_load_profile()
 	_load_balance()
 	_build_models()
+	var manager: Node = get_node_or_null("/root/GameManager")
+	if manager != null:
+		manager.connect("back_requested", _on_back_requested)
+	if not _load_level():
+		# Eksik varsayılan seviyede gövdeler boşluğa düşüp tur üretmesin.
+		_robot.freeze = true
+		_cargo.freeze = true
+		set_physics_process(false)
+		_refresh_hud()
+		return
 	_setup_checkpoints()
 	_connect_signals()
 	_place_robot(_robot_start.global_transform)
 	_refresh_hud()
+
+
+func _load_level() -> bool:
+	var selected: String = DEFAULT_LEVEL_ID
+	var manager: Node = get_node_or_null("/root/GameManager")
+	if manager != null:
+		var raw: Variant = manager.get("selected_level_id")
+		# Kimlik bir dosya adı olmalı; seçim res:// dışına yol oluşturamaz.
+		if raw is String and (raw as String).is_valid_identifier():
+			selected = raw as String
+	if not _instantiate_level(selected):
+		if selected == DEFAULT_LEVEL_ID or not _instantiate_level(DEFAULT_LEVEL_ID):
+			push_warning("GameController: varsayılan seviye yüklenemedi; oyun durduruldu.")
+			return false
+	if manager != null:
+		manager.set("selected_level_id", _level_id)
+	return true
+
+
+func _instantiate_level(id: String) -> bool:
+	var path: String = LEVEL_PATH_TEMPLATE % id
+	if not ResourceLoader.exists(path, "PackedScene"):
+		push_warning("GameController: seviye bulunamadı: %s" % path)
+		return false
+	var packed: PackedScene = load(path) as PackedScene
+	if packed == null:
+		return false
+	var instance: Node = packed.instantiate()
+	var level: LevelRoot = instance as LevelRoot
+	if level == null:
+		push_warning("GameController: seviye kökü LevelRoot olmalı: %s" % path)
+		instance.free()
+		return false
+	var start: Marker3D = level.find_child("RobotStart", true, false) as Marker3D
+	var delivery: Area3D = level.find_child("DeliveryZone", true, false) as Area3D
+	if start == null or delivery == null:
+		push_warning("GameController: seviye başlangıcı/teslimat alanı eksik: %s" % path)
+		level.free()
+		return false
+	_level = level
+	_level_id = level.level_id if not level.level_id.is_empty() else id
+	_robot_start = start
+	_delivery_zone = delivery
+	_level.name = "Level"
+	add_child(_level)
+	return true
 
 
 func _load_profile() -> void:
@@ -101,14 +161,24 @@ func _build_models() -> void:
 
 
 func _setup_checkpoints() -> void:
-	# Sıra = id: 0 başlangıç, N = Checkpoint_N. Respawn bu konuma döner.
-	_checkpoints.append(_robot_start)
-	_checkpoints.append(get_node("Checkpoint_1") as Marker3D)
-	_checkpoints.append(get_node("Checkpoint_2") as Marker3D)
-	var index: int = 0
-	while index < _checkpoints.size():
-		_tracker.register(index, _checkpoints[index].global_position)
-		index += 1
+	_checkpoints.clear()
+	_checkpoint_ids.clear()
+	_checkpoints[0] = _robot_start
+	# Yalnız yüklenen seviyeyi tara: Game'deki eski test marker'ları karışmasın.
+	for node: Node in _level.find_children("Checkpoint_*", "Marker3D", true, false):
+		var marker: Marker3D = node as Marker3D
+		var suffix: String = String(marker.name).trim_prefix("Checkpoint_")
+		if not suffix.is_valid_int():
+			continue
+		var id: int = suffix.to_int()
+		if id <= 0 or _checkpoints.has(id):
+			continue
+		_checkpoints[id] = marker
+		_checkpoint_ids.append(id)
+	_checkpoint_ids.sort()
+	_tracker.register(0, _robot_start.global_position)
+	for id: int in _checkpoint_ids:
+		_tracker.register(id, _checkpoints[id].global_position)
 	_tracker.reach(0)
 
 
@@ -116,9 +186,6 @@ func _connect_signals() -> void:
 	_cargo.impact_reported.connect(_on_cargo_impact)
 	_cargo.slosh_reported.connect(_on_cargo_slosh)
 	_delivery_zone.body_entered.connect(_on_delivery_body_entered)
-	var manager: Node = get_node_or_null("/root/GameManager")
-	if manager != null:
-		manager.connect("back_requested", _on_back_requested)
 
 
 func _physics_process(delta: float) -> void:
@@ -138,14 +205,14 @@ func _physics_process(delta: float) -> void:
 
 
 func _reach_checkpoints() -> void:
-	# Yalnızca ileri doğru bak: geçilmiş noktaları her karede yeniden sınamayız.
-	var index: int = _tracker.last_id() + 1
-	while index < _checkpoints.size():
-		var marker: Marker3D = _checkpoints[index]
+	# Sayısal sıra isim sırasından bağımsızdır; eksik numaralar id'leri kaydırmaz.
+	for id: int in _checkpoint_ids:
+		if id <= _tracker.last_id():
+			continue
+		var marker: Marker3D = _checkpoints[id]
 		if _robot.global_position.distance_squared_to(marker.global_position) <= _checkpoint_radius_sq:
-			_tracker.reach(index)
+			_tracker.reach(id)
 			return
-		index += 1
 
 
 func _respawn() -> void:
@@ -215,7 +282,7 @@ func _finish_run(delivered: bool) -> void:
 	var result: Dictionary = DeliveryReward.compute(_health.damage(), _profile)
 	result["fee"] = int(result.get("gold", 0))
 	result["cargo_id"] = _cargo_id
-	result["level_id"] = LEVEL_ID
+	result["level_id"] = _level_id
 	result["time"] = _elapsed
 	_delivered = delivered
 	_broken = _health.is_broken()
@@ -247,6 +314,7 @@ func set_battery_level(level: float) -> void:
 func state() -> Dictionary:
 	return {
 		"cargo_id": _cargo_id,
+		"level_id": _level_id,
 		"damage": _health.damage(),
 		"integrity": _health.integrity(),
 		"battery": _battery.level(),
@@ -260,6 +328,8 @@ func state() -> Dictionary:
 
 
 func restart() -> void:
+	if _level == null:
+		return
 	_health = CargoHealth.new(_profile)
 	_battery = BatteryModel.new(_battery_capacity, _battery_params)
 	_tracker.reset()
