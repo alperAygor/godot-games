@@ -228,6 +228,7 @@ robot (grup `robot`), kargo (grup `cargo`), takip kamerası, `HUD` (CanvasLayer:
 signal finished(result: Dictionary)          # tur bitince BİR KEZ (teslimat ya da kırılma)
 func state() -> Dictionary                   # {cargo_id, damage, integrity, battery, checkpoint_id, respawns, delivered, broken, finished, elapsed}
 func restart() -> void                       # sağlık, batarya, kontrol noktası, sayaçlar sıfırlanır; robot RobotStart'a döner; finished bayrağı temizlenir
+func set_battery_level(level: float) -> void # 0..1 (kırpılır); reklamlı hızlı şarj ve test için; HUD/hız faktörü hemen yansır
 ```
 **Bağlantılar (hepsi `scripts/core/` sınıflarıyla):**
 - `cargo.impact_reported(impulse)` → `CargoHealth.apply_impact`; `cargo.slosh_reported(a, dt)` → `apply_slosh`. Kargo profili `GameData.table("cargo")[selected_cargo_id]`.

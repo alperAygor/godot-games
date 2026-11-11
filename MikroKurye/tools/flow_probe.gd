@@ -20,8 +20,18 @@ const IMPACT_IMPULSE: float = 30.0
 const IMPACT_EXPECTED: float = 0.42
 const DAMAGE_TOLERANCE: float = 0.03
 const FALL_MIN_PENALTY: float = 0.2
+const CHECKPOINT_FRAMES: int = 900
+const RESPAWN_NEAR_METERS: float = 4.0
+const HUD_TOLERANCE: float = 1.5
+const LOWBAT_FRAMES: int = 150
+## empty_speed_factor 0.35 + pay: boş bataryada hedef hız bunun altında kalmalı
+const LOWBAT_MAX_RATIO: float = 0.55
+const CARGO2_ID: String = "sd_card"
+## sd_card: (10 - 3.5) * 0.07 = 0.455
+const CARGO2_IMPULSE: float = 10.0
+const CARGO2_EXPECTED: float = 0.455
 
-enum Phase { LOAD, READY, IMPACT, SLOSH, DRIVE, FALL, DELIVER, BREAK, DONE }
+enum Phase { LOAD, READY, IMPACT, SLOSH, DRIVE, CHECKPOINT, FALL, DELIVER, BREAK, LOWBAT, CARGO2, DONE }
 
 var _phase: Phase = Phase.LOAD
 var _frames: int = 0
@@ -34,6 +44,7 @@ var _ctl: Node = null
 var _robot: Node3D = null
 var _cargo: Node = null
 var _damage_before_fall: float = 0.0
+var _peak_speed: float = 0.0
 var _finished_count: int = 0
 var _last_result: Dictionary = {}
 var _done: bool = false
@@ -58,9 +69,12 @@ func _physics_process(_delta: float) -> bool:
 		Phase.IMPACT: _step_impact()
 		Phase.SLOSH: _step_slosh()
 		Phase.DRIVE: _step_drive()
+		Phase.CHECKPOINT: _step_checkpoint()
 		Phase.FALL: _step_fall()
 		Phase.DELIVER: _step_deliver()
 		Phase.BREAK: _step_break()
+		Phase.LOWBAT: _step_lowbat()
+		Phase.CARGO2: _step_cargo2()
 		_: pass
 	if _setup_error != "" or _phase == Phase.DONE:
 		_finish()
@@ -115,7 +129,7 @@ func _step_ready() -> void:
 	if _ctl == null:
 		_setup_fail("'game_controller' grubunda düğüm yok")
 		return
-	for method: String in ["state", "restart"]:
+	for method: String in ["state", "restart", "set_battery_level"]:
 		if not _ctl.has_method(method):
 			_setup_fail("GameController.%s() yok" % method)
 	if not _ctl.has_signal("finished"):
@@ -154,6 +168,7 @@ func _step_impact() -> void:
 	print("PROBE hasar impact_sonrası=%.3f (beklenen %.2f)" % [d, IMPACT_EXPECTED])
 	if absf(d - IMPACT_EXPECTED) > DAMAGE_TOLERANCE:
 		_fail("impact hasarı beklenenden farklı: %.3f (beklenen %.2f ± %.2f)" % [d, IMPACT_EXPECTED, DAMAGE_TOLERANCE])
+	_check_hud("impact_sonrası")
 	_go(Phase.SLOSH)
 
 
@@ -178,13 +193,45 @@ func _step_drive() -> void:
 	print("PROBE batarya sürüş_sonrası=%.4f" % b)
 	if b >= 1.0 or b <= 0.0:
 		_fail("batarya sürüşle azalmalı (0<b<1): %.4f" % b)
-	_damage_before_fall = float(_state().get("damage", 0.0))
-	_robot.global_position = Vector3(_robot.global_position.x, -20.0, _robot.global_position.z)
-	var rb: RigidBody3D = _robot as RigidBody3D
-	if rb != null:
-		rb.linear_velocity = Vector3.ZERO
-		rb.angular_velocity = Vector3.ZERO
-	_go(Phase.FALL)
+	_check_hud("sürüş_sonrası")
+	_go(Phase.CHECKPOINT)
+
+
+func _hud_value(bar_name: String) -> float:
+	var bar: Node = _scene.find_child(bar_name, true, false)
+	if bar == null or not ("value" in bar):
+		return -1.0
+	return float(bar.get("value"))
+
+
+func _check_hud(label: String) -> void:
+	var st: Dictionary = _state()
+	var want_health: float = float(st.get("integrity", 0.0)) * 100.0
+	var want_battery: float = float(st.get("battery", 0.0)) * 100.0
+	var got_health: float = _hud_value("CargoHealthBar")
+	var got_battery: float = _hud_value("BatteryBar")
+	print("PROBE hud %s sağlık=%.1f/%.1f batarya=%.1f/%.1f" % [label, got_health, want_health, got_battery, want_battery])
+	if absf(got_health - want_health) > HUD_TOLERANCE:
+		_fail("HUD sağlık çubuğu yanlış (%s): %.1f, beklenen %.1f" % [label, got_health, want_health])
+	if absf(got_battery - want_battery) > HUD_TOLERANCE:
+		_fail("HUD batarya çubuğu yanlış (%s): %.1f, beklenen %.1f" % [label, got_battery, want_battery])
+
+
+func _step_checkpoint() -> void:
+	_robot.call("set_move_input", Vector2(0.0, 1.0))
+	if int(_state().get("checkpoint_id", 0)) >= 1 or _phase_frames >= CHECKPOINT_FRAMES:
+		_robot.call("set_move_input", Vector2.ZERO)
+		var cp: int = int(_state().get("checkpoint_id", 0))
+		print("PROBE kontrol_noktası checkpoint_id=%d kare=%d" % [cp, _phase_frames])
+		if cp < 1:
+			_fail("robot Checkpoint_1'e ulaşıp kaydedemedi (checkpoint_id=%d, %d karede)" % [cp, _phase_frames])
+		_damage_before_fall = float(_state().get("damage", 0.0))
+		_robot.global_position = Vector3(_robot.global_position.x, -20.0, _robot.global_position.z)
+		var rb: RigidBody3D = _robot as RigidBody3D
+		if rb != null:
+			rb.linear_velocity = Vector3.ZERO
+			rb.angular_velocity = Vector3.ZERO
+		_go(Phase.FALL)
 
 
 func _step_fall() -> void:
@@ -197,13 +244,29 @@ func _step_fall() -> void:
 		_fail("düşen robot kontrol noktasına dönmedi (respawns=0)")
 	if _robot.global_position.y < -1.0:
 		_fail("robot hâlâ zeminin altında: y=%.2f" % _robot.global_position.y)
+	var cp1: Node3D = _scene.find_child("Checkpoint_1", true, false) as Node3D
+	if cp1 != null:
+		var dist: float = Vector2(_robot.global_position.x - cp1.global_position.x, _robot.global_position.z - cp1.global_position.z).length()
+		print("PROBE düşme respawn_uzaklık_checkpoint1=%.2f" % dist)
+		if dist > RESPAWN_NEAR_METERS:
+			_fail("düşen robot son kontrol noktasına dönmedi: Checkpoint_1'e %.1f m (> %.1f)" % [dist, RESPAWN_NEAR_METERS])
+	_check_hud("düşme_sonrası")
 	if d - _damage_before_fall < FALL_MIN_PENALTY:
 		_fail("düşme cezası yetersiz: +%.3f (< %.2f)" % [d - _damage_before_fall, FALL_MIN_PENALTY])
 	if bool(st.get("broken", false)):
 		_fail("kargo bu aşamada kırılmamalıydı")
 	_ctl.call("restart")
 	_finished_count = 0
+	_check_restart("düşme_sonrası")
 	_go(Phase.DELIVER)
+
+
+func _check_restart(label: String) -> void:
+	var st: Dictionary = _state()
+	if absf(float(st.get("damage", 1.0))) > 0.0001 or absf(float(st.get("battery", 0.0)) - 1.0) > 0.0001 \
+			or int(st.get("respawns", 1)) != 0 or int(st.get("checkpoint_id", 1)) != 0 \
+			or bool(st.get("finished", true)) or bool(st.get("broken", true)) or bool(st.get("delivered", true)):
+		_fail("restart() durumu sıfırlamadı (%s): %s" % [label, str(st)])
 
 
 func _step_deliver() -> void:
@@ -249,7 +312,61 @@ func _step_break() -> void:
 		_fail("kırılma başarısız sonuç vermeli (success=false)")
 	elif int(_last_result.get("gold", -1)) != 0 or int(_last_result.get("scrap", -1)) != 0:
 		_fail("kırılmada altın ve hurda 0 olmalı")
-	_go(Phase.DONE)
+	_ctl.call("restart")
+	_finished_count = 0
+	_check_restart("kırılma_sonrası")
+	_ctl.call("set_battery_level", 0.0)
+	_peak_speed = 0.0
+	_go(Phase.LOWBAT)
+
+
+func _step_lowbat() -> void:
+	if _phase_frames < 10:
+		return
+	_robot.call("set_move_input", Vector2(0.0, 1.0))
+	_peak_speed = maxf(_peak_speed, float(_robot.call("speed")))
+	if _phase_frames < LOWBAT_FRAMES + 10:
+		return
+	_robot.call("set_move_input", Vector2.ZERO)
+	var max_s: float = float(_robot.call("max_speed"))
+	print("PROBE düşük_batarya peak_speed=%.2f (sınır %.2f)" % [_peak_speed, LOWBAT_MAX_RATIO * max_s])
+	if _peak_speed > LOWBAT_MAX_RATIO * max_s:
+		_fail("boş bataryada robot yavaşlamadı: %.2f > %.2f (set_speed_factor etkisiz?)" % [_peak_speed, LOWBAT_MAX_RATIO * max_s])
+	# ikinci kargo ile sahneyi yeniden kur: selected_cargo_id gerçekten kullanılıyor mu
+	_scene.queue_free()
+	_scene = null
+	_go(Phase.CARGO2)
+
+
+func _step_cargo2() -> void:
+	if _phase_frames == 2:
+		var gm: Node = root.get_node_or_null("/root/GameManager")
+		gm.set("selected_cargo_id", CARGO2_ID)
+		var packed: PackedScene = load(GAME_SCENE) as PackedScene
+		_scene = packed.instantiate()
+		root.add_child(_scene)
+		return
+	if _phase_frames < READY_FRAMES + 2 or _scene == null:
+		return
+	if _phase_frames == READY_FRAMES + 2:
+		_ctl = get_first_node_in_group("game_controller")
+		_cargo = get_first_node_in_group("cargo")
+		if _ctl == null or _cargo == null:
+			_fail("ikinci kurulumda controller/kargo bulunamadı")
+			_go(Phase.DONE)
+			return
+		var st: Dictionary = _state()
+		print("PROBE cargo2 cargo_id=%s" % str(st.get("cargo_id")))
+		if str(st.get("cargo_id")) != CARGO2_ID:
+			_fail("selected_cargo_id yok sayıldı: %s (beklenen %s)" % [str(st.get("cargo_id")), CARGO2_ID])
+		_cargo.emit_signal("impact_reported", CARGO2_IMPULSE)
+		return
+	if _phase_frames == READY_FRAMES + 5:
+		var d: float = float(_state().get("damage", -1.0))
+		print("PROBE cargo2 hasar=%.3f (beklenen %.3f)" % [d, CARGO2_EXPECTED])
+		if absf(d - CARGO2_EXPECTED) > DAMAGE_TOLERANCE:
+			_fail("sd_card profili uygulanmadı: hasar %.3f (beklenen %.3f)" % [d, CARGO2_EXPECTED])
+		_go(Phase.DONE)
 
 
 func _finish() -> void:
