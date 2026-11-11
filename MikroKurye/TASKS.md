@@ -8,7 +8,7 @@
 | 3 | Çalışma Masası haritası ve tehlikeler | ✅ |
 | 4 | Meta: çekirdek, `SaveService`, sipariş, garaj, sonuç ekranı | ✅ |
 | 5 | Reklam yerleşimleri (revive, batarya, 2× ödül, deneme sürüşü, Altın Kutu) | ✅ |
-| 6 | Şok Jeli modülü, ses (SFX), ilk açılış rehberi, ayarlar | ⬜ |
+| 6 | Şok Jeli modülü, ses (SFX), ilk açılış rehberi, ayarlar | ✅ (SFX kulakla dinlenmeli) |
 | 7 | **GÖRSEL FAZ (ayrı):** 7.1 stil laboratuvarı ✅ · **stil A (Toon+Outline) seçildi** · 7.2–7.8 sırada | 🟨 |
 | 8 | Final: tam doğrulama, performans, Android derleme, kullanıcı paketi | ⬜ |
 
@@ -90,9 +90,9 @@ Fizik işlerinde **best-of-N** (`solve.sh --workers "dsh:sol dsh"`) ve görsel d
 
 ## Faz 6 — Modül, ses, rehber
 
-- [ ] **F6.1** Şok Emici Jel modülü (MVP modülü): garajdan sahip olunur, koşu başında takılı; kargo ilk kırılmayı atlatır (`CargoHealth` jel hakkı) [O]
-- [ ] **F6.2** SFX seti (ElevenLabs `make_sfx.py` ya da yedek sentez): çarpma, klavye tıkı, teslimat, satın alma, UI; ASMR hissi [O]
-- [ ] **F6.3** İlk açılış rehberi (3 kısa ipucu), ayarlar (ses açık/kapalı), geri tuşu davranışı [O]
+- [x] **F6.1** Şok Emici Jel modülü (MVP modülü): garajdan sahip olunur, koşu başında takılı; kargo ilk kırılmayı atlatır (`CargoHealth` jel hakkı) [O]
+- [x] **F6.2** SFX seti (ElevenLabs `make_sfx.py` ya da yedek sentez): çarpma, klavye tıkı, teslimat, satın alma, UI; ASMR hissi [O]
+- [x] **F6.3** İlk açılış rehberi (3 kısa ipucu), ayarlar (ses açık/kapalı), geri tuşu davranışı [O]
 
 ## Faz 7 — GÖRSEL FAZ (ayrı faz; kullanıcı görselleri beğenmedi)
 
