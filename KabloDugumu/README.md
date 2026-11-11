@@ -66,6 +66,12 @@ All user-facing text goes through `Loc` (`scripts/autoload/Loc.gd`) with tables 
 auto-detected from the OS on first run, switchable from the menu, persisted in
 `user://settings.cfg`.
 
+## Screenshots
+
+Final v0.2 shots live in [docs/screenshots/](docs/screenshots/) — a 12-frame contact sheet:
+[docs/screenshots/sheet.png](docs/screenshots/sheet.png) (menu EN/TR, level select, sway/locked/
+blackout/L12 gameplay, short circuit, shield, fail, win celebration, result).
+
 ## Run
 
 ```bash
