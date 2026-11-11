@@ -11,6 +11,8 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/), sürümleme [Se
 - Faz 3: `desk_01.tscn` (72 m masa haritası), `KeyboardKey`/`FanWind`/`RollingPencil` tehlikeleri, kontrol noktaları, V1 modelleriyle masa eşyaları; `level_probe` kabul probu.
 - Faz 4a: `UpgradeModel`, `ProfileData`, `data/upgrades.json`; V1 Blender model seti (11 model).
 - Faz 4b: `SaveService` (atomik kayıt, bozuk dosya yedeği), `OrderSelect`, `Garage`, menü/sonuç bağlantıları, yükseltme efektleri (`state.mods`); `meta_probe`.
+- Faz 5: reklam yerleşimleri (CARGO_INSURANCE revive, BATTERY_RECHARGE, DOUBLE_REWARD, TRY_BEFORE_BUY, GOLDEN_BOX); `ads_probe`.
+- Faz 7.1: görsel stil laboratuvarı (toon+outline / soft clay / bold flat), `assets/shaders/`, `docs/art/style_lab_sheet.png`.
 - `DamageModel` (darbe/çalkalanma/düşme → 0..1 hasar) ve `CargoHealth` (birikim, Şok Jeli koruması, kırık kargo) + 25 birim test.
 
 ### Eklenecek

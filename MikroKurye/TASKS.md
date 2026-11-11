@@ -7,9 +7,9 @@
 | 2 | Fizik: robot + sallanan kargo + oyun akışı (HUD, kontrol noktası, teslimat) | ✅ (his onayı kullanıcıda) |
 | 3 | Çalışma Masası haritası ve tehlikeler | ✅ |
 | 4 | Meta: çekirdek, `SaveService`, sipariş, garaj, sonuç ekranı | ✅ |
-| 5 | Reklam yerleşimleri (revive, batarya, 2× ödül, deneme sürüşü) | ⬜ |
+| 5 | Reklam yerleşimleri (revive, batarya, 2× ödül, deneme sürüşü, Altın Kutu) | ✅ |
 | 6 | Şok Jeli modülü, ses (SFX), ilk açılış rehberi, ayarlar | ⬜ |
-| 7 | **GÖRSEL FAZ (ayrı):** sanat yönü yenileme, shader/ışık/ortam, robot, efektler, UI teması | ⬜ |
+| 7 | **GÖRSEL FAZ (ayrı):** 7.1 stil laboratuvarı ✅ (kullanıcı seçimi bekliyor: A/B/C), kalan adımlar sırada | 🟨 |
 | 8 | Final: tam doğrulama, performans, Android derleme, kullanıcı paketi | ⬜ |
 
 Kullanıcı kararı (2026-11-11): çözüm hattında **tek aday** (iki aday yarıştırma kaldırıldı); görseller beğenilmedi → ayrı Faz 7; işlevsel fazlar önce.
@@ -82,11 +82,11 @@ Fizik işlerinde **best-of-N** (`solve.sh --workers "dsh:sol dsh"`) ve görsel d
 
 ## Faz 5 — Reklam yerleşimleri  (`AdManager`; sözleşme ARCHITECTURE §5.5 yazılacak)
 
-- [ ] **F5.1** `CARGO_INSURANCE` (revive): kargo kırılınca/masadan düşünce teklif; kabul edilirse son kontrol noktasında sağlam kargo [O]
-- [ ] **F5.2** `BATTERY_RECHARGE`: batarya bitince HUD düğmesi, reklamla %100 + 10 sn boost [K]
-- [ ] **F5.3** `DOUBLE_REWARD`: sonuç ekranında 2× ödül [K]
-- [ ] **F5.4** `TRY_BEFORE_BUY`: garajda kilitli yükseltmeyi 1 koşu deneme [O]
-- [ ] **F5.5** Altın Kutu (seviyede ulaşması zor kutu → teslimde bonus açma reklamı) [O]
+- [x] **F5.1** `CARGO_INSURANCE` (revive): kargo kırılınca/masadan düşünce teklif; kabul edilirse son kontrol noktasında sağlam kargo [O]
+- [x] **F5.2** `BATTERY_RECHARGE`: batarya bitince HUD düğmesi, reklamla %100 + 10 sn boost [K]
+- [x] **F5.3** `DOUBLE_REWARD`: sonuç ekranında 2× ödül [K]
+- [x] **F5.4** `TRY_BEFORE_BUY`: garajda kilitli yükseltmeyi 1 koşu deneme [O]
+- [x] **F5.5** Altın Kutu (seviyede ulaşması zor kutu → teslimde bonus açma reklamı) [O]
 
 ## Faz 6 — Modül, ses, rehber
 
@@ -98,7 +98,7 @@ Fizik işlerinde **best-of-N** (`solve.sh --workers "dsh:sol dsh"`) ve görsel d
 
 Hedef: "yer tutucu prototip" görünümünden **ürün kalitesinde stilize low-poly** görünüme. Her adım ekran görüntüsüyle denetlenir (`scene_shot.gd`, `shots.sh`); son onay kullanıcıdadır [U].
 
-- [ ] **F7.1** Sanat yönü yeniden tanımı: PROJECT_SPEC §13 güncellenir (referans, palet, malzeme dili, ışık); kısa bir "stil kılavuzu" sahnesi (`scenes/StyleGuide.tscn`) [O]
+- [x] **F7.1** Sanat yönü yeniden tanımı: PROJECT_SPEC §13 güncellenir (referans, palet, malzeme dili, ışık); kısa bir "stil kılavuzu" sahnesi (`scenes/StyleGuide.tscn`) [O]
 - [ ] **F7.2** Shader sistemi: toon/cel gölgelendirme + rim ışık, anahatlar (outline), ahşap masa dokusu (prosedürel), düşük maliyetli (mobil/Compatibility) [Z]
 - [ ] **F7.3** Robot yeniden tasarımı: karakterli yüz/gözler, kurye detayları, tekerlek ve süspansiyon görselleri, idle/hız animasyonları (squash & stretch, anten) [Z]
 - [ ] **F7.4** Ortam: oda (duvar, pencere ışığı, uzakta dev objeler), masa kenarı derinliği, yumuşak gölge, bloom/renk düzeltme, hafif toz parçacığı [Z]
