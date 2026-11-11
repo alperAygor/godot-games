@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/styles/_key_frame.tscn" id="1_frame"]
+
+[node name="StyleC" instance=ExtResource("1_frame")]
+style_index = 2
