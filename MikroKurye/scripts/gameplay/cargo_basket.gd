@@ -111,6 +111,11 @@ func add_damping_bonus(bonus: float) -> void:
 	_damping += maxf(bonus, 0.0)
 
 
+func set_damping_bonus(bonus: float) -> void:
+	# Yeniden başlayan koşu önceki tek koşuluk denemeyi taşımamalı.
+	_damping = _parameter("cargo_damping", DEFAULT_DAMPING) + maxf(bonus, 0.0)
+
+
 func reset_sway() -> void:
 	# Checkpoint/recovery callers must not turn a pose reset into physical slosh.
 	_reset_pending = true

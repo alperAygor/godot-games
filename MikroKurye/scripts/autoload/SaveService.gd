@@ -22,6 +22,9 @@ const JSON_INDENT: String = "\t"
 ## Test için değiştirilebilir; varsayılan gerçek kayıt dosyasıdır.
 var _save_path: String = DEFAULT_SAVE_PATH
 var _profile: ProfileData = null
+## Deneme (TRY_BEFORE_BUY) yalnızca bir sonraki koşu için geçerlidir; bu yüzden
+## diske yazılmaz. GameController koşu başında modlara kattıktan sonra temizler.
+var _trial_category: String = ""
 
 
 func _ready() -> void:
@@ -125,9 +128,46 @@ func purchase(category: String) -> bool:
 	return true
 
 
+## Reklamla kazanılan ek ödül; negatif değerler Wallet.add tarafından 0 sayılır.
+func grant(gold: int, scrap: int) -> void:
+	profile().wallet().add(gold, scrap)
+	save_profile()
+
+
+## Bir sonraki koşu için kategori denemesi açar; bilinmeyen kategori yok sayılır.
+func set_trial(category: String) -> void:
+	var table: Dictionary = _upgrade_table()
+	if category.is_empty() or not table.has(category):
+		return
+	_trial_category = category
+
+
+func clear_trial() -> void:
+	_trial_category = ""
+
+
+func trial() -> String:
+	return _trial_category
+
+
 ## Sahip olunan seviyelerin mod toplamları; GameController bunları uygular.
+## Deneme kategorisinin SONRAKİ seviyesinin modları da eklenir (§5.5).
 func mods() -> Dictionary:
-	return UpgradeModel.stats(_upgrade_table(), profile().levels())
+	var table: Dictionary = _upgrade_table()
+	var totals: Dictionary = UpgradeModel.stats(table, profile().levels())
+	if _trial_category.is_empty() or not table.has(_trial_category):
+		return totals
+	var level: int = profile().level(_trial_category)
+	# `stats` 1..N seviyelerini toplar; farkı almak yalnız N+1'in katkısını verir
+	# ve sahip olunan seviyelerin iki kez sayılmasını engeller.
+	var owned: Dictionary = UpgradeModel.stats(table, {_trial_category: level})
+	var with_next: Dictionary = UpgradeModel.stats(table, {_trial_category: level + 1})
+	for key: Variant in with_next.keys():
+		var name: String = String(key)
+		var extra: float = float(with_next[key]) - float(owned.get(name, 0.0))
+		if absf(extra) > 0.0001:
+			totals[name] = float(totals.get(name, 0.0)) + extra
+	return totals
 
 
 func _upgrade_table() -> Dictionary:

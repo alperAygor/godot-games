@@ -21,6 +21,15 @@ const MAX_LEVEL: String = "MAKS"
 const GOLD_SUFFIX: String = "Altın"
 const SCRAP_SUFFIX: String = "Hurda"
 const WALLET: String = "Cüzdan"
+const REVIVE_TITLE: String = "Kargonu Kurtar"
+const REVIVE_TEXT: String = "Reklam izle; kargo onarılsın ve son kontrol noktasından devam et."
+const REVIVE_ACCEPT: String = "Reklam İzle ve Devam Et"
+const REVIVE_DECLINE: String = "Bu Turu Bitir"
+const RECHARGE: String = "Hızlı Şarj"
+const RECHARGE_HINT: String = "Reklam izle, batarya dolsun ve kısa süre hızlan."
+const DOUBLE_REWARD: String = "Ödülü 2× Yap"
+const GOLDEN_BOX: String = "Altın Kutu Bonusu"
+const TRY_BEFORE_BUY: String = "Dene"
 
 
 ## `data/cargo.json` içindeki `name_key` -> görünen ad. Bilinmeyen anahtar

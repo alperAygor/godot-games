@@ -127,6 +127,11 @@ func add_wheel_grip_bonus(bonus: float) -> void:
 		wheel.add_grip_bonus(bonus)
 
 
+func set_wheel_grip_bonus(bonus: float) -> void:
+	for wheel: SuspensionWheel in _wheels:
+		wheel.set_grip_bonus(bonus)
+
+
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	var body_transform: Transform3D = state.transform
 	var up_dot: float = body_transform.basis.y.normalized().dot(Vector3.UP)

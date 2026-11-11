@@ -1,4 +1,4 @@
-[gd_scene load_steps=33 format=3]
+[gd_scene load_steps=36 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/level_root.gd" id="level"]
 [ext_resource type="Script" path="res://scripts/gameplay/hazards/keyboard_key.gd" id="key"]
@@ -99,6 +99,20 @@ size = Vector3(0.25, 2.5, 2.5)
 [sub_resource type="BoxMesh" id="FanBladeMesh"]
 material = SubResource("Blue")
 size = Vector3(0.12, 0.3, 2)
+
+[sub_resource type="StandardMaterial3D" id="Gold"]
+albedo_color = Color(1, 0.78, 0.16, 1)
+roughness = 1.0
+emission_enabled = true
+emission = Color(1, 0.68, 0.08, 1)
+emission_energy_multiplier = 1.8
+
+[sub_resource type="BoxShape3D" id="GoldShape"]
+size = Vector3(1.1, 1.1, 1.1)
+
+[sub_resource type="BoxMesh" id="GoldMesh"]
+material = SubResource("Gold")
+size = Vector3(0.9, 0.9, 0.9)
 
 [node name="Desk01" type="Node3D"]
 script = ExtResource("level")
@@ -382,3 +396,18 @@ shape = SubResource("PencilShape")
 
 [node name="Visual" parent="RollingPencil2" instance=ExtResource("pencil")]
 position = Vector3(0, -0.265, 0)
+
+
+[node name="GoldenBox" type="Area3D" parent="." groups=["golden_box"]]
+position = Vector3(4.2, 0.55, -38)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GoldenBox"]
+shape = SubResource("GoldShape")
+
+[node name="Visual" type="MeshInstance3D" parent="GoldenBox"]
+mesh = SubResource("GoldMesh")
+
+[node name="Glow" type="OmniLight3D" parent="GoldenBox"]
+light_color = Color(1, 0.78, 0.2, 1)
+light_energy = 1.6
+omni_range = 3.5

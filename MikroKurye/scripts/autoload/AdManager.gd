@@ -3,21 +3,31 @@ extends Node
 ## Ödüllü reklam orkestrasyonu. SDK bilmez; `AdsProvider` ile konuşur.
 ## Ödül YALNIZCA sağlayıcıdan `rewarded` geldikten sonra verilir (idempotent).
 
-enum Placement { EXTRA_POCKET, TAPE_RESCUE, DOUBLE_REWARD }
+enum Placement {
+	CARGO_INSURANCE,
+	BATTERY_RECHARGE,
+	DOUBLE_REWARD,
+	TRY_BEFORE_BUY,
+	GOLDEN_BOX,
+}
 
 const PLACEMENT_KEYS: Dictionary = {
-	Placement.EXTRA_POCKET: "EXTRA_POCKET",
-	Placement.TAPE_RESCUE: "TAPE_RESCUE",
+	Placement.CARGO_INSURANCE: "CARGO_INSURANCE",
+	Placement.BATTERY_RECHARGE: "BATTERY_RECHARGE",
 	Placement.DOUBLE_REWARD: "DOUBLE_REWARD",
+	Placement.TRY_BEFORE_BUY: "TRY_BEFORE_BUY",
+	Placement.GOLDEN_BOX: "GOLDEN_BOX",
 }
 
 const LIMITS_PATH: String = "res://data/ads.json"
 
 ## Tur içi kullanım (GameManager.reset_run_limits() ile sıfırlanır).
 const DEFAULT_LIMITS: Dictionary = {
-	"EXTRA_POCKET": {"per_run": 1, "per_session": 3},
-	"TAPE_RESCUE": {"per_run": 1, "per_session": 5},
+	"CARGO_INSURANCE": {"per_run": 1, "per_session": 5},
+	"BATTERY_RECHARGE": {"per_run": 1, "per_session": 5},
 	"DOUBLE_REWARD": {"per_run": 1, "per_session": 3},
+	"TRY_BEFORE_BUY": {"per_run": 1, "per_session": 3},
+	"GOLDEN_BOX": {"per_run": 1, "per_session": 3},
 }
 
 signal ad_started(placement: Placement)
@@ -30,6 +40,8 @@ var _limits: Dictionary = {}
 var _used_run: Dictionary = {}
 var _used_session: Dictionary = {}
 var _pending: int = -1
+var _run_generation: int = 0
+var _pending_generation: int = 0
 
 
 func _ready() -> void:
@@ -46,21 +58,25 @@ func set_provider(new_provider: AdsProvider) -> void:
 			provider.rewarded.disconnect(_on_provider_rewarded)
 		if provider.failed.is_connected(_on_provider_failed):
 			provider.failed.disconnect(_on_provider_failed)
+		if provider.dismissed.is_connected(_on_provider_dismissed):
+			provider.dismissed.disconnect(_on_provider_dismissed)
+		_on_provider_failed("provider_changed")
 	provider = new_provider
 	if provider != null:
 		provider.shown.connect(_on_provider_shown)
 		provider.rewarded.connect(_on_provider_rewarded)
 		provider.failed.connect(_on_provider_failed)
+		provider.dismissed.connect(_on_provider_dismissed)
 		provider.initialize()
 
 
 func can_offer(placement: Placement) -> bool:
-	if provider == null or not provider.is_ready(placement):
+	if not PLACEMENT_KEYS.has(placement) or provider == null or not provider.is_ready(placement):
 		return false
 	if _pending != -1:
 		return false
 	var key: String = PLACEMENT_KEYS.get(placement, "")
-	var limit: Dictionary = _limits.get(key, DEFAULT_LIMITS.get(key, {"per_run": 1, "per_session": 1}))
+	var limit: Dictionary = _limits.get(key, DEFAULT_LIMITS[key])
 	var used_run: int = int(_used_run.get(key, 0))
 	var used_session: int = int(_used_session.get(key, 0))
 	return used_run < int(limit.get("per_run", 1)) and used_session < int(limit.get("per_session", 1))
@@ -74,20 +90,22 @@ func show_rewarded(placement: Placement) -> void:
 		ad_failed.emit(placement, "not_available")
 		return
 	_pending = placement
-	provider.show(placement)
+	_pending_generation = _run_generation
 	ad_started.emit(placement)
+	provider.show(placement)
 
 
 func reset_run_limits() -> void:
 	_used_run.clear()
-	_pending = -1
+	_run_generation += 1
+	# Eski sağlayıcı callback'i bitmeden yeni istek açılmaz; aksi hâlde eski
+	# ödül yeni yerleşime yazılabilir. Eski turun sonucu yeni turu etkilemez.
 
 
 ## Oturum limitlerini de sıfırlar (testler ve "yeni oyun" için).
 func reset_session_limits() -> void:
-	_used_run.clear()
+	reset_run_limits()
 	_used_session.clear()
-	_pending = -1
 
 
 func used_in_run(placement: Placement) -> int:
@@ -104,8 +122,10 @@ func _on_provider_rewarded() -> void:
 	var placement: Placement = _pending
 	_pending = -1
 	var key: String = PLACEMENT_KEYS.get(placement, "")
-	_used_run[key] = int(_used_run.get(key, 0)) + 1
 	_used_session[key] = int(_used_session.get(key, 0)) + 1
+	if _pending_generation != _run_generation:
+		return
+	_used_run[key] = int(_used_run.get(key, 0)) + 1
 	rewarded_finished.emit(placement, true)
 
 
@@ -114,8 +134,15 @@ func _on_provider_failed(reason: String) -> void:
 		return
 	var placement: Placement = _pending
 	_pending = -1
+	if _pending_generation != _run_generation:
+		return
 	rewarded_finished.emit(placement, false)
 	ad_failed.emit(placement, reason)
+
+
+func _on_provider_dismissed() -> void:
+	# Ödülden sonraki dismissed etkisizdir; erken kapanış beklemeyi sonlandırır.
+	_on_provider_failed("dismissed")
 
 
 func _load_limits() -> void:

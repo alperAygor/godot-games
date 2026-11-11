@@ -1,5 +1,7 @@
 {
-  "EXTRA_POCKET": { "per_run": 1, "per_session": 3 },
-  "TAPE_RESCUE": { "per_run": 1, "per_session": 5 },
-  "DOUBLE_REWARD": { "per_run": 1, "per_session": 3 }
+  "CARGO_INSURANCE": { "per_run": 1, "per_session": 5 },
+  "BATTERY_RECHARGE": { "per_run": 1, "per_session": 5 },
+  "DOUBLE_REWARD": { "per_run": 1, "per_session": 3 },
+  "TRY_BEFORE_BUY": { "per_run": 1, "per_session": 3 },
+  "GOLDEN_BOX": { "per_run": 1, "per_session": 3 }
 }

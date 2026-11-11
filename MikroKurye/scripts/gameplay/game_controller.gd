@@ -9,6 +9,8 @@ extends Node3D
 ## GameManager/GameData'ya yalnızca `/root/...` yoluyla erişilir (GOTCHAS #2).
 
 signal finished(result: Dictionary)
+## Kargo kırıldı ama reklamla kurtarma teklif edilebiliyor; tur HENÜZ bitmedi.
+signal revive_offered()
 
 const DEFAULT_CARGO_ID: String = "pencil_battery"
 const DEFAULT_LEVEL_ID: String = "desk_01"
@@ -19,6 +21,8 @@ const DEFAULT_KILL_Y: float = -5.0
 const DEFAULT_RESPAWN_DROP_HEIGHT: float = 1.0
 const DEFAULT_CHECKPOINT_RADIUS: float = 2.0
 const DEFAULT_BATTERY_CAPACITY: float = 100.0
+const DEFAULT_RECHARGE_THRESHOLD: float = 0.15
+const DEFAULT_RECHARGE_BOOST_SECONDS: float = 10.0
 
 ## §5.4 yükseltme anahtarları; `SaveService.mods()` toplamları bu adlarla gelir.
 const MOD_CARGO_DAMPING: String = "cargo_damping_bonus"
@@ -45,6 +49,19 @@ var _mods: Dictionary[String, float] = {}
 var _kill_y: float = DEFAULT_KILL_Y
 var _respawn_drop_height: float = DEFAULT_RESPAWN_DROP_HEIGHT
 var _checkpoint_radius_sq: float = DEFAULT_CHECKPOINT_RADIUS * DEFAULT_CHECKPOINT_RADIUS
+var _recharge_threshold: float = DEFAULT_RECHARGE_THRESHOLD
+var _recharge_boost_seconds: float = DEFAULT_RECHARGE_BOOST_SECONDS
+
+## Reklam akışı AdManager üzerinden yürür; burada yalnız niyet ve sonuç tutulur.
+var _ad_manager: Node = null
+var _revive_offered: bool = false
+var _revive_used: bool = false
+var _revive_pending: bool = false
+var _recharge_used: bool = false
+var _recharge_pending: bool = false
+var _recharge_available: bool = false
+var _golden_box: Area3D = null
+var _golden_box_collected: bool = false
 
 var _health: CargoHealth = null
 var _battery: BatteryModel = null
@@ -61,11 +78,15 @@ var _finished: bool = false
 
 func _ready() -> void:
 	add_to_group("game_controller")
+	_connect_ad_manager()
+	_reset_ad_limits()
 	_load_profile()
 	_load_balance()
 	_load_mods()
 	_build_models()
 	_apply_mods()
+	# Deneme modları yukarıda `_mods` içine alındı; etkisi bir koşulluktur.
+	_clear_trial()
 	var manager: Node = get_node_or_null("/root/GameManager")
 	if manager != null:
 		manager.connect("back_requested", _on_back_requested)
@@ -78,6 +99,7 @@ func _ready() -> void:
 		return
 	_setup_checkpoints()
 	_connect_signals()
+	_setup_golden_box()
 	_place_robot(_robot_start.global_transform)
 	_refresh_hud()
 
@@ -162,6 +184,10 @@ func _load_balance() -> void:
 	_checkpoint_radius_sq = maxf(radius, 0.0) * maxf(radius, 0.0)
 	_battery_capacity = float(battery_params.get("capacity", DEFAULT_BATTERY_CAPACITY))
 	_battery_params = battery_params
+	_recharge_threshold = clampf(float(game_params.get(
+		"recharge_threshold", DEFAULT_RECHARGE_THRESHOLD)), 0.0, 1.0)
+	_recharge_boost_seconds = maxf(float(game_params.get(
+		"recharge_boost_seconds", DEFAULT_RECHARGE_BOOST_SECONDS)), 0.0)
 
 
 func _build_models() -> void:
@@ -196,8 +222,8 @@ func _load_mods() -> void:
 
 
 func _apply_mods() -> void:
-	_cargo.add_damping_bonus(float(_mods.get(MOD_CARGO_DAMPING, 0.0)))
-	_robot.add_wheel_grip_bonus(float(_mods.get(MOD_WHEEL_GRIP, 0.0)))
+	_cargo.set_damping_bonus(float(_mods.get(MOD_CARGO_DAMPING, 0.0)))
+	_robot.set_wheel_grip_bonus(float(_mods.get(MOD_WHEEL_GRIP, 0.0)))
 
 
 func _setup_checkpoints() -> void:
@@ -226,10 +252,31 @@ func _connect_signals() -> void:
 	_cargo.impact_reported.connect(_on_cargo_impact)
 	_cargo.slosh_reported.connect(_on_cargo_slosh)
 	_delivery_zone.body_entered.connect(_on_delivery_body_entered)
+	_hud.revive_accepted.connect(accept_revive)
+	_hud.revive_declined.connect(decline_revive)
+	_hud.recharge_requested.connect(request_recharge)
+
+
+## Seviyedeki Altın Kutu'yu grubundan/alt ağacından bulur; yoksa sessizce geçer
+## (Faz 3 seviyeleri kutusuz da çalışır).
+func _setup_golden_box() -> void:
+	_golden_box = _level.find_child("GoldenBox", true, false) as Area3D
+	if _golden_box == null:
+		for node: Node in get_tree().get_nodes_in_group("golden_box"):
+			var candidate: Area3D = node as Area3D
+			if candidate != null and _level.is_ancestor_of(candidate):
+				_golden_box = candidate
+				break
+	if _golden_box == null:
+		return
+	if not _golden_box.is_in_group("golden_box"):
+		_golden_box.add_to_group("golden_box")
+	if not _golden_box.body_entered.is_connected(_on_golden_box_body_entered):
+		_golden_box.body_entered.connect(_on_golden_box_body_entered)
 
 
 func _physics_process(delta: float) -> void:
-	if _finished:
+	if _finished or _revive_offered or _recharge_pending:
 		return
 	_elapsed += delta
 	if _robot.global_position.y < _kill_y:
@@ -241,7 +288,7 @@ func _physics_process(delta: float) -> void:
 	_robot.set_speed_factor(_battery.speed_factor())
 	_refresh_hud()
 	if _health.is_broken():
-		_finish_run(false)
+		_handle_broken()
 
 
 func _reach_checkpoints() -> void:
@@ -264,7 +311,7 @@ func _respawn() -> void:
 	_health.apply_fall(_respawn_drop_height)
 	_refresh_hud()
 	if _health.is_broken():
-		_finish_run(false)
+		_handle_broken()
 
 
 func _on_cargo_impact(impulse: float) -> void:
@@ -273,7 +320,7 @@ func _on_cargo_impact(impulse: float) -> void:
 	_health.apply_impact(impulse)
 	_refresh_hud()
 	if _health.is_broken():
-		_finish_run(false)
+		_handle_broken()
 
 
 func _on_cargo_slosh(angular_accel: float, dt: float) -> void:
@@ -282,11 +329,11 @@ func _on_cargo_slosh(angular_accel: float, dt: float) -> void:
 	_health.apply_slosh(angular_accel, dt)
 	_refresh_hud()
 	if _health.is_broken():
-		_finish_run(false)
+		_handle_broken()
 
 
 func _on_delivery_body_entered(body: Node3D) -> void:
-	if _finished or _health.is_broken():
+	if _finished or _health.is_broken() or _recharge_pending:
 		return
 	# Sepet robotun altında top-level bir gövde; teslimat iki gruptan biriyle sayılır.
 	if not body.is_in_group("robot") and not body.is_in_group("cargo"):
@@ -294,10 +341,159 @@ func _on_delivery_body_entered(body: Node3D) -> void:
 	_finish_run(true)
 
 
+## Kargo kırıldı: teklif edilebiliyorsa tur beklemede kalır, aksi hâlde biter.
+## Teklif tur başına bir kezdir; `_revive_used` ikinci kırılmada anında bitirir.
+func _handle_broken() -> void:
+	if _finished or _revive_offered:
+		return
+	if not _revive_used and _can_offer(AdManager.Placement.CARGO_INSURANCE):
+		_revive_offered = true
+		_set_ad_wait(true)
+		_refresh_hud()
+		revive_offered.emit()
+		return
+	_finish_run(false)
+
+
+func accept_revive() -> void:
+	if _finished or not _revive_offered or _revive_pending:
+		return
+	if _ad_manager == null:
+		_close_revive(false)
+		return
+	_revive_pending = true
+	_refresh_hud()
+	_ad_manager.call("show_rewarded", AdManager.Placement.CARGO_INSURANCE)
+
+
+func decline_revive() -> void:
+	if _finished or not _revive_offered or _revive_pending:
+		return
+	_revive_offered = false
+	_finish_run(false)
+
+
+func request_recharge() -> void:
+	if _finished or _recharge_used or _recharge_pending or not _recharge_available:
+		return
+	if _ad_manager == null:
+		return
+	_recharge_pending = true
+	_set_ad_wait(true)
+	_refresh_hud()
+	_ad_manager.call("show_rewarded", AdManager.Placement.BATTERY_RECHARGE)
+
+
+func _on_golden_box_body_entered(body: Node3D) -> void:
+	if _finished or _revive_offered or _recharge_pending or _golden_box_collected:
+		return
+	if not body.is_in_group("robot") and not body.is_in_group("cargo"):
+		return
+	_golden_box_collected = true
+	_golden_box.hide()
+
+
 func _on_back_requested() -> void:
+	if _revive_pending or _recharge_pending:
+		return
 	var manager: Node = get_node_or_null("/root/GameManager")
 	if manager != null:
 		manager.call("goto_scene", &"menu")
+
+
+func _connect_ad_manager() -> void:
+	_ad_manager = get_node_or_null("/root/AdManager")
+	if _ad_manager == null:
+		return
+	if not _ad_manager.is_connected("rewarded_finished", _on_ad_rewarded):
+		_ad_manager.connect("rewarded_finished", _on_ad_rewarded)
+	if not _ad_manager.is_connected("ad_failed", _on_ad_failed):
+		_ad_manager.connect("ad_failed", _on_ad_failed)
+
+
+func _reset_ad_limits() -> void:
+	if _ad_manager != null and _ad_manager.has_method("reset_run_limits"):
+		_ad_manager.call("reset_run_limits")
+
+
+func _can_offer(placement: int) -> bool:
+	if _ad_manager == null:
+		return false
+	return bool(_ad_manager.call("can_offer", placement))
+
+
+func _on_ad_rewarded(placement: int, success: bool) -> void:
+	if placement == AdManager.Placement.CARGO_INSURANCE and _revive_pending:
+		_revive_pending = false
+		_close_revive(success)
+	elif placement == AdManager.Placement.BATTERY_RECHARGE and _recharge_pending:
+		_recharge_pending = false
+		_set_ad_wait(false)
+		if success:
+			_apply_recharge()
+		else:
+			# Başarısız reklam hakkı yakmaz; teklif yeniden hesaplanabilsin.
+			_refresh_hud()
+
+
+## Reklam sonucunu uygular: başarıda kargo sıfırlanır ve son kontrol noktasına
+## dönülür. Reklam başarısızsa teklif kapanır ve tur kırık biter.
+func _close_revive(success: bool) -> void:
+	_revive_offered = false
+	_revive_pending = false
+	_set_ad_wait(false)
+	if not success:
+		_finish_run(false)
+		return
+	_revive_used = true
+	_broken = false
+	# CargoHealth'te setter yok; temiz bir model aynı sözleşmeyi (hasar 0) verir.
+	_health = CargoHealth.new(_profile)
+	var target: Vector3 = _tracker.last_position()
+	if _tracker.last_id() < 0:
+		target = _robot_start.global_position
+	_place_robot(Transform3D(_robot_start.global_basis, target))
+	_refresh_hud()
+
+
+func _apply_recharge() -> void:
+	_recharge_used = true
+	set_battery_level(1.0)
+	if _battery != null:
+		_battery.start_boost(_recharge_boost_seconds)
+	_refresh_hud()
+
+
+func _on_ad_failed(placement: int, _reason: String) -> void:
+	if placement == AdManager.Placement.CARGO_INSURANCE and _revive_pending:
+		_revive_pending = false
+		_revive_offered = false
+		_finish_run(false)
+	elif placement == AdManager.Placement.BATTERY_RECHARGE and _recharge_pending:
+		_recharge_pending = false
+		_set_ad_wait(false)
+		_refresh_hud()
+
+
+## can_offer salt okur; hazır olma durumu başka reklam bitince değişebilir.
+func _update_recharge_availability() -> void:
+	_recharge_available = _battery != null and not _finished \
+		and not _revive_offered and not _recharge_pending and not _recharge_used \
+		and _battery.level() < _recharge_threshold \
+		and _can_offer(AdManager.Placement.BATTERY_RECHARGE)
+
+
+func _set_ad_wait(waiting: bool) -> void:
+	# Teklif sırasında kontrol noktası, süre ve batarya korunur; dünya durumu
+	# ağaç genelinde pause edilmez, dolayısıyla servis callback'leri devam eder.
+	_robot.freeze = waiting
+	_cargo.freeze = waiting
+
+
+func _clear_trial() -> void:
+	var save: Node = get_node_or_null("/root/SaveService")
+	if save != null and save.has_method("clear_trial"):
+		save.call("clear_trial")
 
 
 func _place_robot(target: Transform3D) -> void:
@@ -313,6 +509,10 @@ func _refresh_hud() -> void:
 		return
 	_hud.set_cargo_health(_health.integrity() * PERCENT_SCALE)
 	_hud.set_battery(_battery.level() * PERCENT_SCALE)
+	_update_recharge_availability()
+	_hud.set_ad_pending(_revive_pending or _recharge_pending)
+	_hud.set_revive_offered(_revive_offered)
+	_hud.set_recharge_available(_recharge_available)
 
 
 func _finish_run(delivered: bool) -> void:
@@ -324,9 +524,15 @@ func _finish_run(delivered: bool) -> void:
 	result["cargo_id"] = _cargo_id
 	result["level_id"] = _level_id
 	result["time"] = _elapsed
+	# Altın kutu yalnız başarılı teslimatta ödüle dönüşür (§5.5).
+	result["golden_box"] = delivered and bool(result.get("success", false)) \
+		and _golden_box_collected
+	result["doubled"] = false
 	_delivered = delivered
 	_broken = _health.is_broken()
 	_finished = true
+	_revive_offered = false
+	_recharge_available = false
 	_refresh_hud()
 	finished.emit(result)
 	var manager: Node = get_node_or_null("/root/GameManager")
@@ -361,16 +567,27 @@ func state() -> Dictionary:
 		"checkpoint_id": _tracker.last_id(),
 		"respawns": _respawns,
 		"delivered": _delivered,
-		"broken": _broken,
+		"broken": _health.is_broken(),
 		"finished": _finished,
 		"elapsed": _elapsed,
 		"mods": _mods.duplicate(),
+		"revive_offered": _revive_offered,
+		"revive_used": _revive_used,
+		"recharge_available": _recharge_available,
+		"boost_active": _battery != null and _battery.boost_active(),
+		"golden_box_collected": _golden_box_collected,
 	}
 
 
 func restart() -> void:
+	_reset_ad_limits()
 	if _level == null:
 		return
+	_load_balance()
+	_load_mods()
+	_battery_capacity = maxf(_battery_capacity + float(_mods.get(MOD_BATTERY_CAPACITY, 0.0)), 0.0)
+	_apply_mods()
+	_clear_trial()
 	_health = CargoHealth.new(_profile)
 	_battery = BatteryModel.new(_battery_capacity, _battery_params)
 	_tracker.reset()
@@ -380,6 +597,16 @@ func restart() -> void:
 	_delivered = false
 	_broken = false
 	_finished = false
+	_revive_offered = false
+	_revive_used = false
+	_revive_pending = false
+	_recharge_used = false
+	_recharge_pending = false
+	_recharge_available = false
+	_golden_box_collected = false
+	if _golden_box != null:
+		_golden_box.show()
+	_set_ad_wait(false)
 	_place_robot(_robot_start.global_transform)
 	_robot.set_speed_factor(_battery.speed_factor())
 	_refresh_hud()

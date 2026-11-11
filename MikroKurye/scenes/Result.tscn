@@ -63,6 +63,22 @@ theme_override_font_sizes/font_size = 38
 text = "Cüzdan: 0 Altın · 0 Hurda"
 horizontal_alignment = 1
 
+[node name="DoubleRewardButton" type="Button" parent="Center/Column"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(700, 128)
+layout_mode = 2
+theme_override_font_sizes/font_size = 38
+text = "Ödülü 2× Yap"
+
+[node name="GoldenBoxButton" type="Button" parent="Center/Column"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(700, 128)
+layout_mode = 2
+theme_override_font_sizes/font_size = 38
+text = "Altın Kutu Bonusu"
+
 [node name="RetryButton" type="Button" parent="Center/Column"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(700, 128)
