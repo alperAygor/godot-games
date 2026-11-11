@@ -302,6 +302,10 @@ func _step_break() -> void:
 		return
 	if _phase_frames < 30:
 		return
+	# Faz 5: kırılma önce revive teklif edebilir (reklam). Teklif varsa reddet: tur kırık bitsin.
+	if _ctl.has_method("decline_revive") and bool(_state().get("revive_offered", false)):
+		_ctl.call("decline_revive")
+		return
 	var st: Dictionary = _state()
 	print("PROBE kırılma broken=%s finished=%d sonuç=%s" % [str(st.get("broken")), _finished_count, str(_last_result)])
 	if not bool(st.get("broken", false)):

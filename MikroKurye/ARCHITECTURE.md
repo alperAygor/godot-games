@@ -324,6 +324,31 @@ func mods() -> Dictionary                           # UpgradeModel.stats(data/up
 **Efektler (`GameController.state()["mods"]`):** başlangıçta `SaveService.mods()` okunur: `cargo_damping_bonus` kargo sönümüne eklenir, `wheel_grip_bonus` tekerlek tutuşuna eklenir, `battery_capacity_bonus` batarya kapasitesine eklenir; uygulanan toplamlar `state()["mods"]` sözlüğünde görünür.
 **Probe:** SaveService turu (apply_result → dosyaya yazılır → yeniden yükleme aynı), bozuk dosya toleransı, purchase (bakiye düşer/seviye artar/yetersizse değişmez), mods → `state()["mods"]`, OrderSelect kartı → `selected_cargo_id`, Garage etiketleri.
 
+### 5.5 Reklam sözleşmesi (Faz 5; `tools/ads_probe.gd` denetler)
+
+**AdManager.Placement** (şablon kalıntıları `EXTRA_POCKET`, `TAPE_RESCUE` KALDIRILIR): `CARGO_INSURANCE`, `BATTERY_RECHARGE`, `DOUBLE_REWARD`, `TRY_BEFORE_BUY`, `GOLDEN_BOX`.
+`PLACEMENT_KEYS` ve `data/ads.json` bunlara göre: `CARGO_INSURANCE {per_run 1, per_session 5}`, `BATTERY_RECHARGE {1, 5}`, `DOUBLE_REWARD {1, 3}`, `TRY_BEFORE_BUY {1, 3}`, `GOLDEN_BOX {1, 3}`. Mevcut API (`can_offer`, `show_rewarded`, `rewarded_finished(placement, success)`, `reset_run_limits`) korunur.
+**MockAdsProvider** (test edilebilirlik): `var instant: bool = false` (true iken `show()` bir sonraki karede bitirir, gecikme yok) ve `var force_result: int = -1` (-1 rastgele/mevcut davranış, 0 başarısız `failed("no_fill")`, 1 başarılı `rewarded`). Probe bunları `AdManager.provider` üzerinde ayarlar.
+**Sınırlar:** her tur başlangıcında (`GameController.restart()`/Game açılışı) `AdManager.reset_run_limits()` çağrılır.
+
+**Aşama a — GameController (revive + hızlı şarj):**
+```gdscript
+signal revive_offered()
+func accept_revive() -> void      # reklamı gösterir; başarıyla biterse revive uygulanır
+func decline_revive() -> void     # teklifi reddeder: tur kırık olarak BİTER (finished yayılır)
+func request_recharge() -> void   # BATTERY_RECHARGE reklamı; başarıyla biterse batarya %100 + boost
+# state() yeni anahtarlar: revive_offered (bool), revive_used (bool), recharge_available (bool), boost_active (bool)
+```
+- **Revive (CARGO_INSURANCE):** kargo KIRILIRSA ve `AdManager.can_offer(CARGO_INSURANCE)` ise tur BİTMEZ: `revive_offered` sinyali + `state().revive_offered=true`; HUD'da `RevivePanel` (içinde `ReviveButton`, `DeclineButton`). `accept_revive()` → reklam başarılıysa: kargo sağlığı SIFIRLANIR (hasar 0.0, kırık değil), robot son kontrol noktasına döner (hızlar sıfır), `revive_used=true`, tur devam eder. Reklam başarısızsa teklif kapanır, tur kırık biter. Tur başına bir kez; ikinci kırılmada teklif YOK (anında biter). Reklam teklif edilemiyorsa (limit/provider) kırılma eskisi gibi hemen biter.
+- **Hızlı şarj (BATTERY_RECHARGE):** `battery.level() < balance.game.recharge_threshold` (varsayılan 0.15) ve `can_offer` iken `state().recharge_available=true` ve HUD'da `RechargeButton` görünür. `request_recharge()` → başarıyla biterse `set_battery_level(1.0)` + `BatteryModel.start_boost(balance.game.recharge_boost_seconds)` (varsayılan 10); `state().boost_active`. Tur başına bir kez.
+- Düğme metinleri `scripts/ui/strings.gd`'de.
+
+**Aşama b — Sonuç/garaj/seviye:**
+- **DOUBLE_REWARD:** `Result.tscn`'de `DoubleRewardButton` (yalnız başarılı sonuçta ve `can_offer`): reklam başarılıysa `SaveService.grant(gold, scrap)` (sonuçtaki değerler kadar ikinci kez) ve düğme gizlenir; `result["doubled"]=true`.
+- **SaveService.grant(gold: int, scrap: int) -> void** (cüzdana ekler + kaydeder; negatif 0). `SaveService.set_trial(category: String)`, `SaveService.clear_trial()`, `SaveService.trial() -> String`; `mods()` deneme kategorisinin SONRAKİ seviyesinin `mods`'unu da ekler. `GameController` başlangıçta `mods()`'u okur ve deneme etkisini UYGULADIKTAN sonra `clear_trial()` çağırır (tek koşuluk).
+- **TRY_BEFORE_BUY:** Garage'da seviyesi maksimum olmayan her kategori için `TryButton_<category>`: `show_rewarded(TRY_BEFORE_BUY)` başarılıysa `set_trial(category)`.
+- **GOLDEN_BOX:** seviyede (`desk_01.tscn`) rotadan ~4–5 m uzakta `GoldenBox` (Area3D, grup `golden_box`, altın renkli parlayan kutu); robot/sepet değerse `state().golden_box_collected=true`. Başarılı teslimde `result["golden_box"]=true`. Result'ta `GoldenBoxButton` (yalnız `golden_box` ise ve `can_offer`): reklam başarılıysa `SaveService.grant(balance.game.golden_box_gold (varsayılan 150), balance.game.golden_box_scrap (varsayılan 10))`, düğme gizlenir. `restart()` kutuyu yeniden açar.
+
 ## 6. UI
 
 `HUD` (kargo sağlığı çubuğu, batarya, modül düğmesi), `OrderSelect` (3 kargo kartı), `Garage` (Faz 4), `Result` (mevcut genişletilir). Sunum katmanı yalnızca gösterir; hesap `core`'dadır.
