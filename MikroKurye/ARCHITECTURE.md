@@ -93,17 +93,17 @@ Dönüş değeri, **gerçekten eklenen** hasardır (`damage()` farkı; kırpma/j
 ### 4.3 `BatteryModel` — `scripts/core/battery_model.gd` (durumlu)
 
 ```gdscript
-func _init(capacity: float = 100.0) -> void
+func _init(capacity: float = 100.0, params: Dictionary = {}) -> void   # params: speed_drain (0.02), empty_speed_factor (0.35), boost_factor (1.25); eksik anahtar = parantezdeki varsayılan
 func level() -> float             # 0..1
 func drain(amount: float) -> void # >= 0 harcar, 0'ın altına inmez
-func drain_for_speed(speed: float, dt: float) -> void  # speed^2 orantılı küçük sabit tüketim (katsayı data/balance.json battery.speed_drain)
+func drain_for_speed(speed: float, dt: float) -> void  # tüketim = speed_drain * speed^2 * dt (hız 0 ise 0; negatif dt/hız 0 sayılır)
 func recharge(amount: float) -> void  # kapasiteyi aşmaz
 func refill_full() -> void
 func is_empty() -> bool
-func speed_factor() -> float      # dolu: 1.0; boş: battery.empty_speed_factor (varsayılan 0.35); aralıkta doğrusal
+func speed_factor() -> float      # dolu: 1.0; boş: empty_speed_factor; arada level()'a göre DOĞRUSAL (1.0 -> empty_speed_factor)
 func start_boost(seconds: float) -> void
 func boost_active() -> bool
-func tick(dt: float) -> void      # boost süresini azaltır; boost sırasında speed_factor() = 1.25
+func tick(dt: float) -> void      # boost süresini azaltır (0'ın altına inmez); boost sırasında speed_factor() = boost_factor (batarya boş olsa da)
 ```
 
 ### 4.4 `DeliveryReward` — `scripts/core/delivery_reward.gd` (statik)
