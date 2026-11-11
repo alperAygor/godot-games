@@ -1,0 +1,94 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1_hud"]
+
+[sub_resource type="StyleBoxFlat" id="PanelStyle"]
+content_margin_left = 28.0
+content_margin_top = 22.0
+content_margin_right = 28.0
+content_margin_bottom = 24.0
+bg_color = Color(0.96, 0.93, 0.88, 0.88)
+border_width_bottom = 5
+border_color = Color(0.33, 0.69, 0.52, 0.65)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+
+[sub_resource type="StyleBoxFlat" id="BarBackground"]
+bg_color = Color(0.16, 0.14, 0.13, 0.16)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="CargoFill"]
+bg_color = Color(0.55, 0.88, 0.7, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="BatteryFill"]
+bg_color = Color(1, 0.62, 0.2, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TopPanel" type="PanelContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 40.0
+offset_top = 48.0
+offset_right = -40.0
+offset_bottom = 360.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("PanelStyle")
+
+[node name="Bars" type="VBoxContainer" parent="Root/TopPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CargoLabel" type="Label" parent="Root/TopPanel/Bars"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.16, 0.15, 0.13, 1)
+theme_override_font_sizes/font_size = 30
+text = "Kargo Sağlığı"
+
+[node name="CargoHealthBar" type="ProgressBar" parent="Root/TopPanel/Bars"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+show_percentage = false
+theme_override_styles/background = SubResource("BarBackground")
+theme_override_styles/fill = SubResource("CargoFill")
+
+[node name="BatteryLabel" type="Label" parent="Root/TopPanel/Bars"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.16, 0.15, 0.13, 1)
+theme_override_font_sizes/font_size = 30
+text = "Batarya"
+
+[node name="BatteryBar" type="ProgressBar" parent="Root/TopPanel/Bars"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+show_percentage = false
+theme_override_styles/background = SubResource("BarBackground")
+theme_override_styles/fill = SubResource("BatteryFill")

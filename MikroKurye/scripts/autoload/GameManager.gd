@@ -18,6 +18,9 @@ signal back_requested()
 var phase: Phase = Phase.BOOT
 ## Son turun sonucu; Result sahnesi buradan okur.
 var last_result: Dictionary = {}
+## Seçili kargo profili (`data/cargo.json` anahtarı). Sipariş ekranı Faz 4'te doldurur;
+## bu fazda varsayılan kargo ile oynanır.
+var selected_cargo_id: String = "pencil_battery"
 
 
 func _ready() -> void:

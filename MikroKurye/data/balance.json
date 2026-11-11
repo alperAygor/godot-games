@@ -46,5 +46,16 @@
     "cargo_angular_response": 0.35,
     "flip_recovery_angle_deg": 100.0,
     "flip_recovery_seconds": 1.5
+  },
+  "game": {
+    "kill_y": -5.0,
+    "respawn_drop_height": 1.0,
+    "checkpoint_radius": 2.0
+  },
+  "battery": {
+    "capacity": 100.0,
+    "speed_drain": 0.02,
+    "empty_speed_factor": 0.35,
+    "boost_factor": 1.25
   }
 }

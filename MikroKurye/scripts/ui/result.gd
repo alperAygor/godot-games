@@ -13,10 +13,14 @@ func _ready() -> void:
 	var stars: int = int(result.get("stars", 0))
 	var fee: int = int(result.get("fee", 0))
 	var damage: float = float(result.get("damage", 0.0))
+	var gold: int = int(result.get("gold", 0))
+	var scrap: int = int(result.get("scrap", 0))
 
 	title_label.text = "Teslimat Tamamlandı" if stars > 0 else "Teslimat Hasarlı"
 	stars_label.text = "Yıldız: %d / 3" % stars
-	detail_label.text = "Hasar: %%%d    Ücret: %d" % [int(roundf(damage * 100.0)), fee]
+	# `fee` eski sonuçlarla uyum için korunur; yeni akışta gold ile aynıdır.
+	detail_label.text = "Hasar: %%%d    Ücret: %d\nAltın: %d    Hurda: %d" % [
+		int(roundf(damage * 100.0)), fee, gold, scrap]
 
 	if stars > 0:
 		AudioService.play("success")
