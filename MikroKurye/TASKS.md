@@ -5,7 +5,7 @@
 | 0 | İskelet (Boot/Menu/Game/Result, autoload'lar, tema, testler) | ✅ |
 | 1 | Çekirdek mantık (saf `core`, testler ÖNCE) | ✅ Tamam |
 | 2 | Fizik prototipi: robot + sallanan kargo + rampa (**oyuncu denemesi kapısı**) | 🟨 Robot ✅; kargo sırada |
-| 3 | Masa haritası ve tehlikeler | ⬜ |
+| 3 | Masa haritası ve tehlikeler | ✅ Tamam (görsel cila V2'de) |
 | 4 | Oyun döngüsü: sipariş, teslimat, ödül, garaj, kayıt | ⬜ |
 | 5 | Reklam yerleşimleri | ⬜ |
 | 6 | Modüller, mutfak/salon, boss | ⬜ |
@@ -62,18 +62,18 @@ Fizik işlerinde **best-of-N** (`solve.sh --workers "dsh:sol dsh"`) ve görsel d
 
 ## Faz 3 — Masa haritası ve tehlikeler
 
-- [ ] **F3.1** `LevelRoot`: başlangıç, kontrol noktaları, teslimat bölgesi [O]
-- [ ] **F3.2** `KeyboardKey` (aniden basılan tuş, işaret verir) [O][F]
-- [ ] **F3.3** `FanWind` (dönen fan rüzgârı, Area3D kuvvet) [O][F]
-- [ ] **F3.4** `RollingPencil` (yuvarlanan kalem) [O][F]
-- [ ] **F3.5** Cetvel rampası ve kısayol [O]
-- [ ] **F3.6** Masa görsel stili (low-poly, doygun renk) [O]
+- [x] **F3.1** `LevelRoot`: başlangıç, kontrol noktaları, teslimat bölgesi [O]
+- [x] **F3.2** `KeyboardKey` (aniden basılan tuş, işaret verir) [O][F]
+- [x] **F3.3** `FanWind` (dönen fan rüzgârı, Area3D kuvvet) [O][F]
+- [x] **F3.4** `RollingPencil` (yuvarlanan kalem) [O][F]
+- [x] **F3.5** Cetvel rampası ve kısayol [O]
+- [x] **F3.6** Masa görsel stili (low-poly, doygun renk) [O]
 
 ## Faz 4 — Oyun döngüsü
 
 - [ ] **F4.1** `OrderSelect`: 3 kargo kartı → `GameManager` [O]
 - [ ] **F4.2** Teslimat sonu: `DeliveryReward` → `Result` genişletme [K]
-- [ ] **F4.3** `UpgradeModel` + `data/upgrades.json` (şasi, tekerlek, batarya) [O][T]
+- [x] **F4.3** `UpgradeModel` + `data/upgrades.json` (şasi, tekerlek, batarya) [O][T]
 - [ ] **F4.4** `Garage` ekranı [O]
 - [ ] **F4.5** `SaveService` (user://save.json, sürümlü, bozuk dosya toleransı) [O][T]
 
