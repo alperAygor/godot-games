@@ -101,7 +101,7 @@ Hedef: **low-poly'nin üstü**, pürüzsüz ve ürün kalitesinde stilize görü
 - [x] **F7.1** Stil laboratuvarı; stil A seçildi
 - [x] **F7.2** Malzeme/shader sistemi, ışık, ahşap masa
 - [x] **F7.3** Robot/kargo/eşya modellerinin oyuna girişi (ilk sürüm, basit modellerle)
-- [ ] **F7.4** Kamera + ortam (oda derinliği, pencere ışığı, toz) — çalışıyor
+- [x] **F7.4** Kamera + ortam (oda derinliği, pencere ışığı, toz) ✅ (ilk sürüm; model v2 ile yenilenecek)
 - [ ] **F7.9** **Render kalitesi:** MSAA/FXAA ile kenar tırtığı yok, doku/mip filtreleme, yumuşak toon bantları ve anti-aliased anahat, ölçek [O]
 - [ ] **F7.10a** **Model v2 — robot, tekerlek, sepet, 3 kargo:** hero kalite (kavisli formlar, bevel, yumuşak normal, yüz/detaylar) [Z]
 - [ ] **F7.10b** **Model v2 — masa eşyaları ve oda/çevre kiti:** monitör, lamba, bitki, kitap yığını, kulaklık, defter, kalemlik, yapışkan not, pencere/raf/perde, klavye/kupa/kalem/cetvel/kitap yenileme [Z]
