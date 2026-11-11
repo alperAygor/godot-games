@@ -1,0 +1,32 @@
+{
+  "chassis": {
+    "max_level": 5,
+    "levels": [
+      {"cost": {"gold": 100, "scrap": 5}, "mods": {"cargo_damping_bonus": 1.0}},
+      {"cost": {"gold": 200, "scrap": 10}, "mods": {"cargo_damping_bonus": 1.0}},
+      {"cost": {"gold": 350, "scrap": 18}, "mods": {"cargo_damping_bonus": 1.0}},
+      {"cost": {"gold": 550, "scrap": 28}, "mods": {"cargo_damping_bonus": 1.0}},
+      {"cost": {"gold": 800, "scrap": 40}, "mods": {"cargo_damping_bonus": 1.0}}
+    ]
+  },
+  "wheels": {
+    "max_level": 5,
+    "levels": [
+      {"cost": {"gold": 80, "scrap": 4}, "mods": {"wheel_grip_bonus": 0.6}},
+      {"cost": {"gold": 160, "scrap": 8}, "mods": {"wheel_grip_bonus": 0.6}},
+      {"cost": {"gold": 300, "scrap": 15}, "mods": {"wheel_grip_bonus": 0.6}},
+      {"cost": {"gold": 480, "scrap": 24}, "mods": {"wheel_grip_bonus": 0.6}},
+      {"cost": {"gold": 700, "scrap": 35}, "mods": {"wheel_grip_bonus": 0.6}}
+    ]
+  },
+  "battery": {
+    "max_level": 5,
+    "levels": [
+      {"cost": {"gold": 80, "scrap": 3}, "mods": {"battery_capacity_bonus": 15.0}},
+      {"cost": {"gold": 160, "scrap": 7}, "mods": {"battery_capacity_bonus": 15.0}},
+      {"cost": {"gold": 300, "scrap": 14}, "mods": {"battery_capacity_bonus": 15.0}},
+      {"cost": {"gold": 480, "scrap": 22}, "mods": {"battery_capacity_bonus": 15.0}},
+      {"cost": {"gold": 700, "scrap": 32}, "mods": {"battery_capacity_bonus": 15.0}}
+    ]
+  }
+}
