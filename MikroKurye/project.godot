@@ -50,3 +50,23 @@ common/physics_ticks_per_second=60
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+
+; F7.9 — render kalitesi: "pikselimsi" görünümü bitirir. Gerekçe ve maliyet notu:
+; docs/art/RENDER_QUALITY.md. Yalnız görsel ayarlar; fizik/probe sayıları etkilenmez.
+; 2× MSAA geometri silüetini (robot/tekerlek kenarı, anahat kabuğu) yumuşatır.
+; 4× (değer 2) mobilde pahalıdır; ileride "Kalite" seçeneği olarak bırakılır.
+; Not: screen_space_aa (FXAA) Compatibility renderer'da desteklenmez (yalnız
+; Forward+/Mobile), bu yüzden AA işini MSAA + shader içi smoothstep yapar.
+anti_aliasing/quality/msaa_3d=1
+; Doku filtreleri: prosedürel malzemelerde etkisiz ama dokulu varlık gelirse mipmap
+; zinciri doğru örneklenir ve eğik yüzeyler 16× anizotropi ile bulanıklaşmaz.
+textures/default_filters/use_nearest_mipmap_filter=false
+textures/default_filters/anisotropic_filtering_level=4
+; 3B ölçekleme kapalı/1.0: viewport ekran çözünürlüğünde render eder; düşük çözünürlük
+; yok. (Varsayılanlar açıkça yazıldı, ileride kazara değişmesin.)
+scaling_3d/mode=0
+scaling_3d/scale=1.0
+; Yön ışığı gölgesi PCF ile yumuşar. .mobile varsayılanı 0 (sert) idi; telefonda da
+; yumuşak olsun diye 2 (Soft Low). Masaüstünde 3 (Soft Medium) dev/görüntü için.
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality=3
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality.mobile=2
