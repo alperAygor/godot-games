@@ -1,4 +1,4 @@
-# ARCHITECTURE — Mikro-Kurye
+# ARCHITECTURE — Micro Courier
 
 Tasarım için `PROJECT_SPEC.md`, iş sırası için `TASKS.md`. Bu belge **modül sözleşmelerini** tanımlar: sınıf adı, dosya, kamu API'si, davranış kuralları.
 İşçi ajanlar API imzalarına **birebir** uyar (testler bu imzalara yazılır). İmza değişikliği liderin kararıdır.
@@ -60,7 +60,7 @@ Sihirli sayı yok; ayarlanabilir her değer buradadır.
 
 ## 4. Core modülleri (saf mantık; Faz 1; testler ÖNCE yazılır)
 
-Hepsi `scripts/core/`; `class_name` + `extends RefCounted`; testler `tests/unit/test_<ad>.gd`.
+Hepsi `scripts/core/`; `class_name` + `extends RefCounted`; testler `tests/unit/test_<ad>.gd`. (Numaralama sırası belge sırasıdır, ör. 4.7 `Wallet` 4.5'ten önce yazılabilir.)
 
 ### 4.1 `DamageModel` — `scripts/core/damage_model.gd` (statik, durumsuz)
 
@@ -126,6 +126,21 @@ static func can_afford(wallet: Dictionary, cost: Dictionary) -> bool            
 static func purchase(table: Dictionary, wallet: Dictionary, levels: Dictionary, category: String) -> Dictionary
 # {ok: bool, wallet: Dictionary, levels: Dictionary, reason: String}; girdi sözlüklerini DEĞİŞTİRMEZ (kopya döner)
 static func stats(table: Dictionary, levels: Dictionary) -> Dictionary                 # tüm sahip olunan seviyelerin "mods" toplamı
+```
+
+### 4.7 `Wallet` — `scripts/core/wallet.gd` (durumlu; para birimi)
+
+İki para birimi: **gold** (Altın) ve **scrap** (Hurda). Negatif bakiye olamaz.
+
+```gdscript
+func _init(gold: int = 0, scrap: int = 0) -> void
+func gold() -> int
+func scrap() -> int
+func add(gold: int, scrap: int = 0) -> void        # negatif girdi 0 sayılır (yalnız ekler)
+func can_afford(cost: Dictionary) -> bool          # {"gold": int, "scrap": int}; eksik anahtar 0
+func spend(cost: Dictionary) -> bool               # yeterliyse düşer ve true; değilse HİÇBİR ŞEY değişmez ve false
+func to_dict() -> Dictionary                       # {"gold": int, "scrap": int}
+static func from_dict(d: Dictionary) -> Wallet     # eksik/yanlış tip/negatif -> 0
 ```
 
 ### 4.6 `CheckpointTracker` — `scripts/core/checkpoint_tracker.gd` (durumlu; Faz 2)

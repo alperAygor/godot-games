@@ -1,11 +1,11 @@
-; Mikro-Kurye — studio-kit iskeleti.
+; Micro Courier — studio-kit iskeleti.
 ; Yeni oyun: new_game.sh bu dosyadaki adı/sürümü değiştirir.
 
 config_version=5
 
 [application]
 
-config/name="Mikro-Kurye"
+config/name="Micro Courier"
 config/version="0.1.0"
 run/main_scene="res://scenes/Boot.tscn"
 config/features=PackedStringArray("4.7", "Mobile")

@@ -1,4 +1,6 @@
-# PROJECT_SPEC — Mikro-Kurye: Ev İçi Parkur
+# PROJECT_SPEC — Micro Courier (Ev İçi Parkur)
+
+> Çalışma adı Mikro-Kurye'ydi; görünen ad **Micro Courier**.
 
 > **Tek cümle:** Başparmak boyunda bir kurye robotu sürer, sırtındaki sallanan kargoyu masa, tezgâh ve halı gibi devasa ev parkurlarında
 > hasarsız teslim eder; kazandığın hurda ve altınla robotunu geliştirirsin.
@@ -155,9 +157,10 @@ Sıklık limitleri `AdManager` içinde, veriler `data/` altında. Reklam SDK ça
 
 ---
 
-## 12. Açık sorular (kullanıcı kararı bekliyor)
+## 12. Verilen kararlar (kullanıcı, 2026-11-11)
 
-1. K1 kamera/ekran yönü onaylanıyor mu (3D, arkadan-yukarıdan, dikey)?
-2. Ekonomi: Altın ve Hurda ayrımı MVP'de gerekli mi, yoksa tek para birimiyle mi başlayalım?
-3. Oyun adı sabit mi ("Mikro-Kurye"), yoksa mağaza adı İngilizce mi olacak?
-4. Hangi tek modül MVP'ye girsin (Kanca mı, Şok Jeli mi, Drone mu)?
+1. **K1 (3D, arkadan-yukarıdan, dikey)** varsayılanıyla devam; kullanıcı itiraz etmedi, yetki lidere verildi.
+2. **Para birimi:** Altın + Hurda ikisi de MVP'de (`Wallet`, `UpgradeModel`).
+3. **MVP'deki tek modül: Şok Emici Jel** (mantığı `CargoHealth` içinde hazır; fizik gerektirmez). Kanca/Drone sonra.
+4. **Ad:** mağaza ve oyun içi görünen ad **Micro Courier** (İngilizce). Klasör/dosya adı `MikroKurye` kalır; Türkçe metinler yerelleştirme anahtarlarıyla gelir.
+5. Kullanıcı süreci otomatik yürütmemi istedi; yalnızca **kendi onayı gerektirenler** (oyun hissi onayı, mağaza/yayın, ücretli API, geri alınamaz işlemler) ona kalır.

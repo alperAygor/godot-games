@@ -1,4 +1,4 @@
-# TASKS — Mikro-Kurye
+# TASKS — Micro Courier
 
 | Faz | Konu | Durum |
 |---|---|---|
@@ -34,6 +34,7 @@ Etiketler: **[K]** kolay/mekanik · **[O]** orta · **[Z]** zor · **[T]** önce
 - [ ] **F1.4** `BatteryModel` — tüketim, hız faktörü, boost, doldurma [O][T]
 - [ ] **F1.5** `DeliveryReward` — altın/hurda, `RunScoring` ile uyum [O][T]
 - [ ] **F1.6** `CheckpointTracker` — yalnız ileri ilerleme [K][T]
+- [ ] **F1.7** `Wallet` — Altın/Hurda bakiyesi, harcama, kayıt sözlüğü [K][T]
 
 Bitti: `verify.sh` yeşil, her sınıfın sınır değeri testleri var, `CHANGELOG.md` güncel.
 
@@ -87,6 +88,7 @@ Modüller (Kanca, Şok Jeli, Drone), Mutfak ve Salon, Robot Süpürge boss, ses 
 
 ---
 
-## Açık kararlar [U]
+## Kararlar
 
-Bkz. `PROJECT_SPEC.md` §12.
+Bkz. `PROJECT_SPEC.md` §12 (ad: Micro Courier; Altın+Hurda; MVP modülü Şok Jeli; K1 onaylı).
+Kullanıcı onayı gerektirenler: oyun hissi (Faz 2 kapısı), mağaza/yayın, ücretli API.

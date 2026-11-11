@@ -1,4 +1,4 @@
-# Mikro-Kurye — ajan kuralları
+# Micro Courier — ajan kuralları (klasör adı MikroKurye)
 
 Godot 4.7, GDScript (C# yok), `gl_compatibility`, dikey 1080x1920.
 Bu dosya projenin anayasasıdır; kural ile sezgi çatışırsa kural kazanır.
