@@ -50,7 +50,11 @@
   "game": {
     "kill_y": -5.0,
     "respawn_drop_height": 1.0,
-    "checkpoint_radius": 2.0
+    "checkpoint_radius": 2.0,
+    "recharge_threshold": 0.15,
+    "recharge_boost_seconds": 10.0,
+    "golden_box_gold": 150,
+    "golden_box_scrap": 10
   },
   "battery": {
     "capacity": 100.0,

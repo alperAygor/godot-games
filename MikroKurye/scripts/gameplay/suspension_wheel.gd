@@ -13,6 +13,7 @@ var _radius: float = 0.0
 var _stiffness: float = 0.0
 var _damping: float = 0.0
 var _grip: float = 0.0
+var _base_grip: float = 0.0
 var _force_limit: float = 0.0
 @onready var _visual: MeshInstance3D = get_node("Visual") as MeshInstance3D
 
@@ -25,6 +26,7 @@ func configure(body: RigidBody3D, rest: float, radius: float, stiffness: float,
 	_stiffness = stiffness
 	_damping = damping
 	_grip = grip
+	_base_grip = grip
 	_force_limit = force_limit
 	_ray = get_node("RayCast3D") as RayCast3D
 	_ray.target_position = Vector3.DOWN * (_rest + _radius)
@@ -34,6 +36,10 @@ func configure(body: RigidBody3D, rest: float, radius: float, stiffness: float,
 ## Tekerlek yükseltmesi: yanal tutuş artar (RobotController dört tekerleğe uygular).
 func add_grip_bonus(bonus: float) -> void:
 	_grip += maxf(bonus, 0.0)
+
+
+func set_grip_bonus(bonus: float) -> void:
+	_grip = _base_grip + maxf(bonus, 0.0)
 
 
 func simulate() -> void:
