@@ -34,6 +34,12 @@ var _revive_seconds: float = 15.0
 @onready var _sparks_node: Node3D = $Sparks
 @onready var _camera: CameraRig = $CameraRig as CameraRig
 @onready var _hud: GameHUD = $HUD as GameHUD
+@onready var _lights_node: Node3D = get_node_or_null("Lights") as Node3D
+@onready var _world_env: WorldEnvironment = get_node_or_null("WorldEnvironment") as WorldEnvironment
+
+## blackout fallback: BoardBuilder.set_blackout yoksa ışık enerjilerini kısarız.
+var _light_base: Dictionary = {}
+var _ambient_base: float = 1.0
 
 
 func _ready() -> void:
@@ -43,6 +49,8 @@ func _ready() -> void:
 	_connect_hud()
 	GameManager.back_requested.connect(_on_back_requested)
 	_build_world()
+	_cache_lights()
+	_start_ambient()
 	if _level == null:
 		return
 	_configure_hud()
@@ -86,9 +94,9 @@ func _build_world() -> void:
 	_shield_seconds = float(overload_cfg.get("shield_seconds", 10.0))
 	_revive_seconds = float(overload_cfg.get("revive_shield_seconds", 15.0))
 	_level_number = int(level_config.get("id", 1))
-	_level_name = String(level_config.get("name", "Bölüm"))
+	_level_name = _localized_name(_level_number, level_config)
 	_par_seconds = float(level_config.get("par_seconds", 60.0))
-	_hint = String(level_config.get("hint", ""))
+	_hint = _localized_hint(_level_number, level_config)
 
 	_board = BoardBuilder.new()
 	_board.name = "BoardBuilder"
@@ -99,7 +107,9 @@ func _build_world() -> void:
 	_sparks.name = "SparkBurst"
 	_sparks_node.add_child(_sparks)
 
-	var knot: KnotLevel = KnotLevel.from_config(level_config, colors, layout)
+	# Tam balance tablosu verilir: board bolumu ic ice okunur, modifier ayarlari
+	# (locked_socket sayisi, sway genligi) da veri odakli kalir (ARCHITECTURE §12).
+	var knot: KnotLevel = KnotLevel.from_config(level_config, colors, balance)
 	_level = LevelController.new()
 	_level.build(knot, _board, _cable_root, _sparks, _camera)
 	_level.snap_done.connect(_on_snap_done)
@@ -108,6 +118,9 @@ func _build_world() -> void:
 	_level.connections_changed.connect(_on_connections_changed)
 	_level.fuse_blown.connect(_on_fuse_blown)
 	_level.level_completed.connect(_on_level_completed)
+	_level.locked_socket_hint.connect(_on_locked_socket_hint)
+	_level.socket_unlocked.connect(_on_socket_unlocked)
+	_level.blackout_changed.connect(_on_blackout_changed)
 
 	_input = GameInput.new()
 	_input.setup(_camera, _level, float(layout.get("drag_lift", 0.3)), _board.board_bounds())
@@ -119,6 +132,9 @@ func _configure_hud() -> void:
 	_hud.set_hint(_hint)
 	_hint_left = HINT_VISIBLE_SECONDS
 	_sync_hud()
+	# sway: bölüm başında tek seferlik canlı hat uyarısı (telegraph, ASMR tonunda).
+	if _level.has_modifier(KnotLevel.MODIFIER_SWAY):
+		_toast(_loc("toast.live_wires"))
 
 
 func _sync_hud() -> void:
@@ -155,12 +171,27 @@ func _on_snap_done(_cable_index: int, _socket_index: int) -> void:
 
 func _on_wrong_socket_try(_cable_index: int, _socket_index: int) -> void:
 	AudioService.play("wrong_socket")
-	_toast("Yanlış priz! Kendi rengine tak.")
+	_toast(_loc("toast.wrong_socket"))
 
 
 func _on_short_circuit(_point: Vector3, _color: Color) -> void:
 	AudioService.play("spark", 0.2)
-	_toast("Kısa devre! Teması kes.")
+	_toast(_loc("toast.short_circuit"))
+
+
+## locked_socket: kilitli prizin yanında fiş tutuluyor / kilide bırakıldı.
+func _on_locked_socket_hint(_socket_index: int) -> void:
+	_toast(_loc("toast.locked_socket"))
+
+
+## Kapak açıldı: yumuşak mekanik "clack" (ASMR).
+func _on_socket_unlocked(_socket_index: int) -> void:
+	AudioService.play("clack", 0.12)
+
+
+## blackout: panoya yumuşak sönme; board API'si varsa ona delege et.
+func _on_blackout_changed(amount: float) -> void:
+	_apply_blackout(amount)
 
 
 func _on_connections_changed(done: int, total: int) -> void:
@@ -207,7 +238,7 @@ func _on_fuse_blown() -> void:
 	if _board != null and _board.voltmeter != null:
 		_board.voltmeter.set_load(1.0)
 	_hud.set_ad_buttons(false, false)
-	_hud.show_fail("Sigorta attı! Devre aşırı yüklendi.",
+	_hud.show_fail(_loc("fail.reason"),
 		AdManager.can_offer(AdManager.Placement.FUSE_RESCUE))
 
 
@@ -232,7 +263,7 @@ func _on_rewarded_finished(placement: int, success: bool) -> void:
 	if _state == State.PLAYING:
 		_enable_input()
 	if not success:
-		_hud.toast("Reklam tamamlanmadı, tekrar dene.")
+		_hud.toast(_loc("toast.ad_failed"))
 		return
 	if _applied_rewards.has(placement):
 		return
@@ -251,14 +282,14 @@ func _reward_cutter() -> void:
 		return
 	var target: int = _level.best_cutter_target()
 	if target < 0:
-		_hud.toast("Bağlanacak kablo kalmadı.")
+		_hud.toast(_loc("toast.cutter_none"))
 		return
 	_level.cutter_snap(target)
 	if _state != State.PLAYING:
 		return  # keski son fişi bağladıysa zafer akışı devralır
 	_level.apply_shield(2.0)
 	AudioService.play("cutter")
-	_hud.toast("Altın keski: fiş otomatik bağlandı!")
+	_hud.toast(_loc("toast.cutter_done"))
 
 
 func _reward_spray() -> void:
@@ -266,7 +297,7 @@ func _reward_spray() -> void:
 		return
 	_level.apply_shield(_shield_seconds)
 	AudioService.play("shield_on")
-	_hud.toast("Yalıtım spreyi: %d sn kalkan!" % int(_shield_seconds))
+	_hud.toast(Loc.t("toast.spray_done", {"sec": int(_shield_seconds)}))
 
 
 func _reward_revive() -> void:
@@ -278,7 +309,7 @@ func _reward_revive() -> void:
 	_hud.hide_fail()
 	_clear_toast()
 	AudioService.play("shield_on")
-	_hud.toast("Yedek sigorta takıldı — devam!")
+	_hud.toast(_loc("toast.revive_done"))
 
 
 # --- HUD eylemleri -------------------------------------------------------
@@ -297,7 +328,7 @@ func _request_ad(placement: int) -> void:
 	if _state != State.PLAYING or _pending_reward != -1:
 		return
 	if not AdManager.can_offer(placement):
-		_hud.toast("Reklam şu an kullanılamıyor.")
+		_hud.toast(_loc("toast.ad_unavailable"))
 		return
 	AdManager.show_rewarded(placement)
 
@@ -306,7 +337,7 @@ func _on_revive_pressed() -> void:
 	if _state != State.FAILED or _pending_reward != -1:
 		return
 	if not AdManager.can_offer(AdManager.Placement.FUSE_RESCUE):
-		_hud.toast("Reklam şu an kullanılamıyor.")
+		_hud.toast(_loc("toast.ad_unavailable"))
 		return
 	AdManager.show_rewarded(AdManager.Placement.FUSE_RESCUE)
 
@@ -391,10 +422,18 @@ func force_overload(amount: float) -> void:
 	_level.overload.blown = target >= 1.0
 
 
+## QA: fast_overload çarpanı (modifier yoksa 1.0).
+func fill_multiplier() -> float:
+	if _level == null:
+		return 1.0
+	return _level.monitor.fill_multiplier()
+
+
 func debug_state() -> Dictionary:
 	if _level == null:
 		return {"level": _level_number, "connected": 0, "total": 0,
-			"overload": 0.0, "shorts": 0, "elapsed": _elapsed, "state": _state_name()}
+			"overload": 0.0, "shorts": 0, "elapsed": _elapsed,
+			"state": _state_name(), "modifiers": []}
 	return {
 		"level": _level_number,
 		"connected": _level.connected,
@@ -403,6 +442,10 @@ func debug_state() -> Dictionary:
 		"shorts": _level.shorts,
 		"elapsed": _elapsed,
 		"state": _state_name(),
+		"modifiers": _modifier_names(),
+		"obstacles": _level.obstacle_count(),
+		"locked_sockets": _level.locked_socket_count(),
+		"blackout": _level.blackout_amount(),
 	}
 
 
@@ -444,3 +487,69 @@ func _dict(source: Dictionary, key: String) -> Dictionary:
 	if raw is Dictionary:
 		return raw as Dictionary
 	return {}
+
+
+# --- v0.2: yerelleştirme, atmosfer ve modifier görselleri ----------------
+
+## Loc anahtarı varsa yerelleştirilmiş metin, yoksa veri dosyasındaki yedek.
+func _loc(key: String, fallback: String = "") -> String:
+	if Loc.has(key):
+		return Loc.t(key)
+	if fallback != "":
+		return fallback
+	return Loc.t(key)
+
+
+func _localized_name(level: int, config: Dictionary) -> String:
+	var key: String = "level.%d.name" % level
+	if Loc.has(key):
+		return Loc.t(key)
+	return String(config.get("name", "Level %d" % level))
+
+
+func _localized_hint(level: int, config: Dictionary) -> String:
+	var key: String = "level.%d.hint" % level
+	if Loc.has(key):
+		return Loc.t(key)
+	return String(config.get("hint", ""))
+
+
+func _modifier_names() -> Array[String]:
+	var names: Array[String] = []
+	if _level == null or _level.knot == null:
+		return names
+	for modifier: StringName in _level.knot.modifiers:
+		names.append(String(modifier))
+	return names
+
+
+## blackout: önce BoardBuilder.set_blackout (live-world API'si), sonra sahne
+## ışıkları ve ortam ışığı yumuşakça kısılır (API yoksa da oyun bozulmaz).
+func _apply_blackout(amount: float) -> void:
+	var sealed: float = clampf(amount, 0.0, 1.0)
+	if _board != null and is_instance_valid(_board) and _board.has_method("set_blackout"):
+		_board.call("set_blackout", sealed)
+	var factor: float = lerpf(1.0, 0.45, sealed)
+	for key: Variant in _light_base.keys():
+		var light: Light3D = key as Light3D
+		if light != null and is_instance_valid(light):
+			light.light_energy = float(_light_base[key]) * factor
+	if _world_env != null and _world_env.environment != null:
+		_world_env.environment.ambient_light_energy = _ambient_base * factor
+
+
+func _cache_lights() -> void:
+	_light_base.clear()
+	if _lights_node != null:
+		for child: Node in _lights_node.get_children():
+			var light: Light3D = child as Light3D
+			if light != null:
+				_light_base[light] = light.light_energy
+	if _world_env != null and _world_env.environment != null:
+		_ambient_base = _world_env.environment.ambient_light_energy
+
+
+## ASMR zemin: oyun içi sakin uğultu (AudioService ambient API'si; ses yoksa sessiz).
+func _start_ambient() -> void:
+	if AudioService.has_method("play_ambient"):
+		AudioService.call("play_ambient", "ambient_hum", 1.5)

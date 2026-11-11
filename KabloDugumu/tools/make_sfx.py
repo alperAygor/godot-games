@@ -8,16 +8,21 @@ Kullanım:
     python3 tools/make_sfx.py ui_tap success  # yalnızca bu adlar
     python3 tools/make_sfx.py --normalize     # var olanları tepe-normalize eder
 
-Tarifler \`data/sfx_recipes.json\`:
+Tarifler `data/sfx_recipes.json`:
     {
       "ui_tap": {"prompt": "...", "seconds": 0.4, "synth": "blip", "freq": 880}
     }
 
-Yedek sentez tipleri (anahtar yoksa deterministik üretim):
-    blip, thud, crackle, chime, whoosh, clack, pop, buzz, hum
+Yedek sentez tipleri (v0.2 ASMR — anahtar yoksa deterministik üretim):
+    blip, thud, crackle, chime, whoosh, clack, pop, buzz, hum,
+    friction (kumaş/ahşap sürtünme), hum_loop (dikişsiz uğultu),
+    pad_loop (dikişsiz sıcak pad)
 
-Üretilen dosya \`assets/audio/sfx/<ad>.wav\` (44.1 kHz mono 16-bit, tepe 0.89) ve
-\`data/sounds.json\` tablosuna \`"<ad>": "res://assets/audio/sfx/<ad>.wav"\` kaydı eklenir.
+Loop'lar `crossfade_loop` ile dikişsiz kılınır: kuyruk, başa eşit güç eğrisiyle
+karıştırılır; dosya başı/sonu arasında tık oluşmaz.
+
+Üretilen dosya `assets/audio/sfx/<ad>.wav` (44.1 kHz mono 16-bit, tepe 0.89) ve
+`data/sounds.json` tablosuna `"<ad>": "res://assets/audio/sfx/<ad>.wav"` kaydı eklenir.
 
 Anahtar: ELEVENLABS_API_KEY ortam değişkeni ya da proje kökündeki .env.
 Anahtar hiçbir zaman yazdırılmaz ve repoya girmez.
@@ -44,6 +49,8 @@ TARGET_PEAK = 0.89
 # invalid_generation_settings). Kısa efektler için yine de 0.5 sn istenir,
 # gerekirse sonra kırpılır.
 MIN_API_SECONDS = 0.5
+# Dikişsiz loop üretiminde kuyruk/baş karışım süresi (sn). ASMR: uzun, duyulmaz.
+LOOP_FADE_SECONDS = 1.5
 
 
 # --------------------------------------------------------------------------
@@ -112,10 +119,16 @@ def mp3_to_wav(data, out_path):
 
 
 # --------------------------------------------------------------------------
-# yedek sentez (anahtar yoksa) — tipler tarifte seçilir
+# ortak yardımcılar (ASMR: yumuşak atak, düşük frekans, yumuşak kırpma)
 # --------------------------------------------------------------------------
 def envelope(t, attack, decay):
     return np.clip(t / max(attack, 1e-6), 0.0, 1.0) * np.exp(-t / max(decay, 1e-6))
+
+
+def soft_attack(t, attack):
+    """Tık yapmayan yumuşak giriş: cos eğrisiyle 0 -> 1."""
+    return np.clip(t / max(attack, 1e-6), 0.0, 1.0) ** 2 * (3.0 - 2.0 * np.clip(
+        t / max(attack, 1e-6), 0.0, 1.0))
 
 
 def normalize(samples, peak=TARGET_PEAK):
@@ -123,94 +136,181 @@ def normalize(samples, peak=TARGET_PEAK):
     return samples / top * peak
 
 
+def soft_saturate(samples, drive=1.15):
+    """Tepeye yakın harmonikleri yumuşatır; sert dijital kırpma yerine tanh."""
+    return np.tanh(samples * drive) / math.tanh(drive)
+
+
+def lowpassed(rng, size, kernel):
+    """Basit hareketli ortalama alçak geçiren: pencere büyüdükçe daha koyu."""
+    noise = rng.normal(0, 1, size)
+    if kernel <= 1:
+        return noise
+    taps = np.ones(kernel, dtype=np.float64) / float(kernel)
+    return np.convolve(noise, taps, mode="same")
+
+
+def crossfade_loop(samples, loop_seconds, fade_seconds=LOOP_FADE_SECONDS):
+    """Dikişsiz loop: son `fade` saniyelik kuyruk, eşit güç eğrisiyle başa karışır.
+
+    y[i] = x[i]*(i/fade) + x[loop_len+i]*(1-i/fade)  (i < fade)
+    Böylece y[-1] -> y[0] geçişi doğal örnek adımı kadar kalır; tık oluşmaz.
+    """
+    loop_len = int(round(RATE * loop_seconds))
+    fade_len = int(round(RATE * min(fade_seconds, loop_seconds * 0.4)))
+    if loop_len <= 0 or fade_len <= 0:
+        return normalize(samples)
+    needed = loop_len + fade_len
+    if samples.size < needed:
+        samples = np.resize(samples, needed)
+    out = samples[:loop_len].copy()
+    ramp = np.linspace(0.0, 1.0, fade_len, endpoint=False)
+    head = samples[:fade_len]
+    tail = samples[loop_len:loop_len + fade_len]
+    out[:fade_len] = head * ramp + tail * (1.0 - ramp)
+    return normalize(out)
+
+
+# --------------------------------------------------------------------------
+# yedek sentez tipleri
+# --------------------------------------------------------------------------
 def synth_blip(seconds, freq):
+    """Yumuşak UI dokunuşu: sıcak sinüs, kısa ve nazik."""
     t = np.arange(int(RATE * seconds)) / RATE
-    tone = np.sin(2 * math.pi * freq * t) + 0.3 * np.sin(2 * math.pi * freq * 2 * t)
-    return normalize(tone * envelope(t, 0.002, seconds * 0.22))
+    tone = np.sin(2 * math.pi * freq * t) + 0.16 * np.sin(2 * math.pi * freq * 2.0 * t)
+    return normalize(soft_saturate(tone * envelope(t, 0.006, seconds * 0.30), 1.05))
 
 
 def synth_thud(seconds, freq):
     t = np.arange(int(RATE * seconds)) / RATE
-    sweep = np.sin(2 * math.pi * (freq * (1.0 - 0.45 * t / seconds)) * t)
-    noise = np.random.default_rng(7).normal(0, 1, t.size)
-    return normalize(sweep * envelope(t, 0.004, seconds * 0.3) + noise * envelope(t, 0.001, 0.02) * 0.3)
+    sweep = np.sin(2 * math.pi * (freq * (1.0 - 0.35 * t / seconds)) * t)
+    rng = np.random.default_rng(7)
+    noise = lowpassed(rng, t.size, 24) * envelope(t, 0.002, 0.06) * 0.25
+    return normalize(soft_saturate(sweep * envelope(t, 0.008, seconds * 0.35) + noise))
 
 
 def synth_crackle(seconds, freq):
+    """Yumuşak kıvılcım: alçak geçiren gürültü + kısık rezonanslar (keskin değil)."""
     rng = np.random.default_rng(11)
     t = np.arange(int(RATE * seconds)) / RATE
-    out = rng.normal(0, 1, t.size) * envelope(t, 0.0006, seconds * 0.12)
-    for partial, delay in ((1.0, 0.0), (1.37, 0.04), (2.1, 0.09)):
+    body = lowpassed(rng, t.size, 10) * envelope(t, 0.004, seconds * 0.30)
+    out = body * 0.8
+    for partial, delay in ((1.0, 0.0), (1.37, 0.05), (2.1, 0.11)):
         shifted = np.clip(t - delay, 0, None)
-        out += np.sin(2 * math.pi * freq * partial * shifted) * envelope(shifted, 0.001, seconds * 0.18) * 0.25
-    return normalize(out)
+        out += np.sin(2 * math.pi * freq * partial * shifted) * envelope(
+            shifted, 0.003, seconds * 0.26) * 0.14
+    return normalize(soft_saturate(out, 0.9))
 
 
 def synth_chime(seconds, freq):
+    """Sıcak chime: yumuşak atak, hafif detune, uzun sönüm (ASMR kutlama)."""
     t = np.arange(int(RATE * seconds)) / RATE
     out = np.zeros(t.size)
-    for partial, weight in ((1.0, 1.0), (1.5, 0.4), (2.0, 0.25), (2.98, 0.12)):
+    for partial, weight in ((1.0, 1.0), (1.5, 0.32), (2.0, 0.18), (2.98, 0.08)):
         out += weight * np.sin(2 * math.pi * freq * partial * t)
-    return normalize(out * envelope(t, 0.004, seconds * 0.35))
+    out += 0.22 * np.sin(2 * math.pi * (freq * 1.003) * t)
+    return normalize(soft_saturate(out * envelope(t, 0.012, seconds * 0.42), 0.95))
 
 
 def synth_whoosh(seconds, freq):
+    """Yumuşak hava/whoosh: koyu gürültü, çan şeklinde zarf, düşük ton."""
     rng = np.random.default_rng(23)
     t = np.arange(int(RATE * seconds)) / RATE
-    noise = rng.normal(0, 1, t.size)
+    noise = lowpassed(rng, t.size, 28)
     shape = np.sin(np.pi * np.clip(t / seconds, 0, 1)) ** 2
-    tone = np.sin(2 * math.pi * freq * t) * 0.2
-    return normalize((noise * 0.7 + tone) * shape)
+    tone = np.sin(2 * math.pi * freq * t) * 0.12
+    return normalize(soft_saturate((noise * 0.6 + tone) * shape, 0.9))
 
 
 def synth_clack(seconds, freq):
-    """Keskin metal-tokmak: kısa gürültü atağı + inharmonik metal kısmi tonları."""
+    """Tok ahşap-metal oturma: gövde vuruşu + kısa yumuşak temas gürültüsü."""
     rng = np.random.default_rng(31)
     t = np.arange(int(RATE * seconds)) / RATE
-    click = rng.normal(0, 1, t.size) * envelope(t, 0.0004, 0.006)
-    out = click * 0.45
-    for partial, weight in ((1.0, 0.8), (2.37, 0.5), (3.71, 0.3), (5.43, 0.16)):
-        out += weight * np.sin(2 * math.pi * freq * partial * t) * envelope(t, 0.0008, 0.035)
-    return normalize(out)
+    click = lowpassed(rng, t.size, 6) * envelope(t, 0.0008, 0.010) * 0.30
+    out = click
+    for partial, weight, decay in ((1.0, 0.9, 0.055), (1.58, 0.42, 0.040), (2.31, 0.20, 0.026)):
+        out += weight * np.sin(2 * math.pi * freq * partial * t) * envelope(t, 0.0015, decay)
+    # gövde: hafif aşağı kayan "tok" tonu
+    out += np.sin(2 * math.pi * (freq * 0.5) * t) * envelope(t, 0.002, 0.09) * 0.45
+    return normalize(soft_saturate(out, 1.0))
 
 
 def synth_pop(seconds, freq):
-    """Kısa bas pop: hızlı düşen sinüs + tok bir gövde; sigorta patlaması."""
+    """Kısık sigorta pop'u: yumuşak bas vuruş, sert tık yok."""
     t = np.arange(int(RATE * seconds)) / RATE
-    fall = np.exp(-t / max(seconds * 0.18, 1e-6))
-    sweep = np.sin(2 * math.pi * freq * np.exp(-t / max(seconds * 0.5, 1e-6)) * t)
-    click = np.sin(2 * math.pi * freq * 6.0 * t) * envelope(t, 0.0005, 0.012) * 0.35
-    return normalize((sweep * fall) + click)
+    fall = np.exp(-t / max(seconds * 0.22, 1e-6))
+    sweep = np.sin(2 * math.pi * freq * np.exp(-t / max(seconds * 0.6, 1e-6)) * t)
+    body = np.sin(2 * math.pi * freq * 1.5 * t) * envelope(t, 0.004, 0.05) * 0.18
+    return normalize(soft_saturate(sweep * fall + body, 0.95))
 
 
 def synth_buzz(seconds, freq):
-    """Alçak testere (saw) vurgusu: yanlış priz / sigorta hatası hissi."""
+    """Alçak, yumuşak uğultu: testere yerine birkaç sıcak harmonik + tremolo."""
     t = np.arange(int(RATE * seconds)) / RATE
-    cycle = (freq * t) % 1.0
-    saw = 2.0 * cycle - 1.0
-    out = saw.copy()
-    for harmonic in (2, 3, 4):
-        out += saw_harmonic(cycle, harmonic) / harmonic
-    # Yavaş tremolo "vızıltı" ve sondaki sönüm; başta 8 ms fade ile tık önlenir.
-    tremolo = 1.0 + 0.18 * np.sin(2 * math.pi * 7.0 * t)
-    body = envelope(t, 0.008, seconds * 0.55)
-    # Son 40 ms'i sıfıra indir: kesik kuyruk duyulmasın (tık).
-    body *= np.clip((seconds - t) / 0.04, 0.0, 1.0)
-    return normalize(out * tremolo * body)
-
-
-def saw_harmonic(cycle, harmonic):
-    """Testere dalgasının n. harmoniği (faz kaymasız toplam için)."""
-    return 2.0 * ((cycle * harmonic) % 1.0) - 1.0
+    out = np.sin(2 * math.pi * freq * t)
+    for harmonic, weight in ((2.0, 0.32), (3.0, 0.14), (4.0, 0.06)):
+        out += weight * np.sin(2 * math.pi * freq * harmonic * t)
+    tremolo = 1.0 + 0.12 * np.sin(2 * math.pi * 5.0 * t)
+    body = envelope(t, 0.030, seconds * 0.60)
+    body *= np.clip((seconds - t) / 0.06, 0.0, 1.0)
+    return normalize(soft_saturate(out * tremolo * body, 0.95))
 
 
 def synth_hum(seconds, freq):
-    """Dikişsiz elektrik hum'u: 50 Hz + 100 Hz. Süre * frekans tam sayı olduğundan
-    döngüde baş/son örnekleri uyumludur; fade eklenmez (döngüyü bozar)."""
+    """Kısa uğultu (eski 'hum' adı korunur): 50 Hz + harmonikleri."""
     t = np.arange(int(RATE * seconds)) / RATE
     tone = np.sin(2 * math.pi * freq * t) + 0.5 * np.sin(2 * math.pi * 2.0 * freq * t)
     tone += 0.18 * np.sin(2 * math.pi * 3.0 * freq * t)
-    return normalize(tone)
+    return normalize(tone, peak=0.55)
+
+
+def synth_friction(seconds, freq):
+    """Kumaş/ahşap sürtünmesi: koyu gürültü, yumuşak iki kabarma, kısık rezonans."""
+    rng = np.random.default_rng(41)
+    t = np.arange(int(RATE * seconds)) / RATE
+    t01 = np.clip(t / max(seconds, 1e-6), 0.0, 1.0)
+    swell = np.sin(np.pi * t01) ** 1.6
+    texture = lowpassed(rng, t.size, 42) * 0.7 + lowpassed(rng, t.size, 9) * 0.3
+    tone = np.sin(2 * math.pi * freq * t) * 0.10 * np.sin(np.pi * t01)
+    out = (texture + tone) * swell
+    return normalize(soft_saturate(out, 0.9))
+
+
+def synth_hum_loop(seconds, freq):
+    """Dikişsiz elektrik uğultusu: 50/100 Hz + hafif koyu gürültü yatağı."""
+    loop_len = int(round(RATE * seconds))
+    fade_len = int(round(RATE * min(LOOP_FADE_SECONDS, seconds * 0.4)))
+    t = np.arange(loop_len + fade_len) / RATE
+    rng = np.random.default_rng(53)
+    air = lowpassed(rng, t.size, 64) * 0.16
+    tone = np.sin(2 * math.pi * freq * t)
+    tone += 0.55 * np.sin(2 * math.pi * 2.0 * freq * t)
+    tone += 0.18 * np.sin(2 * math.pi * 3.0 * freq * t)
+    # çok yavaş nefes: 8 sn'de ~1.2 kabarma (loop crossfade toplar)
+    breath = 1.0 + 0.10 * np.sin(2 * math.pi * 0.15 * t)
+    return crossfade_loop((tone * breath + air), seconds, fade_len / float(RATE))
+
+
+def synth_pad_loop(seconds, freq):
+    """Dikişsiz sıcak pad: A minör yaylı akor + yumuşak nefes LFO'ları."""
+    loop_len = int(round(RATE * seconds))
+    fade_len = int(round(RATE * min(LOOP_FADE_SECONDS * 1.4, seconds * 0.4)))
+    t = np.arange(loop_len + fade_len) / RATE
+    # A2 / E3 / A3 / C4 — sıcak, çözülmemiş akor; hafif detune ile canlılık.
+    voices = (
+        (freq, 0.50), (freq * 1.5, 0.34), (freq * 2.0, 0.26),
+        (freq * 2.38, 0.16), (freq * 3.0, 0.10),
+    )
+    out = np.zeros(t.size)
+    for index, (voice_freq, weight) in enumerate(voices):
+        detune = 1.0 + 0.0012 * float(index % 2) - 0.0006 * float(index // 2)
+        lfo = 1.0 + 0.16 * np.sin(2 * math.pi * (0.045 + 0.017 * index) * t + index)
+        out += weight * np.sin(2 * math.pi * voice_freq * detune * t) * lfo
+    rng = np.random.default_rng(67)
+    air = lowpassed(rng, t.size, 90) * 0.10
+    warm = out + air
+    # Nazik saturasyon: pad'e analog sıcaklık, tepe kontrolü
+    return crossfade_loop(soft_saturate(warm, 0.85), seconds, fade_len / float(RATE))
 
 
 SYNTHS = {
@@ -223,6 +323,9 @@ SYNTHS = {
     "pop": synth_pop,
     "buzz": synth_buzz,
     "hum": synth_hum,
+    "friction": synth_friction,
+    "hum_loop": synth_hum_loop,
+    "pad_loop": synth_pad_loop,
 }
 
 

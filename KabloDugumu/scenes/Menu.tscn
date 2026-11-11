@@ -1,24 +1,21 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/menu.gd" id="1_menu"]
 [ext_resource type="Script" path="res://scripts/ui/circuit_background.gd" id="2_bg"]
-[ext_resource type="Texture2D" path="res://assets/icons/lucide/star.svg" id="3_star"]
+[ext_resource type="FontVariation" path="res://assets/fonts/title_font.tres" id="3_title"]
+[ext_resource type="Texture2D" path="res://assets/icons/lucide/star.svg" id="4_star"]
 
-[sub_resource type="StyleBoxFlat" id="SB_card"]
-content_margin_left = 44.0
-content_margin_top = 40.0
-content_margin_right = 44.0
-content_margin_bottom = 40.0
-bg_color = Color(0.0549, 0.0784, 0.098, 0.98)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.2039, 0.9059, 0.7686, 0.45)
-corner_radius_top_left = 34
-corner_radius_top_right = 34
-corner_radius_bottom_right = 34
-corner_radius_bottom_left = 34
+[sub_resource type="Gradient" id="Grad_scrim"]
+offsets = PackedFloat32Array(0, 0.45, 1)
+colors = PackedColorArray(0.0784, 0.0667, 0.0627, 0.62, 0.0784, 0.0667, 0.0627, 0.18,
+0.0784, 0.0667, 0.0627, 0.72)
+
+[sub_resource type="GradientTexture2D" id="GT_scrim"]
+gradient = SubResource("Grad_scrim")
+width = 64
+height = 256
+fill_from = Vector2(0.5, 0)
+fill_to = Vector2(0.5, 1)
 
 [node name="Menu" type="Control"]
 layout_mode = 3
@@ -29,7 +26,8 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_menu")
 
-[node name="Background" type="Control" parent="."]
+[node name="Backdrop" type="Control" parent="."]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -39,93 +37,203 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("2_bg")
 
-[node name="Center" type="CenterContainer" parent="."]
+[node name="AmbientHost" type="Control" parent="."]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="Column" type="VBoxContainer" parent="Center"]
-custom_minimum_size = Vector2(820, 0)
-layout_mode = 2
-theme_override_constants/separation = 22
-
-[node name="Title" type="Label" parent="Center/Column"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.9137, 0.949, 0.9647, 1)
-theme_override_colors/font_outline_color = Color(0.02, 0.03, 0.04, 0.9)
-theme_override_constants/outline_size = 14
-theme_override_font_sizes/font_size = 78
-text = "KABLO DÜĞÜMÜ"
-horizontal_alignment = 1
-
-[node name="Subtitle" type="Label" parent="Center/Column"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.7882, 0.2902, 1)
-theme_override_colors/font_outline_color = Color(0.02, 0.03, 0.04, 0.9)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 26
-text = "AKIM USTASI · YÜKSEK GERİLİM BULMACASI"
-horizontal_alignment = 1
-
-[node name="Spacer" type="Control" parent="Center/Column"]
-custom_minimum_size = Vector2(0, 30)
-layout_mode = 2
 mouse_filter = 2
 
-[node name="StarsRow" type="HBoxContainer" parent="Center/Column"]
-layout_mode = 2
-theme_override_constants/separation = 12
-alignment = 1
+[node name="Scrim" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GT_scrim")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="TopBar" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 48.0
+offset_top = 56.0
+offset_right = -48.0
+offset_bottom = 152.0
+grow_horizontal = 2
 mouse_filter = 2
 
-[node name="StarIcon" type="TextureRect" parent="Center/Column/StarsRow"]
-custom_minimum_size = Vector2(48, 48)
-layout_mode = 2
+[node name="StarsPill" type="PanelContainer" parent="TopBar"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 4.0
+offset_right = 210.0
+offset_bottom = 76.0
 mouse_filter = 2
-modulate = Color(1, 0.7882, 0.2902, 1)
-texture = ExtResource("3_star")
+theme_type_variation = &"Pill"
+
+[node name="StarsRow" type="HBoxContainer" parent="TopBar/StarsPill"]
+layout_mode = 2
+theme_override_constants/separation = 10
+mouse_filter = 2
+
+[node name="StarIcon" type="TextureRect" parent="TopBar/StarsPill/StarsRow"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+modulate = Color(0.9529, 0.7882, 0.4784, 1)
+texture = ExtResource("4_star")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="TotalStars" type="Label" parent="Center/Column/StarsRow"]
+[node name="TotalStars" type="Label" parent="TopBar/StarsPill/StarsRow"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.9137, 0.949, 0.9647, 1)
-theme_override_font_sizes/font_size = 34
+theme_override_colors/font_color = Color(0.949, 0.9216, 0.8902, 1)
+theme_override_font_sizes/font_size = 28
 text = "0 / 36"
 vertical_alignment = 1
 
-[node name="PlayButton" type="Button" parent="Center/Column"]
+[node name="MuteButton" type="Button" parent="TopBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(820, 152)
-layout_mode = 2
-text = "OYNA · BÖLÜM 01"
+custom_minimum_size = Vector2(96, 72)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -216.0
+offset_top = 4.0
+offset_right = -120.0
+offset_bottom = 76.0
+grow_horizontal = 0
+theme_type_variation = &"IconButton"
+text = ""
 
-[node name="LevelsButton" type="Button" parent="Center/Column"]
+[node name="LangButton" type="Button" parent="TopBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(820, 126)
+custom_minimum_size = Vector2(104, 72)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -104.0
+offset_top = 4.0
+offset_right = 0.0
+offset_bottom = 76.0
+grow_horizontal = 0
+theme_type_variation = &"IconButton"
+theme_override_font_sizes/font_size = 28
+text = "EN"
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 96.0
+offset_top = 240.0
+offset_right = -96.0
+offset_bottom = -140.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="Title" type="Label" parent="Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.949, 0.9216, 0.8902, 1)
+theme_override_colors/font_outline_color = Color(0.03, 0.026, 0.023, 0.55)
+theme_override_constants/outline_size = 10
+theme_override_fonts/font = ExtResource("3_title")
+theme_override_font_sizes/font_size = 108
+text = "CABLE KNOT"
+horizontal_alignment = 1
+autowrap_mode = 0
+
+[node name="Subtitle" type="Label" parent="Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9529, 0.7882, 0.4784, 1)
+theme_override_font_sizes/font_size = 34
+text = "CURRENT MASTER"
+horizontal_alignment = 1
+
+[node name="LocalTitle" type="Label" parent="Content"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6275, 0.5843, 0.5412, 0.9)
+theme_override_font_sizes/font_size = 24
+text = "Kablo Düğümü · Akım Ustası"
+horizontal_alignment = 1
+
+[node name="Tagline" type="Label" parent="Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6275, 0.5843, 0.5412, 1)
+theme_override_font_sizes/font_size = 26
+text = "A high-voltage untangling puzzle"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="TitleSpace" type="Control" parent="Content"]
+custom_minimum_size = Vector2(0, 84)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="PlayButton" type="Button" parent="Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 104)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 36
+text = "PLAY"
+
+[node name="ButtonRow" type="HBoxContainer" parent="Content"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="LevelsButton" type="Button" parent="Content/ButtonRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 96)
 layout_mode = 2
 theme_type_variation = &"SecondaryButton"
-theme_override_font_sizes/font_size = 38
-text = "BÖLÜMLER"
+theme_override_font_sizes/font_size = 32
+text = "LEVELS"
 
-[node name="SettingsButton" type="Button" parent="Center/Column"]
+[node name="SettingsButton" type="Button" parent="Content/ButtonRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(820, 126)
+custom_minimum_size = Vector2(96, 96)
 layout_mode = 2
-theme_type_variation = &"SecondaryButton"
-theme_override_font_sizes/font_size = 38
-text = "AYARLAR"
+theme_type_variation = &"IconButton"
+text = ""
 
-[node name="Version" type="Label" parent="Center/Column"]
+[node name="Version" type="Label" parent="."]
 unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.451, 0.5216, 0.5725, 1)
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -92.0
+offset_bottom = -52.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.6275, 0.5843, 0.5412, 0.75)
 theme_override_font_sizes/font_size = 22
-text = "v0.1.0"
+text = "v0.2.0"
 horizontal_alignment = 1
 
 [node name="SettingsPanel" type="Control" parent="."]
@@ -145,7 +253,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.02, 0.03, 0.04, 0.86)
+color = Color(0.0314, 0.0275, 0.0235, 0.88)
 
 [node name="Center" type="CenterContainer" parent="SettingsPanel"]
 layout_mode = 1
@@ -157,48 +265,119 @@ grow_vertical = 2
 
 [node name="Card" type="PanelContainer" parent="SettingsPanel/Center"]
 layout_mode = 2
-theme_override_styles/panel = SubResource("SB_card")
 
 [node name="CardContent" type="VBoxContainer" parent="SettingsPanel/Center/Card"]
 custom_minimum_size = Vector2(760, 0)
 layout_mode = 2
-theme_override_constants/separation = 24
+theme_override_constants/separation = 14
 
 [node name="SettingsTitle" type="Label" parent="SettingsPanel/Center/Card/CardContent"]
+unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.2039, 0.9059, 0.7686, 1)
-theme_override_font_sizes/font_size = 52
-text = "AYARLAR"
+theme_override_colors/font_color = Color(0.498, 0.9098, 0.7961, 1)
+theme_override_font_sizes/font_size = 40
+text = "SETTINGS"
+horizontal_alignment = 1
+
+[node name="SoundRowLabel" type="Label" parent="SettingsPanel/Center/Card/CardContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6275, 0.5843, 0.5412, 1)
+theme_override_font_sizes/font_size = 22
+text = "SOUND"
 horizontal_alignment = 1
 
 [node name="SoundButton" type="Button" parent="SettingsPanel/Center/Card/CardContent"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 124)
+custom_minimum_size = Vector2(0, 88)
 layout_mode = 2
-theme_type_variation = &"SecondaryButton"
-theme_override_font_sizes/font_size = 32
-text = "Ses: AÇIK"
+theme_type_variation = &"GhostButton"
+theme_override_font_sizes/font_size = 30
+text = "SOUND · ON"
+
+[node name="LanguageRowLabel" type="Label" parent="SettingsPanel/Center/Card/CardContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6275, 0.5843, 0.5412, 1)
+theme_override_font_sizes/font_size = 22
+text = "LANGUAGE"
+horizontal_alignment = 1
+
+[node name="LangRow" type="HBoxContainer" parent="SettingsPanel/Center/Card/CardContent"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LangEnButton" type="Button" parent="SettingsPanel/Center/Card/CardContent/LangRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 88)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"GhostButton"
+theme_override_font_sizes/font_size = 28
+text = "ENGLISH"
+
+[node name="LangTrButton" type="Button" parent="SettingsPanel/Center/Card/CardContent/LangRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 88)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"GhostButton"
+theme_override_font_sizes/font_size = 28
+text = "TÜRKÇE"
 
 [node name="ResetButton" type="Button" parent="SettingsPanel/Center/Card/CardContent"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 124)
+custom_minimum_size = Vector2(0, 88)
 layout_mode = 2
-theme_type_variation = &"SecondaryButton"
-theme_override_colors/font_color = Color(1, 0.3333, 0.4, 1)
-theme_override_font_sizes/font_size = 30
-text = "İlerlemeyi Sıfırla"
+theme_type_variation = &"DangerButton"
+theme_override_font_sizes/font_size = 28
+text = "RESET PROGRESS"
 
-[node name="Credits" type="Label" parent="SettingsPanel/Center/Card/CardContent"]
+[node name="ResetConfirmRow" type="HBoxContainer" parent="SettingsPanel/Center/Card/CardContent"]
+unique_name_in_owner = true
+visible = false
 layout_mode = 2
-theme_override_colors/font_color = Color(0.5608, 0.6392, 0.6902, 1)
+theme_override_constants/separation = 16
+
+[node name="ConfirmResetButton" type="Button" parent="SettingsPanel/Center/Card/CardContent/ResetConfirmRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 88)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 28
+text = "CONFIRM"
+
+[node name="CancelResetButton" type="Button" parent="SettingsPanel/Center/Card/CardContent/ResetConfirmRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 88)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"GhostButton"
+theme_override_font_sizes/font_size = 28
+text = "CANCEL"
+
+[node name="ResetFeedback" type="Label" parent="SettingsPanel/Center/Card/CardContent"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.498, 0.9098, 0.7961, 1)
 theme_override_font_sizes/font_size = 22
-text = "Sesler deterministik sentez · İkonlar Lucide (ISC) · Font Baloo 2 (OFL)"
+text = "Progress erased"
+horizontal_alignment = 1
+
+[node name="CreditsLabel" type="Label" parent="SettingsPanel/Center/Card/CardContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6275, 0.5843, 0.5412, 0.85)
+theme_override_font_sizes/font_size = 20
+text = "Sounds: procedural ASMR · Icons: Lucide (ISC) · Type: Manrope (OFL)"
 horizontal_alignment = 1
 autowrap_mode = 3
+max_lines_visible = 2
 
 [node name="CloseButton" type="Button" parent="SettingsPanel/Center/Card/CardContent"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 124)
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
-theme_override_font_sizes/font_size = 34
-text = "KAPAT"
+theme_override_font_sizes/font_size = 32
+text = "CLOSE"

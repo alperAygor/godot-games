@@ -16,7 +16,14 @@ const BASE_FOV: float = 45.0
 const INTRO_PULLBACK: Vector3 = Vector3(0.0, 0.05, 0.32)
 const INTRO_SECONDS: float = 0.9
 const PARALLAX_LIMIT: Vector2 = Vector2(0.02, 0.02)
-const SHAKE_LIMIT: float = 0.055
+## ASMR (§16): sarsıntı küçük ve yumuşak; sert beyaz/kırmızı sıçrama yok.
+const SHAKE_LIMIT: float = 0.036
+## İki düşük frekanslı salınım (67/89 Hz "çıtırtı" hissi veriyordu).
+const SHAKE_FREQUENCY: Vector2 = Vector2(11.0, 17.0)
+const SHAKE_DECAY: float = 2.0
+## Nefes alma: kamera hiç durmaz, çok yavaş salınır (period ~9-13 sn).
+const BREATH_AMPLITUDE: Vector2 = Vector2(0.006, 0.004)
+const BREATH_SPEED: float = 0.72
 
 ## 0 = intro başlangıcı, 1 = oturmuş kompozisyon. Tween tarafından sürülür.
 var intro_progress: float = 1.0:
@@ -29,6 +36,8 @@ var _shake_time: float = 0.0
 var _parallax_target: Vector2 = Vector2.ZERO
 var _parallax_current: Vector2 = Vector2.ZERO
 var _intro_tween: Tween = null
+var _breath_time: float = 0.0
+var _breath_scale: float = 1.0
 
 
 func _ready() -> void:
@@ -38,26 +47,32 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_breath_time += delta
 	_parallax_current = _parallax_current.lerp(_parallax_target,
-		clampf(delta * 6.0, 0.0, 1.0))
+		clampf(delta * 4.0, 0.0, 1.0))
 
 	var shake_offset: Vector3 = Vector3.ZERO
 	if _shake > 0.0001:
-		_shake = maxf(0.0, _shake - delta * 2.8)
+		_shake = maxf(0.0, _shake - delta * SHAKE_DECAY)
 		_shake_time += delta
 		var amount: float = _shake * SHAKE_LIMIT
-		# deterministik, iki frekanslı sarsıntı (randf titreşimi daha "çıtırtılı" olur)
+		# Yumuşak, düşük frekanslı salınım: "panik" değil "gerilim" hissi.
 		shake_offset = Vector3(
-			sin(_shake_time * 67.0) * amount,
-			sin(_shake_time * 89.0 + 1.7) * amount * 0.7,
+			sin(_shake_time * SHAKE_FREQUENCY.x) * amount,
+			sin(_shake_time * SHAKE_FREQUENCY.y + 1.7) * amount * 0.6,
 			0.0)
-		rotation.z = sin(_shake_time * 73.0) * _shake * 0.010
+		rotation.z = sin(_shake_time * 13.0) * _shake * 0.006
 	else:
 		_shake_time = 0.0
-		rotation.z = lerpf(rotation.z, 0.0, clampf(delta * 8.0, 0.0, 1.0))
+		rotation.z = lerpf(rotation.z, 0.0, clampf(delta * 5.0, 0.0, 1.0))
 
+	# Nefes alma: ASMR'ta kamera asla tamamen donuk değil (period >= 9 sn).
+	var breath: Vector3 = Vector3(
+		sin(_breath_time * BREATH_SPEED) * BREATH_AMPLITUDE.x,
+		sin(_breath_time * BREATH_SPEED * 0.71 + 1.3) * BREATH_AMPLITUDE.y,
+		0.0) * _breath_scale
 	var intro_offset: Vector3 = INTRO_PULLBACK * (1.0 - intro_progress)
-	position = BASE_POSITION + intro_offset \
+	position = BASE_POSITION + intro_offset + breath \
 		+ Vector3(_parallax_current.x, _parallax_current.y, 0.0) + shake_offset
 	if _camera != null:
 		_camera.fov = BASE_FOV
@@ -72,7 +87,7 @@ func play_intro() -> void:
 		_camera.fov = BASE_FOV
 	_intro_tween = create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	_intro_tween.tween_property(self, "intro_progress", 1.0, INTRO_SECONDS) \
-		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	_intro_tween.tween_callback(_on_intro_finished)
 
 
@@ -108,6 +123,11 @@ func reset_to_base() -> void:
 	rotation = Vector3.ZERO
 	if _camera != null:
 		_camera.fov = BASE_FOV
+
+
+## Nefes alma genliğini ölçekler (0 = donuk kamera; ör. QA kareleri).
+func set_breath_scale(value: float) -> void:
+	_breath_scale = clampf(value, 0.0, 1.0)
 
 
 func _on_intro_finished() -> void:

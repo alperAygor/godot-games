@@ -11,11 +11,12 @@ const PARTICLE_LIFETIME: float = 0.45
 const QUAD_SIZE: float = 0.018
 const BASE_VELOCITY_MIN: float = 1.5
 const BASE_VELOCITY_MAX: float = 3.5
-const FLASH_SECONDS: float = 0.18
-const RING_SECONDS: float = 0.3
-const BASE_LIGHT_ENERGY: float = 2.4
-const RING_SCALE_START: float = 0.4
-const RING_SCALE_GROWTH: float = 1.2
+## ASMR (§16): sert flaş yok — ışık daha kısık, halka daha yumuşak büyür.
+const FLASH_SECONDS: float = 0.26
+const RING_SECONDS: float = 0.38
+const BASE_LIGHT_ENERGY: float = 1.5
+const RING_SCALE_START: float = 0.35
+const RING_SCALE_GROWTH: float = 0.85
 const MIN_STRENGTH: float = 0.2
 const MAX_STRENGTH: float = 3.0
 
@@ -27,10 +28,55 @@ var _ring_materials: Array[StandardMaterial3D] = []
 var _tweens: Array[Tween] = []
 var _next_index: int = 0
 var _pool_ready: bool = false
+## İlk gerçek patlama drag sırasında 80-120 ms'lik shader/buffer stall'ı
+## yapıyordu (ölçüldü: /tmp/hitch_probe.gd). Bu yüzden havuz, sahne hazır olur
+## olmaz görünmez bir kez "ısıtılır": pipeline derlenir, GPU tamponları ayrılır.
+var _warmed: bool = false
 
 
 func _ready() -> void:
 	_ensure_pool()
+	_warmup_deferred()
+
+
+## Sahne ağaca girdikten sonra (kamera hazırken) tek karelik görünmez ısıtma.
+func _warmup_deferred() -> void:
+	if not is_inside_tree():
+		return
+	_warm_up()
+
+
+## Görünmez ısıtma: partikül rengi/ring alpha 0 olsa da draw çağrısı oluşur,
+## böylece shader pipeline ilk kısa devrede değil, bölüm yüklenirken derlenir.
+func _warm_up() -> void:
+	if _warmed or _particles.is_empty():
+		return
+	_warmed = true
+	for i: int in _particles.size():
+		var particles: GPUParticles3D = _particles[i]
+		var process_material: ParticleProcessMaterial = _particle_materials[i]
+		process_material.color = Color(1.0, 1.0, 1.0, 0.0)
+		particles.emitting = true
+		particles.restart()
+		var ring: MeshInstance3D = _rings[i]
+		var ring_material: StandardMaterial3D = _ring_materials[i]
+		ring.global_position = Vector3(0.0, 0.0, 0.2)
+		ring.scale = Vector3.ONE
+		ring.visible = true
+		ring_material.albedo_color = Color(1.0, 1.0, 1.0, 0.0)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if _next_index > 0:
+		return  # ısıtma sırasında gerçek bir patlama başladıysa ona dokunma
+	for i: int in _particles.size():
+		var particles: GPUParticles3D = _particles[i]
+		particles.emitting = false
+		particles.restart()
+		(_particle_materials[i] as ParticleProcessMaterial).color = Color.WHITE
+		var ring: MeshInstance3D = _rings[i]
+		ring.visible = false
+		ring.global_position = Vector3.ZERO
+		(_ring_materials[i] as StandardMaterial3D).albedo_color = Color(1.0, 1.0, 1.0, 1.0)
 
 
 ## Kivilcim patlatir. Ayni havuz yuvasi yeniden kullanilir; onceki tween iptal edilir.

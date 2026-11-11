@@ -5,6 +5,11 @@ Neden uretici: renk/boyut/kose yaricapi .tscn dosyalarina dagildiginda tutarlili
 bozuluyor ve her ekran ayni StyleBox'lari tekrar yaziyor (GOTCHAS.md #19).
 Tek kaynak: data/theme.json. Degisiklik -> yeniden uret.
 
+Tasarim token'lari (ARCHITECTURE §15, v0.2): 8 px grid, buton yuksekligi 88-100
+tasarim px, kose 20-28, Manrope. Govde fontu FontVariation'dir (wght 500):
+Manrope degisken fontunun VARSAYILAN ekseni ExtraLight (200) oldugu icin
+dogrudan .ttf kullanmak metni cok ince cizer (olculdu; bkz. ROADMAP riskleri).
+
 Kullanim:
     python3 tools/build_theme.py [--project .] [--check]
 
@@ -24,7 +29,8 @@ def hex_to_rgb(value):
     return tuple(int(value[i:i + 2], 16) / 255.0 for i in (0, 2, 4))
 
 
-def rgb_to_color(rgb, alpha=1.0):
+def color(hex_value, alpha=1.0):
+    rgb = hex_to_rgb(hex_value)
     return "Color(%.4f, %.4f, %.4f, %.4f)" % (rgb[0], rgb[1], rgb[2], alpha)
 
 
@@ -32,103 +38,170 @@ def mix(rgb_a, rgb_b, t):
     return tuple(a + (b - a) * t for a, b in zip(rgb_a, rgb_b))
 
 
-def color(hex_value, alpha=1.0):
-    return rgb_to_color(hex_to_rgb(hex_value), alpha)
+def lighten(hex_value, t, alpha=1.0):
+    rgb = mix(hex_to_rgb(hex_value), (1.0, 1.0, 1.0), t)
+    return "Color(%.4f, %.4f, %.4f, %.4f)" % (rgb[0], rgb[1], rgb[2], alpha)
 
 
-def lighten(hex_value, t):
-    return rgb_to_color(mix(hex_to_rgb(hex_value), (1.0, 1.0, 1.0), t))
+def darken(hex_value, t, alpha=1.0):
+    rgb = mix(hex_to_rgb(hex_value), (0.0, 0.0, 0.0), t)
+    return "Color(%.4f, %.4f, %.4f, %.4f)" % (rgb[0], rgb[1], rgb[2], alpha)
 
 
-def darken(hex_value, t):
-    return rgb_to_color(mix(hex_to_rgb(hex_value), (0.0, 0.0, 0.0), t))
-
-
-def style(id_name, bg, border, radius, px, py, border_width, swap_padding=False):
-    top, bottom = (py + 4, py - 4) if swap_padding else (py, py + 4)
-    return """[sub_resource type="StyleBoxFlat" id="{id}"]
-content_margin_left = {px}.0
-content_margin_top = {top}.0
-content_margin_right = {px}.0
-content_margin_bottom = {bottom}.0
-bg_color = {bg}
-border_width_bottom = {bw}
-border_color = {border}
-corner_radius_top_left = {r}
-corner_radius_top_right = {r}
-corner_radius_bottom_right = {r}
-corner_radius_bottom_left = {r}
-""".format(id=id_name, px=px, top=top, bottom=bottom, bg=bg,
-           bw=border_width, border=border, r=radius)
+def style_flat(id_name, bg, radius, pad_x, pad_y, border="", border_color="", border_width=0):
+    lines = ['[sub_resource type="StyleBoxFlat" id="%s"]' % id_name]
+    lines.append("content_margin_left = %.1f" % pad_x)
+    lines.append("content_margin_top = %.1f" % pad_y)
+    lines.append("content_margin_right = %.1f" % pad_x)
+    lines.append("content_margin_bottom = %.1f" % pad_y)
+    if bg:
+        lines.append("bg_color = %s" % bg)
+    if border_width > 0 and border_color:
+        lines.append("border_width_left = %d" % border_width)
+        lines.append("border_width_top = %d" % border_width)
+        lines.append("border_width_right = %d" % border_width)
+        lines.append("border_width_bottom = %d" % border_width)
+        lines.append("border_color = %s" % border_color)
+    lines.append("corner_radius_top_left = %d" % radius)
+    lines.append("corner_radius_top_right = %d" % radius)
+    lines.append("corner_radius_bottom_right = %d" % radius)
+    lines.append("corner_radius_bottom_left = %d" % radius)
+    return "\n".join(lines) + "\n"
 
 
 def build(theme):
     palette = theme["palette"]
     metrics = theme["metrics"]
     radius = int(metrics["radius"])
+    radius_small = int(metrics["radius_small"])
     border = int(metrics["border"])
-    px = int(metrics["padding_x"])
-    py = int(metrics["padding_y"])
+    pad_x = float(metrics["padding_x"])
+    pad_y = float(metrics["padding_y"])
+    icon_pad = float(metrics["icon_padding"])
+    base_size = int(theme["base_font_size"])
+    button_size = int(metrics["button_font_size"])
+    secondary_size = int(metrics["secondary_button_font_size"])
 
-    blocks = []
-    blocks.append(style("SB_primary", color(palette["primary"]),
-                        color(palette["primary_dark"]), radius, px, py, border))
-    blocks.append(style("SB_primary_hover", lighten(palette["primary"], 0.18),
-                        color(palette["primary_dark"]), radius, px, py, border))
-    blocks.append(style("SB_primary_pressed", darken(palette["primary"], 0.10),
-                        color(palette["primary_dark"]), radius, px, py, max(1, border - 4), True))
-    blocks.append(style("SB_primary_disabled", color(palette["primary"], 0.55),
-                        color(palette["primary_dark"], 0.5), radius, px, py, border))
+    primary = palette["primary"]
+    primary_dark = palette["primary_dark"]
+    accent = palette["accent"]
+    accent_dark = palette["accent_dark"]
+    danger = palette["danger"]
+    danger_dark = palette["danger_dark"]
+    surface = palette["surface"]
+    surface_high = palette["surface_high"]
+    outline = palette["outline"]
+    text = palette["text"]
+    muted = palette["text_muted"]
+    on_primary = palette["on_primary"]
+    on_accent = palette["on_accent"]
 
-    blocks.append(style("SB_secondary", color(palette["accent"]),
-                        color(palette["accent_dark"]), radius, px, py, max(1, border - 1)))
-    blocks.append(style("SB_secondary_hover", lighten(palette["accent"], 0.25),
-                        color(palette["accent_dark"]), radius, px, py, max(1, border - 1)))
-    blocks.append(style("SB_secondary_pressed", darken(palette["accent"], 0.10),
-                        color(palette["accent_dark"]), radius, px, py, 2, True))
-    blocks.append(style("SB_secondary_disabled", color(palette["accent"], 0.5),
-                        color(palette["accent_dark"], 0.45), radius, px, py, max(1, border - 1)))
+    sub = []
+    # --- birincil: mint dolgu, koyu metin ---
+    sub.append(style_flat("SB_primary", color(primary), radius, pad_x, pad_y))
+    sub.append(style_flat("SB_primary_hover", lighten(primary, 0.10), radius, pad_x, pad_y))
+    sub.append(style_flat("SB_primary_pressed", darken(primary, 0.10), radius, pad_x,
+                          max(1.0, pad_y - 2.0)))
+    sub.append(style_flat("SB_primary_disabled", color(primary, 0.42), radius, pad_x, pad_y))
+    # --- ikincil: amber dolgu (eski kontrat: kucuk aksiyonlar) ---
+    sub.append(style_flat("SB_secondary", color(accent), radius, pad_x, pad_y))
+    sub.append(style_flat("SB_secondary_hover", lighten(accent, 0.10), radius, pad_x, pad_y))
+    sub.append(style_flat("SB_secondary_pressed", darken(accent, 0.10), radius, pad_x,
+                          max(1.0, pad_y - 2.0)))
+    sub.append(style_flat("SB_secondary_disabled", color(accent, 0.42), radius, pad_x, pad_y))
+    # --- accent: sakin amber dolgu, koyu metin (v0.2 vurgu aksiyonu) ---
+    sub.append(style_flat("SB_accent", color(accent), radius, pad_x, pad_y))
+    sub.append(style_flat("SB_accent_hover", lighten(accent, 0.10), radius, pad_x, pad_y))
+    sub.append(style_flat("SB_accent_pressed", darken(accent, 0.10), radius, pad_x,
+                          max(1.0, pad_y - 2.0)))
+    sub.append(style_flat("SB_accent_disabled", color(accent, 0.42), radius, pad_x, pad_y))
+    # --- ghost: seffaf yuzey + ince cizgi (geri/menu gibi ikincil eylemler) ---
+    ghost_base = color(outline, 0.28)
+    sub.append(style_flat("SB_ghost", ghost_base, radius, pad_x, pad_y,
+                          outline, color(outline, 0.60), max(1, border - 2)))
+    sub.append(style_flat("SB_ghost_hover", color(surface_high, 0.85), radius, pad_x, pad_y,
+                          outline, color(outline, 0.85), max(1, border - 2)))
+    sub.append(style_flat("SB_ghost_pressed", color(surface, 0.95), radius, pad_x,
+                          max(1.0, pad_y - 2.0), outline, color(outline, 0.85),
+                          max(1, border - 2)))
+    sub.append(style_flat("SB_ghost_disabled", color(outline, 0.16), radius, pad_x, pad_y,
+                          outline, color(outline, 0.28), max(1, border - 2)))
+    # --- icon: kare ikon butonu, yumusak yuzey ---
+    icon_radius = radius_small
+    sub.append(style_flat("SB_icon", color(surface_high, 0.78), icon_radius, icon_pad,
+                          icon_pad, outline, color(outline, 0.55), 1))
+    sub.append(style_flat("SB_icon_hover", color(surface_high, 0.95), icon_radius, icon_pad,
+                          icon_pad, outline, color(outline, 0.85), 1))
+    sub.append(style_flat("SB_icon_pressed", color(surface, 0.98), icon_radius, icon_pad,
+                          icon_pad, outline, color(outline, 0.85), 1))
+    sub.append(style_flat("SB_icon_disabled", color(surface_high, 0.34), icon_radius, icon_pad,
+                          icon_pad, outline, color(outline, 0.22), 1))
+    # --- danger: yumusak mercan, ghost zemin (sifirla gibi yikici eylemler) ---
+    sub.append(style_flat("SB_danger", color(danger, 0.14), radius, pad_x, pad_y,
+                          danger, color(danger, 0.55), max(1, border - 2)))
+    sub.append(style_flat("SB_danger_hover", color(danger, 0.24), radius, pad_x, pad_y,
+                          danger, color(danger, 0.85), max(1, border - 2)))
+    sub.append(style_flat("SB_danger_disabled", color(danger, 0.08), radius, pad_x, pad_y,
+                          danger, color(danger, 0.25), max(1, border - 2)))
+    # --- kart / pill / odak ---
+    sub.append(style_flat("SB_card", color(surface, 0.96), 28, 40.0, 36.0,
+                          outline, color(outline, 0.70), max(1, border - 1)))
+    sub.append(style_flat("SB_pill", color(surface_high, 0.80), 26, 24.0, 14.0,
+                          outline, color(outline, 0.50), 1))
+    sub.append('[sub_resource type="StyleBoxEmpty" id="SB_focus"]\n')
 
     resources = []
-    resources.append("default_font = ExtResource(\"1_font\")")
-    # default_font_size KULLANILMAZ: Godot onu varyasyon aramasindan once kontrol edip
-    # TitleLabel gibi tur varyasyonlarinin puntosunu golgeliyor (olculdu).
-    # Taban boyutu tip uzerinden acikca verilir.
-    resources.append("Label/font_sizes/font_size = %d" % int(theme["base_font_size"]))
-    resources.append("Button/font_sizes/font_size = %d" % int(metrics["button_font_size"]))
+    resources.append('default_font = ExtResource("1_font")')
+    resources.append("Label/font_sizes/font_size = %d" % base_size)
+    resources.append("Label/colors/font_color = %s" % color(text))
+    resources.append("Label/colors/font_shadow_color = %s" % color("#000000", 0.0))
 
-    resources.append("Button/colors/font_color = %s" % color(palette["on_primary"]))
-    resources.append("Button/colors/font_hover_color = %s" % color(palette["on_primary"]))
-    resources.append("Button/colors/font_pressed_color = %s" % darken(palette["on_primary"], 0.15))
-    resources.append("Button/colors/font_disabled_color = %s" % color(palette["on_primary"], 0.75))
-    resources.append("Button/font_sizes/font_size = %d" % int(metrics["button_font_size"]))
-    resources.append('Button/styles/normal = SubResource("SB_primary")')
-    resources.append('Button/styles/hover = SubResource("SB_primary_hover")')
-    resources.append('Button/styles/pressed = SubResource("SB_primary_pressed")')
-    resources.append('Button/styles/disabled = SubResource("SB_primary_disabled")')
+    def button_entries(type_name, size, font_color, styles, base="Button"):
+        if type_name != "Button":
+            resources.append('%s/base_type = &"%s"' % (type_name, base))
+        resources.append("%s/font_sizes/font_size = %d" % (type_name, size))
+        resources.append("%s/colors/font_color = %s" % (type_name, font_color))
+        resources.append("%s/colors/font_hover_color = %s" % (type_name, font_color))
+        resources.append("%s/colors/font_pressed_color = %s" % (type_name, font_color))
+        resources.append("%s/colors/font_disabled_color = %s" % (type_name, color(text, 0.55)))
+        resources.append("%s/colors/font_focus_color = %s" % (type_name, font_color))
+        for state in ("normal", "hover", "pressed", "disabled"):
+            resources.append('%s/styles/%s = SubResource("SB_%s")' % (type_name, state, styles[state]))
+        resources.append('%s/styles/focus = SubResource("SB_focus")' % type_name)
 
-    resources.append('SecondaryButton/base_type = &"Button"')
-    resources.append("SecondaryButton/colors/font_color = %s" % color(palette["on_accent"]))
-    resources.append("SecondaryButton/colors/font_hover_color = %s" % color(palette["on_accent"]))
-    resources.append("SecondaryButton/colors/font_pressed_color = %s" % darken(palette["on_accent"], 0.15))
-    resources.append("SecondaryButton/colors/font_disabled_color = %s" % color(palette["on_accent"], 0.7))
-    resources.append("SecondaryButton/font_sizes/font_size = %d" % int(metrics["secondary_button_font_size"]))
-    resources.append('SecondaryButton/styles/normal = SubResource("SB_secondary")')
-    resources.append('SecondaryButton/styles/hover = SubResource("SB_secondary_hover")')
-    resources.append('SecondaryButton/styles/pressed = SubResource("SB_secondary_pressed")')
-    resources.append('SecondaryButton/styles/disabled = SubResource("SB_secondary_disabled")')
+    button_entries("Button", button_size, color(on_primary),
+                   {"normal": "primary", "hover": "primary_hover",
+                    "pressed": "primary_pressed", "disabled": "primary_disabled"})
+    button_entries("SecondaryButton", secondary_size, color(on_accent),
+                   {"normal": "secondary", "hover": "secondary_hover",
+                    "pressed": "secondary_pressed", "disabled": "secondary_disabled"})
+    button_entries("AccentButton", secondary_size, color(on_accent),
+                   {"normal": "accent", "hover": "accent_hover",
+                    "pressed": "accent_pressed", "disabled": "accent_disabled"})
+    button_entries("GhostButton", secondary_size, color(text),
+                   {"normal": "ghost", "hover": "ghost_hover",
+                    "pressed": "ghost_pressed", "disabled": "ghost_disabled"})
+    button_entries("IconButton", secondary_size, color(text),
+                   {"normal": "icon", "hover": "icon_hover",
+                    "pressed": "icon_pressed", "disabled": "icon_disabled"})
+    button_entries("DangerButton", secondary_size, color(danger),
+                   {"normal": "danger", "hover": "danger_hover",
+                    "pressed": "danger_hover", "disabled": "danger_disabled"})
 
-    resources.append("Label/colors/font_color = %s" % color(palette["text"]))
+    resources.append('PanelContainer/styles/panel = SubResource("SB_card")')
+    resources.append('Pill/base_type = &"PanelContainer"')
+    resources.append('Pill/styles/panel = SubResource("SB_pill")')
+    resources.append('Badge/base_type = &"Label"')
+    resources.append('Badge/styles/normal = SubResource("SB_badge")')
+    # Badge stili pill'in kucuk ve koyu varyasyonu
+    sub.insert(len(sub) - 1, style_flat("SB_badge", color("#141110", 0.92), 14, 12.0, 4.0,
+                                        outline, color(outline, 0.45), 1))
 
-    # NOT: Label tur varyasyonlari (TitleLabel vb.) Godot 4.7.2'de font_size/renk
-    # icin UYGULANMIYOR (olculdu; stil varyasyonlari calisiyor). Bu yuzden etiket
-    # punto/renkleri sahne icinde theme_override_* ile verilir (GOTCHAS.md #19).
-
+    font_type = str(theme.get("font_type", "FontFile"))
     header = ('[gd_resource type="Theme" load_steps=%d format=3]\n\n'
-              '[ext_resource type="FontFile" path="%s" id="1_font"]\n\n'
-              % (len(blocks) + 2, theme["font"]))
-    body = "\n".join(blocks)
-    return header + body + "\n[resource]\n" + "\n".join(resources) + "\n"
+              '[ext_resource type="%s" path="%s" id="1_font"]\n\n'
+              % (len(sub) + 2, font_type, theme["font"]))
+    return header + "\n".join(sub) + "\n[resource]\n" + "\n".join(resources) + "\n"
 
 
 def main():

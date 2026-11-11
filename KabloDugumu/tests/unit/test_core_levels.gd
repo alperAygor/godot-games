@@ -87,11 +87,37 @@ func _surface_z() -> float:
 	return _board_float("board_surface_z", 0.055)
 
 
+## Geometri/duzen esitligi (modifier listesi haric; modifiersiz davranis testi icin).
+func _assert_layout_equal(first: KnotLevel, second: KnotLevel) -> void:
+	assert_eq(first.cables.size(), second.cables.size(), "kablo sayisi")
+	assert_eq(first.sockets.size(), second.sockets.size(), "priz sayisi")
+	for i: int in first.sockets.size():
+		var a_socket: SocketSpec = first.sockets[i]
+		var b_socket: SocketSpec = second.sockets[i]
+		assert_eq(a_socket.color_id, b_socket.color_id, "priz rengi")
+		assert_true(a_socket.position.is_equal_approx(b_socket.position), "priz konumu")
+	for i: int in first.cables.size():
+		var a_cable: CableSpec = first.cables[i]
+		var b_cable: CableSpec = second.cables[i]
+		assert_eq(a_cable.color_id, b_cable.color_id, "kablo rengi")
+		assert_true(a_cable.source.is_equal_approx(b_cable.source), "kaynak konumu")
+		assert_true(a_cable.plug_rest.is_equal_approx(b_cable.plug_rest), "fis konumu")
+		assert_true(a_cable.socket.is_equal_approx(b_cable.socket), "priz hedefi")
+		assert_almost_eq(a_cable.length, b_cable.length, 0.0001, "uzunluk")
+		var points_equal: bool = a_cable.points.size() == b_cable.points.size()
+		for p: int in a_cable.points.size() if points_equal else 0:
+			if not a_cable.points[p].is_equal_approx(b_cable.points[p]):
+				points_equal = false
+				break
+		assert_true(points_equal, "egri noktalari birebir ayni olmali")
+
+
 func _assert_levels_equal(first: KnotLevel, second: KnotLevel) -> void:
 	assert_eq(first.level_index, second.level_index, "level_index")
 	assert_eq(first.level_name, second.level_name, "level_name")
 	assert_almost_eq(first.par_seconds, second.par_seconds, 0.0001, "par_seconds")
 	assert_eq(first.seed, second.seed, "seed")
+	assert_eq(first.modifiers, second.modifiers, "modifier listesi")
 	assert_eq(first.cables.size(), second.cables.size(), "kablo sayisi")
 	assert_eq(first.sockets.size(), second.sockets.size(), "priz sayisi")
 	for i: int in first.sockets.size():
@@ -173,6 +199,9 @@ func test_level_metadata_is_preserved() -> void:
 		assert_almost_eq(level.par_seconds, float(config.get("par_seconds", 0.0)), 0.0001)
 		assert_eq(level.seed, int(config.get("seed", 0)))
 		assert_eq(level.cables.size(), int(config.get("cables", 0)))
+		var expected: Array[StringName] = KnotLevel.modifiers_from(config)
+		assert_eq(level.modifiers, expected,
+			"bolum %d: modifiers config'ten okunmali" % level.level_index)
 
 
 # --- determinizm -----------------------------------------------------------
@@ -271,6 +300,29 @@ func test_plugs_are_far_from_all_sockets() -> void:
 			"bolum %d: fisler tum prizlerden > 0.45 uzak" % level.level_index)
 
 
+# --- (h) fis kendi kaynagindan yatayda uzak (dugum gorunumu) ----------------
+
+func test_plugs_are_horizontally_far_from_their_source() -> void:
+	for level: KnotLevel in _levels:
+		var closest: float = INF
+		for cable: CableSpec in level.cables:
+			closest = minf(closest, absf(cable.plug_rest.x - cable.source.x))
+		assert_true(closest >= KnotLevel.MIN_PLUG_SOURCE_DX - 0.0001,
+			"bolum %d: fis kaynagindan >= %.2f m yatay uzakta (en yakin %.3f)"
+				% [level.level_index, KnotLevel.MIN_PLUG_SOURCE_DX, closest])
+
+
+func test_cables_hang_diagonally_not_straight_down() -> void:
+	# Her kabloda fis kaynagin tam altinda DEGIL: ilk halatlar capraz sarkar.
+	for level: KnotLevel in _levels:
+		var diagonal: int = 0
+		for cable: CableSpec in level.cables:
+			if absf(cable.plug_rest.x - cable.source.x) >= KnotLevel.MIN_PLUG_SOURCE_DX:
+				diagonal += 1
+		assert_eq(diagonal, level.cables.size(),
+			"bolum %d: tum halatlar capraz" % level.level_index)
+
+
 # --- (d) fisler birbirinden uzak ve panoda ---------------------------------
 
 func test_plugs_respect_rest_gap_and_board_bounds() -> void:
@@ -340,18 +392,45 @@ func test_cable_curves_stay_on_board() -> void:
 	var max_x: float = _board_float("width", 1.7) * 0.5
 	var max_y: float = _board_float("height", 3.1) * 0.5
 	var surface_z: float = _surface_z()
+	var layer_gap: float = _cable_float("rest_layer_gap", 0.12)
 	for level: KnotLevel in _levels:
 		var violations: int = 0
-		var worst_z_error: float = 0.0
+		var worst_z_low: float = 0.0
+		var worst_z_high: float = 0.0
 		for cable: CableSpec in level.cables:
 			for point: Vector3 in cable.points:
 				if absf(point.x) > max_x or absf(point.y) > max_y:
 					violations += 1
-				worst_z_error = maxf(worst_z_error, absf(point.z - surface_z))
+				worst_z_low = minf(worst_z_low, point.z - surface_z)
+				worst_z_high = maxf(worst_z_high, point.z - surface_z)
 		assert_eq(violations, 0,
 			"bolum %d: halat egrisi pano icinde" % level.level_index)
-		assert_true(worst_z_error <= 0.0001,
-			"bolum %d: halat egrisi pano duzleminde" % level.level_index)
+		assert_true(worst_z_low >= -0.0001,
+			"bolum %d: halat pano yuzeyinin onunde" % level.level_index)
+		assert_true(worst_z_high <= layer_gap * 3.0 + 0.0001,
+			"bolum %d: halat katman araligini asmaz (%.3f)" % [level.level_index, worst_z_high])
+
+
+## v0.2 "orgu" garantisi: iki katman panonun onunde ayrilir; katmanlar arasi
+## z farki temas esiginden buyuk oldugu icin capraz halatlar baslangicta degmez.
+func test_cable_layers_are_separated_and_weave() -> void:
+	var surface_z: float = _surface_z()
+	var layer_gap: float = _cable_float("rest_layer_gap", 0.12)
+	var contact: float = _contact_distance()
+	for level: KnotLevel in _levels:
+		var layers: Dictionary = {}
+		for cable: CableSpec in level.cables:
+			var offset: float = cable.plug_rest.z - surface_z
+			var layer: float = offset / maxf(layer_gap, 0.0001)
+			assert_almost_eq(layer, roundf(layer), 0.02,
+				"bolum %d: fis katmani veriye uygun (%.3f)" % [level.level_index, offset])
+			assert_true(layer >= -0.02 and layer <= 2.02,
+				"bolum %d: katman 0..2 araliginda" % level.level_index)
+			layers[int(roundf(layer))] = true
+		assert_true(layers.size() >= 2,
+			"bolum %d: en az iki katman var (orgu)" % level.level_index)
+		assert_true(layer_gap > contact * 1.15,
+			"katman araligi temas esiginden buyuk (%.3f > %.3f)" % [layer_gap, contact])
 
 
 # --- dugum hissi / fis dagilimi --------------------------------------------
@@ -377,6 +456,61 @@ func test_plugs_scattered_in_middle_band() -> void:
 			"bolum %d: fisler dikeyde dagilmis" % level.level_index)
 		assert_greater(max_x - min_x, 0.2,
 			"bolum %d: fisler yatayda dagilmis" % level.level_index)
+
+
+## v0.2 zorluk egrisi: kablo 3 -> 7, par L1 45 sn -> L12 95 sn, modifier'lar
+## kademeli girer (her bolumun kumesi bir oncekini kapsar).
+func test_difficulty_curve_is_escalating() -> void:
+	var previous_cables: int = 0
+	var previous_par: float = 0.0
+	var previous_modifiers: Array[StringName] = []
+	var first_seen: Dictionary = {}
+	for i: int in _configs.size():
+		var config: Dictionary = _configs[i]
+		var level: KnotLevel = _levels[i]
+		var cables: int = int(config.get("cables", 0))
+		var par: float = float(config.get("par_seconds", 0.0))
+		assert_true(cables >= previous_cables, "bolum %d: kablo sayisi azalmamali" % (i + 1))
+		assert_true(par >= previous_par, "bolum %d: par suresi azalmamali" % (i + 1))
+		assert_true(float(config.get("par_seconds", 0.0)) <= 95.0,
+			"bolum %d: par <= 95 sn (v0.2 hedefi)" % (i + 1))
+		for modifier: StringName in previous_modifiers:
+			assert_true(level.modifiers.has(modifier),
+				"bolum %d: onceki modifier '%s' korunmali" % [i + 1, modifier])
+		if i == 0:
+			assert_true(level.modifiers.is_empty(), "bolum 1 temel (modifier yok)")
+		for modifier: StringName in level.modifiers:
+			if not first_seen.has(modifier):
+				first_seen[modifier] = i + 1
+		previous_cables = cables
+		previous_par = par
+		previous_modifiers = level.modifiers
+	assert_eq(int(first_seen.get(KnotLevel.MODIFIER_SWAY, -1)), 5, "sway L5'te girer")
+	assert_eq(int(first_seen.get(KnotLevel.MODIFIER_LOCKED_SOCKET, -1)), 7,
+		"locked_socket L7'de girer")
+	assert_eq(int(first_seen.get(KnotLevel.MODIFIER_BLACKOUT, -1)), 9, "blackout L9'da girer")
+	assert_eq(int(first_seen.get(KnotLevel.MODIFIER_FAST_OVERLOAD, -1)), 10,
+		"fast_overload L10'da girer")
+	assert_almost_eq(float(_configs[0].get("par_seconds", 0.0)), 45.0, 0.001, "L1 par ~45")
+	assert_almost_eq(float(_configs[11].get("par_seconds", 0.0)), 95.0, 0.001, "L12 par ~95")
+	assert_eq(int(_configs[11].get("cables", 0)), 7, "L12: 7 kablo")
+	assert_eq(_levels[11].modifiers.size(), KnotLevel.VALID_MODIFIERS.size(),
+		"L12: tum modifier'lar acik")
+
+
+## Modifier'lar duzeni (kablo/egri/priz konumlari) DEGISTIRMEZ; yalnizca kilit
+## isaretleri ve oyun içi mekanikler eklenir (geri uyum: ARCHITECTURE §12).
+func test_modifiers_do_not_change_knot_layout() -> void:
+	var config: Dictionary = (_configs[6] as Dictionary).duplicate(true)
+	var with_modifiers: KnotLevel = KnotLevel.from_config(config, _colors, _balance)
+	var bare: Dictionary = config.duplicate(true)
+	bare["modifiers"] = []
+	var without_modifiers: KnotLevel = KnotLevel.from_config(bare, _colors, _balance)
+	assert_eq(without_modifiers.modifiers.size(), 0, "modifiersiz bolum")
+	assert_eq(with_modifiers.modifiers.size(), 2, "L7: sway + locked_socket")
+	_assert_layout_equal(with_modifiers, without_modifiers)
+	assert_true(with_modifiers.locked_socket_count() > 0, "L7: kilitli priz var")
+	assert_eq(without_modifiers.locked_socket_count(), 0, "modifiersiz: kilit yok")
 
 
 func test_generation_is_organic_not_corridor_fallback() -> void:

@@ -1,59 +1,50 @@
-# TASKS — Kablo Düğümü: Akım Ustası
+# TASKS — Cable Knot: Current Master
 
-Durum: **v0.1 — oynanabilir dikey dilim**. Her iş "bitti" sayılmadan önce
-`bash tools/verify.sh` yeşil olmalı (import + duman + birim testleri + oyun probe'u).
+Durum: **v0.2 "ASMR redesign" — uygulanıyor**. Sıralı plan ve kabul ölçütleri: `ROADMAP.md`.
+Her iş "bitti" sayılmadan önce `bash tools/verify.sh` yeşil olmalı.
 
-## Faz 0 — Sözleşme (Lead) ✅
-- [x] studio-kit şablonundan `godot-games/KabloDugumu` üretimi
-- [x] `CLAUDE.md`, `PROJECT_SPEC.md`, `ARCHITECTURE.md`
-- [x] `data/levels.json`, `data/balance.json`, tema
-- [x] Core + GameManager + HUD iskelet sözleşmesi (derlenir, verify yeşil)
+## v0.2 — TAMAMLANDI (doğrulama: 160 test, perf hedefi aşıldı)
 
-## Faz 1 — Paralel modüller ✅
-- [x] **forge-core**: `KnotLevel` üretimi (12 seviye, garantiler), `OverloadModel`, `SnapRule`,
-      `LevelScoring`, `PlayerProfile`, `CableMath` + birim testleri
-- [x] **volt-rope**: verlet halat + tüp mesh, fiş/priz görseli, temas tarayıcı, kıvılcım partikülü
-- [x] **panel-ui**: tema, Boot/Menu/LevelSelect/Result/HUD sahneleri ve script'leri
-- [x] **signal-qa**: 13 SFX üretimi + AdManager yerleşimleri + reklam limitleri + testler
-      (`tools/make_sfx.py`, `data/sfx_recipes.json`, `data/sounds.json`,
-      `scripts/autoload/AudioService.gd`, `scripts/autoload/AdManager.gd`,
-      `scripts/services/*`, `tests/unit/test_ad_limits.gd`)
+### Lead
+- [x] İngilizce kimlik (project.godot: Cable Knot: Current Master)
+- [x] `Loc` autoload + `data/i18n/{en,tr}.json` + settings.cfg kalıcılığı
+- [x] Manrope (OFL) fontu + lisans
+- [x] ARCHITECTURE §10–§16 (i18n, ayarlar, modifier, backdrop, perf, tasarım token'ı, ASMR)
+- [ ] `tools/perf_probe.gd` + i18n parite testi + entegrasyon
+- [ ] README/PROJECT_SPEC İngilizce kimliğe güncelleme
+- [ ] Final verify + ekran görüntüsü montajı + commit
 
-## Faz 2 — Dünya ✅
-- [x] **panel-world**: pano/environment/kamera/voltmetre, `Game.tscn`, `game.gd` orkestrasyon
-- [x] core + rope + UI + HUD entegrasyonu (temas → bar → fail/win → Result)
-- [x] Gerçek dokunma/sürükleme yolu (unproject + sürükleme düzlemi + snap) ve
-      adalet kuralı (dinlenen temaslar sayılmaz)
+### craft-ui (task-6)
+- [ ] Tasarım dili: palet + metrik + Manrope (theme.json → build_theme.py)
+- [ ] Boot/Menu/LevelSelect/HUD/Fail/Pause/Result yeniden tasarım (küçük buton, ikon, sade)
+- [ ] Menu animasyonlu arka plan (AmbientBackdrop SubViewport) + dil değiştirici + ayarlar
+- [ ] Tüm UI metinleri Loc.t anahtarlarında; TR/EN parite
 
-## Faz 3 — Cila ✅
-- [x] Bölüm dengesi (par süreleri, kablo uzunluğu, bar hızları) — oynayarak ölç
-- [x] Ekran görüntüsü akışı + montaj: `tools/flow_shot.gd` + `tools/make_shots.sh`
-      (`/tmp/kablo_shots/`, `/tmp/kablo_sheet.png`)
-- [x] Reklam kancaları uçtan uca (mock) — üç yerleşim: FUSE_RESCUE, GOLDEN_CUTTER,
-      INSULATION_SPRAY (limitler `data/ads.json`, ödül yalnız `rewarded_finished` sonrası)
-- [x] Headless oyun dumanı: `tools/game_probe.gd` — idle adalet + force_snap → win
-- [x] CHANGELOG, final `verify.sh` (4 adım) + tema `--check`
+### live-world (task-7)
+- [ ] ASMR ışık/palet/partikül atmosferi + yumuşak feedback
+- [ ] `AmbientBackdrop` (menü + oyun arka planı): fan, lamba, konveyör, buhar
+- [ ] Performans: halat mesh yeniden inşası olay-tabanlı; kare bütçesi; perf raporu
+- [ ] Drag sırasında p95 kare süresi ölçümü (hedef < 16.7 ms M4 / 33 ms düşük segment)
 
-## Doğrulama komutları
-```bash
-bash tools/verify.sh                    # import + duman + testler + game_probe
-python3 tools/build_theme.py --check    # tema senkron mu
-godot --path . -s res://tools/flow_shot.gd -- --out-dir=/tmp/kablo_shots  # gerçek pencere
-bash tools/make_shots.sh                # flow_shot + /tmp/kablo_sheet.png montajı
-```
+### level-forge (task-8)
+- [ ] KnotLevel düğüm görünümü (fişler kaynaktan uzak) + zorluk eğrisi
+- [ ] Modifier data altyapısı + sway / locked_socket / blackout / fast_overload
+- [ ] L5+ kademeli mekanik girişi, L12 final; testler + verify yeşil
+
+### audio-mood (task-9)
+- [x] ASMR SFX seti (yumuşak crackle, ahşap clack, sürtünme, chime) + ambient hum/pad
+- [x] AudioService loop/ambient API + mix + mute kalıcılığı
+- [x] data/sfx_recipes.json + sounds.json + üretim (deterministik sentez)
+
+## Tamamlanan (v0.1)
+- [x] studio-kit şablonundan proje; core mantık + 12 bölüm + 86 core testi
+- [x] PBD halat fiziği + tüp mesh; fiş/priz/temas/kıvılcım; 137 test yeşil
+- [x] 3D pano, HUD, menü, bölüm seçimi, sonuç; 3 reklam yerleşimi; 13 SFX
+- [x] verify.sh 4 adım (import + smoke + test + oyun dumanı); imleç/girdi düzeltmesi
+- [x] İlk oynanabilir sürüm commit'i (`6908c08`)
 
 ## Bilinen riskler
-- Verlet tüp mesh'i mobilde pahalı → 6 kenar, 16 nokta, güncelleme seyreltme.
-- `-s` script'lerinde autoload kimliği derlenmez (GOTCHAS #2) → `get_node` kullan.
-- `.tscn` elle düzenlemek kırılgan → sahneleri GDScript ile kur, mümkünse.
-- macOS'ta pencere arkada kalınca çizim durabiliyor → flow_shot `always_on_top` +
-  `RenderingServer.force_draw` ile kareleri tazeliyor.
-- ElevenLabs anahtarı repoda yok → sesler deterministik sentez ile üretiliyor;
-  anahtar eklenirse aynı komut gerçek üretimi kullanır.
-
-## Tamamlananlar
-- 2026-11-10: iskelet üretimi, verify yeşil — Lead
-- 2026-11-10: core + rope + UI + pano entegrasyonu; gerçek drag → snap, kısa devre,
-  kalkan, fail/retry/win — panel-world / panel-ui / volt-rope / forge-core
-- 2026-11-10: 13 SFX + üç reklam yerleşimi + limit testleri; headless oyun probe'u;
-  akış ekran görüntüleri + montaj; final verify 137 test / 2590 doğrulama yeşil — signal-qa
+- Manrope variable font: başlık ağırlığı FontVariation ile verilmezse ince kalır.
+- Ambient backdrop ikinci viewport maliyeti; düşük segmentte 30 fps tabanı korunmalı.
+- Modifier'lar mevcut 130 testi kırmamalı; önce saf core, sonra görsel katman.
+- Eşzamanlı yazım: HUD.tscn ve game.gd tek sahipte kalmalı.

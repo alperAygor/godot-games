@@ -12,8 +12,8 @@ set -uo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GODOT="${GODOT:-godot}"
-OUT_DIR="/tmp/kablo_shots"
-SHEET="/tmp/kablo_sheet.png"
+OUT_DIR="/tmp/kablo_v02_shots"
+SHEET="/tmp/kablo_v02_sheet.png"
 
 for arg in "$@"; do
     case "$arg" in

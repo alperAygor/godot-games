@@ -47,6 +47,17 @@ const MAX_DELTA: float = 1.0 / 30.0
 ## Bosta duran kablo mesh'i iki karede bir guncellenir (mobil butce).
 const IDLE_MESH_INTERVAL: int = 2
 const MESH_EPSILON: float = 0.0005
+## Idle'da halka sayisi duser: 26 nokta * 2 = 51 halka (harekette 76).
+## Mesh tepe sayisi testi kurulumda TAM kaliteyi (MESH_SUBDIVISIONS) dogrular.
+const MESH_IDLE_SUBDIVISIONS: int = 2
+## Bu kadar kare boyunca hicbir nokta degismezse PBD uykuya gecer (mobil butce).
+const SLEEP_REST_FRAMES: int = 30
+## Gorsel salinim: noktalar/fizik DEGISMEZ (temas uretmez); yalniz mesh dugumu
+## milimetrik kayar. Kablo "nefes aliyor" gibi okunur (ASMR §16).
+const SWAY_AMPLITUDE_X: float = 0.0016
+const SWAY_AMPLITUDE_Z: float = 0.0038
+const SWAY_SPEED: float = 0.55
+const SWAY_DRAG_SCALE: float = 0.25
 const EMISSION_ENERGY: float = 0.35
 const SHIELDED_EMISSION_ENERGY: float = 0.55
 const SHIELD_COLOR: Color = Color(0.3, 0.95, 1.0)
@@ -75,17 +86,59 @@ var _bounce_distance: float = 0.0
 
 var _mesh_instance: MeshInstance3D = null
 var _material: StandardMaterial3D = null
-var _surface_tool: SurfaceTool = null
 var _mesh_built_points: PackedVector3Array = PackedVector3Array()
-var _mesh_rebuilt: bool = false
 var _step_count: int = 0
 var _setup_done: bool = false
 var _shielded: bool = false
 var _shield_tween: Tween = null
+## Yeniden kullanilan mesh tamponlari (SurfaceTool yerine PackedArray'ler):
+## her karede yeni mesh/tampon ayirmadan ayni ArrayMesh'e yazilir.
+var _array_mesh: ArrayMesh = null
+var _mesh_vertices: PackedVector3Array = PackedVector3Array()
+var _mesh_normals: PackedVector3Array = PackedVector3Array()
+var _mesh_indices: PackedInt32Array = PackedInt32Array()
+var _rings: PackedVector3Array = PackedVector3Array()
+var _tangents: PackedVector3Array = PackedVector3Array()
+var _sides: PackedVector3Array = PackedVector3Array()
+var _mesh_subdiv: int = 0
+## Uyku: dinlenen halat fizigi islemez (step erken doner).
+var _sleeping: bool = false
+var _rest_frames: int = 0
+## segments() cache: nokta/transform degismedikce yeniden hesaplanmaz.
+var _points_version: int = 0
+var _segments_version: int = -1
+var _segments_xform: Transform3D = Transform3D.IDENTITY
+var _segments_toggle: int = 0
+var _segments_buffers: Array[PackedVector3Array] = [
+	PackedVector3Array(), PackedVector3Array()
+]
+var _segments_resampled: PackedVector3Array = PackedVector3Array()
+## Gorsel salinim fazi (her kablo farkli fazda nefes alir).
+var _sway_time: float = 0.0
+var _sway_phase: float = 0.0
 
 
 func _physics_process(delta: float) -> void:
 	step(delta)
+
+
+## Gorsel salinim: mesh node'u milimetrik kayar; fizik noktalarina DOKUNMAZ,
+## bu yuzden temas taramasi (segments()) etkilenmez.
+func _process(delta: float) -> void:
+	if _mesh_instance == null:
+		return
+	_sway_time += delta
+	var scale: float = SWAY_DRAG_SCALE if _phase == Phase.DRAGGING else 1.0
+	_mesh_instance.position = Vector3(
+		sin(_sway_time * SWAY_SPEED + _sway_phase) * SWAY_AMPLITUDE_X,
+		sin(_sway_time * SWAY_SPEED * 0.61 + _sway_phase * 1.7) * SWAY_AMPLITUDE_X * 0.5,
+		sin(_sway_time * SWAY_SPEED * 0.83 + _sway_phase) * SWAY_AMPLITUDE_Z) * scale
+
+
+## Uyuyan halati uyandirir: her durum degisikliginde cagrilir.
+func _wake() -> void:
+	_sleeping = false
+	_rest_frames = 0
 
 
 ## Fizigi ilerletir. Normalde _physics_process cagirir; testler dogrudan cagirir.
@@ -97,6 +150,8 @@ func step(delta: float) -> void:
 		return
 	_step_count += 1
 	if _phase == Phase.FROZEN:
+		return
+	if _sleeping:
 		return
 	_animate_tip(dt)
 	_integrate(dt)
@@ -134,6 +189,10 @@ func setup(points: PackedVector3Array, length: float, color: Color, voltage: int
 	_tip_target = _points[_points.size() - 1]
 	_setup_done = true
 	_step_count = 0
+	_points_version += 1
+	_wake()
+	if _sway_phase == 0.0:
+		_sway_phase = float(get_instance_id() % 628) * 0.01
 	_rebuild_mesh()
 
 
@@ -150,6 +209,8 @@ func reset_shape(points: PackedVector3Array) -> void:
 	_previous = _points.duplicate()
 	_tip_target = _points[_points.size() - 1]
 	_step_count = 0
+	_points_version += 1
+	_wake()
 	_rebuild_mesh()
 
 
@@ -162,6 +223,7 @@ func begin_drag(target: Vector3) -> void:
 	local_target.z = maxf(local_target.z, _tip_min_z)
 	_phase = Phase.DRAGGING
 	_animation_time = 0.0
+	_wake()
 	_set_tip(local_target)
 	_rebuild_mesh()
 
@@ -173,6 +235,7 @@ func update_drag(target: Vector3) -> void:
 	if _phase != Phase.DRAGGING:
 		_phase = Phase.DRAGGING
 		_animation_time = 0.0
+		_wake()
 	var local_target: Vector3 = _clamp_to_reach(_to_local_point(target))
 	local_target.z = maxf(local_target.z, _tip_min_z)
 	_set_tip(local_target)
@@ -191,6 +254,7 @@ func end_drag(locked: bool) -> void:
 	_animation_target = Vector3(_animation_start.x, _animation_start.y, _tip_min_z)
 	_animation_time = 0.0
 	_phase = Phase.SETTLING
+	_wake()
 
 
 ## Fis (son nokta) yumusak bir yayla target'a girer; bitince noktalar donar.
@@ -203,6 +267,7 @@ func snap_to(target: Vector3) -> void:
 	_animation_time = 0.0
 	_tip_target = _animation_start
 	_phase = Phase.SNAPPING
+	_wake()
 
 
 ## Yanlis priz: fis distance kadar yukari sekip panoya geri oturur.
@@ -214,12 +279,14 @@ func bounce_tip_up(distance: float) -> void:
 	_bounce_distance = maxf(distance, 0.0)
 	_animation_time = 0.0
 	_phase = Phase.BOUNCING
+	_wake()
 
 
 ## Sureli animasyonu beklemeden sonuna atlar (test/QA ve snap aninda bitirme).
 func finish_animations() -> void:
 	if not _setup_done:
 		return
+	_wake()
 	match _phase:
 		Phase.SETTLING, Phase.BOUNCING:
 			_set_tip(_animation_target)
@@ -259,11 +326,27 @@ func is_shielded() -> bool:
 
 
 ## Temas taramasi icin dunya (pano) uzayinda 10 ornek nokta.
+## Nokta/transform degismediyse cache'ten doner (uyuyan kabloda sifir is).
+## Donen dizi SALT OKUNUR kabul edilmelidir; iki tampon arasinda ping-pong yapilir
+## ki onceki cagrinin dizisi sonradan degismesin.
 func segments() -> PackedVector3Array:
-	var result: PackedVector3Array = PackedVector3Array()
 	if _points.size() < 2:
-		return result
-	return _to_world_points(CableMath.resample(_points, SEGMENT_SAMPLES))
+		return PackedVector3Array()
+	var xform: Transform3D = Transform3D.IDENTITY
+	if is_inside_tree():
+		xform = global_transform
+	if _segments_version == _points_version and _segments_xform.is_equal_approx(xform):
+		return _segments_buffers[_segments_toggle]
+	_segments_resampled = CableMath.resample(_points, SEGMENT_SAMPLES)
+	_segments_toggle = 1 - _segments_toggle
+	var target: PackedVector3Array = _segments_buffers[_segments_toggle]
+	target.resize(_segments_resampled.size())
+	for i: int in _segments_resampled.size():
+		target[i] = xform * _segments_resampled[i]
+	_segments_buffers[_segments_toggle] = target
+	_segments_version = _points_version
+	_segments_xform = xform
+	return target
 
 
 ## Mevcut uzunluk / toplam uzunluk (0..1) — gerilme gostergesi.
@@ -348,6 +431,7 @@ func _animate_tip(dt: float) -> void:
 
 
 func _integrate(dt: float) -> void:
+	_points_version += 1
 	var gravity: Vector3 = _local_gravity() * dt * dt
 	var last: int = _points.size() - 1
 	for i: int in range(1, _points.size()):
@@ -405,6 +489,7 @@ func _set_tip(position: Vector3) -> void:
 	_tip_target = position
 	_points[last] = position
 	_previous[last] = position
+	_points_version += 1
 
 
 func _clamp_to_reach(target: Vector3) -> Vector3:
@@ -518,7 +603,9 @@ func _ensure_visuals() -> void:
 	_mesh_instance.material_override = _material
 	_mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(_mesh_instance)
-	_surface_tool = SurfaceTool.new()
+	_array_mesh = ArrayMesh.new()
+	_mesh_instance.mesh = _array_mesh
+	set_process(true)
 
 
 func _apply_material_color() -> void:
@@ -533,15 +620,28 @@ func _apply_material_color() -> void:
 		_material.emission_energy_multiplier = EMISSION_ENERGY
 
 
+## Olay-tabanli mesh tazeleme: noktalar degismediyse mesh'e dokunulmaz;
+## hareketli halat kare basina en fazla 1 kez, sabit halat 30 Hz'de bir kurulur.
+## Hic degismeyen halat SLEEP_REST_FRAMES sonra uyur (fizik de durur).
 func _update_mesh() -> void:
 	if _mesh_instance == null:
 		return
 	var active: bool = _phase != Phase.HELD
+	var desired_subdiv: int = MESH_SUBDIVISIONS if active else MESH_IDLE_SUBDIVISIONS
+	if not _points_changed():
+		if _phase == Phase.HELD:
+			if _mesh_subdiv != desired_subdiv:
+				# Animasyon bitti: tek seferlik alt orneklemeye gec (mobil butce).
+				_rebuild_mesh(desired_subdiv)
+				return
+			_rest_frames += 1
+			if _rest_frames >= SLEEP_REST_FRAMES:
+				_sleeping = true
+		return
+	_rest_frames = 0
 	if not active and (_step_count % IDLE_MESH_INTERVAL) != 0:
 		return
-	if not _points_changed():
-		return
-	_rebuild_mesh()
+	_rebuild_mesh(desired_subdiv)
 
 
 func _points_changed() -> bool:
@@ -553,33 +653,42 @@ func _points_changed() -> bool:
 	return false
 
 
-func _rebuild_mesh() -> void:
-	if _mesh_instance == null or _points.size() < 2:
+## Tupe mesh'ini yeniden kullanilabilir PackedArray tamponlarina yazar.
+## SurfaceTool'un tepe-basina metod cagrisi ve her karede yeni ArrayMesh
+## ayirmasi yerine tek bir ArrayMesh'in yuzeyi tazelenir (mobil GC baskisi yok).
+func _rebuild_mesh(subdiv: int = MESH_SUBDIVISIONS) -> void:
+	if _mesh_instance == null or _array_mesh == null or _points.size() < 2:
 		return
-	var rings: PackedVector3Array = _build_smoothed_rings()
-	var ring_count: int = rings.size()
+	var subdivisions: int = maxi(1, subdiv)
+	_build_smoothed_rings(subdivisions)
+	var ring_count: int = _rings.size()
 	if ring_count < 2:
 		return
-	var tangents: PackedVector3Array = _compute_ring_tangents(rings)
-	var sides: PackedVector3Array = _parallel_transport_sides(tangents)
-	_surface_tool.clear()
-	_surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	_compute_ring_tangents()
+	_parallel_transport_sides()
+	var vertex_count: int = ring_count * TUBE_SIDES + 2
+	_mesh_vertices.resize(vertex_count)
+	_mesh_normals.resize(vertex_count)
+	_mesh_indices.resize(ring_count * TUBE_SIDES * 6)
+	var cursor: int = 0
 	for i: int in ring_count:
-		var tangent: Vector3 = tangents[i]
-		var side: Vector3 = sides[i]
+		var tangent: Vector3 = _tangents[i]
+		var side: Vector3 = _sides[i]
 		# up her halkada tegete gore yeniden kurulur; global sabit eksen yok.
 		var up: Vector3 = tangent.cross(side).normalized()
 		for side_index: int in TUBE_SIDES:
 			var angle: float = TAU * float(side_index) / float(TUBE_SIDES)
 			var normal: Vector3 = side * cos(angle) + up * sin(angle)
-			_surface_tool.set_normal(normal)
-			_surface_tool.add_vertex(rings[i] + normal * radius)
+			_mesh_normals[cursor] = normal
+			_mesh_vertices[cursor] = _rings[i] + normal * radius
+			cursor += 1
 	var center_start: int = ring_count * TUBE_SIDES
 	var center_end: int = center_start + 1
-	_surface_tool.set_normal(-tangents[0])
-	_surface_tool.add_vertex(rings[0])
-	_surface_tool.set_normal(tangents[ring_count - 1])
-	_surface_tool.add_vertex(rings[ring_count - 1])
+	_mesh_normals[center_start] = -_tangents[0]
+	_mesh_vertices[center_start] = _rings[0]
+	_mesh_normals[center_end] = _tangents[ring_count - 1]
+	_mesh_vertices[center_end] = _rings[ring_count - 1]
+	var index_cursor: int = 0
 	for i: int in ring_count - 1:
 		for side_index: int in TUBE_SIDES:
 			var next_side: int = (side_index + 1) % TUBE_SIDES
@@ -587,51 +696,58 @@ func _rebuild_mesh() -> void:
 			var b: int = i * TUBE_SIDES + next_side
 			var c: int = (i + 1) * TUBE_SIDES + side_index
 			var d: int = (i + 1) * TUBE_SIDES + next_side
-			_surface_tool.add_index(a)
-			_surface_tool.add_index(c)
-			_surface_tool.add_index(b)
-			_surface_tool.add_index(b)
-			_surface_tool.add_index(c)
-			_surface_tool.add_index(d)
+			_mesh_indices[index_cursor] = a
+			_mesh_indices[index_cursor + 1] = c
+			_mesh_indices[index_cursor + 2] = b
+			_mesh_indices[index_cursor + 3] = b
+			_mesh_indices[index_cursor + 4] = c
+			_mesh_indices[index_cursor + 5] = d
+			index_cursor += 6
 	var last_ring: int = (ring_count - 1) * TUBE_SIDES
 	for side_index: int in TUBE_SIDES:
 		var next_side: int = (side_index + 1) % TUBE_SIDES
-		_surface_tool.add_index(center_start)
-		_surface_tool.add_index(side_index)
-		_surface_tool.add_index(next_side)
-		_surface_tool.add_index(center_end)
-		_surface_tool.add_index(last_ring + next_side)
-		_surface_tool.add_index(last_ring + side_index)
-	var mesh: ArrayMesh = _surface_tool.commit() as ArrayMesh
-	if mesh == null:
-		return
-	_mesh_instance.mesh = mesh
+		_mesh_indices[index_cursor] = center_start
+		_mesh_indices[index_cursor + 1] = side_index
+		_mesh_indices[index_cursor + 2] = next_side
+		_mesh_indices[index_cursor + 3] = center_end
+		_mesh_indices[index_cursor + 4] = last_ring + next_side
+		_mesh_indices[index_cursor + 5] = last_ring + side_index
+		index_cursor += 6
+	var arrays: Array = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = _mesh_vertices
+	arrays[Mesh.ARRAY_NORMAL] = _mesh_normals
+	arrays[Mesh.ARRAY_INDEX] = _mesh_indices
+	_array_mesh.clear_surfaces()
+	_array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	_mesh_subdiv = subdivisions
 	_mesh_built_points = _points.duplicate()
-	_mesh_rebuilt = true
 
 
-## 26 kontrol noktasini Catmull-Rom ile MESH_SUBDIVISIONS katina cikarir.
+## 26 kontrol noktasini Catmull-Rom ile subdivisions katina cikarir (yerinde).
 ## Iki ucu kilitleyici/fis govdesinin icine uzatir: tupe ucu boslukta kalmaz.
-func _build_smoothed_rings() -> PackedVector3Array:
-	var rings: PackedVector3Array = PackedVector3Array()
+func _build_smoothed_rings(subdivisions: int) -> void:
 	var count: int = _points.size()
+	var ring_count: int = (count - 1) * subdivisions + 1
+	_rings.resize(ring_count)
 	if count < 2:
-		return rings
+		return
+	var cursor: int = 0
 	for i: int in count - 1:
 		var p0: Vector3 = _points[maxi(i - 1, 0)]
 		var p1: Vector3 = _points[i]
 		var p2: Vector3 = _points[i + 1]
 		var p3: Vector3 = _points[mini(i + 2, count - 1)]
-		for step: int in MESH_SUBDIVISIONS:
-			var t: float = float(step) / float(MESH_SUBDIVISIONS)
-			rings.append(_catmull_rom(p0, p1, p2, p3, t))
-	rings.append(_points[count - 1])
-	var first_tangent: Vector3 = (rings[1] - rings[0]).normalized()
-	rings[0] = rings[0] - first_tangent * MESH_END_EXTENSION
-	var last_index: int = rings.size() - 1
-	var last_tangent: Vector3 = (rings[last_index] - rings[last_index - 1]).normalized()
-	rings[last_index] = rings[last_index] + last_tangent * MESH_END_EXTENSION
-	return rings
+		for step: int in subdivisions:
+			var t: float = float(step) / float(subdivisions)
+			_rings[cursor] = _catmull_rom(p0, p1, p2, p3, t)
+			cursor += 1
+	_rings[ring_count - 1] = _points[count - 1]
+	var first_tangent: Vector3 = (_rings[1] - _rings[0]).normalized()
+	_rings[0] = _rings[0] - first_tangent * MESH_END_EXTENSION
+	var last_index: int = ring_count - 1
+	var last_tangent: Vector3 = (_rings[last_index] - _rings[last_index - 1]).normalized()
+	_rings[last_index] = _rings[last_index] + last_tangent * MESH_END_EXTENSION
 
 
 func _catmull_rom(p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3, t: float) -> Vector3:
@@ -642,39 +758,43 @@ func _catmull_rom(p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3, t: float) 
 		+ (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t3)
 
 
-func _compute_ring_tangents(rings: PackedVector3Array) -> PackedVector3Array:
-	var result: PackedVector3Array = PackedVector3Array()
-	var count: int = rings.size()
+## Halka tegetlerini yeniden kullanilan tampona yazar.
+func _compute_ring_tangents() -> void:
+	var count: int = _rings.size()
+	_tangents.resize(count)
 	if count < 2:
-		return result
+		return
 	for i: int in count:
 		var tangent: Vector3 = Vector3.ZERO
 		if i == 0:
-			tangent = rings[1] - rings[0]
+			tangent = _rings[1] - _rings[0]
 		elif i == count - 1:
-			tangent = rings[count - 1] - rings[count - 2]
+			tangent = _rings[count - 1] - _rings[count - 2]
 		else:
-			tangent = rings[i + 1] - rings[i - 1]
+			tangent = _rings[i + 1] - _rings[i - 1]
 		if tangent.length_squared() < EPSILON:
 			tangent = Vector3.DOWN
-		result.append(tangent.normalized())
-	return result
+		_tangents[i] = tangent.normalized()
 
 
 ## Halka cercevelerini paralel tasima ile kurar: her normal bir onceki normalin
 ## tegete izdusumu cikarilip normalize edilir. Global up vektor YOK; boylece
 ## silüette 180 derece donme / serit gorunumu olusmaz.
-func _parallel_transport_sides(tangents: PackedVector3Array) -> PackedVector3Array:
-	var sides: PackedVector3Array = PackedVector3Array()
-	if tangents.is_empty():
-		return sides
+## Halka cercevelerini paralel tasima ile yeniden kullanilan tampona yazar:
+## her normal bir onceki normalin tegete izdusumu cikarilip normalize edilir.
+## Global up vektor YOK; boylece silüette 180 derece donme olusmaz.
+func _parallel_transport_sides() -> void:
+	var count: int = _tangents.size()
+	_sides.resize(count)
+	if count == 0:
+		return
 	var reference: Vector3 = Vector3(0.0, 1.0, 0.0)
-	if absf(tangents[0].dot(reference)) > 0.9:
+	if absf(_tangents[0].dot(reference)) > 0.9:
 		reference = Vector3(1.0, 0.0, 0.0)
-	var side: Vector3 = tangents[0].cross(reference).normalized()
-	sides.append(side)
-	for i: int in range(1, tangents.size()):
-		var tangent: Vector3 = tangents[i]
+	var side: Vector3 = _tangents[0].cross(reference).normalized()
+	_sides[0] = side
+	for i: int in range(1, count):
+		var tangent: Vector3 = _tangents[i]
 		var transported: Vector3 = side - tangent * side.dot(tangent)
 		if transported.length_squared() < 0.000001:
 			var fallback_reference: Vector3 = Vector3(1.0, 0.0, 0.0)
@@ -682,8 +802,7 @@ func _parallel_transport_sides(tangents: PackedVector3Array) -> PackedVector3Arr
 				fallback_reference = Vector3(0.0, 1.0, 0.0)
 			transported = tangent.cross(fallback_reference)
 		side = transported.normalized()
-		sides.append(side)
-	return sides
+		_sides[i] = side
 
 
 # --- uzay donusumleri ----------------------------------------------------
@@ -708,16 +827,6 @@ func _to_world_point(point: Vector3) -> Vector3:
 	if is_inside_tree():
 		return global_transform * point
 	return point
-
-
-func _to_world_points(points: PackedVector3Array) -> PackedVector3Array:
-	var result: PackedVector3Array = PackedVector3Array()
-	var xform: Transform3D = Transform3D.IDENTITY
-	if is_inside_tree():
-		xform = global_transform
-	for point: Vector3 in points:
-		result.append(xform * point)
-	return result
 
 
 # --- denge tablosu -------------------------------------------------------

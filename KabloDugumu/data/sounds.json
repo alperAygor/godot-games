@@ -1,5 +1,8 @@
 {
+  "ambient_hum": "res://assets/audio/sfx/ambient_hum.wav",
+  "ambient_pad": "res://assets/audio/sfx/ambient_pad.wav",
   "cable_pull": "res://assets/audio/sfx/cable_pull.wav",
+  "cable_slide": "res://assets/audio/sfx/cable_slide.wav",
   "clack": "res://assets/audio/sfx/clack.wav",
   "cutter": "res://assets/audio/sfx/cutter.wav",
   "fail": "res://assets/audio/sfx/fail.wav",

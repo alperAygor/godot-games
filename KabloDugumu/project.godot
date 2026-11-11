@@ -5,8 +5,9 @@ config_version=5
 
 [application]
 
-config/name="Kablo Düğümü: Akım Ustası"
-config/version="0.1.0"
+config/name="Cable Knot: Current Master"
+config/version="0.2.0"
+config/description="A high-voltage untangling puzzle. Untangle colored cables, match the sockets, keep the fuse alive."
 run/main_scene="res://scenes/Boot.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 
@@ -17,6 +18,7 @@ GameManager="*res://scripts/autoload/GameManager.gd"
 AudioService="*res://scripts/autoload/AudioService.gd"
 AdManager="*res://scripts/autoload/AdManager.gd"
 GameData="*res://scripts/autoload/GameData.gd"
+Loc="*res://scripts/autoload/Loc.gd"
 
 [debug]
 

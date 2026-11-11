@@ -27,6 +27,16 @@ Bağımlılık yönü **yukarıdan aşağıya**: `ui → gameplay → core`; `co
 | **signal-qa** | `scripts/autoload/AdManager.gd`, `scripts/autoload/AudioService.gd`, `scripts/services/*`, `data/sfx_recipes.json`, `data/sounds.json`, `data/ads.json`, `assets/audio/*`, `tools/*`, `tests/run_tests.gd`, kök dokümanlar |
 | **panel-world + Lead** | `scenes/HUD.tscn` iskeleti Lead'den, içerik panel-ui |
 
+### v0.2 ("ASMR redesign") sahiplik
+
+| Sahip | Dosyalar |
+|---|---|
+| **Lead** | `project.godot`, `scripts/autoload/Loc.gd`, `scripts/autoload/GameManager.gd`, `data/i18n/*` (ilk tablo), `scripts/autoload/Loc.gd`, `tools/perf_probe.gd`, `tests/unit/test_i18n.gd`, kök dokümanlar, entegrasyon |
+| **craft-ui** | `scenes/{Boot,Menu,LevelSelect,Result,HUD}.tscn`, `scripts/ui/**`, `data/theme.json`, `assets/theme/**`, `assets/fonts/title_font.tres`; anahtar eklemek için `data/i18n/{en,tr}.json` (parite zorunlu) |
+| **live-world** | `scripts/gameplay/{board_builder,camera_rig,cable_rope,ambient_backdrop}.gd`, `scenes/Game.tscn`, `scenes/AmbientBackdrop.tscn`, `assets/shaders/**`, `assets/materials/**` |
+| **level-forge** | `scripts/core/{knot_level,cable_spec,socket_spec}.gd`, `data/{levels,balance}.json`, `scripts/gameplay/{game,level_controller,contact_monitor,input_controller,socket_node,obstacle_cable}.gd`, `tests/unit/test_core_levels.gd`, `tests/unit/test_modifiers.gd` |
+| **audio-mood** | `scripts/autoload/AudioService.gd`, `data/{sfx_recipes,sounds}.json`, `assets/audio/**`, `tools/make_sfx.py` |
+
 Aynı dosyaya iki sahip yazmaz. Sözleşme dışı API eklemek gerekiyorsa **önce mesaj at**.
 
 ## 3. Autoload sözleşmesi
@@ -304,3 +314,100 @@ func celebrate(stars: int) -> void
 3. Pano + Game sahnesi (panel-world) core/rope/UI'a bağlanır.
 4. Entegrasyon: Lead + panel-world; QA: signal-qa akış + ekran görüntüsü.
 5. Cila: denge, ses, partikül, doküman, final verify.
+
+## 10. Yerelleştirme (i18n) sözleşmesi — v0.2
+
+- **Kural:** Kullanıcıya görünen hiçbir metin koda gömülmez. Hepsi `Loc.t("anahtar", değerler)`.
+- `Loc` autoload sırası: `GameManager → AudioService → AdManager → GameData → Loc`.
+- Tablolar: `data/i18n/en.json` (varsayılan) ve `data/i18n/tr.json`. **İki dosya aynı anahtar
+  kümesine sahip olmalı** (verify'da parite testi vardır).
+- Verme biçimi: `Loc.t("hud.overload", {"pct": 42}) -> "OVERLOAD 42%"`. Anahtar yoksa anahtar
+  döner ve `push_warning` basar.
+- Dil: `Loc.set_locale("tr" | "en")`, `Loc.toggle_locale()`, `Loc.locale`,
+  `Loc.language_changed` sinyali. Seçim `user://settings.cfg`'de kalıcı; ilk açılışta
+  `OS.get_locale()` Türkçe ise `tr`, değilse `en`.
+- Bölüm adları/ipuçları anahtarla: `level.<n>.name`, `level.<n>.hint`.
+- Oyun adı İngilizce kimlikle sabit: **Cable Knot: Current Master** (`game.title` /
+  `game.subtitle` anahtarları TR'de de yerelleştirilmiş adı gösterir).
+
+## 11. Ayarlar sözleşmesi
+
+- Tek dosya: `user://settings.cfg` (`ConfigFile`). Bölüm `ui`: `locale`, `sound`.
+- Yazan: `Loc` (dil) ve `AudioService` (ses aç/kapa). Okuyan: ilgili servis `_ready`'de.
+- Ayarlar ekranı `craft-ui`'de; servis API'leri: `Loc.set_locale`, `AudioService.set_muted`.
+
+## 12. Bölüm modifier sözleşmesi — v0.2
+
+`data/levels.json` her bölümde `"modifiers": Array[String]` taşır (boş olabilir). Geçerli değerler:
+
+| Modifier | İlk bölüm | Anlam |
+|---|---|---|
+| `sway` | 5 | Panoda yavaşça salınan canlı hatlar (obstacle); temas kısa devre sayılır |
+| `locked_socket` | 7 | Bazı prizler kapaklı: fiş priz yanında 0.6 sn tutulursa kapak açılır |
+| `blackout` | 9 | Pano ışıkları yumuşakça söner/yanar (görsel zorluk; drag engellenmez) |
+| `fast_overload` | 10 | Bar dolum hızı `overload.fill_per_second * 1.5` |
+
+`KnotLevel` alanı: `var modifiers: Array[StringName]`. gameplay modifier davranışını
+`LevelController` üzerinden yönetir; modifier yoksa eski davranış aynen korunur (geri uyum).
+
+## 13. Ambient backdrop sözleşmesi — v0.2
+
+- `scenes/AmbientBackdrop.tscn`: `Node3D` + `scripts/gameplay/ambient_backdrop.gd`
+  (`class_name AmbientBackdrop extends Node3D`), kendi kamerası/ortamı **yok** (çağıran sahneler
+  kurar) VEYA kendi SubViewport'u için kamera içerir — karar `live-world`'de, ama:
+  - API: `func setup(kind: int) -> void` (`KIND_MENU`, `KIND_GAME`), `func set_intensity(value: float) -> void`.
+  - Gölge yok, `cast_shadow = OFF`, düşük poligon, toplam ≤ 40 düğüm; menüde SubViewport
+    çözünürlüğü ≤ 540×960 ve `render_target_update_mode = UPDATE_ALWAYS`.
+- Menüde: `Menu.tscn` içinde `SubViewportContainer` → `SubViewport` → instance. Pano/oyun
+  arkasında: `Game.tscn`'de `Backdrop` düğümü olarak.
+- Animasyonlar ASMR diline uyar: yavaş (`period ≥ 2 sn`), kesintisiz, döngüsel.
+
+## 13.1 AmbientBackdrop teslimi (uygulandı)
+
+`scenes/AmbientBackdrop.tscn` + `class_name AmbientBackdrop` teslim edildi:
+`setup(kind)` (`KIND_MENU=0`, `KIND_GAME=1`), `set_intensity(0..1)`, `menu_camera()`,
+`menu_environment()`. Oyun içinde yalnızca panonun sol/sağ kenar boşlukları görünür; üst HUD
+bandı ve alt eylem şeridi temiz tutulur. ≤40 düğüm, gölge yok, 30 Hz döngüsel animasyon,
+2 statik batch (~9 draw call). Menüde `SubViewport` (540×960) içinde çalışır.
+
+## 14. Performans bütçesi — v0.2
+
+- Hedef: masaüstünde 60 fps sabit; düşük segment Android'de ≥ 30 fps.
+- **Kare süresi p95 < 16.7 ms** (M4, 540×960 pencere) ve drag sırasında da korunur.
+- Halat mesh'i: yalnızca noktalar değiştiğinde yeniden kurulur; hareketli kablo ≤ 1/kare,
+  sabit kablolar 30 Hz'de bir. Alt örnekleme katsayısı idle'da düşürülebilir.
+- Tam ekran ekstra render yok (postfx screen-texture shader'ı kaldırılabilir; statik vinyet
+  dokusu tercih edilir). MSAA kapalı.
+- Ölçüm: `godot --path . -s res://tools/perf_probe.gd` → `BUILD/perf.json` + konsol raporu.
+- 2274 nesne / 19k primitive mevcut tabandır; ideal hedef < 120 draw call.
+- **Uygulanan optimizasyonlar (ölçüldü):** halat mesh'i olay-tabanlı + yeniden kullanılabilir
+  PackedArray (SurfaceTool kaldırıldı), 30 kare hareketsizlikte fizik uykusu, idle'da 51 halka;
+  `SparkBurst` `_ready`'de görünmez ısıtma (ilk kıvılcım shader compile hitch'i 118.9 ms → 0);
+  BoardBuilder statik pano 2 vertex-renkli batch (~27 → 10 draw); tam ekran screen-texture
+  postfx kaldırıldı, statik vinyet dokusu kullanıldı; kamera sarsıntısı yumuşatıldı.
+  Sonuç (M4, 540×960, bölüm 12): menu p95 2.78 ms / draw 39; game p95 6.06 ms / draw 158;
+  drag p95 6.94 ms / max 10.66 ms / hitch yok / min_fps 93.8. Kalan tek hedef socket
+  birleştirmesi (42 → 21 draw, ~+21 kazanç).
+
+## 15. UI tasarım token'ları — v0.2
+
+- **Sade, ikon-öncelikli, nazik.** Ekran başına en fazla 3 ana eylem; buton metni 1–2 kelime.
+- Buton yüksekliği **88–100 tasarım px** (1080 taban), dokunma alanı ≥ 88. Birincil buton
+  genişliği içerik kadar (tam genişlik değil), ekran kenar boşluğu 48 px.
+- Tipografi: **Manrope** (OFL). Başlık `FontVariation` wght 800 (veya büyük punto + sıkı
+  aralık); gövde 30–34, etiket 24–28. Maks 2 satır.
+- 8 px grid; köşe yarıçapı 20–28; gölge yok, yumuşak kontrast; palet: koyu sıcak-gri zemin,
+  mint birincil, amber vurgu, yumuşak mercan tehlike.
+- HUD panoyu **örtmez**: üst bar ≤ 180 px, alt eylem şeridi ≤ 140 px (1080 tabanında).
+- Dil değiştirici her ekranda erişilebilir (menü üst köşe + ayarlar).
+
+## 16. ASMR / rahatlatıcı yönergeleri — v0.2
+
+- **Hissiyat:** gerilim var ama panik yok; hareketler yavaş, yumuşak, nefes alan.
+- Görsel: warm-koyu palet, düşük kontrast, yumuşak bloom; sert beyaz/kırmızı flaş yok;
+  kısa devrede sıcak amber vinyet + yumuşak kamera sarsıntısı; kablolar yavaş sallanır.
+- Arka plan: canlı ama sakin — dönen fan, salınan lamba, yavaş konveyör, toz partikülleri.
+- Ses: yumuşak, tok, düşük frekanslı; crackle kısık; clack ahşap-tok; ambient hum + pad
+  sürekli ve kısık; ani yüksek ses yok. `AudioService` ambient loop API kullanılır.
+- Animasyon: easing `TRANS_SINE/EASE_OUT`, süreler 0.25–0.6 sn; kutlama sakin parıltı.
+

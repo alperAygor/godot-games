@@ -1,94 +1,116 @@
-# Kablo Düğümü: Akım Ustası
+# Cable Knot: Current Master
 
-Yüksek voltajlı renkli kabloları düğümden çözüp **kendi rengindeki** prizlere bağladığın,
-3D fizik ve bulmaca oyunu. Stilize low-poly endüstriyel pano, neon fişler, kısa devre
-kıvılcımları ve ASMR hissi veren ses geri bildirimleri.
+A high-voltage untangling puzzle with a calm, ASMR atmosphere. Untangle colored cables, thread
+them past each other without shorting, and snap every plug into its matching socket.
 
-- **Motor:** Godot 4.7.2 (GDScript, C# yok)
-- **Platform:** Android, dikey 1080x1920, `gl_compatibility` (düşük segment uyumluluğu)
-- **Hedef:** 60 FPS, tek elle oynanır, 45–105 saniyelik 12 bölüm
+- **Engine:** Godot 4.7.2 (GDScript, no C#)
+- **Platform:** Android, portrait 1080×1920, `gl_compatibility` renderer
+- **Target:** 60 FPS desktop / ≥30 FPS low-end mobile, one-hand play, 12 levels (45–105 s)
+- **Languages:** English + Turkish (in-game switch, persisted)
+- **Store title:** Cable Knot: Current Master · TR: Kablo Düğümü: Akım Ustası
 
-## Oynanış
+## How to play
 
-1. **Analiz et** — üstte ana pano (kaynak terminaller), altta priz şeridi. Kablolar düğümlü,
-   fişler panonun ortasında mıknatısla tutulu.
-2. **Sürükle** — fişe dokun, parmağını gezdir. Fiş havaya kalkar, kablo verlet fizikle peşinden gelir.
-3. **Teması kes** — farklı renkli iki kablo birbirine değerse kıvılcım çıkar ve **aşırı yük barı** dolar.
-   Teması kesersen bar boşalır. Bar %100 olursa sigorta atar, bölüm başarısız olur.
-4. **Tak** — fişi kendi rengindeki prizin üstüne bırak: snap + "clack". Yanlış renk priz ark yapar,
-   bar cezası alırsın ve fiş geri seker.
-5. **Dengele** — bütün fişler yerindeyse devre tamamlanır; voltmetre sakinleşir, yıldızlar verilir.
+1. **Study the tangle** — the main panel on top feeds colored cables; the socket strip sits below.
+2. **Drag a plug** — touch a plug head and move it; the cable lifts and follows with soft rope physics.
+3. **Break contact** — when two cables of *different* colors touch, sparks fly and the overload bar
+   starts filling. Break the contact to let it drain. At 100% the fuse blows and the level fails.
+4. **Snap it** — drop a plug on the socket of the same color for a satisfying "clack".
+   A wrong-color socket arcs, adds load, and bounces the plug back.
+5. **Balance the circuit** — when every plug is seated the level is complete.
 
-Aynı renk teması güvenlidir. Kabloların uzunluğu sınırlıdır; fişi kablo boyunun ötesine çekemezsin.
-Yıldızlar süre, kısa devre sayısı ve tepe yükten hesaplanır.
+Same-color contact is safe. Cables have a fixed length — you cannot pull a plug past its reach.
 
-### Kontroller
-- **Dokun + sürükle:** fişi taşı (masaüstünde fare, `emulate_touch_from_mouse`).
-- **Esc / Android geri tuşu:** geri (oyun içinde menü, menüde çıkış).
-- Oyun içi HUD: duraklat, Altın Keski, Yalıtım Spreyi.
+### Controls
+- **Touch & drag:** move the plug (mouse emulated as touch on desktop).
+- **Esc / Android back:** back (pause in game, quit in menu).
+- HUD: pause, Golden Cutter, Insulation Spray.
 
-## Ödüllü reklam kancaları
+## Progression & mechanics
 
-| Yerleşim | Tetikleyici | Ödül |
+| Levels | New element |
+|---|---|
+| 1–4 | Basics: 3→4 cables, gentle tutorial hints |
+| 5+ | **Sway** — live, swaying bare wires you must not touch |
+| 7+ | **Locked sockets** — hold the plug on the socket for 0.6 s to open the cover |
+| 9+ | **Blackout** — panel lights slowly fade and return (visual challenge) |
+| 10+ | **Fast overload** — the load bar fills 1.5× faster |
+| 12 | Seven cables, all modifiers, tightest par time |
+
+Stars: clean run within par = 3 · ≤2 short circuits and 1.6× par = 2 · completed = 1.
+
+## Rewarded ad hooks
+
+| Placement | Trigger | Reward |
 |---|---|---|
-| `FUSE_RESCUE` | Sigorta attığında | Yükü sıfırlar + 15 sn yalıtım kalkanı, aynı bölümden devam |
-| `GOLDEN_CUTTER` | Bölüm içi buton (1/bölüm) | En çok dolaşan fişi altın ışınla otomatik bağlar |
-| `INSULATION_SPRAY` | Bölüm içi buton (1/bölüm) | 10 sn kalkan: temas barı doldurmaz |
+| `FUSE_RESCUE` | Fuse blows | Resets load + 15 s insulation shield, continue the level |
+| `GOLDEN_CUTTER` | In-level button (1/level) | Auto-connects the most tangled plug with a golden arc |
+| `INSULATION_SPRAY` | In-level button (1/level) | 10 s shield: contact no longer fills the overload bar |
 
-Bugün `MockAdsProvider` kullanılır (1.2 sn simülasyon, %8 dolmama). Gerçek SDK eklemek için
-yalnızca `scripts/services/ads_provider.gd` arayüzünü uygulayan yeni bir sağlayıcı yazılır;
-oyun kodu değişmez. Limitler `data/ads.json`.
+Development uses `MockAdsProvider` (1.2 s simulation, 8% no-fill). To ship a real SDK, implement
+`scripts/services/ads_provider.gd`; no game code changes. Limits live in `data/ads.json`.
 
-## Çalıştırma
+## ASMR design direction (v0.2)
+
+- Warm-dark workshop ambience, low contrast, soft bloom, dust motes, breathing panel lights.
+- Animated background in the menu and behind the game panel: slowly rotating fan, swinging pendant
+  lamp, conveyor with spools, drifting steam.
+- Soft audio: muffled sparks, wooden clacks, fabric cable slide, warm chimes, seamless ambient
+  hum/pad loops. **Most important:** the game should feel relaxing, not panicky.
+- Gentle easing on every interaction; no harsh white/red flashes.
+
+## Localization
+
+All user-facing text goes through `Loc` (`scripts/autoload/Loc.gd`) with tables in
+`data/i18n/en.json` and `data/i18n/tr.json` (key parity enforced by tests). Language is
+auto-detected from the OS on first run, switchable from the menu, persisted in
+`user://settings.cfg`.
+
+## Run
 
 ```bash
 cd godot-games/KabloDugumu
-godot --path .                    # editörde açmak için: godot --path . -e
-bash tools/verify.sh              # import + açılış dumanı + birim testleri + oyun dumanı
+godot --path .                     # run the game (editor: godot --path . -e)
+bash tools/verify.sh               # import + boot smoke + unit tests + game probe
 python3 tools/build_theme.py --check
-```
-
-Doğrulama Godot script hatasında bile 0 dönebildiği için `verify.sh` çıktıyı ayrıca
-`SCRIPT ERROR|Parse Error` için tarar. Kırmızıysa iş bitmemiştir.
-
-## Proje yapısı
-
-```
-scenes/            Boot, Menu, LevelSelect, Game, Result, HUD (sahne geçişi yalnız GameManager'dan)
-scripts/autoload/  GameManager (akış+kayıt), AudioService, AdManager, GameData
-scripts/core/      saf mantık: seviye üretimi, aşırı yük, snap, skor, kayıt, halat matematiği (testli)
-scripts/gameplay/  3D dünya: pano, kablo fiziği, fiş/priz, temas, kıvılcım, kamera, voltmetre
-scripts/ui/        HUD ve ekranlar (sadece gösterir)
-scripts/services/  AdsProvider sınırı (SDK buraya hapsolur)
-data/              JSON denge tabloları: levels, balance, ads, theme, sounds, sfx_recipes
-tests/             tests/unit/test_*.gd — otomatik keşif, headless koşar
-tools/             verify.sh, build_theme.py, make_sfx.py, game_probe.gd, flow_shot.gd, montage
-```
-
-Dokümanlar: [PROJECT_SPEC.md](PROJECT_SPEC.md) (tasarım), [ARCHITECTURE.md](ARCHITECTURE.md)
-(sözleşmeler), [CLAUDE.md](CLAUDE.md) (kod kuralları), [TASKS.md](TASKS.md), [CHANGELOG.md](CHANGELOG.md).
-
-## Ses
-
-Ses efektleri `data/sfx_recipes.json`'dan üretilir:
-
-```bash
-python3 tools/make_sfx.py            # eksikleri üretir (anahtar yoksa deterministik sentez)
-ELEVENLABS_API_KEY=... python3 tools/make_sfx.py --force   # ElevenLabs sound-generation
-```
-
-ElevenLabs anahtarı repoya girmez; anahtar yoksa aynı isimlerle sentez üretilir, oyun her durumda seslidir.
-
-## Ekran görüntüleri
-
-```bash
+godot --path . -s res://tools/perf_probe.gd        # frame-time report (windowed)
 godot --path . -s res://tools/flow_shot.gd -- --out-dir=/tmp/kablo_shots
-bash tools/make_shots.sh             # + montaj kontak sayfası
 ```
 
-## Lisans / varlıklar
+Verification scans the output for `SCRIPT ERROR|Parse Error` because Godot can exit 0 on script
+errors. Red means not done.
 
-- Font: Baloo 2 (OFL) — `assets/fonts/OFL_Baloo2.txt`
-- İkonlar: Lucide (ISC) — `assets/icons/LICENSE_lucide.txt`
-- 3D varlıklar prosedürel primitiflerdir; harici model yok.
-- Ses: anahtar varsa ElevenLabs, yoksa deterministik sentez.
+## Project layout
+
+```
+scenes/            Boot, Menu, LevelSelect, Game, Result, HUD, AmbientBackdrop
+scripts/autoload/  GameManager, AudioService, AdManager, GameData, Loc
+scripts/core/      pure logic: level generation, overload, snap rules, scoring, profile, geometry (tested)
+scripts/gameplay/  3D world: board, rope physics, plugs/sockets, contact, sparks, camera, backdrop
+scripts/ui/        HUD and screens (presentation only)
+scripts/services/  AdsProvider boundary (SDK isolated here)
+data/              JSON tuning: levels, balance, ads, theme, sounds, sfx recipes, i18n
+tests/             tests/unit/test_*.gd — auto-discovered, headless
+tools/             verify.sh, build_theme.py, make_sfx.py, perf_probe.gd, flow_shot.gd
+```
+
+Docs: [ROADMAP.md](ROADMAP.md) (v0.2 plan), [PROJECT_SPEC.md](PROJECT_SPEC.md) (design),
+[ARCHITECTURE.md](ARCHITECTURE.md) (contracts), [CLAUDE.md](CLAUDE.md) (code rules),
+[TASKS.md](TASKS.md), [CHANGELOG.md](CHANGELOG.md).
+
+## Audio generation
+
+```bash
+python3 tools/make_sfx.py                     # generate missing sounds (deterministic synth fallback)
+ELEVENLABS_API_KEY=... python3 tools/make_sfx.py --force   # ElevenLabs sound generation
+```
+
+The ElevenLabs key never enters the repo; without a key the same names are produced by a
+deterministic synthesizer, so the game is always voiced.
+
+## Licenses
+
+- Fonts: Manrope (OFL) — `assets/fonts/OFL_Manrope.txt`; Baloo 2 (OFL) — `assets/fonts/OFL_Baloo2.txt`
+- Icons: Lucide (ISC) — `assets/icons/LICENSE_lucide.txt`
+- 3D assets are procedural primitives; no external models.
+- Audio: ElevenLabs when a key is provided, otherwise deterministic synthesis.

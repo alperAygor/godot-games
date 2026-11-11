@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "colors": {
     "red": {
       "hex": "#FF5566",
@@ -42,6 +42,7 @@
       ],
       "seed": 1103,
       "par_seconds": 45,
+      "modifiers": [],
       "hint": "Fişi tut, kendi rengindeki prizin üstüne bırak. Farklı renge değme!"
     },
     {
@@ -55,6 +56,7 @@
       ],
       "seed": 2207,
       "par_seconds": 45,
+      "modifiers": [],
       "hint": "Kablo önce gerginleşir, sonra yumuşar. Sakin çek."
     },
     {
@@ -68,7 +70,8 @@
         "green"
       ],
       "seed": 3313,
-      "par_seconds": 52,
+      "par_seconds": 50,
+      "modifiers": [],
       "hint": "Kısa devre barı boşalır — teması hemen kes."
     },
     {
@@ -82,7 +85,8 @@
         "yellow"
       ],
       "seed": 4409,
-      "par_seconds": 55,
+      "par_seconds": 52,
+      "modifiers": [],
       "hint": "Önce hangi kabloyu çekeceğini düşün."
     },
     {
@@ -96,8 +100,11 @@
         "yellow"
       ],
       "seed": 5501,
-      "par_seconds": 58,
-      "hint": "Aynı renk teması güvenli; farklı renk kıvılcım çıkarır."
+      "par_seconds": 55,
+      "modifiers": [
+        "sway"
+      ],
+      "hint": "Panoda canlı hatlar salınıyor — değme."
     },
     {
       "id": 6,
@@ -111,7 +118,10 @@
         "blue"
       ],
       "seed": 6607,
-      "par_seconds": 65,
+      "par_seconds": 59,
+      "modifiers": [
+        "sway"
+      ],
       "hint": "Kablovu panonun kenarından dolaştır."
     },
     {
@@ -126,8 +136,12 @@
         "green"
       ],
       "seed": 7703,
-      "par_seconds": 70,
-      "hint": "Altın Yan Keski sıkıştığında bir fişi senin yerine bağlar."
+      "par_seconds": 63,
+      "modifiers": [
+        "sway",
+        "locked_socket"
+      ],
+      "hint": "Bazı prizler kapaklı: açmak için fişi prizin yanında yarım saniye tut."
     },
     {
       "id": 8,
@@ -141,7 +155,11 @@
         "blue"
       ],
       "seed": 8809,
-      "par_seconds": 74,
+      "par_seconds": 67,
+      "modifiers": [
+        "sway",
+        "locked_socket"
+      ],
       "hint": "Yalıtım Spreyi 10 saniye dokunulmazlık verir."
     },
     {
@@ -157,8 +175,13 @@
         "orange"
       ],
       "seed": 9901,
-      "par_seconds": 82,
-      "hint": "Aynı anda iki temastan kaçın; bar iki kat hızlı dolar."
+      "par_seconds": 73,
+      "modifiers": [
+        "sway",
+        "locked_socket",
+        "blackout"
+      ],
+      "hint": "Işıklar sönünce panoyu sakin oku."
     },
     {
       "id": 10,
@@ -173,8 +196,14 @@
         "purple"
       ],
       "seed": 10103,
-      "par_seconds": 88,
-      "hint": "Beyaz kablo 6V — düşük gerilim ama yine de yalıtımlı."
+      "par_seconds": 80,
+      "modifiers": [
+        "sway",
+        "locked_socket",
+        "blackout",
+        "fast_overload"
+      ],
+      "hint": "Aşırı yük barı artık 1.5 kat hızlı doluyor."
     },
     {
       "id": 11,
@@ -189,8 +218,14 @@
         "green"
       ],
       "seed": 11113,
-      "par_seconds": 94,
-      "hint": "Panonun üstündeki analog voltmetre yükü gösterir."
+      "par_seconds": 87,
+      "modifiers": [
+        "sway",
+        "locked_socket",
+        "blackout",
+        "fast_overload"
+      ],
+      "hint": "Analog voltmetre yükü gösterir; sakin kal."
     },
     {
       "id": 12,
@@ -206,8 +241,14 @@
         "white"
       ],
       "seed": 12101,
-      "par_seconds": 105,
-      "hint": "Son bölüm: yedi hat, tek şans. Sigortayı koru."
+      "par_seconds": 95,
+      "modifiers": [
+        "sway",
+        "locked_socket",
+        "blackout",
+        "fast_overload"
+      ],
+      "hint": "Yedi hat, tek şans. Tüm engeller açık: sigortayı koru."
     }
   ]
 }

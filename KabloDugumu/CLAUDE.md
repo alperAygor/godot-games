@@ -1,7 +1,8 @@
-# Kablo Düğümü: Akım Ustası — ajan kuralları
+# Cable Knot: Current Master — ajan kuralları
 
 Yüksek voltajlı renkli kabloları düğümden çözüp **doğru renkli prizlere** bağladığın,
-3D fizik ve bulmaca oyunu. Android, dikey (portrait), `gl_compatibility`, Godot 4.7.2, GDScript.
+ASMR hissi veren 3D fizik ve bulmaca oyunu. Android, dikey (portrait), `gl_compatibility`,
+Godot 4.7.2, GDScript. Oyun adı **İngilizce** kimlikle sabittir; TR metinler yerelleştirilir.
 
 Bu dosya projenin anayasasıdır. Kural ile sezgi çatışırsa **kural kazanır**.
 Oyun tasarımı: `PROJECT_SPEC.md`. Modül sözleşmeleri: `ARCHITECTURE.md`.
@@ -86,3 +87,24 @@ Godot script hatasında da 0 döner → çıktı taranır. Kırmızıysa iş bit
 
 Conventional Commits, kapsam proje adı: `feat(KabloDugumu): ...`, `fix(...): ...`.
 Bir mantıksal değişiklik = bir commit. `.godot/`, `build/`, `.env`, `tests/results/` commit edilmez.
+
+---
+
+## 9. v0.2 "ASMR redesign" kuralları
+
+1. **Yerelleştirme:** kullanıcıya görünen hiçbir metin koda gömülmez → `Loc.t("anahtar")`.
+   Yeni anahtar **her iki** `data/i18n/en.json` ve `tr.json` dosyasına eklenir (parite zorunlu).
+   Bölüm adı/ipucu: `level.<n>.name` / `level.<n>.hint`. Oyun adı: `game.title` / `game.subtitle`.
+2. **İngilizce kimlik:** `project.godot config/name = "Cable Knot: Current Master"`. Menü ve
+   başlıklarda İngilizce ad kullanılır; TR'de yerelleştirilmiş karşılığı gösterilebilir.
+3. **UI tasarım token'ları** (ARCHITECTURE §15): sade, ikon-öncelikli, buton yüksekliği 88–100
+   tasarım px, ekran başına ≤ 3 ana eylem, panoyu örtmeyen HUD, Manrope fontu, 8 px grid.
+4. **Performans bütçesi** (ARCHITECTURE §14): p95 kare süresi < 16.7 ms (M4), drag sırasında da.
+   Halat mesh'i olay-tabanlı yeniden kurulur; tam ekran ekstra render yok.
+5. **ASMR yönergeleri** (ARCHITECTURE §16): yumuşak geçişler, düşük kontrast, sıcak-koyu palet,
+   sert beyaz/kırmızı flaş yok, ambient hum/pad sürekli ve kısık, sakin kutlama.
+6. **Bölüm modifier'ları** (ARCHITECTURE §12): veri odaklı (`data/levels.json -> modifiers`);
+   yoksa eski davranış korunur. Yeni mekanik eklerken önce core (saf + testli), sonra görsel.
+7. **Ölçüm olmadan iddia yok:** perf iddiası `tools/perf_probe.gd` çıktısıyla, davranış iddiası
+   `tools/verify.sh` + ekran görüntüsüyle kanıtlanır.
+

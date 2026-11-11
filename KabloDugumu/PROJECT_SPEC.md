@@ -1,4 +1,4 @@
-# PROJECT_SPEC — Kablo Düğümü: Akım Ustası
+# PROJECT_SPEC — Cable Knot: Current Master
 
 Durum: **v0.1 — uygulanıyor**. Bu belge oyunun ne olduğunu ve neden böyle olduğunu tanımlar.
 
@@ -79,3 +79,46 @@ SDK yoksa `MockAdsProvider` (1.2 sn simülasyon, %8 başarısız) kullanılır.
 - **Boot** (0.9 sn) → **Menu** (oyna / bölümler / ayar) → **LevelSelect** (12 bölüm, yıldız/kilit)
   → **Game** (3D pano + HUD) → **Result** (yıldız, süre, kısa devre, en iyi) → menü/sonraki.
 - Fail/pause/ad overlay'leri Game içinde (HUD) yaşar; sahne geçişi yapmaz.
+
+---
+
+## 10. v0.2 — "ASMR redesign" tasarım kararları (2026-11-11)
+
+Kullanıcı geri bildirimi sonrası yön: **rahatlatıcı (ASMR) his**, sade-modern UI, aşamalı
+zorluk, çoklu dil. Ayrıntılı iş planı: `ROADMAP.md`; teknik sözleşmeler `ARCHITECTURE.md` §10–§16.
+
+### 10.1 Kimlik ve dil
+- Oyun adı **İngilizce**: **Cable Knot: Current Master** (menüde başlık; TR'de yerelleştirilmiş
+  karşılığı "Kablo Düğümü / Akım Ustası" gösterilir).
+- Diller: **EN** (varsayılan) + **TR**. Tüm UI metinleri ve bölüm adı/ipuçları yerelleştirilir;
+  ilk açılışta sistem diline göre seçilir, menüden değiştirilir, `user://settings.cfg`'de saklanır.
+
+### 10.2 Hissiyat: gerilim var, panik yok
+- Hareketler yavaş ve yumuşak: easing SINE/EASE_OUT, süre 0.25–0.6 sn; kamera nefes alır.
+- Kısa devre: sert beyaz/kırmızı flaş yerine sıcak amber vinyet + kısa, yumuşak sarsıntı.
+- Başarı: sakin parıltı + sıcak chime; kutlama abartısız.
+- ASMR mikro-geri bildirimler: kablo sürtünmesi, prize oturma "clack", yumuşak elektrik uğultusu
+  (ambient hum/pad), toz partikülleri, panoda nefes alan ışıklar.
+
+### 10.3 UI/UX
+- Sade, ikon-öncelikli, nazik; ekran başına ≤3 ana eylem; butonlar 88–100 tasarım px;
+  HUD panoyu örtmez; tipografi Manrope (OFL); TR/EN dil değiştirici her yerde erişilir.
+- Ana menüde animasyonlu 3D atölye arka planı (fan/lamba/konveyör/buhar), oyun içinde panonun
+  arkasında aynı canlı çevre; düşük maliyet (SubViewport 540×960, gölge yok).
+
+### 10.4 Aşamalı zorluk ve yeni mekanikler
+| Bölüm | Yeni unsur |
+|---|---|
+| 1–4 | Temel: kablo sayısı 3→4, öğretici ipuçları |
+| 5+ | **sway**: panoda yavaşça salınan canlı/çıplak hatlar (temas = kısa devre) |
+| 7+ | **locked_socket**: kapaklı prizler; fişi 0.6 sn priz yanında tutunca açılır |
+| 9+ | **blackout**: pano ışıkları yumuşakça söner/yanar (görsel zorluk) |
+| 10+ | **fast_overload**: aşırı yük barı 1.5× hızda dolar |
+| 12 | Yedi hat + tüm modifier'lar + en sıkı par süresi |
+
+Yıldız kuralı aynı: temiz + par süre = 3 yıldız; ≤2 kısa devre + 1.6×par = 2; tamamlandı = 1.
+
+### 10.5 Performans hedefi
+- Masaüstü 60 fps; düşük segment Android ≥30 fps. p95 kare süresi < 16.7 ms (M4, 540×960),
+  drag sırasında da. Halat mesh'i olay-tabanlı güncellenir; tam ekran ekstra render yok.
+

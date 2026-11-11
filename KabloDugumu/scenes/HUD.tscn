@@ -1,13 +1,14 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1_hud"]
-[ext_resource type="Script" path="res://scripts/ui/volt_gauge.gd" id="2_gauge"]
-[ext_resource type="Script" path="res://scripts/ui/overload_bar.gd" id="3_bar"]
-[ext_resource type="Texture2D" path="res://assets/icons/lucide/star.svg" id="4_star"]
+[ext_resource type="Script" path="res://scripts/ui/overload_bar.gd" id="2_bar"]
+[ext_resource type="Script" path="res://scripts/ui/filled_star.gd" id="3_star"]
+[ext_resource type="FontVariation" path="res://assets/fonts/title_font.tres" id="4_title"]
+[ext_resource type="Texture2D" path="res://assets/icons/lucide/shield.svg" id="5_shield"]
 
 [sub_resource type="Gradient" id="Grad_vignette"]
-offsets = PackedFloat32Array(0, 0.62, 1)
-colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1)
+offsets = PackedFloat32Array(0, 0.58, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0.9)
 
 [sub_resource type="GradientTexture2D" id="GT_vignette"]
 gradient = SubResource("Grad_vignette")
@@ -16,33 +17,6 @@ height = 256
 fill = 1
 fill_from = Vector2(0.5, 0.5)
 fill_to = Vector2(0.5, 0.0)
-
-[sub_resource type="StyleBoxFlat" id="SB_card"]
-content_margin_left = 44.0
-content_margin_top = 40.0
-content_margin_right = 44.0
-content_margin_bottom = 40.0
-bg_color = Color(0.0549, 0.0784, 0.098, 0.98)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.2039, 0.9059, 0.7686, 0.45)
-corner_radius_top_left = 34
-corner_radius_top_right = 34
-corner_radius_bottom_right = 34
-corner_radius_bottom_left = 34
-
-[sub_resource type="StyleBoxFlat" id="SB_badge"]
-content_margin_left = 10.0
-content_margin_top = 2.0
-content_margin_right = 10.0
-content_margin_bottom = 2.0
-bg_color = Color(0.0431, 0.0588, 0.0784, 0.92)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
 
 [node name="HUD" type="CanvasLayer"]
 process_mode = 3
@@ -60,7 +34,7 @@ mouse_filter = 2
 
 [node name="Vignette" type="TextureRect" parent="Root"]
 unique_name_in_owner = true
-modulate = Color(1, 0.18, 0.25, 0)
+modulate = Color(0.9373, 0.5608, 0.4941, 0)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -82,16 +56,29 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.72, 1, 0.92, 1)
+color = Color(1, 0.88, 0.72, 1)
+
+[node name="OverloadBar" type="Control" parent="Root"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 40.0
+offset_top = 184.0
+offset_right = -40.0
+offset_bottom = 198.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("2_bar")
 
 [node name="TopBar" type="Control" parent="Root"]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 40.0
-offset_top = 28.0
-offset_right = -280.0
-offset_bottom = 200.0
+offset_top = 44.0
+offset_right = -40.0
+offset_bottom = 180.0
 grow_horizontal = 2
 mouse_filter = 2
 
@@ -100,27 +87,13 @@ unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_top = 0.0
-offset_bottom = 62.0
+offset_right = -360.0
+offset_bottom = 52.0
 grow_horizontal = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.9137, 0.949, 0.9647, 1)
-theme_override_font_sizes/font_size = 38
-text = "BÖLÜM 01 · İLK KIVILCIM"
-vertical_alignment = 1
-
-[node name="ConnectedLabel" type="Label" parent="Root/TopBar"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 72.0
-offset_bottom = 126.0
-grow_horizontal = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.2039, 0.9059, 0.7686, 1)
-theme_override_font_sizes/font_size = 32
-text = "BAĞLI 0/3"
+theme_override_colors/font_color = Color(0.949, 0.9216, 0.8902, 1)
+theme_override_font_sizes/font_size = 30
+text = "LEVEL 01 · FIRST SPARK"
 vertical_alignment = 1
 
 [node name="TimeLabel" type="Label" parent="Root/TopBar"]
@@ -128,130 +101,116 @@ unique_name_in_owner = true
 layout_mode = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -280.0
-offset_top = 0.0
-offset_right = 0.0
-offset_bottom = 64.0
+offset_left = -300.0
+offset_bottom = 52.0
+offset_right = -120.0
 grow_horizontal = 0
 mouse_filter = 2
-theme_override_colors/font_color = Color(1, 0.7882, 0.2902, 1)
-theme_override_font_sizes/font_size = 42
+theme_override_colors/font_color = Color(1, 0.7882, 0.4784, 1)
+theme_override_font_sizes/font_size = 32
 text = "00:00"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="PauseButton" type="Button" parent="Root"]
+[node name="PauseButton" type="Button" parent="Root/TopBar"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(84, 84)
 layout_mode = 1
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -156.0
-offset_top = 32.0
-offset_right = -36.0
-offset_bottom = 152.0
+offset_left = -96.0
+offset_right = 0.0
+offset_bottom = 84.0
 grow_horizontal = 0
+theme_type_variation = &"IconButton"
 text = ""
 
-[node name="OverloadBox" type="Control" parent="Root"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 40.0
-offset_top = 250.0
-offset_right = -40.0
-offset_bottom = 660.0
-grow_horizontal = 2
-mouse_filter = 2
-
-[node name="OverloadLabel" type="Label" parent="Root/OverloadBox"]
+[node name="ConnectedLabel" type="Label" parent="Root/TopBar"]
 unique_name_in_owner = true
-layout_mode = 1
-offset_right = 620.0
-offset_bottom = 52.0
+layout_mode = 0
+offset_top = 64.0
+offset_right = 360.0
+offset_bottom = 116.0
 mouse_filter = 2
-theme_override_colors/font_color = Color(1, 0.7882, 0.2902, 1)
-theme_override_colors/font_outline_color = Color(0.02, 0.03, 0.04, 0.85)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 32
-text = "AŞIRI YÜK %0"
+theme_override_colors/font_color = Color(0.498, 0.9098, 0.7961, 1)
+theme_override_font_sizes/font_size = 24
+text = "LINKED 0/3"
 vertical_alignment = 1
 
-[node name="OverloadBar" type="Control" parent="Root/OverloadBox"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 62.0
-offset_bottom = 130.0
-grow_horizontal = 2
-mouse_filter = 2
-script = ExtResource("3_bar")
-
-[node name="ShieldLabel" type="Label" parent="Root/OverloadBox"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 1
-offset_right = 620.0
-offset_top = 150.0
-offset_bottom = 206.0
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.302, 0.82, 1, 1)
-theme_override_colors/font_outline_color = Color(0.02, 0.03, 0.04, 0.85)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 34
-text = "KALKAN 0.0 sn"
-vertical_alignment = 1
-
-[node name="VoltageLabel" type="Label" parent="Root/OverloadBox"]
+[node name="OverloadLabel" type="Label" parent="Root/TopBar"]
 unique_name_in_owner = true
 layout_mode = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -480.0
-offset_top = 146.0
-offset_right = 0.0
-offset_bottom = 200.0
+offset_left = -430.0
+offset_top = 64.0
+offset_right = -200.0
+offset_bottom = 116.0
 grow_horizontal = 0
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.9137, 0.949, 0.9647, 1)
-theme_override_font_sizes/font_size = 34
+theme_override_colors/font_color = Color(0.9529, 0.7882, 0.4784, 1)
+theme_override_font_sizes/font_size = 22
+text = "OVERLOAD 0%"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="VoltageLabel" type="Label" parent="Root/TopBar"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -190.0
+offset_top = 64.0
+offset_right = -96.0
+offset_bottom = 116.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.949, 0.9216, 0.8902, 1)
+theme_override_font_sizes/font_size = 26
 text = "0 V"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="VoltGauge" type="Control" parent="Root/OverloadBox"]
+[node name="ShieldPill" type="PanelContainer" parent="Root"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -480.0
-offset_top = 196.0
-offset_right = 0.0
-offset_bottom = 410.0
-grow_horizontal = 0
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+offset_top = -160.0
+offset_right = 350.0
+offset_bottom = -104.0
+grow_vertical = 0
 mouse_filter = 2
-script = ExtResource("2_gauge")
+theme_type_variation = &"Pill"
 
-[node name="HintLabel" type="Label" parent="Root"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 70.0
-offset_top = 690.0
-offset_right = -70.0
-offset_bottom = 820.0
-grow_horizontal = 2
+[node name="ShieldRow" type="HBoxContainer" parent="Root/ShieldPill"]
+layout_mode = 2
+theme_override_constants/separation = 8
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.5608, 0.6392, 0.6902, 1)
-theme_override_colors/font_outline_color = Color(0.02, 0.03, 0.04, 0.8)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 30
-horizontal_alignment = 1
+
+[node name="ShieldIcon" type="TextureRect" parent="Root/ShieldPill/ShieldRow"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+modulate = Color(0.5608, 0.8275, 0.9412, 1)
+texture = ExtResource("5_shield")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ShieldLabel" type="Label" parent="Root/ShieldPill/ShieldRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5608, 0.8275, 0.9412, 1)
+theme_override_font_sizes/font_size = 22
+text = "SHIELD 0.0s"
 vertical_alignment = 1
-autowrap_mode = 3
 
-[node name="ToastLabel" type="Label" parent="Root"]
+[node name="HintPanel" type="PanelContainer" parent="Root"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -259,85 +218,166 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 60.0
-offset_top = -470.0
-offset_right = -60.0
-offset_bottom = -390.0
+offset_left = 120.0
+offset_top = -330.0
+offset_right = -120.0
+offset_bottom = -196.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.9137, 0.949, 0.9647, 1)
-theme_override_colors/font_outline_color = Color(0.02, 0.03, 0.04, 0.9)
-theme_override_constants/outline_size = 10
-theme_override_font_sizes/font_size = 38
+theme_type_variation = &"Pill"
+
+[node name="HintLabel" type="Label" parent="Root/HintPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.949, 0.9216, 0.8902, 1)
+theme_override_font_sizes/font_size = 26
+text = "Match the colors, keep the current cool"
 horizontal_alignment = 1
 vertical_alignment = 1
+autowrap_mode = 3
+max_lines_visible = 2
 
-[node name="BottomBar" type="HBoxContainer" parent="Root"]
+[node name="ToastPanel" type="PanelContainer" parent="Root"]
+unique_name_in_owner = true
+visible = false
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 40.0
-offset_top = -250.0
-offset_right = -40.0
-offset_bottom = -60.0
+offset_left = 200.0
+offset_top = -466.0
+offset_right = -200.0
+offset_bottom = -356.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/separation = 24
+mouse_filter = 2
+theme_type_variation = &"Pill"
+
+[node name="ToastLabel" type="Label" parent="Root/ToastPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.949, 0.9216, 0.8902, 1)
+theme_override_font_sizes/font_size = 28
+text = "Toast"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+max_lines_visible = 2
+
+[node name="BottomBar" type="Control" parent="Root"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+offset_top = -164.0
+offset_right = -48.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
 
 [node name="CutterButton" type="Button" parent="Root/BottomBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 190)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_type_variation = &"SecondaryButton"
-theme_override_font_sizes/font_size = 30
-text = "Altın Keski"
+custom_minimum_size = Vector2(112, 112)
+layout_mode = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -124.0
+offset_top = 8.0
+offset_right = -12.0
+offset_bottom = 120.0
+grow_horizontal = 0
+theme_type_variation = &"IconButton"
+text = ""
 
 [node name="CutterBadge" type="Label" parent="Root/BottomBar/CutterButton"]
 unique_name_in_owner = true
 layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -58.0
+offset_top = -14.0
+offset_right = 58.0
+offset_bottom = 18.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"Badge"
+theme_override_colors/font_color = Color(0.9529, 0.7882, 0.4784, 1)
+theme_override_font_sizes/font_size = 14
+text = "AD"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CutterLabel" type="Label" parent="Root/BottomBar"]
+unique_name_in_owner = true
+layout_mode = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -136.0
-offset_top = 10.0
+offset_left = -124.0
+offset_top = 112.0
 offset_right = -12.0
-offset_bottom = 46.0
+offset_bottom = 136.0
 grow_horizontal = 0
 mouse_filter = 2
-theme_override_colors/font_color = Color(1, 0.7882, 0.2902, 1)
+theme_override_colors/font_color = Color(0.6275, 0.5843, 0.5412, 1)
 theme_override_font_sizes/font_size = 20
-theme_override_styles/normal = SubResource("SB_badge")
-text = "REKLAM"
+text = "Cutter"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SprayLabel" type="Label" parent="Root/BottomBar"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -248.0
+offset_top = 112.0
+offset_right = -136.0
+offset_bottom = 136.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.6275, 0.5843, 0.5412, 1)
+theme_override_font_sizes/font_size = 20
+text = "Spray"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="SprayButton" type="Button" parent="Root/BottomBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 190)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_type_variation = &"SecondaryButton"
-theme_override_font_sizes/font_size = 30
-text = "Yalıtım Spreyi"
+custom_minimum_size = Vector2(112, 112)
+layout_mode = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -248.0
+offset_top = 8.0
+offset_right = -136.0
+offset_bottom = 120.0
+grow_horizontal = 0
+theme_type_variation = &"IconButton"
+text = ""
 
 [node name="SprayBadge" type="Label" parent="Root/BottomBar/SprayButton"]
 unique_name_in_owner = true
 layout_mode = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -136.0
-offset_top = 10.0
-offset_right = -12.0
-offset_bottom = 46.0
-grow_horizontal = 0
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -58.0
+offset_top = -14.0
+offset_right = 58.0
+offset_bottom = 18.0
+grow_horizontal = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(1, 0.7882, 0.2902, 1)
-theme_override_font_sizes/font_size = 20
-theme_override_styles/normal = SubResource("SB_badge")
-text = "REKLAM"
+theme_type_variation = &"Badge"
+theme_override_colors/font_color = Color(0.9529, 0.7882, 0.4784, 1)
+theme_override_font_sizes/font_size = 14
+text = "AD"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -359,7 +399,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.02, 0.03, 0.04, 0.84)
+color = Color(0.0314, 0.0275, 0.0235, 0.86)
 
 [node name="Center" type="CenterContainer" parent="Root/FailOverlay"]
 layout_mode = 1
@@ -371,53 +411,52 @@ grow_vertical = 2
 
 [node name="Card" type="PanelContainer" parent="Root/FailOverlay/Center"]
 layout_mode = 2
-theme_override_styles/panel = SubResource("SB_card")
 
 [node name="CardContent" type="VBoxContainer" parent="Root/FailOverlay/Center/Card"]
-custom_minimum_size = Vector2(760, 0)
+custom_minimum_size = Vector2(700, 0)
 layout_mode = 2
-theme_override_constants/separation = 28
+theme_override_constants/separation = 16
 
 [node name="FailTitle" type="Label" parent="Root/FailOverlay/Center/Card/CardContent"]
+unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.3333, 0.4, 1)
-theme_override_colors/font_outline_color = Color(0.12, 0.02, 0.03, 0.9)
-theme_override_constants/outline_size = 10
-theme_override_font_sizes/font_size = 60
-text = "SİGORTA ATTI"
+theme_override_colors/font_color = Color(0.9373, 0.5608, 0.4941, 1)
+theme_override_font_sizes/font_size = 44
+text = "FUSE BLOWN"
 horizontal_alignment = 1
 
 [node name="FailReason" type="Label" parent="Root/FailOverlay/Center/Card/CardContent"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.9137, 0.949, 0.9647, 1)
-theme_override_font_sizes/font_size = 32
-text = "Aşırı yük barı doldu."
+theme_override_colors/font_color = Color(0.949, 0.9216, 0.8902, 1)
+theme_override_font_sizes/font_size = 26
+text = "The circuit was overloaded."
 horizontal_alignment = 1
 autowrap_mode = 3
+max_lines_visible = 2
 
 [node name="ReviveButton" type="Button" parent="Root/FailOverlay/Center/Card/CardContent"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 140)
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
-theme_type_variation = &"SecondaryButton"
 theme_override_font_sizes/font_size = 30
-text = "Yedek Sigorta Tak · REKLAM"
+text = "Replace Fuse · AD"
 
 [node name="RetryButton" type="Button" parent="Root/FailOverlay/Center/Card/CardContent"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 116)
-layout_mode = 2
-theme_override_font_sizes/font_size = 30
-text = "Tekrar Dene"
-
-[node name="FailMenuButton" type="Button" parent="Root/FailOverlay/Center/Card/CardContent"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 100)
+custom_minimum_size = Vector2(0, 88)
 layout_mode = 2
 theme_type_variation = &"SecondaryButton"
 theme_override_font_sizes/font_size = 28
-text = "Menü"
+text = "TRY AGAIN"
+
+[node name="FailMenuButton" type="Button" parent="Root/FailOverlay/Center/Card/CardContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 84)
+layout_mode = 2
+theme_type_variation = &"GhostButton"
+theme_override_font_sizes/font_size = 26
+text = "MENU"
 
 [node name="PauseOverlay" type="Control" parent="Root"]
 unique_name_in_owner = true
@@ -437,7 +476,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.02, 0.03, 0.04, 0.82)
+color = Color(0.0314, 0.0275, 0.0235, 0.84)
 
 [node name="Center" type="CenterContainer" parent="Root/PauseOverlay"]
 layout_mode = 1
@@ -449,34 +488,34 @@ grow_vertical = 2
 
 [node name="Card" type="PanelContainer" parent="Root/PauseOverlay/Center"]
 layout_mode = 2
-theme_override_styles/panel = SubResource("SB_card")
 
 [node name="CardContent" type="VBoxContainer" parent="Root/PauseOverlay/Center/Card"]
-custom_minimum_size = Vector2(700, 0)
+custom_minimum_size = Vector2(620, 0)
 layout_mode = 2
-theme_override_constants/separation = 30
+theme_override_constants/separation = 18
 
 [node name="PauseTitle" type="Label" parent="Root/PauseOverlay/Center/Card/CardContent"]
+unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.2039, 0.9059, 0.7686, 1)
-theme_override_font_sizes/font_size = 56
-text = "DURAKLATILDI"
+theme_override_colors/font_color = Color(0.498, 0.9098, 0.7961, 1)
+theme_override_font_sizes/font_size = 40
+text = "PAUSED"
 horizontal_alignment = 1
 
 [node name="ResumeButton" type="Button" parent="Root/PauseOverlay/Center/Card/CardContent"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 140)
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
-theme_override_font_sizes/font_size = 34
-text = "Devam Et"
+theme_override_font_sizes/font_size = 30
+text = "RESUME"
 
 [node name="MenuButton" type="Button" parent="Root/PauseOverlay/Center/Card/CardContent"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 110)
+custom_minimum_size = Vector2(0, 84)
 layout_mode = 2
-theme_type_variation = &"SecondaryButton"
-theme_override_font_sizes/font_size = 30
-text = "Menü"
+theme_type_variation = &"GhostButton"
+theme_override_font_sizes/font_size = 26
+text = "MENU"
 
 [node name="AdOverlay" type="Control" parent="Root"]
 unique_name_in_owner = true
@@ -496,7 +535,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.01, 0.015, 0.02, 0.93)
+color = Color(0.0314, 0.0275, 0.0235, 0.94)
 
 [node name="Center" type="CenterContainer" parent="Root/AdOverlay"]
 layout_mode = 1
@@ -506,23 +545,33 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Column" type="VBoxContainer" parent="Root/AdOverlay/Center"]
+[node name="Card" type="PanelContainer" parent="Root/AdOverlay/Center"]
 layout_mode = 2
-theme_override_constants/separation = 24
 
-[node name="AdTag" type="Label" parent="Root/AdOverlay/Center/Column"]
+[node name="CardContent" type="VBoxContainer" parent="Root/AdOverlay/Center/Card"]
+custom_minimum_size = Vector2(560, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.7882, 0.2902, 1)
-theme_override_font_sizes/font_size = 32
-text = "REKLAM"
-horizontal_alignment = 1
+theme_override_constants/separation = 16
 
-[node name="AdText" type="Label" parent="Root/AdOverlay/Center/Column"]
+[node name="AdTag" type="Label" parent="Root/AdOverlay/Center/Card/CardContent"]
+unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.9137, 0.949, 0.9647, 1)
-theme_override_font_sizes/font_size = 44
-text = "Reklam yükleniyor..."
+size_flags_horizontal = 4
+theme_type_variation = &"Badge"
+theme_override_colors/font_color = Color(0.9529, 0.7882, 0.4784, 1)
+theme_override_font_sizes/font_size = 18
+text = "AD"
 horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AdLabel" type="Label" parent="Root/AdOverlay/Center/Card/CardContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.949, 0.9216, 0.8902, 1)
+theme_override_font_sizes/font_size = 34
+text = "Loading ad…"
+horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="Celebrate" type="Control" parent="Root"]
 unique_name_in_owner = true
@@ -545,35 +594,46 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="StarsBox" type="HBoxContainer" parent="Root/Celebrate/Center"]
+[node name="Column" type="VBoxContainer" parent="Root/Celebrate/Center"]
 layout_mode = 2
-theme_override_constants/separation = 26
-mouse_filter = 2
+theme_override_constants/separation = 20
 alignment = 1
+mouse_filter = 2
 
-[node name="CelebrateStar1" type="TextureRect" parent="Root/Celebrate/Center/StarsBox"]
+[node name="CelebrateTitle" type="Label" parent="Root/Celebrate/Center/Column"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 150)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.498, 0.9098, 0.7961, 1)
+theme_override_colors/font_outline_color = Color(0.03, 0.026, 0.023, 0.55)
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("4_title")
+theme_override_font_sizes/font_size = 52
+text = "LEVEL COMPLETE"
+horizontal_alignment = 1
+
+[node name="StarsBox" type="HBoxContainer" parent="Root/Celebrate/Center/Column"]
+layout_mode = 2
+theme_override_constants/separation = 22
+alignment = 1
+mouse_filter = 2
+
+[node name="CelebrateStar1" type="Control" parent="Root/Celebrate/Center/Column/StarsBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(124, 124)
 layout_mode = 2
 mouse_filter = 2
-texture = ExtResource("4_star")
-expand_mode = 1
-stretch_mode = 5
+script = ExtResource("3_star")
 
-[node name="CelebrateStar2" type="TextureRect" parent="Root/Celebrate/Center/StarsBox"]
+[node name="CelebrateStar2" type="Control" parent="Root/Celebrate/Center/Column/StarsBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 150)
+custom_minimum_size = Vector2(124, 124)
 layout_mode = 2
 mouse_filter = 2
-texture = ExtResource("4_star")
-expand_mode = 1
-stretch_mode = 5
+script = ExtResource("3_star")
 
-[node name="CelebrateStar3" type="TextureRect" parent="Root/Celebrate/Center/StarsBox"]
+[node name="CelebrateStar3" type="Control" parent="Root/Celebrate/Center/Column/StarsBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 150)
+custom_minimum_size = Vector2(124, 124)
 layout_mode = 2
 mouse_filter = 2
-texture = ExtResource("4_star")
-expand_mode = 1
-stretch_mode = 5
+script = ExtResource("3_star")

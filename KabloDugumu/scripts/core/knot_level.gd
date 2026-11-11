@@ -17,6 +17,12 @@ extends RefCounted
 ##  (e) her kablonun essiz renkli prizi var; kaynak ve priz renk sirasi farkli
 ##  (f) ayni config + seed = ayni duzen (deterministik)
 ##  (g) kaynak/priz panonun icinde, z = board_surface_z
+##  (h) fis, KENDI kaynagindan yatayda >= MIN_PLUG_SOURCE_DX (0.22 m) uzak:
+##      tohumlu derangement + satir kaydirma -> panoda capraz sarkan halatlar
+##
+## v0.2 modifier'lar (ARCHITECTURE 12): config["modifiers"] okunur, tanimsiz
+## degerler yok sayilir. Modifier yoksa uretim tamamen eskisiyle aynidir; veri
+## yalnizca priz kilitlerini (locked_socket) etkiler.
 ##
 ## Ayrica halat egrisinin yay uzunlugu kablo length'ine esittir (CableRope
 ## noktalari length'e gore normalize eder; uyusmazsa gorsel "pop" olur).
@@ -29,6 +35,21 @@ extends RefCounted
 
 const MAX_CABLES: int = 7
 const DEFAULT_POINT_COUNT: int = 18
+
+## Fis ile kendi kaynagi arasindaki en az YATAY mesafe (dugum gorunumu garantisi).
+const MIN_PLUG_SOURCE_DX: float = 0.22
+
+## Gecerli bolum modifier'lari (ARCHITECTURE 12).
+const MODIFIER_SWAY: StringName = &"sway"
+const MODIFIER_LOCKED_SOCKET: StringName = &"locked_socket"
+const MODIFIER_BLACKOUT: StringName = &"blackout"
+const MODIFIER_FAST_OVERLOAD: StringName = &"fast_overload"
+const VALID_MODIFIERS: Array[StringName] = [
+	MODIFIER_SWAY,
+	MODIFIER_LOCKED_SOCKET,
+	MODIFIER_BLACKOUT,
+	MODIFIER_FAST_OVERLOAD,
+]
 
 ## Ulasilabilirlik garantisi: length >= |source - socket| + REACH_GUARANTEE.
 const REACH_GUARANTEE: float = 0.15
@@ -47,6 +68,14 @@ const PLUG_ROWS: int = 3
 const MAX_LOBES: int = 3
 const CONTROL_X_JITTER: float = 0.025
 const SHARED_SWAY: float = 0.05
+## Kaynak -> fis yatay gecisi ust bantta bu kadar dikey dususte tamamlanir
+## (koridor girisi); kivrimlar sonra kendi fis koridorunda kalir.
+const KORIDOR_DROP: float = 0.22
+## Katman yukselmesinin tamamlandigi kisa dikey mesafe (ust bant).
+const KORIDOR_RISE: float = 0.06
+## Katman yukselmesinin tamamlandigi yol parametresi dilimi (cok kisa: z ayrimi
+## halatlar caprazlasmadan once kurulur).
+const KORIDOR_RISE_T: float = 0.02
 ## Kivrimin iki gecisi ayni cizgiye binmesin diye ortak yatay "ilmek" genligi.
 const LOOP_SWAY_SHARED: float = 0.075
 const LOOP_SWAY_IND: float = 0.02
@@ -76,6 +105,9 @@ class Layout:
 	var length_min_slack: float = 0.2
 	var rest_gap: float = 0.24
 	var contact_distance: float = 0.078
+	## "Örgü" görünümü: komşu fiş katmanları pano önünde bu kadar ayrışır.
+	## contacts < katman aralığı olduğu için çapraz halatlar başlangıçta temas etmez.
+	var rest_layer_gap: float = 0.12
 
 
 ## Uretim sonucu (iki dizi birlikte doner).
@@ -92,6 +124,8 @@ var hint: String = ""
 var seed: int = 1
 var cables: Array[CableSpec] = []
 var sockets: Array[SocketSpec] = []
+## Bolum modifier'lari (ARCHITECTURE 12; bos = eski davranis).
+var modifiers: Array[StringName] = []
 ## Duz yedek duzen kullanildi mi? (normalde false; tani/QA icin)
 var used_fallback: bool = false
 
@@ -106,6 +140,7 @@ static func from_config(config: Dictionary, colors_table: Dictionary,
 	level.par_seconds = float(config.get("par_seconds", 60.0))
 	level.hint = String(config.get("hint", ""))
 	level.seed = int(config.get("seed", 1))
+	level.modifiers = modifiers_from(config)
 	var params: Layout = layout_from(layout)
 	var count: int = clampi(int(config.get("cables", 3)), 1, MAX_CABLES)
 	var color_ids: Array[StringName] = _color_ids(config, colors_table, count)
@@ -113,6 +148,10 @@ static func from_config(config: Dictionary, colors_table: Dictionary,
 	level.cables = built.cables
 	level.sockets = built.sockets
 	level.used_fallback = built.used_fallback
+	if level.has_modifier(MODIFIER_LOCKED_SOCKET):
+		var locked_cfg: Dictionary = _modifier_section(layout, "locked_socket")
+		level._mark_locked_sockets(int(locked_cfg.get("base_cables", 4)),
+			int(locked_cfg.get("max_locked", 2)))
 	return level
 
 
@@ -145,6 +184,8 @@ static func layout_from(layout: Dictionary) -> Layout:
 	out.length_min_slack = maxf(0.0, _layout_float(layout, "length_min_slack", "cable",
 		out.length_min_slack))
 	out.rest_gap = maxf(0.05, _layout_float(layout, "rest_gap", "cable", out.rest_gap))
+	out.rest_layer_gap = maxf(0.0, _layout_float(layout, "rest_layer_gap", "cable",
+		out.rest_layer_gap))
 	var raw_contact: Variant = layout.get("contact_distance")
 	if raw_contact == null:
 		var contact_section: Variant = layout.get("contact")
@@ -153,6 +194,50 @@ static func layout_from(layout: Dictionary) -> Layout:
 	if raw_contact != null:
 		out.contact_distance = maxf(0.0, float(raw_contact))
 	return out
+
+
+## config["modifiers"] dizisini tipli, tekrarsiz, gecerli StringName listesine cevirir.
+## Bilinmeyen deger yok sayilir (ileri surum verisi eski kodu kirmaz).
+static func modifiers_from(config: Dictionary) -> Array[StringName]:
+	var result: Array[StringName] = []
+	var raw: Variant = config.get("modifiers", [])
+	if not (raw is Array):
+		return result
+	for item: Variant in raw as Array:
+		var modifier: StringName = StringName(String(item))
+		if VALID_MODIFIERS.has(modifier) and not result.has(modifier):
+			result.append(modifier)
+	return result
+
+
+func has_modifier(modifier: StringName) -> bool:
+	return modifiers.has(modifier)
+
+
+## locked_socket aktifken kilitsiz kalan priz sayisi (QA/tani).
+func locked_socket_count() -> int:
+	var total: int = 0
+	for socket: SocketSpec in sockets:
+		if socket.locked:
+			total += 1
+	return total
+
+
+## locked_socket: bazi prizler kapakli. Secim ayri bir tohumla yapilir; bu yuzden
+## modifier kablo/priz duzenini (konumlari) DEGISTIRMEZ, yalnizca kilit isaretler.
+func _mark_locked_sockets(base_cables: int, max_locked: int) -> void:
+	if sockets.is_empty():
+		return
+	var limit: int = maxi(1, max_locked)
+	var count: int = clampi(sockets.size() - maxi(0, base_cables), 1, limit)
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = seed * 7919 + 104729
+	var order: Array[int] = []
+	for i: int in sockets.size():
+		order.append(i)
+	_shuffle_ints(order, rng)
+	for i: int in mini(count, order.size()):
+		sockets[order[i]].locked = true
 
 
 func source_points() -> Array[Vector3]:
@@ -194,8 +279,8 @@ static func _attempt_layout(count: int, color_ids: Array[StringName],
 		colors_table: Dictionary, params: Layout, rng: RandomNumberGenerator) -> Built:
 	var sockets: Array[SocketSpec] = _build_sockets(color_ids,
 		_spread(count, params.socket_x_span), params, colors_table, rng)
-	var plugs: Array[Vector3] = _build_plugs(count, params, rng)
 	var source_xs: Array[float] = _spread(count, params.source_x_span)
+	var plugs: Array[Vector3] = _build_plugs(count, params, source_xs, rng)
 	var sway: PackedFloat32Array = _make_sway(rng)
 	var loop_sway: float = rng.randf_range(LOOP_SWAY_SHARED * 0.7, LOOP_SWAY_SHARED)
 	var clearance: float = params.contact_distance * CLEARANCE_SCALE + CLEARANCE_MARGIN
@@ -244,7 +329,7 @@ static func _fallback_layout(seed_value: int, count: int,
 		(clearance + 0.05) * float(maxi(count - 1, 1)) * 0.5)
 	needed_span = minf(needed_span, params.width * 0.5 - PLUG_EDGE_MARGIN)
 	var source_xs: Array[float] = _spread(count, needed_span)
-	var plugs: Array[Vector3] = _fallback_plugs(source_xs, params)
+	var plugs: Array[Vector3] = _build_plugs(count, params, source_xs, rng)
 	var sway: PackedFloat32Array = PackedFloat32Array()
 	for _i: int in MAX_LOBES * 2 + 2:
 		sway.append(0.0)
@@ -278,22 +363,6 @@ static func _fallback_layout(seed_value: int, count: int,
 	built.sockets = sockets
 	built.used_fallback = true
 	return built
-
-
-static func _fallback_plugs(source_xs: Array[float], params: Layout) -> Array[Vector3]:
-	var row_top: float = params.knot_y_top - 0.06
-	var row_bottom: float = maxf(params.knot_y_bottom + 0.06,
-		params.socket_y + PLUG_SOCKET_MIN + 0.25)
-	var min_gap: float = maxf(params.rest_gap + 0.04, 0.18)
-	if row_bottom > row_top - min_gap * float(PLUG_ROWS - 1):
-		row_bottom = row_top - min_gap * float(PLUG_ROWS - 1)
-	var row_gap: float = (row_top - row_bottom) / float(PLUG_ROWS - 1)
-	var result: Array[Vector3] = []
-	for i: int in source_xs.size():
-		var row: int = i % PLUG_ROWS
-		var y: float = row_top - row_gap * float(row)
-		result.append(Vector3(source_xs[i], y, params.surface_z))
-	return result
 
 
 static func _straight_path(source: Vector3, plug: Vector3,
@@ -346,7 +415,7 @@ static func _solve_style(source: Vector3, plug: Vector3, target_length: float,
 		loop_sway: float, rng: RandomNumberGenerator) -> PackedVector3Array:
 	var ind_phase: float = rng.randf_range(0.0, TAU)
 	var sag: float = rng.randf_range(SAG_BIAS_MIN, SAG_BIAS_MAX)
-	var control_count: int = style.size() + 2
+	var control_count: int = style.size() + 3
 	var jitters: PackedFloat32Array = PackedFloat32Array()
 	for i: int in control_count:
 		jitters.append(0.0 if (i == 0 or i == control_count - 1)
@@ -388,20 +457,32 @@ static func _solve_style(source: Vector3, plug: Vector3, target_length: float,
 	return PackedVector3Array()
 
 
+## Kivrim kontrolleri ONCE fis koridoruna tasinir (kisa dikey "boyun"), sonra
+## y'de salinan donguler ayni koridorda kalir; boylece kaydirilmis fisler yuzunden
+## komsu halatlar panonun ustunde caprazlasip baslangic temasi uretmez.
 static func _build_style(source: Vector3, plug: Vector3, params: Layout,
 		style: PackedFloat32Array, amplitude: float, sway: PackedFloat32Array,
 		jitters: PackedFloat32Array, loop_sway: float,
 		ind_phase: float, sag: float) -> PackedVector3Array:
 	var center_y: float = (source.y + plug.y) * 0.5 - sag
 	var z: float = params.surface_z
-	var control_count: int = style.size() + 2
 	var controls: PackedVector3Array = PackedVector3Array()
 	controls.append(source)
-	var index: int = 1
+	# 1) kisa dikey "nefes": halat kendi katmanina yukselir (z ayrimi erken olur),
+	# 2) yatay gecis: ust bantta fis koridoruna kayar.
+	var drop: float = minf(KORIDOR_DROP, absf(source.y - plug.y) * 0.5)
+	var rise_drop: float = minf(KORIDOR_RISE, maxf(drop * 0.25, 0.02))
+	controls.append(Vector3(
+		source.x + _offset_at(sway, 1) + _offset_at(jitters, 1),
+		source.y - rise_drop, plug.z))
+	controls.append(Vector3(
+		plug.x + _offset_at(sway, 2) + _offset_at(jitters, 2),
+		source.y - drop, plug.z))
+	var index: int = 3
 	for factor: float in style:
 		controls.append(Vector3(
-			_control_x(source, plug, index, control_count, sway, jitters),
-			center_y + factor * amplitude, z))
+			plug.x + _offset_at(sway, index) + _offset_at(jitters, index),
+			center_y + factor * amplitude, plug.z))
 		index += 1
 	controls.append(plug)
 	var raw: PackedVector3Array = PackedVector3Array()
@@ -410,17 +491,22 @@ static func _build_style(source: Vector3, plug: Vector3, params: Layout,
 		var point: Vector3 = _spline_point(controls, t)
 		point.x += loop_sway * sin(TAU * t)
 		point.x += LOOP_SWAY_IND * sin(TAU * 2.0 * t + ind_phase)
+		# Katman yukselmesi yolun en basinda (kisa dikey bolum) tamamlanir; boylece
+		# farkli katman halatlari ancak z ayrimi kurulduktan sonra caprazlasir.
+		var rise: float = _smoothstep01(clampf(t / KORIDOR_RISE_T, 0.0, 1.0))
+		point.z = lerpf(source.z, plug.z, rise)
 		raw.append(point)
 	return CableMath.resample(raw, maxi(4, params.cable_points))
 
 
-static func _control_x(source: Vector3, plug: Vector3, index: int, control_count: int,
-		sway: PackedFloat32Array, jitters: PackedFloat32Array) -> float:
-	var t: float = float(index) / float(control_count - 1)
-	var base: float = lerpf(source.x, plug.x, t)
-	var shared: float = sway[index] if index < sway.size() else 0.0
-	var jitter: float = jitters[index] if index < jitters.size() else 0.0
-	return base + shared + jitter
+## 0..1 smoothstep; yumusak hizlanma/yavaslama (ASMR egri dili).
+static func _smoothstep01(value: float) -> float:
+	var clamped: float = clampf(value, 0.0, 1.0)
+	return clamped * clamped * (3.0 - 2.0 * clamped)
+
+
+static func _offset_at(values: PackedFloat32Array, index: int) -> float:
+	return values[index] if index >= 0 and index < values.size() else 0.0
 
 
 ## Egriyi gecen uniform Catmull-Rom orneklemesi (uclar birebir korunur).
@@ -486,12 +572,27 @@ static func _build_sockets(color_ids: Array[StringName], x_slots: Array[float],
 	return sockets
 
 
-## Fisler orta bolgede 3 satira dagitilir; ayni satirdakiler arasi 3*step,
-## farkli satir arasi y farki buyuk oldugu icin rest_gap garantisi yapisaldir.
-static func _build_plugs(count: int, params: Layout,
+## Fisler orta bolgede 3 satira, tohumlu "derangement" + satir kaydirma ile
+## dagitilir: her fis yatayda en az MIN_PLUG_SOURCE_DX kaydirilir (hicbir fis
+## kendi kaynaginin tam altinda durmaz) ve satiri karistirilir; boylece ilk
+## halatlar panoda capraz sarkar (dugum gorunumu).
+##
+## Tohumlu "derangement + satir kaydirma + katman" kurulumu:
+##  - her satir ayni zamanda bir DERINLIK katmanidir (z = satir * rest_layer_gap);
+##  - hicbir fis kendi kaynaginin altinda durmaz: |dx| >= MIN_PLUG_SOURCE_DX,
+##    her katmanin kaydirma yonu/miktari tohumludur (derangement),
+##  - ayni katmanda kaynak/fis soldan-saga sirasi KORUNUR (sabit kaydirma) ->
+##    ayni katman halatlari kesisemez, rest_gap yapisal olarak korunur,
+##  - farkli katmanlar panonun onunde ayrildigi icin birbirinin UZERINDEN
+##    gecebilir (orgu gorunumu); katman araligi temas esiginden buyuktur.
+static func _build_plugs(count: int, params: Layout, source_xs: Array[float],
 		rng: RandomNumberGenerator) -> Array[Vector3]:
-	var span: float = minf(params.plug_x_span, params.width * 0.5 - PLUG_EDGE_MARGIN)
-	var step: float = 2.0 * span / float(maxi(count, 1))
+	var x_limit: float = minf(params.plug_x_span, params.width * 0.5 - PLUG_EDGE_MARGIN)
+	var source_max: float = 0.0
+	for source_x: float in source_xs:
+		source_max = maxf(source_max, absf(source_x))
+	# Kaydirma ust siniri: en disaridaki fis de panonun icinde kalsin.
+	var shift_max: float = maxf(MIN_PLUG_SOURCE_DX, x_limit - source_max)
 	var row_top: float = params.knot_y_top - 0.06
 	var row_bottom: float = maxf(params.knot_y_bottom + 0.06,
 		params.socket_y + PLUG_SOCKET_MIN + 0.25)
@@ -499,17 +600,60 @@ static func _build_plugs(count: int, params: Layout,
 	if row_bottom > row_top - min_gap * float(PLUG_ROWS - 1):
 		row_bottom = row_top - min_gap * float(PLUG_ROWS - 1)
 	var row_gap: float = (row_top - row_bottom) / float(PLUG_ROWS - 1)
-	var jitter_x: float = minf(PLUG_X_JITTER, step * 0.4)
-	var x_limit: float = params.width * 0.5 - PLUG_EDGE_MARGIN
+	var row_shift: int = rng.randi_range(0, PLUG_ROWS - 1)
+	# Her katman (satir) kendi yon ve kaydirmasina sahip; katman icinde kaynak/fis
+	# x sirasi korunur (kayma sabit), katmanlar arasi orgu serbesttir.
+	var directions: Array[float] = []
+	var shifts: Array[float] = []
+	var jitters: Array[float] = []
+	for _layer: int in PLUG_ROWS:
+		var direction: float = 1.0 if rng.randf() < 0.5 else -1.0
+		var shift: float = rng.randf_range(MIN_PLUG_SOURCE_DX, shift_max)
+		directions.append(direction)
+		shifts.append(shift)
+		jitters.append(minf(PLUG_X_JITTER, maxf(0.0, shift - MIN_PLUG_SOURCE_DX)))
 	var result: Array[Vector3] = []
 	for i: int in count:
-		var row: int = i % PLUG_ROWS
-		var x: float = -span + step * (float(i) + 0.5)
-		x += rng.randf_range(-jitter_x, jitter_x)
-		var y: float = row_top - row_gap * float(row)
+		var layer: int = (i + row_shift) % PLUG_ROWS
+		var x: float = source_xs[i] + directions[layer] * shifts[layer]
+		x += rng.randf_range(-jitters[layer], jitters[layer])
+		x = clampf(x, -x_limit, x_limit)
+		var y: float = row_top - row_gap * float(layer)
 		y += rng.randf_range(-PLUG_Y_JITTER, PLUG_Y_JITTER)
-		result.append(Vector3(clampf(x, -x_limit, x_limit), y, params.surface_z))
+		var z: float = params.surface_z + float(layer) * params.rest_layer_gap
+		result.append(Vector3(x, y, z))
+	if _plugs_satisfy(result, source_xs, params):
+		return result
+	# Jittersiz kurulum: yapisi geregi garantilidir (deterministik guvenlik agi).
+	result.clear()
+	for i: int in count:
+		var layer: int = (i + row_shift) % PLUG_ROWS
+		var x: float = clampf(source_xs[i] + directions[layer] * shifts[layer],
+			-x_limit, x_limit)
+		var z: float = params.surface_z + float(layer) * params.rest_layer_gap
+		result.append(Vector3(x, row_top - row_gap * float(layer), z))
 	return result
+
+
+## Uretim garantileri: (h) fis-kaynak yatay mesafesi, (d) fisler arasi rest_gap.
+static func _plugs_satisfy(plugs: Array[Vector3], source_xs: Array[float],
+		params: Layout) -> bool:
+	for i: int in plugs.size():
+		if absf(plugs[i].x - source_xs[i]) < MIN_PLUG_SOURCE_DX - 0.0001:
+			return false
+		for j: int in range(i + 1, plugs.size()):
+			if plugs[i].distance_to(plugs[j]) < params.rest_gap - 0.0001:
+				return false
+	return true
+
+
+## Tohumlu karistirma (global rng kullanmaz; determinizm).
+static func _shuffle_ints(items: Array[int], rng: RandomNumberGenerator) -> void:
+	for i: int in range(items.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var tmp: int = items[i]
+		items[i] = items[j]
+		items[j] = tmp
 
 
 static func _path_inside_board(points: PackedVector3Array, params: Layout) -> bool:
@@ -550,6 +694,17 @@ static func _layout_float(layout: Dictionary, key: String, section: String,
 static func _layout_int(layout: Dictionary, key: String, section: String,
 		fallback: int) -> int:
 	return int(roundf(_layout_float(layout, key, section, float(fallback))))
+
+
+## layout (tam balance.json ya da board bolumu) icinden bir modifier ayar
+## sozlugunu okur; yoksa bos sozluk (koddaki varsayilanlar kullanilir).
+static func _modifier_section(layout: Dictionary, modifier: String) -> Dictionary:
+	var raw: Variant = layout.get("modifiers")
+	if raw is Dictionary:
+		var entry: Variant = (raw as Dictionary).get(modifier)
+		if entry is Dictionary:
+			return entry as Dictionary
+	return {}
 
 
 static func _color_ids(config: Dictionary, colors_table: Dictionary,
