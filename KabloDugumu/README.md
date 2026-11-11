@@ -66,6 +66,19 @@ All user-facing text goes through `Loc` (`scripts/autoload/Loc.gd`) with tables 
 auto-detected from the OS on first run, switchable from the menu, persisted in
 `user://settings.cfg`.
 
+## Android build
+
+Debug APK: `build/android/cableknot-debug.apk` (`com.studiokit.cableknot`, minSdk 24,
+targetSdk 36, arm64-v8a, debug imzalı). Build/cihaz/release adımları:
+[docs/BUILD_ANDROID.md](docs/BUILD_ANDROID.md).
+
+```bash
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
+godot --headless --path . --export-debug "Android" build/android/cableknot-debug.apk
+adb install -r build/android/cableknot-debug.apk
+```
+
 ## Screenshots
 
 Final v0.2 shots live in [docs/screenshots/](docs/screenshots/) — a 12-frame contact sheet:
