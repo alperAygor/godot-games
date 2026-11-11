@@ -115,3 +115,16 @@ func test_instances_do_not_share_state() -> void:
 	a.add(5)
 	assert_eq(a.gold(), 15)
 	assert_eq(b.gold(), 0)
+
+
+func test_from_dict_accepts_whole_floats_from_json() -> void:
+	# Godot JSON sayıları float döndürür (GOTCHAS #20): kayıt dosyası böyle okunur.
+	var w: Wallet = Wallet.from_dict({"gold": 10.0, "scrap": 5.0})
+	assert_eq(w.gold(), 10)
+	assert_eq(w.scrap(), 5)
+	var parsed: Variant = JSON.parse_string(JSON.stringify({"gold": 120, "scrap": 7}))
+	var loaded: Wallet = Wallet.from_dict(parsed as Dictionary)
+	assert_eq(loaded.gold(), 120)
+	assert_eq(loaded.scrap(), 7)
+	assert_eq(Wallet.from_dict({"gold": 10.5}).gold(), 0)
+	assert_eq(Wallet.from_dict({"gold": -3.0}).gold(), 0)
