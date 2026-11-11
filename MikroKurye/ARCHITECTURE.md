@@ -140,7 +140,7 @@ func add(gold: int, scrap: int = 0) -> void        # negatif girdi 0 sayılır (
 func can_afford(cost: Dictionary) -> bool          # {"gold": int, "scrap": int}; eksik anahtar 0
 func spend(cost: Dictionary) -> bool               # yeterliyse düşer ve true; değilse HİÇBİR ŞEY değişmez ve false
 func to_dict() -> Dictionary                       # {"gold": int, "scrap": int}
-static func from_dict(d: Dictionary) -> Wallet     # eksik/yanlış tip/negatif -> 0
+static func from_dict(d: Dictionary) -> Wallet     # eksik/yanlış tip/negatif/küsuratlı -> 0; JSON'dan gelen küsuratsız float (10.0) tamsayı sayılır (GOTCHAS #20)
 ```
 
 ### 4.6 `CheckpointTracker` — `scripts/core/checkpoint_tracker.gd` (durumlu; Faz 2)
