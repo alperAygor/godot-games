@@ -3,13 +3,16 @@
 | Faz | Konu | Durum |
 |---|---|---|
 | 0 | İskelet (Boot/Menu/Game/Result, autoload'lar, tema, testler) | ✅ |
-| 1 | Çekirdek mantık (saf `core`, testler ÖNCE) | ✅ Tamam |
-| 2 | Fizik prototipi: robot + sallanan kargo + rampa (**oyuncu denemesi kapısı**) | 🟨 Robot ✅; kargo sırada |
-| 3 | Masa haritası ve tehlikeler | ✅ Tamam (görsel cila V2'de) |
-| 4 | Oyun döngüsü: sipariş, teslimat, ödül, garaj, kayıt | ⬜ |
-| 5 | Reklam yerleşimleri | ⬜ |
-| 6 | Modüller, mutfak/salon, boss | ⬜ |
-| 7 | Cilalama, ses (ASMR), UA kreatifleri | ⬜ |
+| 1 | Çekirdek mantık (saf `core`, testler ÖNCE) | ✅ |
+| 2 | Fizik: robot + sallanan kargo + oyun akışı (HUD, kontrol noktası, teslimat) | ✅ (his onayı kullanıcıda) |
+| 3 | Çalışma Masası haritası ve tehlikeler | ✅ |
+| 4 | Meta: 4a çekirdek ✅ · 4b `SaveService`, sipariş, garaj, sonuç ekranı | 🟨 4b sırada |
+| 5 | Reklam yerleşimleri (revive, batarya, 2× ödül, deneme sürüşü) | ⬜ |
+| 6 | Şok Jeli modülü, ses (SFX), ilk açılış rehberi, ayarlar | ⬜ |
+| 7 | **GÖRSEL FAZ (ayrı):** sanat yönü yenileme, shader/ışık/ortam, robot, efektler, UI teması | ⬜ |
+| 8 | Final: tam doğrulama, performans, Android derleme, kullanıcı paketi | ⬜ |
+
+Kullanıcı kararı (2026-11-11): çözüm hattında **tek aday** (iki aday yarıştırma kaldırıldı); görseller beğenilmedi → ayrı Faz 7; işlevsel fazlar önce.
 
 Etiketler: **[K]** kolay/mekanik · **[O]** orta · **[Z]** zor · **[T]** önce-test hattı (`solve.sh --tests-first` ya da lider testleri) ·
 **[F]** fizik/his (otomatik doğrulanamaz; oyuncu denemesi) · **[U]** kullanıcı kararı bekliyor.
@@ -77,16 +80,38 @@ Fizik işlerinde **best-of-N** (`solve.sh --workers "dsh:sol dsh"`) ve görsel d
 - [ ] **F4.4** `Garage` ekranı [O]
 - [ ] **F4.5** `SaveService` (user://save.json, sürümlü, bozuk dosya toleransı) [O][T]
 
-## Faz 5 — Reklam yerleşimleri
+## Faz 5 — Reklam yerleşimleri  (`AdManager`; sözleşme ARCHITECTURE §5.5 yazılacak)
 
-- [ ] **F5.1** `CARGO_INSURANCE` (revive → son kontrol noktası, sağlam kargo) [O]
-- [ ] **F5.2** `BATTERY_RECHARGE` [K]
-- [ ] **F5.3** `GOLDEN_BOX` [O]
-- [ ] **F5.4** `TRY_BEFORE_BUY` [O]
+- [ ] **F5.1** `CARGO_INSURANCE` (revive): kargo kırılınca/masadan düşünce teklif; kabul edilirse son kontrol noktasında sağlam kargo [O]
+- [ ] **F5.2** `BATTERY_RECHARGE`: batarya bitince HUD düğmesi, reklamla %100 + 10 sn boost [K]
+- [ ] **F5.3** `DOUBLE_REWARD`: sonuç ekranında 2× ödül [K]
+- [ ] **F5.4** `TRY_BEFORE_BUY`: garajda kilitli yükseltmeyi 1 koşu deneme [O]
+- [ ] **F5.5** Altın Kutu (seviyede ulaşması zor kutu → teslimde bonus açma reklamı) [O]
 
-## Faz 6–7
+## Faz 6 — Modül, ses, rehber
 
-Modüller (Kanca, Şok Jeli, Drone), Mutfak ve Salon, Robot Süpürge boss, ses (ASMR), UA kreatifleri. Ayrıntı Faz 3–4 bittiğinde.
+- [ ] **F6.1** Şok Emici Jel modülü (MVP modülü): garajdan sahip olunur, koşu başında takılı; kargo ilk kırılmayı atlatır (`CargoHealth` jel hakkı) [O]
+- [ ] **F6.2** SFX seti (ElevenLabs `make_sfx.py` ya da yedek sentez): çarpma, klavye tıkı, teslimat, satın alma, UI; ASMR hissi [O]
+- [ ] **F6.3** İlk açılış rehberi (3 kısa ipucu), ayarlar (ses açık/kapalı), geri tuşu davranışı [O]
+
+## Faz 7 — GÖRSEL FAZ (ayrı faz; kullanıcı görselleri beğenmedi)
+
+Hedef: "yer tutucu prototip" görünümünden **ürün kalitesinde stilize low-poly** görünüme. Her adım ekran görüntüsüyle denetlenir (`scene_shot.gd`, `shots.sh`); son onay kullanıcıdadır [U].
+
+- [ ] **F7.1** Sanat yönü yeniden tanımı: PROJECT_SPEC §13 güncellenir (referans, palet, malzeme dili, ışık); kısa bir "stil kılavuzu" sahnesi (`scenes/StyleGuide.tscn`) [O]
+- [ ] **F7.2** Shader sistemi: toon/cel gölgelendirme + rim ışık, anahatlar (outline), ahşap masa dokusu (prosedürel), düşük maliyetli (mobil/Compatibility) [Z]
+- [ ] **F7.3** Robot yeniden tasarımı: karakterli yüz/gözler, kurye detayları, tekerlek ve süspansiyon görselleri, idle/hız animasyonları (squash & stretch, anten) [Z]
+- [ ] **F7.4** Ortam: oda (duvar, pencere ışığı, uzakta dev objeler), masa kenarı derinliği, yumuşak gölge, bloom/renk düzeltme, hafif toz parçacığı [Z]
+- [ ] **F7.5** Efektler: çarpma kıvılcımı, hız çizgileri, kırılma, kontrol noktası/teslimat konfeti, klavye tuşu uyarı parıltısı [O]
+- [ ] **F7.6** UI teması: HUD, menü, sipariş kartları, garaj, sonuç; ikonlar (Lucide/Kenney), yazı tipi, düğme animasyonları [O]
+- [ ] **F7.7** Kamera: hız bağımlı FOV, hafif sarsıntı, geçişler [K]
+- [ ] **F7.8** Görsel QA turu: tüm ekranların ekran görüntüleri, tutarlılık düzeltmeleri; kullanıcı onayı [U]
+
+## Faz 8 — Final
+
+- [ ] **F8.1** Performans: `perf_probe` ve düşük segment Android hedefi (60 FPS), çokgen/draw call bütçesi [O]
+- [ ] **F8.2** Android debug export hazırlığı (`export_presets.cfg`, APK notları) [K]
+- [ ] **F8.3** Tam kabul koşusu (tüm probalar + `verify.sh`), CHANGELOG/README, kullanıcı oynama paketi [K]
 
 ---
 

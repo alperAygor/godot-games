@@ -189,3 +189,6 @@ Sıklık limitleri `AdManager` içinde, veriler `data/` altında. Reklam SDK ça
 **Üretim:** modeller Blender ile `tools/blender/*.py` betiklerinden (kaynak = betik, GLB üretilmiş çıktı; `studio-kit/tools/blender_kit.py`). Önizleme PNG'leri `build/previews/` (Blender workbench render).
 
 **Aşamalar:** V1 model seti (robot, tekerlek, sepet, 3 kargo, masa eşyaları) → V2 sahne entegrasyonu (palet, ışık, ortam, Proto.tscn'de modeller) → V3 cila (parçacık, kamera sarsıntısı, UI teması).
+
+> **Güncelleme (2026-11-11):** V1 model seti üretildi (docs/art/v1_model_sheet.png) ama kullanıcı mevcut görselleri beğenmedi. Görsel V2 (model entegrasyonu) iptal edildi; tüm görsel iş
+> `TASKS.md` **Faz 7 (Görsel Faz)** altında yeniden planlandı. Bu bölümdeki palet/stil başlangıçtır, Faz 7'de gözden geçirilir.
