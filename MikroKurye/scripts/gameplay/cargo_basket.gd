@@ -105,6 +105,12 @@ func _parameter(key: String, fallback: float) -> float:
 	return float(_parameters.get(key, fallback))
 
 
+## Şasi yükseltmesi: sönüm artar, sallanma daha çabuk söner. GameController
+## `SaveService.mods()` toplamını bir kez uygular.
+func add_damping_bonus(bonus: float) -> void:
+	_damping += maxf(bonus, 0.0)
+
+
 func reset_sway() -> void:
 	# Checkpoint/recovery callers must not turn a pose reset into physical slosh.
 	_reset_pending = true

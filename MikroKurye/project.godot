@@ -16,6 +16,7 @@ GameManager="*res://scripts/autoload/GameManager.gd"
 AudioService="*res://scripts/autoload/AudioService.gd"
 AdManager="*res://scripts/autoload/AdManager.gd"
 GameData="*res://scripts/autoload/GameData.gd"
+SaveService="*res://scripts/autoload/SaveService.gd"
 
 [debug]
 

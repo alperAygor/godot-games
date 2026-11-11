@@ -1,10 +1,12 @@
 extends Control
 
-## Sonuç ekranı: `GameManager.last_result` sözlüğünü gösterir.
+## Sonuç ekranı: `GameManager.last_result` sözlüğünü gösterir ve tur ödülünü
+## kayda BİR KEZ işler. Sözleşme: ARCHITECTURE.md §5.4.
 
 @onready var title_label: Label = %Title
 @onready var stars_label: Label = %Stars
 @onready var detail_label: Label = %Detail
+@onready var wallet_label: Label = %WalletLabel
 
 
 func _ready() -> void:
@@ -21,6 +23,16 @@ func _ready() -> void:
 	# `fee` eski sonuçlarla uyum için korunur; yeni akışta gold ile aynıdır.
 	detail_label.text = "Hasar: %%%d    Ücret: %d\nAltın: %d    Hurda: %d" % [
 		int(roundf(damage * 100.0)), fee, gold, scrap]
+
+	# Kayıt yoksa (probe/izole sahne) sonuç değerleri gösterilir, çökme yok.
+	var save: Node = get_node_or_null("/root/SaveService")
+	if save != null:
+		save.call("apply_result", result)
+		var profile: ProfileData = save.call("profile") as ProfileData
+		if profile != null:
+			gold = profile.wallet().gold()
+			scrap = profile.wallet().scrap()
+	wallet_label.text = UiStrings.wallet_label(gold, scrap)
 
 	if stars > 0:
 		AudioService.play("success")
