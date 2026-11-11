@@ -1,0 +1,24 @@
+{
+  "font": "res://assets/fonts/Baloo2.ttf",
+  "base_font_size": 34,
+  "palette": {
+    "background": "#F5EDE2",
+    "primary": "#8DE0B4",
+    "primary_dark": "#55B085",
+    "accent": "#FFE9C9",
+    "accent_dark": "#D9BD93",
+    "danger": "#FF8F7A",
+    "text": "#2A2522",
+    "text_muted": "#6B625B",
+    "on_primary": "#142F20",
+    "on_accent": "#4A3418"
+  },
+  "metrics": {
+    "radius": 28,
+    "border": 7,
+    "padding_x": 28,
+    "padding_y": 20,
+    "button_font_size": 40,
+    "secondary_button_font_size": 34
+  }
+}
