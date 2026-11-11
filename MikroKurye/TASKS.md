@@ -6,7 +6,7 @@
 | 1 | Çekirdek mantık (saf `core`, testler ÖNCE) | ✅ |
 | 2 | Fizik: robot + sallanan kargo + oyun akışı (HUD, kontrol noktası, teslimat) | ✅ (his onayı kullanıcıda) |
 | 3 | Çalışma Masası haritası ve tehlikeler | ✅ |
-| 4 | Meta: 4a çekirdek ✅ · 4b `SaveService`, sipariş, garaj, sonuç ekranı | 🟨 4b sırada |
+| 4 | Meta: çekirdek, `SaveService`, sipariş, garaj, sonuç ekranı | ✅ |
 | 5 | Reklam yerleşimleri (revive, batarya, 2× ödül, deneme sürüşü) | ⬜ |
 | 6 | Şok Jeli modülü, ses (SFX), ilk açılış rehberi, ayarlar | ⬜ |
 | 7 | **GÖRSEL FAZ (ayrı):** sanat yönü yenileme, shader/ışık/ortam, robot, efektler, UI teması | ⬜ |
@@ -74,11 +74,11 @@ Fizik işlerinde **best-of-N** (`solve.sh --workers "dsh:sol dsh"`) ve görsel d
 
 ## Faz 4 — Oyun döngüsü
 
-- [ ] **F4.1** `OrderSelect`: 3 kargo kartı → `GameManager` [O]
-- [ ] **F4.2** Teslimat sonu: `DeliveryReward` → `Result` genişletme [K]
+- [x] **F4.1** `OrderSelect`: 3 kargo kartı → `GameManager` [O]
+- [x] **F4.2** Teslimat sonu: `DeliveryReward` → `Result` genişletme [K]
 - [x] **F4.3** `UpgradeModel` + `data/upgrades.json` (şasi, tekerlek, batarya) [O][T]
-- [ ] **F4.4** `Garage` ekranı [O]
-- [ ] **F4.5** `SaveService` (user://save.json, sürümlü, bozuk dosya toleransı) [O][T]
+- [x] **F4.4** `Garage` ekranı [O]
+- [x] **F4.5** `SaveService` (user://save.json, sürümlü, bozuk dosya toleransı) [O][T]
 
 ## Faz 5 — Reklam yerleşimleri  (`AdManager`; sözleşme ARCHITECTURE §5.5 yazılacak)
 

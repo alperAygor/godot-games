@@ -10,6 +10,7 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/), sürümleme [Se
 - Faz 2 kargo dilimi: `CargoBasket` (açık yay-sönüm sallanma, `impact_reported`/`slosh_reported`), ters dönme kurtarması, parlak ortam ışığı; 6DOF eklem karşılaştırması `docs/physics/`.
 - Faz 3: `desk_01.tscn` (72 m masa haritası), `KeyboardKey`/`FanWind`/`RollingPencil` tehlikeleri, kontrol noktaları, V1 modelleriyle masa eşyaları; `level_probe` kabul probu.
 - Faz 4a: `UpgradeModel`, `ProfileData`, `data/upgrades.json`; V1 Blender model seti (11 model).
+- Faz 4b: `SaveService` (atomik kayıt, bozuk dosya yedeği), `OrderSelect`, `Garage`, menü/sonuç bağlantıları, yükseltme efektleri (`state.mods`); `meta_probe`.
 - `DamageModel` (darbe/çalkalanma/düşme → 0..1 hasar) ve `CargoHealth` (birikim, Şok Jeli koruması, kırık kargo) + 25 birim test.
 
 ### Eklenecek
