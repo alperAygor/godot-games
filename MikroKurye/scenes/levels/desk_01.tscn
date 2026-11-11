@@ -1,4 +1,4 @@
-[gd_scene load_steps=36 format=3]
+[gd_scene load_steps=40 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/level_root.gd" id="level"]
 [ext_resource type="Script" path="res://scripts/gameplay/hazards/keyboard_key.gd" id="key"]
@@ -9,38 +9,35 @@
 [ext_resource type="PackedScene" path="res://assets/models/prop_pencil.glb" id="pencil"]
 [ext_resource type="PackedScene" path="res://assets/models/prop_ruler.glb" id="ruler"]
 [ext_resource type="PackedScene" path="res://assets/models/prop_book.glb" id="book"]
+[ext_resource type="Material" path="res://assets/materials/wood.tres" id="wood"]
+[ext_resource type="Material" path="res://assets/materials/wood_edge.tres" id="wood_edge"]
+[ext_resource type="Material" path="res://assets/materials/stripe_yellow.tres" id="stripe"]
+[ext_resource type="Material" path="res://assets/materials/route_blue.tres" id="route"]
+[ext_resource type="Material" path="res://assets/materials/pad_green.tres" id="pad"]
+[ext_resource type="Material" path="res://assets/materials/fan_housing.tres" id="fan_house"]
+[ext_resource type="Material" path="res://assets/materials/fan_blade.tres" id="fan_blade"]
+[ext_resource type="Material" path="res://assets/materials/golden.tres" id="golden"]
+[ext_resource type="Script" path="res://scripts/gameplay/style_a.gd" id="style_a"]
 
-[sub_resource type="StandardMaterial3D" id="Wood"]
-albedo_color = Color(0.851, 0.627, 0.4, 1)
-roughness = 1.0
+[sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
+sky_top_color = Color(0.749, 0.8902, 0.949, 1)
+sky_horizon_color = Color(1, 0.9098, 0.7804, 1)
+ground_bottom_color = Color(1, 0.9098, 0.7804, 1)
+ground_horizon_color = Color(1, 0.9098, 0.7804, 1)
 
-[sub_resource type="StandardMaterial3D" id="Edge"]
-albedo_color = Color(0.69, 0.478, 0.271, 1)
-roughness = 1.0
-
-[sub_resource type="StandardMaterial3D" id="Yellow"]
-albedo_color = Color(0.969, 0.722, 0.004, 1)
-roughness = 1.0
-
-[sub_resource type="StandardMaterial3D" id="Blue"]
-albedo_color = Color(0.302, 0.616, 0.878, 1)
-roughness = 1.0
-
-[sub_resource type="StandardMaterial3D" id="Green"]
-albedo_color = Color(0.482, 0.784, 0.424, 1)
-roughness = 1.0
-
-[sub_resource type="StandardMaterial3D" id="Dark"]
-albedo_color = Color(0.169, 0.184, 0.227, 1)
-roughness = 1.0
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMaterial")
 
 [sub_resource type="Environment" id="Room"]
-background_mode = 1
-background_color = Color(1, 0.91, 0.78, 1)
+background_mode = 2
+sky = SubResource("Sky")
 ambient_light_source = 2
-ambient_light_color = Color(0.75, 0.89, 0.95, 1)
-ambient_light_energy = 0.85
+ambient_light_color = Color(0.83, 0.9, 0.95, 1)
+ambient_light_energy = 0.3
 tonemap_mode = 0
+glow_enabled = true
+glow_intensity = 0.05
+glow_hdr_threshold = 1.1
 
 [sub_resource type="BoxShape3D" id="DeskShape"]
 size = Vector3(10, 0.5, 77)
@@ -69,49 +66,42 @@ radius = 0.265
 height = 8.0
 
 [sub_resource type="BoxMesh" id="DeskMesh"]
-material = SubResource("Wood")
+material = ExtResource("wood")
 size = Vector3(10, 0.5, 77)
 
 [sub_resource type="BoxMesh" id="ApronMesh"]
-material = SubResource("Edge")
+material = ExtResource("wood_edge")
 size = Vector3(10, 0.35, 77)
 
 [sub_resource type="BoxMesh" id="EdgeStripeMesh"]
-material = SubResource("Yellow")
+material = ExtResource("stripe")
 size = Vector3(0.1, 0.012, 76)
 
 [sub_resource type="BoxMesh" id="RouteMesh"]
-material = SubResource("Blue")
+material = ExtResource("route")
 size = Vector3(0.045, 0.008, 70)
 
 [sub_resource type="BoxMesh" id="PadMesh"]
-material = SubResource("Green")
+material = ExtResource("pad")
 size = Vector3(3, 0.012, 3)
 
 [sub_resource type="BoxMesh" id="CheckpointMesh"]
-material = SubResource("Blue")
+material = ExtResource("route")
 size = Vector3(3, 0.01, 0.15)
 
 [sub_resource type="BoxMesh" id="FanBaseMesh"]
-material = SubResource("Dark")
+material = ExtResource("fan_house")
 size = Vector3(0.25, 2.5, 2.5)
 
 [sub_resource type="BoxMesh" id="FanBladeMesh"]
-material = SubResource("Blue")
+material = ExtResource("fan_blade")
 size = Vector3(0.12, 0.3, 2)
-
-[sub_resource type="StandardMaterial3D" id="Gold"]
-albedo_color = Color(1, 0.78, 0.16, 1)
-roughness = 1.0
-emission_enabled = true
-emission = Color(1, 0.68, 0.08, 1)
-emission_energy_multiplier = 1.8
 
 [sub_resource type="BoxShape3D" id="GoldShape"]
 size = Vector3(1.1, 1.1, 1.1)
 
 [sub_resource type="BoxMesh" id="GoldMesh"]
-material = SubResource("Gold")
+material = ExtResource("golden")
 size = Vector3(0.9, 0.9, 0.9)
 
 [node name="Desk01" type="Node3D"]
@@ -123,9 +113,11 @@ environment = SubResource("Room")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
 rotation_degrees = Vector3(-55, -25, 0)
-light_color = Color(1, 0.93, 0.82, 1)
-light_energy = 1.2
+light_color = Color(1, 0.9412, 0.8275, 1)
+light_energy = 1.0
 shadow_enabled = true
+shadow_blur = 1.5
+directional_shadow_max_distance = 30.0
 
 [node name="Desk" type="StaticBody3D" parent="."]
 position = Vector3(0, -0.25, -36.5)
@@ -411,3 +403,6 @@ mesh = SubResource("GoldMesh")
 light_color = Color(1, 0.78, 0.2, 1)
 light_energy = 1.6
 omni_range = 3.5
+
+[node name="StyleA" type="Node" parent="."]
+script = ExtResource("style_a")

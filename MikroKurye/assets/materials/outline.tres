@@ -1,0 +1,8 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/outline.gdshader" id="1_outline"]
+
+[resource]
+shader = ExtResource("1_outline")
+shader_parameter/width = 0.005
+shader_parameter/ink_color = Color(0.1255, 0.1569, 0.2431, 1)

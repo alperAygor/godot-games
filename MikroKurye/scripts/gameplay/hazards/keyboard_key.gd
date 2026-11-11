@@ -4,6 +4,11 @@ extends AnimatableBody3D
 ## Tuşun basma başlangıcı; ses olayı bu sinyale bağlanır (ARCHITECTURE.md §5.6).
 signal pressed()
 
+## Stil A toon yüzeyi; tuş rengi (idle/warn/pressed) `base_color` parametresiyle
+## sürülür, böylece PBR yerine ortak toon görünümü korunur (CLAUDE.md §8 "PBR yok").
+const TOON_SHADER_PATH: String = "res://assets/shaders/toon.gdshader"
+const SHADOW_COLOR: Color = Color("44446b")
+
 @export var phase_offset_seconds: float = 0.0
 
 var _parameters: Dictionary[String, Variant] = {}
@@ -23,7 +28,7 @@ var _was_pressed: bool = false
 var _normal_color: Color = Color.WHITE
 var _warning_color: Color = Color.WHITE
 var _pressed_color: Color = Color.WHITE
-var _visual_material: StandardMaterial3D = null
+var _visual_material: ShaderMaterial = null
 
 
 func _ready() -> void:
@@ -49,8 +54,10 @@ func _ready() -> void:
 	_warning_start = _press_start - _warning_seconds
 	_phase = fposmod(phase_offset_seconds, _period)
 	sync_to_physics = true
-	_visual_material = StandardMaterial3D.new()
-	_visual_material.albedo_color = _normal_color
+	_visual_material = ShaderMaterial.new()
+	_visual_material.shader = load(TOON_SHADER_PATH) as Shader
+	_visual_material.set_shader_parameter("base_color", _normal_color)
+	_visual_material.set_shader_parameter("shadow_color", SHADOW_COLOR)
 	var visual: Node = get_node_or_null("Visual")
 	if visual != null:
 		_override_visual_material(visual)
@@ -87,12 +94,17 @@ func _update_phase() -> void:
 		depth_fraction = 1.0 - clampf(
 			(_phase - _press_start - _press_seconds - _hold_seconds) / _release_seconds, 0.0, 1.0)
 	position = _rest_position + Vector3.DOWN * (_press_depth * depth_fraction)
+	# Telegraph rengi parametre üzerinden sürülür; her kare yeni malzeme üretilmez.
 	if _telegraphing:
-		_visual_material.albedo_color = _warning_color
+		_set_visual_color(_warning_color)
 	elif _pressed:
-		_visual_material.albedo_color = _pressed_color
+		_set_visual_color(_pressed_color)
 	else:
-		_visual_material.albedo_color = _normal_color
+		_set_visual_color(_normal_color)
+
+
+func _set_visual_color(color: Color) -> void:
+	_visual_material.set_shader_parameter("base_color", color)
 
 
 func _override_visual_material(node: Node) -> void:
