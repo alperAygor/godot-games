@@ -3,8 +3,8 @@
 | Faz | Konu | Durum |
 |---|---|---|
 | 0 | İskelet (Boot/Menu/Game/Result, autoload'lar, tema, testler) | ✅ |
-| 1 | Çekirdek mantık (saf `core`, testler ÖNCE) | ⬜ Sırada |
-| 2 | Fizik prototipi: robot + sallanan kargo + rampa (**oyuncu denemesi kapısı**) | ⬜ |
+| 1 | Çekirdek mantık (saf `core`, testler ÖNCE) | ✅ Tamam |
+| 2 | Fizik prototipi: robot + sallanan kargo + rampa (**oyuncu denemesi kapısı**) | 🟨 Robot ✅; kargo sırada |
 | 3 | Masa haritası ve tehlikeler | ⬜ |
 | 4 | Oyun döngüsü: sipariş, teslimat, ödül, garaj, kayıt | ⬜ |
 | 5 | Reklam yerleşimleri | ⬜ |
@@ -28,13 +28,13 @@ Etiketler: **[K]** kolay/mekanik · **[O]** orta · **[Z]** zor · **[T]** önce
 
 **Hedef:** Oyunun sayısal kuralları sahne olmadan, testle sabit. Fizik prototipi bu sınıflara ölçüm besler.
 
-- [ ] **F1.1** `data/cargo.json` + şema testi (zorunlu anahtarlar, aralıklar) [K][T]
+- [x] **F1.1** `data/cargo.json` + şema testi (zorunlu anahtarlar, aralıklar) [K][T]
 - [x] **F1.2** `DamageModel` (statik) — eşikler, sınırlar, kırpma [O][T]
 - [x] **F1.3** `CargoHealth` — birikim, Şok Jeli koruması (0.95 kuralı), kırık kargo [O][T]
-- [ ] **F1.4** `BatteryModel` — tüketim, hız faktörü, boost, doldurma [O][T]
-- [ ] **F1.5** `DeliveryReward` — altın/hurda, `RunScoring` ile uyum [O][T]
-- [ ] **F1.6** `CheckpointTracker` — yalnız ileri ilerleme [K][T]
-- [ ] **F1.7** `Wallet` — Altın/Hurda bakiyesi, harcama, kayıt sözlüğü [K][T]
+- [x] **F1.4** `BatteryModel` — tüketim, hız faktörü, boost, doldurma [O][T]
+- [x] **F1.5** `DeliveryReward` — altın/hurda, `RunScoring` ile uyum [O][T]
+- [x] **F1.6** `CheckpointTracker` — yalnız ileri ilerleme [K][T]
+- [x] **F1.7** `Wallet` — Altın/Hurda bakiyesi, harcama, kayıt sözlüğü [K][T]
 
 Bitti: `verify.sh` yeşil, her sınıfın sınır değeri testleri var, `CHANGELOG.md` güncel.
 
@@ -45,14 +45,16 @@ Bitti: `verify.sh` yeşil, her sınıfın sınır değeri testleri var, `CHANGEL
 **Hedef:** Boş bir masada robot sürülür, sırtta kargo gerçekçi sallanır, rampadan atlanır, kargo darbesi `CargoHealth`'e akar ve HUD'da görünür.
 **Kapı:** Bu faz bittiğinde **kullanıcı oynar**; hissi onaylamadan Faz 3'e geçilmez.
 
-- [ ] **F2.1** Robot: `RigidBody3D` + 4 raycast süspansiyon, joystick girdisi, hızlanma/dönme eğrisi [Z][F]
+- [x] **F2.1** Robot: `RigidBody3D` + 4 raycast süspansiyon, joystick girdisi, hızlanma/dönme eğrisi [Z][F]
 - [ ] **F2.2** Kargo sepeti: sırtta `RigidBody3D` + yaylı 6DOF (ya da yay-sönüm kodu); iki yaklaşımı `game_probe.gd` ile karşılaştır [Z][F]
-- [ ] **F2.3** Kamera: arkadan-yukarıdan takip [O][F]
-- [ ] **F2.4** Test haritası: düz masa, rampa, kenar; düşme sınırı → kontrol noktası [O]
+- [x] **F2.3** Kamera: arkadan-yukarıdan takip [O][F]
+- [~] **F2.4** Test haritası: düz masa ve rampa ✅ (Proto.tscn); kenar + düşme sınırı → kontrol noktası bekliyor [O]
 - [ ] **F2.5** `ImpactSensor` + sinyaller → `CargoHealth` → HUD sağlık çubuğu [O]
 - [ ] **F2.6** Havada denge kaydırması [Z][F]
-- [ ] **F2.7** `tools/game_probe.gd`: sabit girdiyle sürüş, sallanma genliği ve hasar eğrisi çıktısı [O]
-- [ ] **F2.8** Fizik sabitlerini `data/balance.json`'a taşı ve ayar rehberi yaz [K]
+- [ ] **F2.9** Ters dönme kurtarması: robot >100° eğik 1.5 sn kalırsa kendini doğrult (inceleme bulgusu) [K]
+- [ ] **F2.10** Proto ortam ışığı: `ambient_light_source` uyumsuzluğu, daha parlak/doygun low-poly görünüm (şu an koyu lacivert gökyüzü) [K]
+- [x] **F2.7** `tools/game_probe.gd`: sabit girdiyle sürüş, sallanma genliği ve hasar eğrisi çıktısı [O]
+- [x] **F2.8** Fizik sabitlerini `data/balance.json`'a taşı ve ayar rehberi yaz [K]
 
 Fizik işlerinde **best-of-N** (`solve.sh --workers "dsh:sol dsh"`) ve görsel denetim (`shots.sh`) kullanılır; kabul: `verify.sh` + `game_probe` sayıları + kullanıcı denemesi.
 

@@ -5,6 +5,8 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/), sürümleme [Se
 ## [Unreleased]
 
 ### Eklendi
+- Faz 1 çekirdek: `BatteryModel`, `Wallet` (Altın/Hurda), `CheckpointTracker`, `DeliveryReward`, `data/cargo.json` + testler (85 test).
+- Faz 2 robot dilimi: `RobotController` (RigidBody3D + 4 raycast süspansiyon), `SuspensionWheel`, `CameraRig`, `InputService` (klavye + sanal joystick), `Proto.tscn` (zemin + rampa), fizik parametreleri `data/balance.json`; `tools/game_probe.gd` kabul probu.
 - `DamageModel` (darbe/çalkalanma/düşme → 0..1 hasar) ve `CargoHealth` (birikim, Şok Jeli koruması, kırık kargo) + 25 birim test.
 
 ### Eklenecek
