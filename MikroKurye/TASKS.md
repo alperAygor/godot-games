@@ -9,7 +9,7 @@
 | 4 | Meta: çekirdek, `SaveService`, sipariş, garaj, sonuç ekranı | ✅ |
 | 5 | Reklam yerleşimleri (revive, batarya, 2× ödül, deneme sürüşü, Altın Kutu) | ✅ |
 | 6 | Şok Jeli modülü, ses (SFX), ilk açılış rehberi, ayarlar | ⬜ |
-| 7 | **GÖRSEL FAZ (ayrı):** 7.1 stil laboratuvarı ✅ (kullanıcı seçimi bekliyor: A/B/C), kalan adımlar sırada | 🟨 |
+| 7 | **GÖRSEL FAZ (ayrı):** 7.1 stil laboratuvarı ✅ · **stil A (Toon+Outline) seçildi** · 7.2–7.8 sırada | 🟨 |
 | 8 | Final: tam doğrulama, performans, Android derleme, kullanıcı paketi | ⬜ |
 
 Kullanıcı kararı (2026-11-11): çözüm hattında **tek aday** (iki aday yarıştırma kaldırıldı); görseller beğenilmedi → ayrı Faz 7; işlevsel fazlar önce.

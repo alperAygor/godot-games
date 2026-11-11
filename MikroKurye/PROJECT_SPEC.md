@@ -192,3 +192,6 @@ Sıklık limitleri `AdManager` içinde, veriler `data/` altında. Reklam SDK ça
 
 > **Güncelleme (2026-11-11):** V1 model seti üretildi (docs/art/v1_model_sheet.png) ama kullanıcı mevcut görselleri beğenmedi. Görsel V2 (model entegrasyonu) iptal edildi; tüm görsel iş
 > `TASKS.md` **Faz 7 (Görsel Faz)** altında yeniden planlandı. Bu bölümdeki palet/stil başlangıçtır, Faz 7'de gözden geçirilir.
+
+> **Karar (2026-11-11, kullanıcı): görsel stil A — Toon + Outline.** 3 bant hücre gölgelendirme, rim ışık, koyu renkli ters-kabuk anahat (yalnızca robot ve etkileşimli nesnelerde; mobil maliyet), doygun palet, tek sıcak ana ışık, yumuşak gerçek gölge, açık gökyüzü/oda arka planı.
+> Referans: `docs/art/style_lab_sheet.png` (A sütunu) ve `assets/shaders/style_lab/`, `scenes/styles/style_a.tscn`. B ve C varyantları referans olarak kalır, kullanılmaz.
