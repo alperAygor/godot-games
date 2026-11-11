@@ -87,7 +87,8 @@ func is_broken() -> bool                          # damage() >= 1.0
 func jelly_left() -> int                          # Şok Emici Jel: kalan koruma
 ```
 
-Kural: Hasar ilk kez 1.0'a ulaşacakken ve `jelly_left() > 0` ise koruma tüketilir; hasar **0.95**'te kalır ve `jelly_left()` bir azalır (kırılma yok). Kırık kargoya hasar eklenmez.
+Kural: Hasar bu çağrıda 1.0'a ulaşacakken ve `jelly_left() > 0` ise koruma tüketilir; hasar `max(mevcut, 0.95)` olur ve `jelly_left()` bir azalır (kırılma yok).
+Dönüş değeri, **gerçekten eklenen** hasardır (`damage()` farkı; kırpma/jel sonrası). Kırık kargoya hasar eklenmez (dönüş 0.0).
 
 ### 4.3 `BatteryModel` — `scripts/core/battery_model.gd` (durumlu)
 
