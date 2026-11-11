@@ -4,5 +4,5 @@
 
 [resource]
 shader = ExtResource("1_toon")
-shader_parameter/base_color = Color(0.302, 0.6157, 0.8784, 1)
+shader_parameter/base_color = Color(0.451, 0.6784, 0.8784, 1)
 shader_parameter/shadow_color = Color(0.2667, 0.2667, 0.4196, 1)

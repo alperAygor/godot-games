@@ -15,7 +15,9 @@ var _damping: float = 0.0
 var _grip: float = 0.0
 var _base_grip: float = 0.0
 var _force_limit: float = 0.0
-@onready var _visual: MeshInstance3D = get_node("Visual") as MeshInstance3D
+## Görsel düğüm artık GLB tekerleğini saran Node3D (Spin/Mesh alt düğümleriyle);
+## süspansiyon yalnızca bu düğümün dikey konumunu sürer, fiziğe dokunmaz.
+@onready var _visual: Node3D = get_node("Visual") as Node3D
 
 
 func configure(body: RigidBody3D, rest: float, radius: float, stiffness: float,

@@ -1,18 +1,11 @@
-[gd_scene load_steps=31 format=3]
+[gd_scene load_steps=15 format=3]
 
-[ext_resource type="Script" path="res://scripts/gameplay/robot_controller.gd" id="1_robot"]
-[ext_resource type="Script" path="res://scripts/gameplay/suspension_wheel.gd" id="2_wheel"]
-[ext_resource type="Script" path="res://scripts/gameplay/camera_rig.gd" id="3_camera"]
-[ext_resource type="Script" path="res://scripts/gameplay/input_service.gd" id="4_input"]
-
-[ext_resource type="Script" path="res://scripts/gameplay/cargo_basket.gd" id="5_cargo"]
-[ext_resource type="Material" path="res://assets/materials/floor.tres" id="6_floor"]
-[ext_resource type="Material" path="res://assets/materials/robot_turquoise.tres" id="7_robot"]
-[ext_resource type="Material" path="res://assets/materials/robot_dark.tres" id="8_dark"]
-[ext_resource type="Material" path="res://assets/materials/ramp.tres" id="9_ramp"]
-[ext_resource type="Material" path="res://assets/materials/basket_yellow.tres" id="10_basket"]
-[ext_resource type="Material" path="res://assets/materials/cargo_parcel.tres" id="11_parcel"]
-[ext_resource type="Material" path="res://assets/materials/route_blue.tres" id="12_route"]
+[ext_resource type="Script" path="res://scripts/gameplay/camera_rig.gd" id="1_camera"]
+[ext_resource type="Script" path="res://scripts/gameplay/input_service.gd" id="2_input"]
+[ext_resource type="Material" path="res://assets/materials/floor.tres" id="3_floor"]
+[ext_resource type="Material" path="res://assets/materials/ramp.tres" id="4_ramp"]
+[ext_resource type="Material" path="res://assets/materials/route_blue.tres" id="5_route"]
+[ext_resource type="PackedScene" path="res://scenes/Robot.tscn" id="6_robot"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 sky_top_color = Color(0.749, 0.8902, 0.949, 1)
@@ -38,60 +31,19 @@ glow_hdr_threshold = 1.1
 size = Vector3(80, 0.4, 160)
 
 [sub_resource type="BoxMesh" id="FloorMesh"]
-material = ExtResource("6_floor")
+material = ExtResource("3_floor")
 size = Vector3(80, 0.4, 160)
 
 [sub_resource type="BoxShape3D" id="RampShape"]
 size = Vector3(6, 0.2, 2.4)
 
 [sub_resource type="BoxMesh" id="RampMesh"]
-material = ExtResource("9_ramp")
+material = ExtResource("4_ramp")
 size = Vector3(6, 0.2, 2.4)
 
-[sub_resource type="BoxShape3D" id="RobotShape"]
-size = Vector3(0.82, 0.32, 1.15)
-
-[sub_resource type="BoxMesh" id="RobotMesh"]
-material = ExtResource("7_robot")
-size = Vector3(0.82, 0.32, 1.15)
-
-[sub_resource type="BoxMesh" id="HeadMesh"]
-material = ExtResource("7_robot")
-size = Vector3(0.56, 0.26, 0.34)
-
-[sub_resource type="BoxMesh" id="VisorMesh"]
-material = ExtResource("8_dark")
-size = Vector3(0.46, 0.1, 0.025)
-
-[sub_resource type="CylinderMesh" id="WheelMesh"]
-material = ExtResource("8_dark")
-top_radius = 0.18
-bottom_radius = 0.18
-height = 0.16
-radial_segments = 12
-
 [sub_resource type="BoxMesh" id="LineMesh"]
-material = ExtResource("12_route")
+material = ExtResource("5_route")
 size = Vector3(0.08, 0.01, 110)
-
-[sub_resource type="PhysicsMaterial" id="BodyPhysics"]
-friction = 0.0
-bounce = 0.0
-
-[sub_resource type="BoxShape3D" id="BasketShape"]
-size = Vector3(0.66, 0.36, 0.5)
-
-[sub_resource type="BoxMesh" id="BasketBase"]
-material = ExtResource("10_basket")
-size = Vector3(0.66, 0.1, 0.5)
-
-[sub_resource type="BoxMesh" id="BasketRail"]
-material = ExtResource("10_basket")
-size = Vector3(0.66, 0.18, 0.06)
-
-[sub_resource type="BoxMesh" id="ParcelMesh"]
-material = ExtResource("11_parcel")
-size = Vector3(0.38, 0.32, 0.3)
 
 [node name="Proto" type="Node3D"]
 
@@ -139,104 +91,11 @@ position = Vector3(0, 0.58, 4)
 [node name="RampStart" type="Marker3D" parent="."]
 position = Vector3(0, 0.58, -25)
 
-[node name="Robot" type="RigidBody3D" parent="."]
+[node name="Robot" parent="." instance=ExtResource("6_robot")]
 position = Vector3(0, 0.58, 4)
-physics_material_override = SubResource("BodyPhysics")
-continuous_cd = true
-script = ExtResource("1_robot")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Robot"]
-shape = SubResource("RobotShape")
-
-[node name="Chassis" type="MeshInstance3D" parent="Robot"]
-mesh = SubResource("RobotMesh")
-
-[node name="Head" type="MeshInstance3D" parent="Robot"]
-position = Vector3(0, 0.28, -0.28)
-mesh = SubResource("HeadMesh")
-
-[node name="Visor" type="MeshInstance3D" parent="Robot"]
-position = Vector3(0, 0.3, -0.46)
-mesh = SubResource("VisorMesh")
-
-[node name="FrontLeft" type="Node3D" parent="Robot"]
-position = Vector3(-0.48, 0, -0.48)
-script = ExtResource("2_wheel")
-
-[node name="RayCast3D" type="RayCast3D" parent="Robot/FrontLeft"]
-
-[node name="Visual" type="MeshInstance3D" parent="Robot/FrontLeft"]
-rotation_degrees = Vector3(0, 0, 90)
-mesh = SubResource("WheelMesh")
-
-[node name="FrontRight" type="Node3D" parent="Robot"]
-position = Vector3(0.48, 0, -0.48)
-script = ExtResource("2_wheel")
-
-[node name="RayCast3D" type="RayCast3D" parent="Robot/FrontRight"]
-
-[node name="Visual" type="MeshInstance3D" parent="Robot/FrontRight"]
-rotation_degrees = Vector3(0, 0, 90)
-mesh = SubResource("WheelMesh")
-
-[node name="RearLeft" type="Node3D" parent="Robot"]
-position = Vector3(-0.48, 0, 0.48)
-script = ExtResource("2_wheel")
-
-[node name="RayCast3D" type="RayCast3D" parent="Robot/RearLeft"]
-
-[node name="Visual" type="MeshInstance3D" parent="Robot/RearLeft"]
-rotation_degrees = Vector3(0, 0, 90)
-mesh = SubResource("WheelMesh")
-
-[node name="RearRight" type="Node3D" parent="Robot"]
-position = Vector3(0.48, 0, 0.48)
-script = ExtResource("2_wheel")
-
-[node name="RayCast3D" type="RayCast3D" parent="Robot/RearRight"]
-
-[node name="Visual" type="MeshInstance3D" parent="Robot/RearRight"]
-rotation_degrees = Vector3(0, 0, 90)
-mesh = SubResource("WheelMesh")
-
-[node name="CargoBasket" type="RigidBody3D" parent="Robot"]
-position = Vector3(0, 0.44, 0.24)
-script = ExtResource("5_cargo")
-continuous_cd = true
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Robot/CargoBasket"]
-shape = SubResource("BasketShape")
-
-[node name="Base" type="MeshInstance3D" parent="Robot/CargoBasket"]
-position = Vector3(0, -0.13, 0)
-mesh = SubResource("BasketBase")
-
-[node name="FrontRail" type="MeshInstance3D" parent="Robot/CargoBasket"]
-position = Vector3(0, 0.02, -0.22)
-mesh = SubResource("BasketRail")
-
-[node name="BackRail" type="MeshInstance3D" parent="Robot/CargoBasket"]
-position = Vector3(0, 0.02, 0.22)
-mesh = SubResource("BasketRail")
-
-[node name="LeftRail" type="MeshInstance3D" parent="Robot/CargoBasket"]
-position = Vector3(-0.3, 0.02, 0)
-rotation_degrees = Vector3(0, 90, 0)
-scale = Vector3(0.67, 1, 1)
-mesh = SubResource("BasketRail")
-
-[node name="RightRail" type="MeshInstance3D" parent="Robot/CargoBasket"]
-position = Vector3(0.3, 0.02, 0)
-rotation_degrees = Vector3(0, 90, 0)
-scale = Vector3(0.67, 1, 1)
-mesh = SubResource("BasketRail")
-
-[node name="Parcel" type="MeshInstance3D" parent="Robot/CargoBasket"]
-position = Vector3(0, 0.08, 0)
-mesh = SubResource("ParcelMesh")
 
 [node name="CameraRig" type="Node3D" parent="."]
-script = ExtResource("3_camera")
+script = ExtResource("1_camera")
 target_path = NodePath("../Robot")
 
 [node name="Camera3D" type="Camera3D" parent="CameraRig"]
@@ -252,5 +111,5 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-script = ExtResource("4_input")
+script = ExtResource("2_input")
 robot_path = NodePath("../../Robot")
