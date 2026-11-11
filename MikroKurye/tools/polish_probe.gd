@@ -51,10 +51,12 @@ func _physics_process(_delta: float) -> bool:
 	if Time.get_ticks_msec() - _start_ms > DEADLINE_MS:
 		_setup_error = "zaman aşımı"
 	_frames += 1
-	if _setup_error == "" and not _queue.is_empty():
+	if _setup_error == "":
+		# `wait` = bu adım çalıştıktan SONRA beklenecek kare sayısı. Kuyruk boşken de sayaç azalır,
+		# böylece son adımın beklemesi bitince prob kendiliğinden sonlanır (aksi halde zaman aşımına kadar asılır).
 		if _wait > 0:
 			_wait -= 1
-		else:
+		elif not _queue.is_empty():
 			var item: Dictionary = _queue.pop_front()
 			_wait = int(item["wait"])
 			(item["fn"] as Callable).call()
