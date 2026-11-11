@@ -1,0 +1,41 @@
+{
+  "pencil_battery": {
+    "name_key": "cargo.battery",
+    "difficulty": 1,
+    "mass": 0.05,
+    "impact_threshold": 9.0,
+    "impact_scale": 0.02,
+    "slosh_threshold": 999.0,
+    "slosh_scale": 0.0,
+    "fall_threshold": 0.45,
+    "fall_scale": 0.6,
+    "reward_gold": 40,
+    "reward_scrap": 2
+  },
+  "sd_card": {
+    "name_key": "cargo.sd_card",
+    "difficulty": 2,
+    "mass": 0.02,
+    "impact_threshold": 3.5,
+    "impact_scale": 0.07,
+    "slosh_threshold": 14.0,
+    "slosh_scale": 0.004,
+    "fall_threshold": 0.18,
+    "fall_scale": 1.4,
+    "reward_gold": 90,
+    "reward_scrap": 5
+  },
+  "espresso_capsule": {
+    "name_key": "cargo.espresso",
+    "difficulty": 3,
+    "mass": 0.04,
+    "impact_threshold": 5.0,
+    "impact_scale": 0.05,
+    "slosh_threshold": 6.0,
+    "slosh_scale": 0.012,
+    "fall_threshold": 0.25,
+    "fall_scale": 1.0,
+    "reward_gold": 160,
+    "reward_scrap": 9
+  }
+}
