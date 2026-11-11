@@ -45,9 +45,17 @@ custom_minimum_size = Vector2(620, 132)
 layout_mode = 2
 text = "Oyna"
 
+[node name="GarageButton" type="Button" parent="Center/Column"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(620, 132)
+layout_mode = 2
+theme_type_variation = &"SecondaryButton"
+text = "Garaj"
+
 [node name="Hint" type="Label" parent="Center/Column"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.45, 0.4, 0.36, 1)
 theme_override_font_sizes/font_size = 26
-text = "İskelet sürümü — oyun içeriği buraya gelir"
+text = "Siparişini seç, kuryeni geliştir."
 horizontal_alignment = 1

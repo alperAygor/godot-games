@@ -31,6 +31,11 @@ func configure(body: RigidBody3D, rest: float, radius: float, stiffness: float,
 	_ray.add_exception(body)
 
 
+## Tekerlek yükseltmesi: yanal tutuş artar (RobotController dört tekerleğe uygular).
+func add_grip_bonus(bonus: float) -> void:
+	_grip += maxf(bonus, 0.0)
+
+
 func simulate() -> void:
 	_ray.force_raycast_update()
 	grounded = _ray.is_colliding()

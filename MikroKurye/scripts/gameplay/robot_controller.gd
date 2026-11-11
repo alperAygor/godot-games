@@ -120,6 +120,13 @@ func is_grounded() -> bool:
 	return _grounded
 
 
+## Tekerlek yükseltmesi toplamını dört süspansiyon tekerleğine uygular.
+## GameController `SaveService.mods()` okuduktan sonra bir kez çağırır.
+func add_wheel_grip_bonus(bonus: float) -> void:
+	for wheel: SuspensionWheel in _wheels:
+		wheel.add_grip_bonus(bonus)
+
+
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	var body_transform: Transform3D = state.transform
 	var up_dot: float = body_transform.basis.y.normalized().dot(Vector3.UP)

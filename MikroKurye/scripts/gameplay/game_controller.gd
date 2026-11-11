@@ -20,6 +20,12 @@ const DEFAULT_RESPAWN_DROP_HEIGHT: float = 1.0
 const DEFAULT_CHECKPOINT_RADIUS: float = 2.0
 const DEFAULT_BATTERY_CAPACITY: float = 100.0
 
+## §5.4 yükseltme anahtarları; `SaveService.mods()` toplamları bu adlarla gelir.
+const MOD_CARGO_DAMPING: String = "cargo_damping_bonus"
+const MOD_WHEEL_GRIP: String = "wheel_grip_bonus"
+const MOD_BATTERY_CAPACITY: String = "battery_capacity_bonus"
+const MOD_KEYS: Array[String] = [MOD_CARGO_DAMPING, MOD_WHEEL_GRIP, MOD_BATTERY_CAPACITY]
+
 const PERCENT_SCALE: float = 100.0
 
 @onready var _robot: RobotController = $Robot as RobotController
@@ -34,6 +40,8 @@ var _cargo_id: String = DEFAULT_CARGO_ID
 var _profile: Dictionary = {}
 var _battery_params: Dictionary = {}
 var _battery_capacity: float = DEFAULT_BATTERY_CAPACITY
+## Uygulanan yükseltme toplamları; `state()["mods"]` bunları raporlar.
+var _mods: Dictionary[String, float] = {}
 var _kill_y: float = DEFAULT_KILL_Y
 var _respawn_drop_height: float = DEFAULT_RESPAWN_DROP_HEIGHT
 var _checkpoint_radius_sq: float = DEFAULT_CHECKPOINT_RADIUS * DEFAULT_CHECKPOINT_RADIUS
@@ -55,7 +63,9 @@ func _ready() -> void:
 	add_to_group("game_controller")
 	_load_profile()
 	_load_balance()
+	_load_mods()
 	_build_models()
+	_apply_mods()
 	var manager: Node = get_node_or_null("/root/GameManager")
 	if manager != null:
 		manager.connect("back_requested", _on_back_requested)
@@ -156,8 +166,38 @@ func _load_balance() -> void:
 
 func _build_models() -> void:
 	_health = CargoHealth.new(_profile)
+	# Batarya kapasitesi yükseltmesi model kurulmadan önce eklenir; aksi hâlde
+	# `set_battery_level` eski kapasiteyle oran hesaplar.
+	_battery_capacity = maxf(_battery_capacity
+		+ float(_mods.get(MOD_BATTERY_CAPACITY, 0.0)), 0.0)
 	_battery = BatteryModel.new(_battery_capacity, _battery_params)
 	_tracker = CheckpointTracker.new()
+
+
+## `SaveService.mods()` toplamları; servis yoksa (izole probe/test) hepsi 0.
+func _load_mods() -> void:
+	_mods.clear()
+	for key: String in MOD_KEYS:
+		_mods[key] = 0.0
+	var save: Node = get_node_or_null("/root/SaveService")
+	if save == null or not save.has_method("mods"):
+		return
+	var raw: Variant = save.call("mods")
+	if not raw is Dictionary:
+		return
+	var totals: Dictionary = raw as Dictionary
+	for key: String in MOD_KEYS:
+		var value: Variant = totals.get(key, 0.0)
+		if typeof(value) != TYPE_INT and typeof(value) != TYPE_FLOAT:
+			continue
+		var number: float = float(value)
+		if is_finite(number):
+			_mods[key] = maxf(number, 0.0)
+
+
+func _apply_mods() -> void:
+	_cargo.add_damping_bonus(float(_mods.get(MOD_CARGO_DAMPING, 0.0)))
+	_robot.add_wheel_grip_bonus(float(_mods.get(MOD_WHEEL_GRIP, 0.0)))
 
 
 func _setup_checkpoints() -> void:
@@ -324,6 +364,7 @@ func state() -> Dictionary:
 		"broken": _broken,
 		"finished": _finished,
 		"elapsed": _elapsed,
+		"mods": _mods.duplicate(),
 	}
 
 

@@ -3,11 +3,13 @@ extends Node
 ## Oyun akışının tek sahibi: faz, sahne yönlendirme, tur sonucu, geri tuşu.
 ## Sahneler `change_scene_to_file` çağırmaz; hepsi buradan geçer.
 
-enum Phase { BOOT, MENU, GAME, RESULT }
+enum Phase { BOOT, MENU, GARAGE, GAME, RESULT }
 
 const SCENES: Dictionary = {
 	&"boot": "res://scenes/Boot.tscn",
 	&"menu": "res://scenes/Menu.tscn",
+	&"order": "res://scenes/OrderSelect.tscn",
+	&"garage": "res://scenes/Garage.tscn",
 	&"game": "res://scenes/Game.tscn",
 	&"result": "res://scenes/Result.tscn",
 }
@@ -16,10 +18,12 @@ signal phase_changed(from: Phase, to: Phase)
 signal back_requested()
 
 var phase: Phase = Phase.BOOT
+## Probe/test için: false iken sahne değişmez ve hata basılmaz.
+var navigation_enabled: bool = true
 ## Son turun sonucu; Result sahnesi buradan okur.
 var last_result: Dictionary = {}
-## Seçili kargo profili (`data/cargo.json` anahtarı). Sipariş ekranı Faz 4'te doldurur;
-## bu fazda varsayılan kargo ile oynanır.
+## Seçili kargo profili (`data/cargo.json` anahtarı); sipariş ekranı doldurur.
+## Varsayılan, sipariş seçilmeden açılan testler içindir.
 var selected_cargo_id: String = "pencil_battery"
 ## Seviye kimliği `scenes/levels/<id>.tscn` yoluna karşılık gelir.
 var selected_level_id: String = "desk_01"
@@ -43,6 +47,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func goto_scene(scene_key: StringName) -> void:
+	# Probe kendi sahnesini kurarken akışın sahneyi değiştirmesini engeller.
+	if not navigation_enabled:
+		return
 	var path: Variant = SCENES.get(scene_key)
 	if not (path is String):
 		push_error("GameManager: bilinmeyen sahne '%s'" % scene_key)
