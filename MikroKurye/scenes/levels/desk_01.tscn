@@ -1,4 +1,4 @@
-[gd_scene load_steps=40 format=3]
+[gd_scene load_steps=62 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/level_root.gd" id="level"]
 [ext_resource type="Script" path="res://scripts/gameplay/hazards/keyboard_key.gd" id="key"]
@@ -18,12 +18,14 @@
 [ext_resource type="Material" path="res://assets/materials/fan_blade.tres" id="fan_blade"]
 [ext_resource type="Material" path="res://assets/materials/golden.tres" id="golden"]
 [ext_resource type="Script" path="res://scripts/gameplay/style_a.gd" id="style_a"]
+[ext_resource type="Shader" path="res://assets/shaders/toon.gdshader" id="toon_shader"]
+[ext_resource type="Shader" path="res://assets/shaders/light_beam.gdshader" id="beam_shader"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
-sky_top_color = Color(0.749, 0.8902, 0.949, 1)
-sky_horizon_color = Color(1, 0.9098, 0.7804, 1)
-ground_bottom_color = Color(1, 0.9098, 0.7804, 1)
-ground_horizon_color = Color(1, 0.9098, 0.7804, 1)
+sky_top_color = Color(0.9569, 0.8941, 0.8078, 1)
+sky_horizon_color = Color(1, 0.9255, 0.8353, 1)
+ground_bottom_color = Color(0.9294, 0.851, 0.7529, 1)
+ground_horizon_color = Color(1, 0.9255, 0.8353, 1)
 
 [sub_resource type="Sky" id="Sky"]
 sky_material = SubResource("SkyMaterial")
@@ -32,12 +34,20 @@ sky_material = SubResource("SkyMaterial")
 background_mode = 2
 sky = SubResource("Sky")
 ambient_light_source = 2
-ambient_light_color = Color(0.83, 0.9, 0.95, 1)
-ambient_light_energy = 0.3
+ambient_light_color = Color(0.86, 0.86, 0.8, 1)
+ambient_light_energy = 0.35
 tonemap_mode = 0
 glow_enabled = true
 glow_intensity = 0.05
 glow_hdr_threshold = 1.1
+fog_enabled = true
+fog_mode = 1
+fog_depth_begin = 45.0
+fog_depth_end = 130.0
+fog_depth_curve = 1.2
+fog_light_color = Color(1, 0.9, 0.76, 1)
+fog_light_energy = 0.55
+fog_sky_affect = 0.4
 
 [sub_resource type="BoxShape3D" id="DeskShape"]
 size = Vector3(10, 0.5, 77)
@@ -103,6 +113,106 @@ size = Vector3(1.1, 1.1, 1.1)
 [sub_resource type="BoxMesh" id="GoldMesh"]
 material = ExtResource("golden")
 size = Vector3(0.9, 0.9, 0.9)
+
+[sub_resource type="ShaderMaterial" id="SilhouetteDark"]
+shader = ExtResource("toon_shader")
+shader_parameter/base_color = Color(0.3, 0.27, 0.28, 1)
+
+[sub_resource type="ShaderMaterial" id="SilhouetteWarm"]
+shader = ExtResource("toon_shader")
+shader_parameter/base_color = Color(0.5, 0.43, 0.36, 1)
+
+[sub_resource type="ShaderMaterial" id="SilhouetteAmber"]
+shader = ExtResource("toon_shader")
+shader_parameter/base_color = Color(0.85, 0.62, 0.3, 1)
+
+[sub_resource type="ShaderMaterial" id="SilhouetteGreen"]
+shader = ExtResource("toon_shader")
+shader_parameter/base_color = Color(0.36, 0.5, 0.32, 1)
+
+[sub_resource type="ShaderMaterial" id="SilhouetteTerra"]
+shader = ExtResource("toon_shader")
+shader_parameter/base_color = Color(0.6, 0.38, 0.27, 1)
+
+[sub_resource type="StandardMaterial3D" id="DustMat"]
+shading_mode = 0
+transparency = 1
+blend_mode = 1
+cull_mode = 2
+albedo_color = Color(1, 0.9, 0.7, 0.5)
+
+[sub_resource type="ShaderMaterial" id="BeamMat"]
+shader = ExtResource("beam_shader")
+shader_parameter/beam_color = Color(1, 0.88, 0.66, 0.9)
+shader_parameter/edge_fade = 0.38
+shader_parameter/top_brightness = 1.0
+
+[sub_resource type="BoxMesh" id="VoidMesh"]
+material = SubResource("SilhouetteDark")
+size = Vector3(90, 0.2, 130)
+
+[sub_resource type="BoxMesh" id="EdgeShadowMesh"]
+material = SubResource("SilhouetteDark")
+size = Vector3(10.6, 0.02, 77.6)
+
+[sub_resource type="BoxMesh" id="MonitorScreenMesh"]
+material = SubResource("SilhouetteDark")
+size = Vector3(26, 16, 0.6)
+
+[sub_resource type="BoxMesh" id="MonitorStandMesh"]
+material = SubResource("SilhouetteDark")
+size = Vector3(7, 5, 7)
+
+[sub_resource type="CylinderMesh" id="LampBaseMesh"]
+material = SubResource("SilhouetteWarm")
+top_radius = 2.6
+bottom_radius = 2.6
+height = 1.2
+radial_segments = 10
+
+[sub_resource type="BoxMesh" id="LampStemMesh"]
+material = SubResource("SilhouetteWarm")
+size = Vector3(0.6, 9, 0.6)
+
+[sub_resource type="CylinderMesh" id="LampShadeMesh"]
+material = SubResource("SilhouetteAmber")
+top_radius = 0.8
+bottom_radius = 3.4
+height = 3.4
+radial_segments = 12
+
+[sub_resource type="CylinderMesh" id="PlantPotMesh"]
+material = SubResource("SilhouetteTerra")
+top_radius = 2.4
+bottom_radius = 1.8
+height = 3.2
+radial_segments = 12
+
+[sub_resource type="SphereMesh" id="PlantFoliageMesh"]
+material = SubResource("SilhouetteGreen")
+radius = 4.4
+height = 8.8
+radial_segments = 8
+rings = 5
+
+[sub_resource type="BoxMesh" id="BookMeshWarm"]
+material = SubResource("SilhouetteWarm")
+size = Vector3(7, 1.3, 4.6)
+
+[sub_resource type="BoxMesh" id="BookMeshTerra"]
+material = SubResource("SilhouetteTerra")
+size = Vector3(6.4, 1.3, 4.2)
+
+[sub_resource type="QuadMesh" id="BeamMesh"]
+material = SubResource("BeamMat")
+size = Vector2(18, 30)
+
+[sub_resource type="SphereMesh" id="DustMesh"]
+material = SubResource("DustMat")
+radius = 0.16
+height = 0.32
+radial_segments = 4
+rings = 2
 
 [node name="Desk01" type="Node3D"]
 script = ExtResource("level")
@@ -403,6 +513,93 @@ mesh = SubResource("GoldMesh")
 light_color = Color(1, 0.78, 0.2, 1)
 light_energy = 1.6
 omni_range = 3.5
+
+[node name="VoidFloor" type="MeshInstance3D" parent="."]
+position = Vector3(0, -6, -35)
+mesh = SubResource("VoidMesh")
+
+[node name="EdgeShadow" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.02, -36.5)
+mesh = SubResource("EdgeShadowMesh")
+
+[node name="Monitor" type="Node3D" parent="."]
+position = Vector3(10, -6, -95)
+
+[node name="Screen" type="MeshInstance3D" parent="Monitor"]
+position = Vector3(0, 15, 0)
+mesh = SubResource("MonitorScreenMesh")
+
+[node name="Stand" type="MeshInstance3D" parent="Monitor"]
+position = Vector3(0, 2, -4)
+mesh = SubResource("MonitorStandMesh")
+
+[node name="Lamp" type="Node3D" parent="."]
+position = Vector3(-16, -6, -82)
+
+[node name="Base" type="MeshInstance3D" parent="Lamp"]
+position = Vector3(0, 0.6, 0)
+mesh = SubResource("LampBaseMesh")
+
+[node name="Stem" type="MeshInstance3D" parent="Lamp"]
+position = Vector3(0, 5, 0)
+mesh = SubResource("LampStemMesh")
+
+[node name="Shade" type="MeshInstance3D" parent="Lamp"]
+position = Vector3(0, 10.5, 0)
+mesh = SubResource("LampShadeMesh")
+
+[node name="Plant" type="Node3D" parent="."]
+position = Vector3(22, -6, -70)
+
+[node name="Pot" type="MeshInstance3D" parent="Plant"]
+position = Vector3(0, 1.6, 0)
+mesh = SubResource("PlantPotMesh")
+
+[node name="FoliageA" type="MeshInstance3D" parent="Plant"]
+position = Vector3(0, 4.5, 0)
+mesh = SubResource("PlantFoliageMesh")
+
+[node name="FoliageB" type="MeshInstance3D" parent="Plant"]
+position = Vector3(1.4, 3.4, 0.8)
+scale = Vector3(0.7, 0.7, 0.7)
+mesh = SubResource("PlantFoliageMesh")
+
+[node name="BookStack" type="Node3D" parent="."]
+position = Vector3(-12, -6, -90)
+
+[node name="BookA" type="MeshInstance3D" parent="BookStack"]
+position = Vector3(0, 0.65, 0)
+mesh = SubResource("BookMeshWarm")
+
+[node name="BookB" type="MeshInstance3D" parent="BookStack"]
+position = Vector3(0.3, 1.95, 0.2)
+mesh = SubResource("BookMeshTerra")
+
+[node name="BookC" type="MeshInstance3D" parent="BookStack"]
+position = Vector3(-0.2, 3.2, -0.1)
+mesh = SubResource("BookMeshWarm")
+
+[node name="LightBeam" type="MeshInstance3D" parent="."]
+position = Vector3(1.5, 6, -18)
+rotation_degrees = Vector3(0, -15, -12)
+mesh = SubResource("BeamMesh")
+
+[node name="Dust" type="CPUParticles3D" parent="."]
+position = Vector3(0, 3, -30)
+amount = 30
+lifetime = 6.0
+lifetime_randomness = 0.4
+preprocess = 3.0
+emission_shape = 3
+emission_box_extents = Vector3(9, 5, 26)
+direction = Vector3(0.05, 0.015, -0.03)
+spread = 30.0
+gravity = Vector3(0, -0.02, 0)
+initial_velocity_min = 0.1
+initial_velocity_max = 0.4
+scale_amount_min = 0.5
+scale_amount_max = 1.4
+mesh = SubResource("DustMesh")
 
 [node name="StyleA" type="Node" parent="."]
 script = ExtResource("style_a")
