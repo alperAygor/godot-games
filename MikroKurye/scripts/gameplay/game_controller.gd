@@ -227,6 +227,23 @@ func _finish_run(delivered: bool) -> void:
 		manager.call("finish_run", result)
 
 
+## Bataryayı hedef doluluğa getirir (0..1 kırpılır). Reklamlı hızlı şarj ve test
+## içindir: HUD ile robotun hız faktörü aynı karede yeni seviyeyi gösterir.
+## BatteryModel'de seviye setter'ı yok; doluya çekip fazlasını boşaltmak
+## `refill_full()` + `drain()` sözleşmesini kullanır (core'a dokunmadan).
+func set_battery_level(level: float) -> void:
+	if _battery == null:
+		return
+	# NaN tüm karşılaştırmalardan sessizce geçer ve clampf onu kırpmaz; bu yüzden
+	# açıkça 0'a düşürülür. Negatif değerleri clampf zaten 0'a çeker.
+	var target: float = 0.0 if is_nan(level) else clampf(level, 0.0, 1.0)
+	_battery.refill_full()
+	_battery.drain(_battery_capacity * (1.0 - target))
+	if _robot != null:
+		_robot.set_speed_factor(_battery.speed_factor())
+	_refresh_hud()
+
+
 func state() -> Dictionary:
 	return {
 		"cargo_id": _cargo_id,
