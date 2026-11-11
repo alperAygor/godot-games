@@ -349,6 +349,21 @@ func request_recharge() -> void   # BATTERY_RECHARGE reklamı; başarıyla biter
 - **TRY_BEFORE_BUY:** Garage'da seviyesi maksimum olmayan her kategori için `TryButton_<category>`: `show_rewarded(TRY_BEFORE_BUY)` başarılıysa `set_trial(category)`.
 - **GOLDEN_BOX:** seviyede (`desk_01.tscn`) rotadan ~4–5 m uzakta `GoldenBox` (Area3D, grup `golden_box`, altın renkli parlayan kutu); robot/sepet değerse `state().golden_box_collected=true`. Başarılı teslimde `result["golden_box"]=true`. Result'ta `GoldenBoxButton` (yalnız `golden_box` ise ve `can_offer`): reklam başarılıysa `SaveService.grant(balance.game.golden_box_gold (varsayılan 150), balance.game.golden_box_scrap (varsayılan 10))`, düğme gizlenir. `restart()` kutuyu yeniden açar.
 
+### 5.6 Cila sözleşmesi (Faz 6; `tools/polish_probe.gd` denetler): Şok Jeli, ses, ayarlar, rehber
+
+**Şok Emici Jel (MVP modülü):** `data/upgrades.json`'a kategori `shock_gel` eklenir: `{"max_level": 1, "levels": [{"cost": {"gold": 400, "scrap": 20}, "mods": {"jelly_charges": 1}}]}`.
+`GameController` başlangıçta `mods.jelly_charges`'ı (float → tamsayı, GOTCHAS #20) `CargoHealth.new(profile, jelly_charges)`'a verir; `state()` yeni anahtar `jelly_left` (int). Garage'da `UpgradeButton_shock_gel` ve `TryButton_shock_gel` (diğer kategorilerle aynı mantık, kategori listesi `upgrades.json`'dan dinamik).
+Davranış (core'da hazır): kargoyu ilk KIRACAK vuruş jel tarafından emilir (hasar 0.95, kırık değil, `jelly_left` 1→0); sonraki kırıcı vuruş kırar (revive teklifi vb. normal akış).
+
+**Ses:** `AudioService`'e `func play_count(sound_name: String) -> int` (başarıyla "çalınan" her `play` için artar; headless'ta sesli çalma yok ama SAYAÇ artar), `func set_muted(muted: bool)`, `func is_muted() -> bool` (muted iken `play` hiçbir şey yapmaz ve sayaç ARTMAZ).
+`data/sounds.json` anahtarları ve gerçek `assets/audio/sfx/<ad>.wav` dosyaları: `ui_tap`, `success` (var) + `impact_light`, `impact_heavy`, `key_press`, `delivery`, `break_sound`, `purchase`, `revive`, `boost`. Dosyalar `tools/make_sfx.py --offline` ile (YEDEK SENTEZ; ücretli ElevenLabs API'si ÇAĞRILMAZ) `data/sfx_recipes.json` tariflerinden üretilir.
+Olay → ses: `cargo.impact_reported(impulse)`: impulse ≥ `balance.audio.heavy_impulse` (varsayılan 8.0) → `impact_heavy`, ≥ `balance.audio.light_impulse` (varsayılan 2.0) → `impact_light`; klavye tuşu basma başlangıcı (`KeyboardKey` yeni sinyal `pressed()`) → `key_press`; teslimat başarılı → `delivery`; kırılma → `break_sound`; `SaveService.purchase` başarılı → `purchase`; revive başarılı → `revive`; hızlı şarj başarılı → `boost`; her `Button.pressed` (Menu/OrderSelect/Garage/Result/Settings) → `ui_tap` (`scripts/ui/ui_sfx.gd` yardımcı sınıfı ile bağlanır, kodu tek yerde tut).
+Sıklık sınırı: aynı ses 80 ms içinde iki kez çalınmaz (çarpma sinyali sağanağı); `balance.audio.min_gap_ms`.
+
+**Ayarlar:** `ProfileData` (core) `settings` kazanır: `func settings() -> Dictionary` (KOPYA; varsayılan `{"sound_on": true, "tutorial_done": false}`), `func set_setting(key: String, value: bool) -> void` (yalnız bilinen anahtarlar), `to_dict/from_dict` içinde `"settings"` (tolerans kuralları aynı; eksik anahtar varsayılan). `SaveService.setting(key: String) -> bool` ve `set_setting(key: String, value: bool)` (kaydeder); açılışta `AudioService.set_muted(not sound_on)`.
+`scenes/Settings.tscn`: `SoundToggle` (CheckButton, `button_pressed = sound_on`; değişince `set_setting("sound_on", ...)` + `AudioService.set_muted`), `BackButton`. `Menu.tscn`'e `SettingsButton` (→ `GameManager` sahne anahtarı `settings`).
+**Rehber:** `Menu.tscn` `TutorialPanel` (yalnız `tutorial_done == false` iken görünür), 3 sayfa: `TutorialNextButton` ilerletir, son sayfada basınca panel kapanır ve `tutorial_done = true` kaydedilir; `TutorialSkipButton` da kapatır ve işaretler. Metinler `scripts/ui/strings.gd`'de (kısa: sürüş, kargo sallanması/hasar, garaj).
+
 ## 6. UI
 
 `HUD` (kargo sağlığı çubuğu, batarya, modül düğmesi), `OrderSelect` (3 kargo kartı), `Garage` (Faz 4), `Result` (mevcut genişletilir). Sunum katmanı yalnızca gösterir; hesap `core`'dadır.
