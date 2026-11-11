@@ -57,5 +57,27 @@
     "speed_drain": 0.02,
     "empty_speed_factor": 0.35,
     "boost_factor": 1.25
+  },
+  "hazards": {
+    "key_period_seconds": 4.0,
+    "key_warn_seconds": 0.65,
+    "key_press_depth": 0.28,
+    "key_press_seconds": 0.12,
+    "key_hold_seconds": 0.4,
+    "key_release_seconds": 0.25,
+    "key_idle_color": "4d9de0",
+    "key_warn_color": "f7b801",
+    "key_pressed_color": "ff4d4d",
+    "fan_accel": 4.0,
+    "fan_cycle_seconds": 4.0,
+    "fan_blow_fraction": 0.55,
+    "pencil_period_seconds": 5.0,
+    "pencil_speed": 1.3,
+    "pencil_travel_distance": 2.0,
+    "pencil_radius": 0.265,
+    "pencil_mass": 2.0,
+    "pencil_lane_min_x": 2.1,
+    "pencil_lane_max_x": 4.4,
+    "pencil_center_clearance": 1.5
   }
 }

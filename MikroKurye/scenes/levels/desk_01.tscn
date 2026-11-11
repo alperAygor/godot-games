@@ -1,0 +1,384 @@
+[gd_scene load_steps=33 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/level_root.gd" id="level"]
+[ext_resource type="Script" path="res://scripts/gameplay/hazards/keyboard_key.gd" id="key"]
+[ext_resource type="Script" path="res://scripts/gameplay/hazards/fan_wind.gd" id="fan"]
+[ext_resource type="Script" path="res://scripts/gameplay/hazards/rolling_pencil.gd" id="pencil_script"]
+[ext_resource type="PackedScene" path="res://assets/models/prop_keyboard_row.glb" id="keyboard_row"]
+[ext_resource type="PackedScene" path="res://assets/models/prop_mug.glb" id="mug"]
+[ext_resource type="PackedScene" path="res://assets/models/prop_pencil.glb" id="pencil"]
+[ext_resource type="PackedScene" path="res://assets/models/prop_ruler.glb" id="ruler"]
+[ext_resource type="PackedScene" path="res://assets/models/prop_book.glb" id="book"]
+
+[sub_resource type="StandardMaterial3D" id="Wood"]
+albedo_color = Color(0.851, 0.627, 0.4, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="Edge"]
+albedo_color = Color(0.69, 0.478, 0.271, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="Yellow"]
+albedo_color = Color(0.969, 0.722, 0.004, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="Blue"]
+albedo_color = Color(0.302, 0.616, 0.878, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="Green"]
+albedo_color = Color(0.482, 0.784, 0.424, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="Dark"]
+albedo_color = Color(0.169, 0.184, 0.227, 1)
+roughness = 1.0
+
+[sub_resource type="Environment" id="Room"]
+background_mode = 1
+background_color = Color(1, 0.91, 0.78, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.75, 0.89, 0.95, 1)
+ambient_light_energy = 0.85
+tonemap_mode = 0
+
+[sub_resource type="BoxShape3D" id="DeskShape"]
+size = Vector3(10, 0.5, 77)
+
+[sub_resource type="BoxShape3D" id="KeyShape"]
+size = Vector3(2.4, 0.54, 0.9)
+
+[sub_resource type="BoxShape3D" id="RampShape"]
+size = Vector3(1.6, 0.1, 4)
+
+[sub_resource type="BoxShape3D" id="BookShape"]
+size = Vector3(2.45, 0.42, 3.5)
+
+[sub_resource type="BoxShape3D" id="FanShape"]
+size = Vector3(2.8, 3, 10)
+
+[sub_resource type="BoxShape3D" id="DeliveryShape"]
+size = Vector3(3, 3, 3)
+
+[sub_resource type="CylinderShape3D" id="MugShape"]
+radius = 1.0
+height = 2.4
+
+[sub_resource type="CylinderShape3D" id="PencilShape"]
+radius = 0.265
+height = 8.0
+
+[sub_resource type="BoxMesh" id="DeskMesh"]
+material = SubResource("Wood")
+size = Vector3(10, 0.5, 77)
+
+[sub_resource type="BoxMesh" id="ApronMesh"]
+material = SubResource("Edge")
+size = Vector3(10, 0.35, 77)
+
+[sub_resource type="BoxMesh" id="EdgeStripeMesh"]
+material = SubResource("Yellow")
+size = Vector3(0.1, 0.012, 76)
+
+[sub_resource type="BoxMesh" id="RouteMesh"]
+material = SubResource("Blue")
+size = Vector3(0.045, 0.008, 70)
+
+[sub_resource type="BoxMesh" id="PadMesh"]
+material = SubResource("Green")
+size = Vector3(3, 0.012, 3)
+
+[sub_resource type="BoxMesh" id="CheckpointMesh"]
+material = SubResource("Blue")
+size = Vector3(3, 0.01, 0.15)
+
+[sub_resource type="BoxMesh" id="FanBaseMesh"]
+material = SubResource("Dark")
+size = Vector3(0.25, 2.5, 2.5)
+
+[sub_resource type="BoxMesh" id="FanBladeMesh"]
+material = SubResource("Blue")
+size = Vector3(0.12, 0.3, 2)
+
+[node name="Desk01" type="Node3D"]
+script = ExtResource("level")
+level_id = "desk_01"
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Room")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-55, -25, 0)
+light_color = Color(1, 0.93, 0.82, 1)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="Desk" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.25, -36.5)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Desk"]
+shape = SubResource("DeskShape")
+
+[node name="Surface" type="MeshInstance3D" parent="Desk"]
+mesh = SubResource("DeskMesh")
+
+[node name="Apron" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.65, -36.5)
+mesh = SubResource("ApronMesh")
+
+[node name="EdgeLeft" type="MeshInstance3D" parent="."]
+position = Vector3(-4.85, 0.008, -36.5)
+mesh = SubResource("EdgeStripeMesh")
+
+[node name="EdgeRight" type="MeshInstance3D" parent="."]
+position = Vector3(4.85, 0.008, -36.5)
+mesh = SubResource("EdgeStripeMesh")
+
+[node name="RouteLeft" type="MeshInstance3D" parent="."]
+position = Vector3(-1.5, 0.006, -36)
+mesh = SubResource("RouteMesh")
+
+[node name="RouteRight" type="MeshInstance3D" parent="."]
+position = Vector3(1.5, 0.006, -36)
+mesh = SubResource("RouteMesh")
+
+[node name="RobotStart" type="Marker3D" parent="."]
+position = Vector3(0, 0.58, 0)
+
+[node name="Checkpoint_1" type="Marker3D" parent="."]
+position = Vector3(0, 0.58, -20)
+
+[node name="CheckpointStripe1" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.007, -20)
+mesh = SubResource("CheckpointMesh")
+
+[node name="Checkpoint_2" type="Marker3D" parent="."]
+position = Vector3(0, 0.58, -42)
+
+[node name="CheckpointStripe2" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.007, -42)
+mesh = SubResource("CheckpointMesh")
+
+[node name="Checkpoint_3" type="Marker3D" parent="."]
+position = Vector3(0, 0.58, -58)
+
+[node name="CheckpointStripe3" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.007, -58)
+mesh = SubResource("CheckpointMesh")
+
+[node name="DeliveryZone" type="Area3D" parent="."]
+position = Vector3(0, 1, -72)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DeliveryZone"]
+shape = SubResource("DeliveryShape")
+
+[node name="Pad" type="MeshInstance3D" parent="DeliveryZone"]
+position = Vector3(0, -0.99, 0)
+mesh = SubResource("PadMesh")
+
+[node name="RulerRamp" type="StaticBody3D" parent="."]
+position = Vector3(3.2, 0.57, -12)
+rotation_degrees = Vector3(18, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RulerRamp"]
+position = Vector3(0, 0.05, 0)
+shape = SubResource("RampShape")
+
+[node name="Visual" parent="RulerRamp" instance=ExtResource("ruler")]
+scale = Vector3(1.333333, 1, 0.333333)
+
+[node name="KeyRow1Left" type="AnimatableBody3D" parent="."]
+position = Vector3(-3.3, 0.06, -18)
+script = ExtResource("key")
+phase_offset_seconds = 0.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="KeyRow1Left"]
+position = Vector3(0, 0.27, 0)
+shape = SubResource("KeyShape")
+
+[node name="Visual" parent="KeyRow1Left" instance=ExtResource("keyboard_row")]
+
+
+[node name="KeyRow1Right" type="AnimatableBody3D" parent="."]
+position = Vector3(3.3, 0.06, -18)
+script = ExtResource("key")
+phase_offset_seconds = 0.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="KeyRow1Right"]
+position = Vector3(0, 0.27, 0)
+shape = SubResource("KeyShape")
+
+[node name="Visual" parent="KeyRow1Right" instance=ExtResource("keyboard_row")]
+
+
+[node name="KeyRow2Left" type="AnimatableBody3D" parent="."]
+position = Vector3(-3.3, 0.06, -22)
+script = ExtResource("key")
+phase_offset_seconds = 0.8
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="KeyRow2Left"]
+position = Vector3(0, 0.27, 0)
+shape = SubResource("KeyShape")
+
+[node name="Visual" parent="KeyRow2Left" instance=ExtResource("keyboard_row")]
+
+
+[node name="KeyRow2Right" type="AnimatableBody3D" parent="."]
+position = Vector3(3.3, 0.06, -22)
+script = ExtResource("key")
+phase_offset_seconds = 0.8
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="KeyRow2Right"]
+position = Vector3(0, 0.27, 0)
+shape = SubResource("KeyShape")
+
+[node name="Visual" parent="KeyRow2Right" instance=ExtResource("keyboard_row")]
+
+
+[node name="KeyRow3Left" type="AnimatableBody3D" parent="."]
+position = Vector3(-3.3, 0.06, -26)
+script = ExtResource("key")
+phase_offset_seconds = 1.6
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="KeyRow3Left"]
+position = Vector3(0, 0.27, 0)
+shape = SubResource("KeyShape")
+
+[node name="Visual" parent="KeyRow3Left" instance=ExtResource("keyboard_row")]
+
+
+[node name="KeyRow3Right" type="AnimatableBody3D" parent="."]
+position = Vector3(3.3, 0.06, -26)
+script = ExtResource("key")
+phase_offset_seconds = 1.6
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="KeyRow3Right"]
+position = Vector3(0, 0.27, 0)
+shape = SubResource("KeyShape")
+
+[node name="Visual" parent="KeyRow3Right" instance=ExtResource("keyboard_row")]
+
+
+[node name="KeyRow4Left" type="AnimatableBody3D" parent="."]
+position = Vector3(-3.3, 0.06, -30)
+script = ExtResource("key")
+phase_offset_seconds = 2.4000000000000004
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="KeyRow4Left"]
+position = Vector3(0, 0.27, 0)
+shape = SubResource("KeyShape")
+
+[node name="Visual" parent="KeyRow4Left" instance=ExtResource("keyboard_row")]
+
+
+[node name="KeyRow4Right" type="AnimatableBody3D" parent="."]
+position = Vector3(3.3, 0.06, -30)
+script = ExtResource("key")
+phase_offset_seconds = 2.4000000000000004
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="KeyRow4Right"]
+position = Vector3(0, 0.27, 0)
+shape = SubResource("KeyShape")
+
+[node name="Visual" parent="KeyRow4Right" instance=ExtResource("keyboard_row")]
+
+
+[node name="FanLeft" type="Area3D" parent="."]
+position = Vector3(-3.3, 1.5, -45)
+script = ExtResource("fan")
+direction = Vector3(-1, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="FanLeft"]
+shape = SubResource("FanShape")
+
+[node name="Housing" type="MeshInstance3D" parent="FanLeft"]
+position = Vector3(-1.45, -0.25, 0)
+mesh = SubResource("FanBaseMesh")
+
+[node name="Blade0" type="MeshInstance3D" parent="FanLeft"]
+position = Vector3(-1.3, -0.25, 0)
+rotation_degrees = Vector3(0, 0, 0)
+mesh = SubResource("FanBladeMesh")
+
+[node name="Blade1" type="MeshInstance3D" parent="FanLeft"]
+position = Vector3(-1.3, -0.25, 0)
+rotation_degrees = Vector3(60, 0, 0)
+mesh = SubResource("FanBladeMesh")
+
+[node name="Blade2" type="MeshInstance3D" parent="FanLeft"]
+position = Vector3(-1.3, -0.25, 0)
+rotation_degrees = Vector3(120, 0, 0)
+mesh = SubResource("FanBladeMesh")
+
+[node name="FanRight" type="Area3D" parent="."]
+position = Vector3(3.3, 1.5, -45)
+script = ExtResource("fan")
+direction = Vector3(1, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="FanRight"]
+shape = SubResource("FanShape")
+
+[node name="Housing" type="MeshInstance3D" parent="FanRight"]
+position = Vector3(1.45, -0.25, 0)
+mesh = SubResource("FanBaseMesh")
+
+[node name="Blade0" type="MeshInstance3D" parent="FanRight"]
+position = Vector3(1.3, -0.25, 0)
+rotation_degrees = Vector3(0, 0, 0)
+mesh = SubResource("FanBladeMesh")
+
+[node name="Blade1" type="MeshInstance3D" parent="FanRight"]
+position = Vector3(1.3, -0.25, 0)
+rotation_degrees = Vector3(60, 0, 0)
+mesh = SubResource("FanBladeMesh")
+
+[node name="Blade2" type="MeshInstance3D" parent="FanRight"]
+position = Vector3(1.3, -0.25, 0)
+rotation_degrees = Vector3(120, 0, 0)
+mesh = SubResource("FanBladeMesh")
+
+[node name="Mug" type="StaticBody3D" parent="."]
+position = Vector3(3.3, 0, -54)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Mug"]
+position = Vector3(0, 1.2, 0)
+shape = SubResource("MugShape")
+
+[node name="Visual" parent="Mug" instance=ExtResource("mug")]
+
+
+[node name="Book" type="StaticBody3D" parent="."]
+position = Vector3(-3.5, 0, -66)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Book"]
+position = Vector3(0, 0.21, 0)
+shape = SubResource("BookShape")
+
+[node name="Visual" parent="Book" instance=ExtResource("book")]
+scale = Vector3(0.7, 0.7, 0.7)
+
+[node name="RollingPencil1" type="RigidBody3D" parent="."]
+position = Vector3(4.3, 0.28, -59)
+continuous_cd = true
+script = ExtResource("pencil_script")
+travel_direction = Vector3(-1, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RollingPencil1"]
+rotation_degrees = Vector3(90, 0, 0)
+shape = SubResource("PencilShape")
+
+[node name="Visual" parent="RollingPencil1" instance=ExtResource("pencil")]
+position = Vector3(0, -0.265, 0)
+
+[node name="RollingPencil2" type="RigidBody3D" parent="."]
+position = Vector3(-4.3, 0.28, -59)
+continuous_cd = true
+script = ExtResource("pencil_script")
+travel_direction = Vector3(1, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RollingPencil2"]
+rotation_degrees = Vector3(90, 0, 0)
+shape = SubResource("PencilShape")
+
+[node name="Visual" parent="RollingPencil2" instance=ExtResource("pencil")]
+position = Vector3(0, -0.265, 0)

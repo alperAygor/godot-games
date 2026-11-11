@@ -21,6 +21,8 @@ var last_result: Dictionary = {}
 ## Seçili kargo profili (`data/cargo.json` anahtarı). Sipariş ekranı Faz 4'te doldurur;
 ## bu fazda varsayılan kargo ile oynanır.
 var selected_cargo_id: String = "pencil_battery"
+## Seviye kimliği `scenes/levels/<id>.tscn` yoluna karşılık gelir.
+var selected_level_id: String = "desk_01"
 
 
 func _ready() -> void:
