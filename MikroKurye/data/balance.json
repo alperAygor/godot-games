@@ -1,1 +1,35 @@
-{ "base_fee": 100 }
+{
+  "base_fee": 100,
+  "physics": {
+    "max_speed": 8.0,
+    "accel": 12.0,
+    "brake": 4.0,
+    "turn_rate": 1.8,
+    "robot_mass": 45.0,
+    "gravity_scale": 1.0,
+    "suspension_rest": 0.38,
+    "suspension_stiffness": 2400.0,
+    "suspension_damping": 200.0,
+    "suspension_force_limit": 1000.0,
+    "wheel_radius": 0.18,
+    "wheel_grip": 7.0,
+    "center_of_mass_y": -0.14,
+    "linear_damp": 0.05,
+    "angular_damp": 0.3,
+    "upright_torque": 14.0,
+    "upright_damping": 4.0,
+    "air_balance_torque": 5.0,
+    "steering_response": 6.0,
+    "speed_response": 3.0,
+    "input_response": 8.0,
+    "steer_speed_factor": 0.65,
+    "joystick_radius": 130.0,
+    "joystick_deadzone": 0.12,
+    "camera_distance": 6.0,
+    "camera_height": 3.5,
+    "camera_look_height": 0.7,
+    "camera_follow_speed": 8.0,
+    "camera_look_speed": 10.0,
+    "camera_fov": 65.0
+  }
+}
