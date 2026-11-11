@@ -173,6 +173,47 @@ Fizik sabitleri (`data/balance.json`, `physics.*`): `gravity_scale`, `robot_mass
 
 Kurallar: sabit adım 60 Hz; `_physics_process`'te allocation yok (`Array`/`Dictionary`/`PackedVector3Array` yeniden kullanılır); çarpışma şekilleri basit (kutu/kapsül/küre); raycast sayısı robot başına 4.
 
+### 5.1 Fizik prototipi sözleşmesi (Faz 2; `tools/game_probe.gd` bunu denetler)
+
+Bu bölüm bağlayıcıdır; imzalar ve sahne düzeni değişmez. Probe (`tools/game_probe.gd`, KORUMALI) headless çalışır ve sayısal kabul ölçütüdür.
+
+**Sahne:** `res://scenes/Proto.tscn` (kök `Node3D`):
+- Zemin: `StaticBody3D`, üst yüzeyi **y = 0**, −Z yönünde en az 60 m, X'te en az 6 m. Yürüyüş yönü **−Z**.
+- `Marker3D` adı `RampStart`: zeminde, rampadan ~8 m önce; **−Z'ye bakar**. Rampanın ardında en az 15 m düz zemin (iniş alanı). Rampa tırmanışı ~15–25°, yüksekliği 0.4–1.0 m.
+- `Marker3D` adı `RobotStart`: robotun başlangıcı (zeminin biraz üstü, −Z'ye bakar).
+- Takip kamerası: `Camera3D` (arkadan-yukarıdan, robotu izler); kök sahnede `CameraRig` düğümü.
+- Dış ortam: sahne yalnızca basit düz renkli `StandardMaterial3D` kullanır (low-poly stili).
+
+**Robot** — düğüm grubu `robot`, `class_name RobotController`, `extends RigidBody3D`, `scripts/gameplay/robot_controller.gd`:
+```gdscript
+func set_move_input(v: Vector2) -> void   # x: sol(-1)/sağ(+1) direksiyon, y: geri(-1)/ileri(+1) gaz; uzunluk 1'e kırpılır
+func speed() -> float                      # |düzlemsel hız| (m/s)
+func max_speed() -> float                  # hedeflenen azami hız (m/s), balance.physics.max_speed
+func is_grounded() -> bool                 # en az bir tekerlek zemine değiyor
+```
+4 raycast süspansiyon tekerleği (`SuspensionWheel`); `RigidBody3D` kullanılır, `VehicleBody3D` DEĞİL. Girdi klavye (WASD/oklar) ve dokunma/fare joystick'ten gelir, ikisi de `set_move_input`'a düşer.
+
+**Kargo** (Faz 2.2'den itibaren) — grup `cargo`, `class_name CargoBasket`, `extends RigidBody3D`, `scripts/gameplay/cargo_basket.gd`:
+```gdscript
+func sway_angle_deg() -> float   # sepet "yukarı" ekseni ile robotun "yukarı" ekseni arasındaki açı (derece, >= 0)
+func is_attached() -> bool       # robota bağlı mı (sepet–robot mesafesi/açısı sınır içinde)
+signal impact_reported(impulse: float)
+signal slosh_reported(angular_accel: float, dt: float)
+```
+
+**Parametreler:** `balance.json` → `physics.*` (bkz. §5 sabit listesi). Kod, değeri `get_node_or_null("/root/GameData")` ile okur (probe `-s` modunda çalıştığı için autoload'a **kimlikle** değil yolla eriş); düğüm yoksa koddaki makul varsayılanlar kullanılır.
+
+**Probe aşamaları** (`tools/probe_stage.txt`: `robot` ya da `full`; liderin kararıdır):
+| Aşama | Ölçüt (60 Hz fizik, kare sayıları) |
+|---|---|
+| Kurulum | `Proto.tscn` yüklenir; `robot` grubu var; API metotları var; `RobotStart`/`RampStart` var |
+| Dinlenme | 180 kare girdisiz: `speed() < 0.1`, `0 < robot.y < 1.0`, değerler sonlu |
+| İvmelenme | 180 kare ileri gaz: azami hız ≥ `0.8 * max_speed()`, ≤ `1.3 * max_speed()` |
+| Frenleme | 240 kare girdisiz: son hız < `0.15 * max_speed()` |
+| Dönüş | 120 kare gaz+sağ direksiyon: yaw değişimi ≥ 30° |
+| Rampa | `RampStart`'tan gazla: ≥ 3 ardışık kare havada, sonra tekrar yerde; hız < 40 m/s; y > −2 |
+| (full) Kargo | `cargo` var; dinlenmede `sway < 1.5°`; ivmelenmede tepe `sway ≥ 2°` ve `≤ 60°`; frenlemeden 4 sn sonra `sway < 3°`; tüm testlerde `is_attached()` doğru |
+
 ## 6. UI
 
 `HUD` (kargo sağlığı çubuğu, batarya, modül düğmesi), `OrderSelect` (3 kargo kartı), `Garage` (Faz 4), `Result` (mevcut genişletilir). Sunum katmanı yalnızca gösterir; hesap `core`'dadır.
