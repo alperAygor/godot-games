@@ -46,13 +46,13 @@ Bitti: `verify.sh` yeşil, her sınıfın sınır değeri testleri var, `CHANGEL
 **Kapı:** Bu faz bittiğinde **kullanıcı oynar**; hissi onaylamadan Faz 3'e geçilmez.
 
 - [x] **F2.1** Robot: `RigidBody3D` + 4 raycast süspansiyon, joystick girdisi, hızlanma/dönme eğrisi [Z][F]
-- [ ] **F2.2** Kargo sepeti: sırtta `RigidBody3D` + yaylı 6DOF (ya da yay-sönüm kodu); iki yaklaşımı `game_probe.gd` ile karşılaştır [Z][F]
+- [x] **F2.2** Kargo sepeti: sırtta `RigidBody3D` + yaylı 6DOF (ya da yay-sönüm kodu); iki yaklaşımı `game_probe.gd` ile karşılaştır [Z][F]
 - [x] **F2.3** Kamera: arkadan-yukarıdan takip [O][F]
 - [~] **F2.4** Test haritası: düz masa ve rampa ✅ (Proto.tscn); kenar + düşme sınırı → kontrol noktası bekliyor [O]
 - [ ] **F2.5** `ImpactSensor` + sinyaller → `CargoHealth` → HUD sağlık çubuğu [O]
 - [ ] **F2.6** Havada denge kaydırması [Z][F]
-- [ ] **F2.9** Ters dönme kurtarması: robot >100° eğik 1.5 sn kalırsa kendini doğrult (inceleme bulgusu) [K]
-- [ ] **F2.10** Proto ortam ışığı: `ambient_light_source` uyumsuzluğu, daha parlak/doygun low-poly görünüm (şu an koyu lacivert gökyüzü) [K]
+- [x] **F2.9** Ters dönme kurtarması: robot >100° eğik 1.5 sn kalırsa kendini doğrult (inceleme bulgusu) [K]
+- [x] **F2.10** Proto ortam ışığı: `ambient_light_source` uyumsuzluğu, daha parlak/doygun low-poly görünüm (şu an koyu lacivert gökyüzü) [K]
 - [x] **F2.7** `tools/game_probe.gd`: sabit girdiyle sürüş, sallanma genliği ve hasar eğrisi çıktısı [O]
 - [x] **F2.8** Fizik sabitlerini `data/balance.json`'a taşı ve ayar rehberi yaz [K]
 
