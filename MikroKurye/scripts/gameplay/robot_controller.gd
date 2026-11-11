@@ -1,6 +1,8 @@
 class_name RobotController
 extends RigidBody3D
 
+signal physics_reset()
+
 const DEFAULT_MAX_SPEED: float = 8.0
 const DEFAULT_ACCEL: float = 12.0
 const DEFAULT_BRAKE: float = 4.0
@@ -23,6 +25,8 @@ const DEFAULT_STEERING_RESPONSE: float = 6.0
 const DEFAULT_SPEED_RESPONSE: float = 3.0
 const DEFAULT_INPUT_RESPONSE: float = 8.0
 const DEFAULT_STEER_SPEED_FACTOR: float = 0.65
+const DEFAULT_FLIP_RECOVERY_ANGLE_DEG: float = 100.0
+const DEFAULT_FLIP_RECOVERY_SECONDS: float = 1.5
 const MIN_SPEED: float = 0.001
 
 var _wheels: Array[SuspensionWheel] = []
@@ -40,6 +44,9 @@ var _steering_response: float = DEFAULT_STEERING_RESPONSE
 var _speed_response: float = DEFAULT_SPEED_RESPONSE
 var _input_response: float = DEFAULT_INPUT_RESPONSE
 var _steer_speed_factor: float = DEFAULT_STEER_SPEED_FACTOR
+var _flip_recovery_up_dot: float = cos(deg_to_rad(DEFAULT_FLIP_RECOVERY_ANGLE_DEG))
+var _flip_recovery_seconds: float = DEFAULT_FLIP_RECOVERY_SECONDS
+var _flipped_seconds: float = 0.0
 var _parameters: Dictionary[String, Variant] = {}
 
 
@@ -61,6 +68,9 @@ func _ready() -> void:
 	_speed_response = _parameter("speed_response", DEFAULT_SPEED_RESPONSE)
 	_input_response = _parameter("input_response", DEFAULT_INPUT_RESPONSE)
 	_steer_speed_factor = _parameter("steer_speed_factor", DEFAULT_STEER_SPEED_FACTOR)
+	_flip_recovery_up_dot = cos(deg_to_rad(
+		_parameter("flip_recovery_angle_deg", DEFAULT_FLIP_RECOVERY_ANGLE_DEG)))
+	_flip_recovery_seconds = _parameter("flip_recovery_seconds", DEFAULT_FLIP_RECOVERY_SECONDS)
 	mass = _parameter("robot_mass", DEFAULT_MASS)
 	gravity_scale = _parameter("gravity_scale", DEFAULT_GRAVITY_SCALE)
 	center_of_mass_mode = RigidBody3D.CENTER_OF_MASS_MODE_CUSTOM
@@ -100,6 +110,30 @@ func max_speed() -> float:
 
 func is_grounded() -> bool:
 	return _grounded
+
+
+func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
+	var body_transform: Transform3D = state.transform
+	var up_dot: float = body_transform.basis.y.normalized().dot(Vector3.UP)
+	if up_dot >= _flip_recovery_up_dot:
+		_flipped_seconds = 0.0
+		return
+	_flipped_seconds += state.step
+	if _flipped_seconds < _flip_recovery_seconds:
+		return
+	var heading: Vector3 = -body_transform.basis.z
+	heading.y = 0.0
+	if heading.is_zero_approx():
+		# A vertical forward axis has no yaw; the right axis still defines one.
+		heading = Vector3.UP.cross(body_transform.basis.x)
+	var yaw: float = atan2(-heading.x, -heading.z)
+	body_transform.basis = Basis(Vector3.UP, yaw)
+	# Direct state keeps the reset synchronized with physics and retains the origin.
+	state.transform = body_transform
+	state.linear_velocity = Vector3.ZERO
+	state.angular_velocity = Vector3.ZERO
+	_flipped_seconds = 0.0
+	physics_reset.emit()
 
 
 func _physics_process(delta: float) -> void:

@@ -1,19 +1,21 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=28 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/robot_controller.gd" id="1_robot"]
 [ext_resource type="Script" path="res://scripts/gameplay/suspension_wheel.gd" id="2_wheel"]
 [ext_resource type="Script" path="res://scripts/gameplay/camera_rig.gd" id="3_camera"]
 [ext_resource type="Script" path="res://scripts/gameplay/input_service.gd" id="4_input"]
 
+[ext_resource type="Script" path="res://scripts/gameplay/cargo_basket.gd" id="5_cargo"]
+
 [sub_resource type="Environment" id="Environment"]
 background_mode = 1
-background_color = Color(0.12, 0.18, 0.24, 1)
-ambient_light_source = 3
+background_color = Color(0.48, 0.74, 0.86, 1)
+ambient_light_source = 2
 ambient_light_color = Color(0.8, 0.88, 1, 1)
-ambient_light_energy = 0.7
+ambient_light_energy = 0.85
 
 [sub_resource type="StandardMaterial3D" id="FloorMaterial"]
-albedo_color = Color(0.18, 0.28, 0.32, 1)
+albedo_color = Color(0.3, 0.54, 0.58, 1)
 roughness = 1.0
 
 [sub_resource type="StandardMaterial3D" id="RobotMaterial"]
@@ -71,6 +73,29 @@ size = Vector3(0.08, 0.01, 110)
 [sub_resource type="PhysicsMaterial" id="BodyPhysics"]
 friction = 0.0
 bounce = 0.0
+
+[sub_resource type="StandardMaterial3D" id="BasketMaterial"]
+albedo_color = Color(1, 0.45, 0.09, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="ParcelMaterial"]
+albedo_color = Color(1, 0.86, 0.48, 1)
+roughness = 1.0
+
+[sub_resource type="BoxShape3D" id="BasketShape"]
+size = Vector3(0.66, 0.36, 0.5)
+
+[sub_resource type="BoxMesh" id="BasketBase"]
+material = SubResource("BasketMaterial")
+size = Vector3(0.66, 0.1, 0.5)
+
+[sub_resource type="BoxMesh" id="BasketRail"]
+material = SubResource("BasketMaterial")
+size = Vector3(0.66, 0.18, 0.06)
+
+[sub_resource type="BoxMesh" id="ParcelMesh"]
+material = SubResource("ParcelMaterial")
+size = Vector3(0.38, 0.32, 0.3)
 
 [node name="Proto" type="Node3D"]
 
@@ -173,6 +198,42 @@ script = ExtResource("2_wheel")
 [node name="Visual" type="MeshInstance3D" parent="Robot/RearRight"]
 rotation_degrees = Vector3(0, 0, 90)
 mesh = SubResource("WheelMesh")
+
+[node name="CargoBasket" type="RigidBody3D" parent="Robot"]
+position = Vector3(0, 0.44, 0.24)
+script = ExtResource("5_cargo")
+continuous_cd = true
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Robot/CargoBasket"]
+shape = SubResource("BasketShape")
+
+[node name="Base" type="MeshInstance3D" parent="Robot/CargoBasket"]
+position = Vector3(0, -0.13, 0)
+mesh = SubResource("BasketBase")
+
+[node name="FrontRail" type="MeshInstance3D" parent="Robot/CargoBasket"]
+position = Vector3(0, 0.02, -0.22)
+mesh = SubResource("BasketRail")
+
+[node name="BackRail" type="MeshInstance3D" parent="Robot/CargoBasket"]
+position = Vector3(0, 0.02, 0.22)
+mesh = SubResource("BasketRail")
+
+[node name="LeftRail" type="MeshInstance3D" parent="Robot/CargoBasket"]
+position = Vector3(-0.3, 0.02, 0)
+rotation_degrees = Vector3(0, 90, 0)
+scale = Vector3(0.67, 1, 1)
+mesh = SubResource("BasketRail")
+
+[node name="RightRail" type="MeshInstance3D" parent="Robot/CargoBasket"]
+position = Vector3(0.3, 0.02, 0)
+rotation_degrees = Vector3(0, 90, 0)
+scale = Vector3(0.67, 1, 1)
+mesh = SubResource("BasketRail")
+
+[node name="Parcel" type="MeshInstance3D" parent="Robot/CargoBasket"]
+position = Vector3(0, 0.08, 0)
+mesh = SubResource("ParcelMesh")
 
 [node name="CameraRig" type="Node3D" parent="."]
 script = ExtResource("3_camera")
