@@ -48,12 +48,29 @@ Sihirli sayı yok; ayarlanabilir her değer buradadır.
 
 (Sayılar başlangıç tahminidir; fizik prototipinde (Faz 2) ölçülerek ayarlanır.)
 
-`data/upgrades.json` — kategori → seviyeler (Faz 4):
+`data/upgrades.json` — kategori → seviyeler (Faz 4). Seviye N'i satın almanın bedeli `levels[N-1].cost`; sahip olunan tüm seviyelerin `mods`'u toplanır:
 
 ```json
-{ "chassis": { "max_level": 5, "levels": [ { "cost": {"gold": 100, "scrap": 5}, "mods": {"sway_damping": 0.08} } ] },
-  "wheels":  { "max_level": 5, "levels": [] },
-  "battery": { "max_level": 5, "levels": [ { "cost": {"gold": 80, "scrap": 3}, "mods": {"battery_capacity": 15.0} } ] } }
+{
+  "chassis": { "max_level": 5, "levels": [
+    { "cost": {"gold": 100, "scrap": 5},  "mods": {"cargo_damping_bonus": 1.0} },
+    { "cost": {"gold": 200, "scrap": 10}, "mods": {"cargo_damping_bonus": 1.0} },
+    { "cost": {"gold": 350, "scrap": 18}, "mods": {"cargo_damping_bonus": 1.0} },
+    { "cost": {"gold": 550, "scrap": 28}, "mods": {"cargo_damping_bonus": 1.0} },
+    { "cost": {"gold": 800, "scrap": 40}, "mods": {"cargo_damping_bonus": 1.0} } ] },
+  "wheels": { "max_level": 5, "levels": [
+    { "cost": {"gold": 80,  "scrap": 4},  "mods": {"wheel_grip_bonus": 0.6} },
+    { "cost": {"gold": 160, "scrap": 8},  "mods": {"wheel_grip_bonus": 0.6} },
+    { "cost": {"gold": 300, "scrap": 15}, "mods": {"wheel_grip_bonus": 0.6} },
+    { "cost": {"gold": 480, "scrap": 24}, "mods": {"wheel_grip_bonus": 0.6} },
+    { "cost": {"gold": 700, "scrap": 35}, "mods": {"wheel_grip_bonus": 0.6} } ] },
+  "battery": { "max_level": 5, "levels": [
+    { "cost": {"gold": 80,  "scrap": 3},  "mods": {"battery_capacity_bonus": 15.0} },
+    { "cost": {"gold": 160, "scrap": 7},  "mods": {"battery_capacity_bonus": 15.0} },
+    { "cost": {"gold": 300, "scrap": 14}, "mods": {"battery_capacity_bonus": 15.0} },
+    { "cost": {"gold": 480, "scrap": 22}, "mods": {"battery_capacity_bonus": 15.0} },
+    { "cost": {"gold": 700, "scrap": 32}, "mods": {"battery_capacity_bonus": 15.0} } ] }
+}
 ```
 
 `data/balance.json` — mevcut `base_fee` korunur; fizik ve batarya sabitleri `physics.*`, `battery.*` anahtarlarıyla eklenir (bkz. §5).
@@ -141,6 +158,25 @@ func can_afford(cost: Dictionary) -> bool          # {"gold": int, "scrap": int}
 func spend(cost: Dictionary) -> bool               # yeterliyse düşer ve true; değilse HİÇBİR ŞEY değişmez ve false
 func to_dict() -> Dictionary                       # {"gold": int, "scrap": int}
 static func from_dict(d: Dictionary) -> Wallet     # eksik/yanlış tip/negatif/küsuratlı -> 0; JSON'dan gelen küsuratsız float (10.0) tamsayı sayılır (GOTCHAS #20)
+```
+
+### 4.8 `ProfileData` — `scripts/core/profile_data.gd` (durumlu; kayıt içeriği, Faz 4)
+
+Oyuncu ilerlemesinin saf veri modeli (dosya/IO YOK; `SaveService` sarmalar).
+
+```gdscript
+const VERSION: int = 1
+func _init() -> void                                   # cüzdan 0/0, seviyeler {chassis:0, wheels:0, battery:0}, istatistik sıfır
+func wallet() -> Wallet                                # canlı referans (değişiklikler profile yansır)
+func level(category: String) -> int                    # bilinmeyen kategori 0
+func set_level(category: String, level: int) -> void   # < 0 -> 0
+func levels() -> Dictionary                            # {"chassis": int, "wheels": int, "battery": int} KOPYA
+func record_result(result: Dictionary) -> void
+# result: {success, gold, scrap, stars, cargo_id}. Başarılıysa gold/scrap cüzdana eklenir (negatif 0), stats.deliveries += 1,
+# stats.best_stars[cargo_id] = max(eski, stars); başarısızsa (success=false) yalnız stats.breaks += 1 (para eklenmez).
+func stats() -> Dictionary                             # {"deliveries": int, "breaks": int, "best_stars": Dictionary} KOPYA
+func to_dict() -> Dictionary                           # {"version": 1, "wallet": {...}, "levels": {...}, "stats": {...}}
+static func from_dict(d: Dictionary) -> ProfileData    # eksik/yanlış tip/negatif -> varsayılan; JSON küsuratsız float tamsayı sayılır (GOTCHAS #20); bilinmeyen/yüksek sürüm -> yalnız tanıdığı alanları okur
 ```
 
 ### 4.6 `CheckpointTracker` — `scripts/core/checkpoint_tracker.gd` (durumlu; Faz 2)
@@ -267,6 +303,26 @@ Kargo hasarı, tehlikelerin robota/sepete uyguladığı çarpmalardan zaten `imp
 Parametreler: `balance.json` → `hazards.*` (`key_period_seconds`, `key_warn_seconds`, `key_press_depth`, `fan_accel`, `fan_cycle_seconds`, `pencil_period_seconds`, `pencil_speed`).
 
 **Probe (headless, 60 Hz kare sayımı):** yapı (marker'lar, uzunluk, ≥1 klavye tuşu, ≥1 fan, ≥1 kalem), klavye uyarı→basma sırası (uyarı ≥ 20 kare önce), fan alanındaki test küresi üflerken ≥0.3 m/s kazanır, kalem 600 karede ≥1 m hareket eder.
+
+### 5.4 Meta akışı sözleşmesi (Faz 4b; `tools/meta_probe.gd` denetler)
+
+**SaveService** (autoload, `GameData`'dan SONRA; `scripts/autoload/SaveService.gd`): `ProfileData`'yı `user://save.json`'a yazar/okur.
+```gdscript
+func profile() -> ProfileData
+func set_save_path(path: String) -> void           # test için; varsayılan "user://save.json"
+func load_profile() -> void                         # yok/bozuk dosya -> varsayılan profil (bozuk dosya "<ad>.corrupt" olarak yedeklenir, çökme yok)
+func save_profile() -> bool                         # atomik yaz (geçici dosya + yeniden adlandır)
+func apply_result(result: Dictionary) -> void       # profile.record_result + save_profile(); AYNI sonuç iki kez uygulanmaz (result["applied"] işareti)
+func upgrade_cost(category: String) -> Dictionary   # sıradaki seviyenin bedeli ({} = maksimumda)
+func purchase(category: String) -> bool             # UpgradeModel.purchase + save_profile(); yetersiz bakiye/maksimum -> false, DEĞİŞİKLİK YOK
+func mods() -> Dictionary                           # UpgradeModel.stats(data/upgrades.json, profile.levels())
+```
+**GameManager:** `var navigation_enabled: bool = true` (false iken `goto_scene` sahne değiştirmez, hata basmaz; probe için); `SCENES`'e `&"order"` (`OrderSelect.tscn`) ve `&"garage"` (`Garage.tscn`) eklenir; `Phase`'e `GARAGE`. Akış: Menu → (Oyna) OrderSelect → Game → Result → (Tekrar) Game / (Menü) Menu; Menu → Garaj.
+**OrderSelect** (`scenes/OrderSelect.tscn`): `data/cargo.json`'daki her kargo için bir kart düğmesi `CargoCard_<cargo_id>` (ad, zorluk, ödül); basınca `GameManager.selected_cargo_id` set edilir ve `start_game()` çağrılır. Geri düğmesi `BackButton`.
+**Garage** (`scenes/Garage.tscn`): cüzdan etiketleri `GoldLabel`, `ScrapLabel`; her kategori için `UpgradeButton_<category>` (seviye, maliyet; yetmiyorsa devre dışı) → `SaveService.purchase`; `BackButton`.
+**Result:** `SaveService.apply_result(result)` ÇAĞIRIR (bir kez) ve yeni cüzdanı gösterir. **Menü:** "Oyna" → OrderSelect, "Garaj" → Garage; mevcut diğer akış bozulmaz.
+**Efektler (`GameController.state()["mods"]`):** başlangıçta `SaveService.mods()` okunur: `cargo_damping_bonus` kargo sönümüne eklenir, `wheel_grip_bonus` tekerlek tutuşuna eklenir, `battery_capacity_bonus` batarya kapasitesine eklenir; uygulanan toplamlar `state()["mods"]` sözlüğünde görünür.
+**Probe:** SaveService turu (apply_result → dosyaya yazılır → yeniden yükleme aynı), bozuk dosya toleransı, purchase (bakiye düşer/seviye artar/yetersizse değişmez), mods → `state()["mods"]`, OrderSelect kartı → `selected_cargo_id`, Garage etiketleri.
 
 ## 6. UI
 
