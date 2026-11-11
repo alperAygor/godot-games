@@ -6,8 +6,23 @@ extends RefCounted
 
 const MENU_PLAY: String = "Oyna"
 const MENU_GARAGE: String = "Garaj"
+const MENU_SETTINGS: String = "Ayarlar"
 const MENU_HINT: String = "Siparişini seç, kuryeni geliştir."
 const BACK: String = "Geri"
+const SETTINGS_TITLE: String = "Ayarlar"
+const SETTINGS_HINT: String = "Ses ve oyun tercihleri."
+const SOUND_LABEL: String = "Ses"
+const SOUND_ON: String = "Ses Açık"
+const TUTORIAL_TITLE: String = "Mikro Kurye"
+const TUTORIAL_NEXT: String = "Devam"
+const TUTORIAL_START: String = "Başla"
+const TUTORIAL_SKIP: String = "Atla"
+## İlk açılış rehberi: kısa, dikey ekranda tek bakışta okunur üç sayfa.
+const TUTORIAL_PAGES: Array[String] = [
+	"Sürüş: sol alttaki joystick ile kuryeni yönlendir. Dengeli sür, gereksiz çarpmadan kaçın.",
+	"Kargo: sallanma ve çarpmalar kargoyu yorar. Sağlık çubuğu biterse teslimat başarısız olur.",
+	"Garaj: altın ve hurdayla şasi, tekerlek, batarya ve şok jeli yükselt. Kazandıkça ilerle.",
+]
 const ORDER_TITLE: String = "Sipariş Seç"
 const ORDER_HINT: String = "Taşımak istediğin kargoyu seç."
 const GARAGE_TITLE: String = "Garaj"
@@ -59,6 +74,8 @@ static func category_name(category: String) -> String:
 			return "Tekerlek"
 		"battery":
 			return "Batarya"
+		"shock_gel":
+			return "Şok Jeli"
 		_:
 			return category
 

@@ -25,6 +25,8 @@ func _ready() -> void:
 	_back_button.pressed.connect(_on_back)
 	GameManager.back_requested.connect(_on_back)
 	_build_cards()
+	# Kartlar veriden üretildi; tıklama sesi ancak şimdi bağlanabilir.
+	UiSfx.bind(self)
 
 
 func _build_cards() -> void:
@@ -56,11 +58,9 @@ func _make_card(cargo_id: String, profile: Dictionary) -> Button:
 
 
 func _on_card_pressed(cargo_id: String) -> void:
-	AudioService.play("ui_tap")
 	GameManager.selected_cargo_id = cargo_id
 	GameManager.start_game()
 
 
 func _on_back() -> void:
-	AudioService.play("ui_tap")
 	GameManager.goto_scene(&"menu")

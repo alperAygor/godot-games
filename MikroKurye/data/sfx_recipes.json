@@ -10,5 +10,53 @@
     "seconds": 1.8,
     "synth": "chime",
     "freq": 523
+  },
+  "impact_light": {
+    "prompt": "soft muted thud of a small parcel tapping a padded surface, ASMR, close and gentle, no reverb",
+    "seconds": 0.22,
+    "synth": "thud",
+    "freq": 190
+  },
+  "impact_heavy": {
+    "prompt": "deep soft thump of a padded box landing, firm but never harsh or metallic, ASMR body, short tail",
+    "seconds": 0.32,
+    "synth": "thud",
+    "freq": 110
+  },
+  "key_press": {
+    "prompt": "gentle mechanical keyboard key press, single soft click, ASMR, satisfying and clean",
+    "seconds": 0.16,
+    "synth": "blip",
+    "freq": 520
+  },
+  "delivery": {
+    "prompt": "cheerful delivery complete chime for a cozy mobile game, warm marimba and soft bell, happy but not loud",
+    "seconds": 0.9,
+    "synth": "chime",
+    "freq": 659
+  },
+  "break_sound": {
+    "prompt": "soft crunch of a cardboard parcel breaking, muted and tactile ASMR, not violent, short",
+    "seconds": 0.45,
+    "synth": "crackle",
+    "freq": 240
+  },
+  "purchase": {
+    "prompt": "pleasant shop purchase ding for a cozy mobile game, single bright bell with soft sparkle",
+    "seconds": 0.7,
+    "synth": "chime",
+    "freq": 988
+  },
+  "revive": {
+    "prompt": "warm hopeful revive shimmer for a cozy mobile game, soft rising bell and gentle sparkle",
+    "seconds": 0.8,
+    "synth": "chime",
+    "freq": 523
+  },
+  "boost": {
+    "prompt": "short smooth energy boost whoosh for a mobile game, airy and friendly, no harsh noise",
+    "seconds": 0.55,
+    "synth": "whoosh",
+    "freq": 420
   }
 }

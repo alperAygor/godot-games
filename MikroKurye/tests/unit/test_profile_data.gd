@@ -14,8 +14,9 @@ extends TestCase
 const DEFAULT_DICT: Dictionary = {
 	"version": 1,
 	"wallet": {"gold": 0, "scrap": 0},
-	"levels": {"chassis": 0, "wheels": 0, "battery": 0},
+	"levels": {"chassis": 0, "wheels": 0, "battery": 0, "shock_gel": 0},
 	"stats": {"deliveries": 0, "breaks": 0, "best_stars": {}},
+	"settings": {"sound_on": true, "tutorial_done": false},
 }
 
 
@@ -45,7 +46,7 @@ func test_new_profile_defaults() -> void:
 	assert_eq(profile.level("chassis"), 0)
 	assert_eq(profile.level("wheels"), 0)
 	assert_eq(profile.level("battery"), 0)
-	assert_eq(profile.levels(), {"chassis": 0, "wheels": 0, "battery": 0})
+	assert_eq(profile.levels(), {"chassis": 0, "wheels": 0, "battery": 0, "shock_gel": 0})
 	assert_eq(profile.stats(), {"deliveries": 0, "breaks": 0, "best_stars": {}})
 	assert_eq(profile.to_dict(), DEFAULT_DICT)
 
@@ -69,7 +70,7 @@ func test_set_level_and_accessor() -> void:
 	assert_eq(profile.level("chassis"), 2)
 	assert_eq(profile.level("wheels"), 1)
 	assert_eq(profile.level("battery"), 0)
-	assert_eq(profile.levels(), {"chassis": 2, "wheels": 1, "battery": 0})
+	assert_eq(profile.levels(), {"chassis": 2, "wheels": 1, "battery": 0, "shock_gel": 0})
 
 
 func test_set_level_negative_clamps_to_zero() -> void:
@@ -96,7 +97,7 @@ func test_levels_returns_copy() -> void:
 
 	assert_eq(profile.level("chassis"), 1, "dönen seviyeleri değiştirmek profili etkilememeli")
 	assert_false(profile.levels().has("wings"), "dönen kopyaya eklenen kategori profile girmez")
-	assert_eq(profile.levels(), {"chassis": 1, "wheels": 0, "battery": 0})
+	assert_eq(profile.levels(), {"chassis": 1, "wheels": 0, "battery": 0, "shock_gel": 0})
 
 
 func test_record_result_success_adds_reward_and_delivery() -> void:
@@ -186,8 +187,9 @@ func test_to_dict_snapshot() -> void:
 	var expected: Dictionary = {
 		"version": 1,
 		"wallet": {"gold": 160, "scrap": 9},
-		"levels": {"chassis": 2, "wheels": 1, "battery": 0},
+		"levels": {"chassis": 2, "wheels": 1, "battery": 0, "shock_gel": 0},
 		"stats": {"deliveries": 1, "breaks": 1, "best_stars": {"sd_card": 3}},
+		"settings": {"sound_on": true, "tutorial_done": false},
 	}
 	assert_eq(profile.to_dict(), expected)
 
@@ -223,7 +225,7 @@ func test_from_dict_missing_fields_use_defaults() -> void:
 
 	assert_eq(profile.wallet().gold(), 10)
 	assert_eq(profile.wallet().scrap(), 0)
-	assert_eq(profile.levels(), {"chassis": 0, "wheels": 0, "battery": 0})
+	assert_eq(profile.levels(), {"chassis": 0, "wheels": 0, "battery": 0, "shock_gel": 0})
 	assert_eq(profile.stats(), {"deliveries": 0, "breaks": 0, "best_stars": {}})
 	assert_eq(profile.to_dict().get("version"), 1)
 
@@ -274,8 +276,9 @@ func test_from_dict_accepts_whole_floats_from_json() -> void:
 	var expected: Dictionary = {
 		"version": 1,
 		"wallet": {"gold": 120, "scrap": 7},
-		"levels": {"chassis": 2, "wheels": 1, "battery": 0},
+		"levels": {"chassis": 2, "wheels": 1, "battery": 0, "shock_gel": 0},
 		"stats": {"deliveries": 3, "breaks": 1, "best_stars": {"sd_card": 3}},
+		"settings": {"sound_on": true, "tutorial_done": false},
 	}
 	assert_eq(profile.to_dict(), expected, "küsuratsız JSON float tamsayı sayılmalı")
 	assert_eq(typeof(profile.wallet().gold()), TYPE_INT)
@@ -307,7 +310,7 @@ func test_from_dict_ignores_unknown_level_category() -> void:
 		"levels": {"chassis": 2, "wings": 5},
 	})
 
-	assert_eq(profile.levels(), {"chassis": 2, "wheels": 0, "battery": 0},
+	assert_eq(profile.levels(), {"chassis": 2, "wheels": 0, "battery": 0, "shock_gel": 0},
 		"yalnız tanıdık kategoriler okunmalı")
 	assert_false(profile.levels().has("wings"))
 	assert_eq(profile.level("wings"), 0)
@@ -324,8 +327,61 @@ func test_from_dict_high_version_reads_known_fields() -> void:
 	var expected: Dictionary = {
 		"version": 1,
 		"wallet": {"gold": 50, "scrap": 3},
-		"levels": {"chassis": 0, "wheels": 1, "battery": 0},
+		"levels": {"chassis": 0, "wheels": 1, "battery": 0, "shock_gel": 0},
 		"stats": {"deliveries": 2, "breaks": 1, "best_stars": {"sd_card": 2}},
+		"settings": {"sound_on": true, "tutorial_done": false},
 	}
 	assert_eq(profile.to_dict(), expected, "yüksek sürümde tanıdık alanlar okunmalı")
 	assert_false(profile.to_dict().has("unknown_key"), "bilinmeyen anahtar kayda yazılmamalı")
+
+
+func test_settings_defaults() -> void:
+	var profile: ProfileData = ProfileData.new()
+	assert_eq(profile.settings(), {"sound_on": true, "tutorial_done": false})
+
+
+func test_set_setting_known_keys_and_unknown_ignored() -> void:
+	var profile: ProfileData = ProfileData.new()
+	profile.set_setting("sound_on", false)
+	profile.set_setting("tutorial_done", true)
+	profile.set_setting("bilinmeyen", true)
+
+	assert_eq(profile.settings(), {"sound_on": false, "tutorial_done": true},
+		"bilinmeyen ayar anahtarı kayda girmemeli")
+
+
+func test_settings_returns_copy() -> void:
+	var profile: ProfileData = ProfileData.new()
+	var settings: Dictionary = profile.settings()
+	settings["sound_on"] = false
+	settings["yeni"] = true
+
+	assert_eq(profile.settings(), {"sound_on": true, "tutorial_done": false},
+		"dönen ayar kopyası profili etkilememeli")
+
+
+func test_settings_round_trips_through_json() -> void:
+	var profile: ProfileData = ProfileData.new()
+	profile.set_setting("sound_on", false)
+	profile.set_setting("tutorial_done", true)
+	var parsed: Variant = JSON.parse_string(JSON.stringify(profile.to_dict()))
+	if not parsed is Dictionary:
+		fail("ayarlı profil JSON'a çevrilemedi")
+		return
+	var restored: ProfileData = ProfileData.from_dict(parsed as Dictionary)
+	assert_eq(restored.settings(), {"sound_on": false, "tutorial_done": true})
+
+
+func test_settings_missing_and_wrong_types_use_defaults() -> void:
+	var missing: ProfileData = ProfileData.from_dict({"settings": {"sound_on": false}})
+	assert_eq(missing.settings(), {"sound_on": false, "tutorial_done": false},
+		"eksik anahtar varsayılanı korumalı")
+
+	var wrong: ProfileData = ProfileData.from_dict({
+		"settings": {"sound_on": "kapali", "tutorial_done": 1},
+	})
+	assert_eq(wrong.settings(), {"sound_on": true, "tutorial_done": false},
+		"bool olmayan ayar varsayılana dönmeli")
+
+	var wrong_container: ProfileData = ProfileData.from_dict({"settings": []})
+	assert_eq(wrong_container.settings(), {"sound_on": true, "tutorial_done": false})

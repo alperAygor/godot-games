@@ -83,5 +83,10 @@
     "pencil_lane_min_x": 2.1,
     "pencil_lane_max_x": 4.4,
     "pencil_center_clearance": 1.5
+  },
+  "audio": {
+    "heavy_impulse": 8.0,
+    "light_impulse": 2.0,
+    "min_gap_ms": 80
   }
 }

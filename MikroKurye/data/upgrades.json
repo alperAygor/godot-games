@@ -28,5 +28,11 @@
       {"cost": {"gold": 480, "scrap": 22}, "mods": {"battery_capacity_bonus": 15.0}},
       {"cost": {"gold": 700, "scrap": 32}, "mods": {"battery_capacity_bonus": 15.0}}
     ]
+  },
+  "shock_gel": {
+    "max_level": 1,
+    "levels": [
+      {"cost": {"gold": 400, "scrap": 20}, "mods": {"jelly_charges": 1}}
+    ]
   }
 }

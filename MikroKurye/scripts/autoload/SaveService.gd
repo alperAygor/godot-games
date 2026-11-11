@@ -16,11 +16,19 @@ extends Node
 const DEFAULT_SAVE_PATH: String = "user://save.json"
 const CORRUPT_SUFFIX: String = ".corrupt"
 const TEMP_SUFFIX: String = ".tmp"
+## `user://` yazılamadığı kısıtlı ortamlarda (CI/probe) geçici dizin yedeği.
+const FALLBACK_DIR_NAME: String = "micro_courier"
+const FALLBACK_HOME_DIR_NAME: String = "micro_courier_home"
+const WRITE_PROBE_PATH: String = "user://.write_probe"
 const UPGRADES_TABLE: String = "upgrades"
+const SETTING_SOUND_ON: String = "sound_on"
 const JSON_INDENT: String = "\t"
 
 ## Test için değiştirilebilir; varsayılan gerçek kayıt dosyasıdır.
 var _save_path: String = DEFAULT_SAVE_PATH
+## Gerçekten yazılan yol; user:// yazılamazsa geçici dizine düşer.
+var _storage_path: String = DEFAULT_SAVE_PATH
+var _fallback_active: bool = false
 var _profile: ProfileData = null
 ## Deneme (TRY_BEFORE_BUY) yalnızca bir sonraki koşu için geçerlidir; bu yüzden
 ## diske yazılmaz. GameController koşu başında modlara kattıktan sonra temizler.
@@ -30,7 +38,11 @@ var _trial_category: String = ""
 func _ready() -> void:
 	# Kayıt servisi duraklatılmış sahnede de yanıt versin (CLAUDE.md §4).
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_ensure_user_dir_writable()
 	load_profile()
+	# Açılışta ses ayarı AudioService'e uygulanır; servis sırası gereği SaveService
+	# yüklendiğinde AudioService zaten hazırdır (project.godot autoload sırası).
+	_apply_sound_setting()
 
 
 func profile() -> ProfileData:
@@ -43,50 +55,49 @@ func profile() -> ProfileData:
 ## Testlerin gerçek kaydı ezmemesi için yol değiştirilebilir.
 func set_save_path(path: String) -> void:
 	_save_path = path if not path.is_empty() else DEFAULT_SAVE_PATH
+	_storage_path = _save_path
+	_fallback_active = false
 
 
 func load_profile() -> void:
 	# Her yükleme temiz bir modelle başlar: eksik alanlar varsayılana döner.
 	_profile = ProfileData.new()
-	if not FileAccess.file_exists(_save_path):
+	var path: String = _load_path()
+	if not FileAccess.file_exists(path):
 		return
-	var file: FileAccess = FileAccess.open(_save_path, FileAccess.READ)
+	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
 	if file == null:
-		push_warning("SaveService: kayıt okunamadı (%s); varsayılan profil" % _save_path)
+		push_warning("SaveService: kayıt okunamadı (%s); varsayılan profil" % path)
 		_backup_corrupt()
 		return
 	var text: String = file.get_as_text()
 	file.close()
-	var parsed: Variant = JSON.parse_string(text)
-	if parsed is Dictionary:
-		_profile = ProfileData.from_dict(parsed as Dictionary)
+	# `JSON.new().parse()` bozuk kayıtta motor ERROR satırı basmaz. Bozuk kayıt
+	# beklenen bir durumdur (yedekle + varsayılana dön); günlüğü kirletmeyiz.
+	var json: JSON = JSON.new()
+	var parse_error: Error = json.parse(text)
+	if parse_error == OK and json.data is Dictionary:
+		_profile = ProfileData.from_dict(json.data as Dictionary)
 		return
-	push_warning("SaveService: kayıt bozuk (%s); varsayılan profil" % _save_path)
+	push_warning("SaveService: kayıt bozuk (%s); varsayılan profil" % path)
 	_backup_corrupt()
 
 
 ## Geçici dosyaya yaz + yeniden adlandır. Hedef dosya yarım kalmaz.
 func save_profile() -> bool:
-	var target_abs: String = ProjectSettings.globalize_path(_save_path)
-	var temp_path: String = _save_path + TEMP_SUFFIX
-	var temp_abs: String = ProjectSettings.globalize_path(temp_path)
-	var directory: DirAccess = DirAccess.open(target_abs.get_base_dir())
-	if directory == null:
-		push_warning("SaveService: kayıt dizini açılamadı (%s)" % target_abs.get_base_dir())
-		return false
-	var file: FileAccess = FileAccess.open(temp_path, FileAccess.WRITE)
-	if file == null:
-		push_warning("SaveService: geçici kayıt açılamadı (%s)" % temp_path)
-		return false
-	file.store_string(JSON.stringify(profile().to_dict(), JSON_INDENT))
-	file.flush()
-	file.close()
-	var error: Error = DirAccess.rename_absolute(temp_abs, target_abs)
-	if error != OK:
-		push_warning("SaveService: kayıt yerine konamadı (%s), hata %d" % [_save_path, error])
-		DirAccess.remove_absolute(temp_abs)
-		return false
-	return true
+	if _write_to(_storage_path):
+		return true
+	# Yalnızca headless CI/probe kum havuzunda user:// yazılamaz: geçici dizin
+	# yedeği denenir. Normal oyunda user:// yazılabildiği için bu dal çalışmaz.
+	if not _fallback_active and DisplayServer.get_name() == "headless":
+		var fallback: String = _fallback_path()
+		if not fallback.is_empty() and _write_to(fallback):
+			_storage_path = fallback
+			_fallback_active = true
+			push_warning("SaveService: user:// yazılamadı; geçici kayıt kullanılıyor (%s)" % fallback)
+			return true
+	push_warning("SaveService: kayıt yerine konamadı (%s)" % _storage_path)
+	return false
 
 
 ## Aynı sonuç iki kez uygulanmaz: ilk çağrı `result["applied"]` işaretini bırakır.
@@ -125,12 +136,26 @@ func purchase(category: String) -> bool:
 		return false
 	profile().set_level(category, int(next_levels.get(category, profile().level(category))))
 	save_profile()
+	# Satın alma geri bildirimi: karar core'da, ses olay bağlantısı burada.
+	_play_sound("purchase")
 	return true
 
 
 ## Reklamla kazanılan ek ödül; negatif değerler Wallet.add tarafından 0 sayılır.
 func grant(gold: int, scrap: int) -> void:
 	profile().wallet().add(gold, scrap)
+	save_profile()
+
+
+## Profildeki ayarın değeri; bilinmeyen/eksik anahtar false döner.
+func setting(key: String) -> bool:
+	var value: Variant = profile().settings().get(key, false)
+	return value is bool and bool(value)
+
+
+## Ayarları yazar ve diske işler; bilinmeyen anahtar profilde yok sayılır.
+func set_setting(key: String, value: bool) -> void:
+	profile().set_setting(key, value)
 	save_profile()
 
 
@@ -170,6 +195,45 @@ func mods() -> Dictionary:
 	return totals
 
 
+## Headless CI/probe kum havuzunda `user://` yazılamayabilir. Yalnızca headless
+## çalışmada ve gerçekten yazılamıyorsa HOME geçici dizine alınır; oyunun
+## normal (masaüstü/mobil) kayıt yolu değişmez.
+func _ensure_user_dir_writable() -> void:
+	var user_dir: String = OS.get_user_data_dir()
+	DirAccess.make_dir_recursive_absolute(user_dir)
+	if _can_write_user_dir():
+		return
+	if DisplayServer.get_name() != "headless":
+		return
+	var temp_home: String = OS.get_temp_dir().path_join(FALLBACK_HOME_DIR_NAME)
+	if DirAccess.make_dir_recursive_absolute(temp_home) != OK:
+		return
+	OS.set_environment("HOME", temp_home)
+	DirAccess.make_dir_recursive_absolute(OS.get_user_data_dir())
+
+
+func _can_write_user_dir() -> bool:
+	var file: FileAccess = FileAccess.open(WRITE_PROBE_PATH, FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_string("")
+	file.close()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(WRITE_PROBE_PATH))
+	return true
+
+
+func _apply_sound_setting() -> void:
+	var audio: Node = get_node_or_null("/root/AudioService")
+	if audio != null and audio.has_method("set_muted"):
+		audio.call("set_muted", not setting(SETTING_SOUND_ON))
+
+
+func _play_sound(sound_name: String) -> void:
+	var audio: Node = get_node_or_null("/root/AudioService")
+	if audio != null and audio.has_method("play"):
+		audio.call("play", sound_name)
+
+
 func _upgrade_table() -> Dictionary:
 	var data: Node = get_node_or_null("/root/GameData")
 	if data == null:
@@ -180,10 +244,51 @@ func _upgrade_table() -> Dictionary:
 	return {}
 
 
+## Okunacak yol: yazma sırasında geçici yedeğe düşüldüyse oradan okunur.
+func _load_path() -> String:
+	if _storage_path != _save_path and not FileAccess.file_exists(_storage_path) \
+			and FileAccess.file_exists(_save_path):
+		_storage_path = _save_path
+	return _storage_path
+
+
+## Tek bir yola atomik yazar; hedef/temp açılamazsa false döner.
+func _write_to(path: String) -> bool:
+	var target_abs: String = _absolute(path)
+	var temp_path: String = path + TEMP_SUFFIX
+	var temp_abs: String = _absolute(temp_path)
+	var directory: DirAccess = DirAccess.open(target_abs.get_base_dir())
+	if directory == null:
+		return false
+	var file: FileAccess = FileAccess.open(temp_path, FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_string(JSON.stringify(profile().to_dict(), JSON_INDENT))
+	file.flush()
+	file.close()
+	var error: Error = DirAccess.rename_absolute(temp_abs, target_abs)
+	if error != OK:
+		DirAccess.remove_absolute(temp_abs)
+		return false
+	return true
+
+
+func _absolute(path: String) -> String:
+	return path if path.is_absolute_path() else ProjectSettings.globalize_path(path)
+
+
+## Yalnızca son çare: geçici dizinde aynı dosya adı. Dizin oluşturulamazsa "".
+func _fallback_path() -> String:
+	var dir: String = OS.get_temp_dir().path_join(FALLBACK_DIR_NAME)
+	if DirAccess.make_dir_recursive_absolute(dir) != OK:
+		return ""
+	return dir.path_join(_save_path.get_file())
+
+
 ## Bozuk kaydı yanına kopyalar, sonra temiz bir varsayılan kayıt bırakır.
 func _backup_corrupt() -> void:
-	var source_abs: String = ProjectSettings.globalize_path(_save_path)
-	var backup_abs: String = ProjectSettings.globalize_path(_save_path + CORRUPT_SUFFIX)
+	var source_abs: String = _absolute(_storage_path)
+	var backup_abs: String = _absolute(_storage_path + CORRUPT_SUFFIX)
 	# Önceki bozuk yedek varsa üzerine yazılabilsin diye kaldırılır.
 	DirAccess.remove_absolute(backup_abs)
 	var error: Error = DirAccess.copy_absolute(source_abs, backup_abs)
