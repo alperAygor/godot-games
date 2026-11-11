@@ -214,6 +214,31 @@ signal slosh_reported(angular_accel: float, dt: float)
 | Rampa | `RampStart`'tan gazla: ≥ 3 ardışık kare havada, sonra tekrar yerde; hız < 40 m/s; y > −2 |
 | (full) Kargo | `cargo` var; dinlenmede `sway < 1.5°`; ivmelenmede tepe `sway ≥ 2°` ve `≤ 60°`; frenlemeden 4 sn sonra `sway < 3°`; tüm testlerde `is_attached()` doğru |
 
+### 5.2 Oyun akışı sözleşmesi (Faz 2C; `tools/flow_probe.gd` denetler)
+
+`res://scenes/Game.tscn` gerçek oyun sahnesi olur (şablondaki yer tutucu butonlu sahne YERİNE). Kök `Node3D`, script `scripts/gameplay/game_controller.gd`, `class_name GameController`, düğüm grubu `game_controller`.
+
+**Sahne içeriği:** zemin/rampa içeren test seviyesi (Proto'dan türetilebilir ama Proto.tscn DEĞİŞMEZ), `RobotStart` Marker3D, `Checkpoint_1`, `Checkpoint_2` Marker3D (−Z'de ~10 m ve ~20 m), `DeliveryZone` (Area3D + CollisionShape3D, −Z'de ~30 m, robotun düz gidişinde engelsiz),
+robot (grup `robot`), kargo (grup `cargo`), takip kamerası, `HUD` (CanvasLayer: `CargoHealthBar` ProgressBar 0..100, `BatteryBar` ProgressBar 0..100). Seviye düz ve engelsizdir; gerçek harita Faz 3'te gelir.
+
+**GameManager:** `var selected_cargo_id: String = "pencil_battery"` eklenir (ileride sipariş ekranı doldurur). `Game.tscn` açılınca bu kargo profili `GameData.table("cargo")` içinden alınır; yoksa `pencil_battery`.
+
+**GameController API:**
+```gdscript
+signal finished(result: Dictionary)          # tur bitince BİR KEZ (teslimat ya da kırılma)
+func state() -> Dictionary                   # {cargo_id, damage, integrity, battery, checkpoint_id, respawns, delivered, broken, finished, elapsed}
+func restart() -> void                       # sağlık, batarya, kontrol noktası, sayaçlar sıfırlanır; robot RobotStart'a döner; finished bayrağı temizlenir
+```
+**Bağlantılar (hepsi `scripts/core/` sınıflarıyla):**
+- `cargo.impact_reported(impulse)` → `CargoHealth.apply_impact`; `cargo.slosh_reported(a, dt)` → `apply_slosh`. Kargo profili `GameData.table("cargo")[selected_cargo_id]`.
+- Her fizik karesi `BatteryModel.drain_for_speed(robot.speed(), dt)`; `robot.set_speed_factor(battery.speed_factor())` (RobotController'a `set_speed_factor(f: float) -> void` eklenir: hedef hızı f ile çarpar; `max_speed()` DEĞİŞMEZ).
+- `CheckpointTracker`: `RobotStart` = id 0, `Checkpoint_N` = id N; robot bir kontrol noktasının 2 m yakınına girince `reach(N)`.
+- Düşme: robot `y < balance.game.kill_y` (varsayılan -5) olursa son kontrol noktasına geri döner (hızlar sıfır), `respawns += 1`, ceza olarak `apply_fall(balance.game.respawn_drop_height)` (varsayılan 1.0).
+- `DeliveryZone` robota/sepete temas ederse teslimat: `DeliveryReward.compute(damage, profile)`; `is_broken()` olursa başarısız sonuç (aynı fonksiyon, `success=false`).
+- Sonuç sözlüğü: `{success, damage, stars, multiplier, gold, scrap, fee (=gold), cargo_id, level_id, time}`. `finished` yayılır, sonra `GameManager.finish_run(result)` **çağrılır** (`get_node_or_null("/root/GameManager")` ile, probe `-s` modunda çalışır).
+- HUD çubukları her karede `integrity()*100` ve `battery.level()*100` ile güncellenir.
+- Parametreler: `balance.json` → `game.kill_y`, `game.respawn_drop_height`, `game.checkpoint_radius`.
+
 ## 6. UI
 
 `HUD` (kargo sağlığı çubuğu, batarya, modül düğmesi), `OrderSelect` (3 kargo kartı), `Garage` (Faz 4), `Result` (mevcut genişletilir). Sunum katmanı yalnızca gösterir; hesap `core`'dadır.
