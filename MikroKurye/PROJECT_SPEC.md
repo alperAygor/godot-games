@@ -222,5 +222,5 @@ L6 + karışık parçalar. Çevre/model temaları (raf, mutfak…) ayrı bir alt
 
 **Kasa kuralı.** Kırılma: toplanan altın/hurdanın yarısı (aşağı yuvarlanır). Revive (reklam) korunur.
 
-**Bilinen sınır.** Çok uzun mesafede (>≈5 km) tek duyarlıklı kayan nokta titremesi; dünya geri çekme (origin rebase)
-9.5'te ele alınır, ölçüm probu 4 km'de bakar.
+**Uzun mesafe.** Ölçüldü: robot 6 km'de durağanken y titremesi ≈ 6 µm; `endless_probe` 4 km'de bunu denetler.
+Dünya geri çekme (origin rebase) şimdilik gerekmiyor; gerçek aygıtta görsel titreme ölçülmedi.

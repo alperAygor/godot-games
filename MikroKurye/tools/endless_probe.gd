@@ -23,8 +23,14 @@ const BATTERY_FRAMES: int = 420
 const IMPACT_BREAK: float = 5000.0
 const TELEPORT_BEFORE_PAD: float = 8.0
 const MAX_LIVE_SEGMENTS: int = 40
+## Uzak mesafe: bu z'de robot durağan kalmalı (tek duyarlıklı kayan nokta sınırı, PROJECT_SPEC §14).
+const FAR_Z: float = -4000.0
+const FAR_BUILD_CALLS: int = 120
+const FAR_SETTLE_FRAMES: int = 90
+const FAR_SAMPLE_FRAMES: int = 240
+const FAR_MAX_JITTER: float = 0.002
 
-enum Phase { LOAD, READY, LEVEL1, SETTLE, LEVEL2, BREAK, RELOAD, READY2, LEVEL1B, BATTERY, DONE }
+enum Phase { LOAD, READY, LEVEL1, SETTLE, LEVEL2, BREAK, RELOAD, READY2, LEVEL1B, BATTERY, FARLOAD, FAR, DONE }
 
 var _phase: Phase = Phase.LOAD
 var _frames: int = 0
@@ -57,13 +63,14 @@ func _physics_process(_delta: float) -> bool:
 	_frames += 1
 	_phase_frames += 1
 	match _phase:
-		Phase.LOAD, Phase.RELOAD: _step_load()
+		Phase.LOAD, Phase.RELOAD, Phase.FARLOAD: _step_load()
 		Phase.READY, Phase.READY2: _step_ready()
 		Phase.LEVEL1, Phase.LEVEL1B: _step_level1()
 		Phase.SETTLE: _step_settle()
 		Phase.LEVEL2: _step_level2()
 		Phase.BREAK: _step_break()
 		Phase.BATTERY: _step_battery()
+		Phase.FAR: _step_far()
 		_: pass
 	if _setup_error != "" or _phase == Phase.DONE:
 		_finish()
@@ -111,7 +118,10 @@ func _step_load() -> void:
 	root.add_child(_scene)
 	_finished_count = 0
 	_last_result = {}
-	_go(Phase.READY if _phase == Phase.LOAD else Phase.READY2)
+	match _phase:
+		Phase.LOAD: _go(Phase.READY)
+		Phase.RELOAD: _go(Phase.READY2)
+		_: _go(Phase.FAR)
 
 
 func _step_ready() -> void:
@@ -238,6 +248,48 @@ func _step_battery() -> void:
 		_fail("batarya bitişinde kasa tam ödenmeli")
 	if not bool(_last_result.get("success", false)):
 		_fail("batarya bitişi success=true sayılmalı (kırılma değil)")
+	_go(Phase.FARLOAD)
+
+
+## Uzak mesafe: yol robotun önüne kadar üretilir, robot 4 km'ye ışınlanır; durağan
+## y titremesi ve kaymasızlık ölçülür (dünya geri çekme gerekip gerekmediğini söyler).
+var _far_ys: Array[float] = []
+
+
+func _step_far() -> void:
+	if _phase_frames == 1:
+		_ctl = get_first_node_in_group("game_controller")
+		_robot = get_first_node_in_group("robot") as Node3D
+		_level = _scene.get_node_or_null("Level")
+		if _ctl == null or _robot == null or _level == null:
+			_setup_fail("uzak mesafe: denetleyici/robot/Level bulunamadı")
+			return
+		for i: int in FAR_BUILD_CALLS:
+			_level.call("update_world", FAR_Z)
+		_teleport_to(FAR_Z)
+		return
+	if _phase_frames > FAR_SETTLE_FRAMES:
+		_far_ys.append(_robot.global_position.y)
+	if _phase_frames < FAR_SAMPLE_FRAMES:
+		return
+	var lowest: float = 1e9
+	var highest: float = -1e9
+	for y: float in _far_ys:
+		lowest = minf(lowest, y)
+		highest = maxf(highest, y)
+	var jitter: float = highest - lowest
+	var st: Dictionary = _state()
+	print("PROBE uzak z=%.0f titreme=%.6f y=%.3f respawns=%d canlı_parça=%d" % [
+		_robot.global_position.z, jitter, _robot.global_position.y, int(st.get("respawns", 0)),
+		int(_level.call("segment_count"))])
+	if jitter > FAR_MAX_JITTER:
+		_fail("uzak mesafede durağan titreme çok büyük: %.6f" % jitter)
+	if int(st.get("respawns", 0)) != 0:
+		_fail("uzak mesafede robot zeminden düştü (zemin üretilmedi?)")
+	if absf(_robot.global_position.z - FAR_Z) > 2.0:
+		_fail("uzak mesafede robot kaydı: %.2f" % _robot.global_position.z)
+	if int(_level.call("segment_count")) > MAX_LIVE_SEGMENTS:
+		_fail("uzak mesafede canlı parça sayısı büyüdü: %d" % int(_level.call("segment_count")))
 	_go(Phase.DONE)
 
 
