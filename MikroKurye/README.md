@@ -3,6 +3,8 @@
 Masa üstünde küçük bir kurye robotuyla kırılgan kargo taşıdığın dikey (portre) 3B mobil oyun. Godot 4.7, GDScript, `gl_compatibility`.
 
 ## Oynanış
+**Sonsuz level modu:** her level'ın sonunda yeşil teslimat noktası vardır; geçince ödül kasaya yazılır, hasar kısmen onarılır, batarya kısmen dolar ve yol sonsuza kadar zorlaşarak devam eder. Her 5 level'da çevre bölgesi değişir. Kargo kırılırsa kasanın yarısı, batarya bitince ya da menüye dönünce tamamı ödenir. Zor kargolar puan ve altın çarpanı verir. Rekorlar: en yüksek level, mesafe ve puan.
+
 - Sol alttaki sanal joystick (ya da klavye ok/WASD) ile robotu sür; kargoyu çarpmadan teslim et.
 - Tehlikeler: klavye tuşları (uyarıyla kapanır), fanlar, yuvarlanan kalemler. Kargo hasarı ve batarya HUD'da ikon + yüzde olarak görünür.
 - Teslimat altın + hurda kazandırır; garajda şasi, tekerlek, batarya ve şok jeli yükseltilir.
