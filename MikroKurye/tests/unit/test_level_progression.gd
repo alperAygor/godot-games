@@ -42,7 +42,10 @@ func test_scales_move_toward_harder_values() -> void:
 	assert_almost_eq(LevelProgression.cycle_scale(50), LevelProgression.MIN_CYCLE_SCALE, 0.0001)
 	assert_almost_eq(LevelProgression.fan_strength_scale(50), LevelProgression.MAX_FAN_SCALE, 0.0001)
 	assert_almost_eq(LevelProgression.heal_fraction(1), LevelProgression.HEAL_FRACTION_EASY, 0.0001)
-	assert_almost_eq(LevelProgression.battery_refill(50), LevelProgression.BATTERY_REFILL_HARD, 0.0001)
+	# Yenileme level boyuyla orantılı: L1 (60 m) -> %6, tavan (240 m) -> %24.
+	assert_almost_eq(LevelProgression.battery_refill(1), 0.06, 0.0001)
+	assert_almost_eq(LevelProgression.battery_refill(50), 0.24, 0.0001)
+	assert_greater(LevelProgression.battery_refill(10), LevelProgression.battery_refill(2))
 
 
 func test_hazard_budget_is_clamped() -> void:

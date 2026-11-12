@@ -220,6 +220,10 @@ L6 + karışık parçalar. Çevre/model temaları (raf, mutfak…) ayrı bir alt
 **Ödül.** Level ödülü `taban_altın · (1 + 0.25·(n−1)) · hasar_çarpanı`; hurda benzer. Puan = mesafe · kargo çarpanı
 (`1 + 0.5·(zorluk−1)`: pil 1.0, SD kart 1.5, espresso 2.0); altın ödülü de aynı çarpanla büyür.
 
+**Batarya.** Teslimatta batarya, level boyuna orantılı dolar (kapasitenin %0.1'i / metre). Tam gazda
+tüketim %0.16/m olduğundan yaklaşık 5 m/s'de denge sağlanır; daha hızlısında net düşüş olur (level ≈ 12–15'te
+sınırlayıcı). Batarya yükseltmesi koşuyu uzatır; hız bir ödünleşmedir.
+
 **Kasa kuralı.** Kırılma: toplanan altın/hurdanın yarısı (aşağı yuvarlanır). Revive (reklam) korunur.
 
 **Uzun mesafe.** Ölçüldü: robot 6 km'de durağanken y titremesi ≈ 6 µm; `endless_probe` 4 km'de bunu denetler.

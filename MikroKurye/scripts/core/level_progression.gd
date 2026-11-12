@@ -23,8 +23,11 @@ const MIN_CYCLE_SCALE: float = 0.7
 const MAX_FAN_SCALE: float = 1.4
 const HEAL_FRACTION_EASY: float = 0.35
 const HEAL_FRACTION_HARD: float = 0.2
-const BATTERY_REFILL_EASY: float = 0.5
-const BATTERY_REFILL_HARD: float = 0.3
+## Teslimatta batarya, level boyuna orantılı dolar (kapasitenin oranı / metre). Enerji
+## tüketimi metre başına `speed_drain · hız` olduğundan (balance.json) tam gazla %0.16/m
+## harcanır; yenileme %0.1/m: ~5 m/s'de denge, daha hızlıda net düşüş. Hız bir ödünleşmedir
+## ve batarya kapasitesi yükseltmesi koşuyu uzatır.
+const BATTERY_REFILL_PER_METER: float = 0.001
 
 
 ## Level n'in hedef boyu (metre).
@@ -63,7 +66,7 @@ static func heal_fraction(level: int) -> float:
 
 
 static func battery_refill(level: int) -> float:
-	return lerpf(BATTERY_REFILL_EASY, BATTERY_REFILL_HARD, intensity(level))
+	return clampf(BATTERY_REFILL_PER_METER * length_for(level), 0.0, 1.0)
 
 
 ## Bu levelde açık engel etiketleri.

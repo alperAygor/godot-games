@@ -128,8 +128,8 @@ Kullanıcı onayı gerektirenler: oyun hissi (Faz 2 kapısı), mağaza/yayın, �
 - [x] **F9.1** Tasarım kararları (PROJECT_SPEC §14) ✅
 - [x] **F9.2** Çekirdek: `LevelProgression`, `EndlessReward`, `RunRecords` (ProfileData) + testler [Z]
 - [x] **F9.3** Çalışma zamanı: parça dizici, sonsuz level, teslimat noktası, GameController entegrasyonu [Z]
-- [ ] **F9.4** Parça kütüphanesi ve yeni engeller (segment sözleşmesi + `segment_probe`) [Z]
+- [x] **F9.4** Parça kütüphanesi ve yeni engeller (segment sözleşmesi + `segment_probe`) [Z]
 - [x] **F9.5** HUD (level/mesafe/kasa), sonuç ve rekor arayüzü, öğretici ✅ (ekonomi dengesi: oyun denemesi sonrası)
-- [ ] **F9.6** Çevre temaları (raf, mutfak…) [Z]
+- [x] **F9.6** Çevre temaları (raf, mutfak…) [Z]
 - [ ] **F9.7** `endless_probe`, tam kabul, APK [K]
 
