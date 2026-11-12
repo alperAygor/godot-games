@@ -23,6 +23,7 @@ var _deliveries: int
 var _breaks: int
 var _best_stars: Dictionary
 var _settings: Dictionary
+var _records: RunRecords
 
 
 func _init() -> void:
@@ -34,6 +35,7 @@ func _init() -> void:
 	_breaks = 0
 	_best_stars = {}
 	_settings = DEFAULT_SETTINGS.duplicate()
+	_records = RunRecords.new()
 
 
 ## Canlı referans: çağıranın cüzdanı değiştirmesi profile yansır.
@@ -62,6 +64,10 @@ func levels() -> Dictionary:
 ## Tur sonucunu işler. Başarıda ödül + teslimat + kargo başına en iyi yıldız;
 ## başarısızlıkta yalnız kırılma sayacı artar (para ve yıldız eklenmez).
 func record_result(result: Dictionary) -> void:
+	var endless_raw: Variant = result.get("endless", false)
+	if endless_raw is bool and bool(endless_raw):
+		_record_endless(result)
+		return
 	var success_raw: Variant = result.get("success", false)
 	var success: bool = success_raw is bool and bool(success_raw)
 	if not success:
@@ -85,6 +91,19 @@ func record_result(result: Dictionary) -> void:
 		_best_stars[cargo_id] = stars
 
 
+## Sonsuz koşu: ödenen kasa (kırılmada yarısı) her durumda cüzdana girer; teslim edilen
+## level sayısı teslimata eklenir; rekorlar güncellenir ve kırılanlar `new_records`a yazılır.
+func _record_endless(result: Dictionary) -> void:
+	_wallet.add(_whole_or_zero(result.get("gold", 0)), _whole_or_zero(result.get("scrap", 0)))
+	_deliveries += _whole_or_zero(result.get("levels_delivered", 0))
+	if String(result.get("reason", "")) == "broken":
+		_breaks += 1
+	var distance_raw: Variant = result.get("distance", 0.0)
+	var distance: float = float(distance_raw) if typeof(distance_raw) in [TYPE_INT, TYPE_FLOAT] else 0.0
+	result["new_records"] = _records.submit(
+		_whole_or_zero(result.get("level", 0)), distance, _whole_or_zero(result.get("score", 0)))
+
+
 ## İstatistiklerin kopyası; `best_stars` iç sözlüğü de kopyalanır, böylece
 ## dönen sözlüğü değiştirmek profili etkilemez.
 func stats() -> Dictionary:
@@ -96,6 +115,11 @@ func stats() -> Dictionary:
 		"breaks": _breaks,
 		"best_stars": best_copy,
 	}
+
+
+## Canlı referans: rekorlar (sonsuz mod). Koşu bitince `submit` çağrılır.
+func records() -> RunRecords:
+	return _records
 
 
 ## Ayarların kopyası; çağıranın değiştirmesi profili etkilemez.
@@ -117,6 +141,7 @@ func to_dict() -> Dictionary:
 		"levels": levels(),
 		"stats": stats(),
 		"settings": settings(),
+		"records": _records.to_dict(),
 	}
 
 
@@ -143,6 +168,10 @@ static func from_dict(d: Dictionary) -> ProfileData:
 			# Eksik ya da bool olmayan ayar, varsayılanı korur (tolerans kuralı).
 			if value_raw is bool:
 				profile._settings[key_name] = bool(value_raw)
+
+	var records_raw: Variant = d.get("records")
+	if records_raw is Dictionary:
+		profile._records = RunRecords.from_dict(records_raw as Dictionary)
 
 	var stats_raw: Variant = d.get("stats")
 	if stats_raw is Dictionary:

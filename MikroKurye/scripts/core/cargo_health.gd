@@ -36,6 +36,16 @@ func apply_fall(drop_height: float) -> float:
 	return _apply(DamageModel.fall_damage(drop_height, _profile))
 
 
+## Sonsuz mod: teslimatta hasarın `fraction` kadarı onarılır (0..1). Kırık kargo
+## onarılmaz; jel hakkı değişmez. Dönüş: onarılan hasar miktarı.
+func repair(fraction: float) -> float:
+	if _damage >= MAX_DAMAGE or is_nan(fraction) or fraction <= 0.0:
+		return 0.0
+	var healed: float = _damage * clampf(fraction, 0.0, 1.0)
+	_damage -= healed
+	return healed
+
+
 func damage() -> float:
 	return _damage
 

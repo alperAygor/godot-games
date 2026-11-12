@@ -7,6 +7,9 @@ var _parameters: Dictionary[String, Variant] = {}
 var _bodies: Array[RigidBody3D] = []
 var _direction: Vector3 = Vector3.LEFT
 var _acceleration: float = 0.0
+var _base_acceleration: float = 0.0
+var _base_cycle: float = 0.0
+var _blow_fraction: float = 0.55
 var _cycle_seconds: float = 0.0
 var _blow_seconds: float = 0.0
 var _phase: float = 0.0
@@ -23,12 +26,23 @@ func _ready() -> void:
 			_parameters.assign(found)
 	_acceleration = maxf(_parameter("fan_accel", 4.0), 0.0)
 	_cycle_seconds = maxf(_parameter("fan_cycle_seconds", 4.0), 0.001)
-	_blow_seconds = _cycle_seconds * clampf(_parameter("fan_blow_fraction", 0.55), 0.0, 1.0)
+	_blow_fraction = clampf(_parameter("fan_blow_fraction", 0.55), 0.0, 1.0)
+	_blow_seconds = _cycle_seconds * _blow_fraction
+	_base_acceleration = _acceleration
+	_base_cycle = _cycle_seconds
 	_direction = direction.normalized() if not direction.is_zero_approx() else Vector3.LEFT
 	_blowing = _phase < _blow_seconds
 	monitoring = true
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
+
+
+## Sonsuz mod: level zorluğu döngüyü kısaltır, rüzgârı güçlendirir.
+func apply_difficulty(params: Dictionary) -> void:
+	_cycle_seconds = maxf(_base_cycle * float(params.get("cycle_scale", 1.0)), 0.5)
+	_blow_seconds = _cycle_seconds * _blow_fraction
+	_acceleration = _base_acceleration * float(params.get("fan_scale", 1.0))
+	_phase = fposmod(_phase, _cycle_seconds)
 
 
 func is_blowing() -> bool:

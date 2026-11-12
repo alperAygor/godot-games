@@ -11,6 +11,7 @@ var _rolling_angular_velocity: Vector3 = Vector3.ZERO
 var _speed: float = 0.0
 var _travel_distance: float = 0.0
 var _period: float = 0.0
+var _base_period: float = 0.0
 var _elapsed: float = 0.0
 var _lane_min: float = 0.0
 var _lane_max: float = 0.0
@@ -28,6 +29,7 @@ func _ready() -> void:
 			_parameters.assign(found)
 	_speed = maxf(_parameter("pencil_speed", 1.3), 0.0)
 	_period = maxf(_parameter("pencil_period_seconds", 5.0), 0.001)
+	_base_period = _period
 	_lane_min = maxf(_parameter("pencil_lane_min_x", 2.1),
 		_parameter("pencil_center_clearance", 1.5))
 	_lane_max = maxf(_parameter("pencil_lane_max_x", 4.4), _lane_min)
@@ -53,6 +55,11 @@ func _ready() -> void:
 	axis_lock_angular_x = true
 	axis_lock_angular_y = true
 	axis_lock_linear_z = true
+
+
+## Sonsuz mod: level zorluğu geçiş döngüsünü sıklaştırır (en az 1 sn).
+func apply_difficulty(params: Dictionary) -> void:
+	_period = maxf(_base_period * float(params.get("cycle_scale", 1.0)), 1.0)
 
 
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
