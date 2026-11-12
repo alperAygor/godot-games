@@ -1,6 +1,8 @@
-[gd_scene load_steps=62 format=3]
+[gd_scene load_steps=64 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/level_root.gd" id="level"]
+[ext_resource type="Script" path="res://scripts/gameplay/ambient/sway.gd" id="sway"]
+[ext_resource type="Script" path="res://scripts/gameplay/ambient/mug_steam.gd" id="mug_steam"]
 [ext_resource type="Script" path="res://scripts/gameplay/hazards/keyboard_key.gd" id="key"]
 [ext_resource type="Script" path="res://scripts/gameplay/hazards/fan_wind.gd" id="fan"]
 [ext_resource type="Script" path="res://scripts/gameplay/hazards/rolling_pencil.gd" id="pencil_script"]
@@ -429,6 +431,9 @@ shape = SubResource("MugShape")
 
 [node name="Visual" parent="Mug" instance=ExtResource("mug")]
 
+[node name="Steam" type="CPUParticles3D" parent="Mug"]
+position = Vector3(0, 2.5, 0)
+script = ExtResource("mug_steam")
 
 [node name="Book" type="StaticBody3D" parent="."]
 position = Vector3(-3.5, 0, -66)
@@ -519,6 +524,9 @@ transform = Transform3D(6, 0, 0, 0, 6, 0, 0, 0, 6, -14, 12, -118.5)
 
 [node name="BgCurtain" parent="." instance=ExtResource("bg_curtain")]
 transform = Transform3D(7, 0, 0, 0, 7, 0, 0, 0, 7, -14, 12, -117.5)
+script = ExtResource("sway")
+amplitude_deg = 1.2
+period_seconds = 4.0
 
 [node name="BgShelf" parent="." instance=ExtResource("bg_shelf")]
 transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 20, 14, -118)
@@ -534,6 +542,10 @@ transform = Transform3D(7, 0, 0, 0, 7, 0, 0, 0, 7, -16, -6, -82)
 
 [node name="BgPlant" parent="." instance=ExtResource("bg_plant")]
 transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 22, -6, -70)
+script = ExtResource("sway")
+amplitude_deg = 1.5
+period_seconds = 3.5
+phase_offset_seconds = 1.1
 
 [node name="BgBooks" parent="." instance=ExtResource("bg_books")]
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, -12, -6, -90)

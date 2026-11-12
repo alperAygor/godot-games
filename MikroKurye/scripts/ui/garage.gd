@@ -39,6 +39,14 @@ var _locks: Dictionary[String, TextureRect] = {}
 var _ad: Node = null
 var _trial_pending: String = ""
 var _cards: Array[Control] = []
+## Satın alma geri bildirimi için kategori -> kart ve dolu pip düğümleri.
+var _card_nodes: Dictionary[String, PanelContainer] = {}
+var _pip_nodes: Dictionary[String, Array] = {}
+## Cüzdan çipleri (pop/parıltı için) ve önceki değerler (yalnızca değişimde pop).
+var _gold_chip: Control = null
+var _scrap_chip: Control = null
+var _last_gold: int = -1
+var _last_scrap: int = -1
 
 
 func _ready() -> void:
@@ -59,10 +67,13 @@ func _ready() -> void:
 			_ad.connect("ad_failed", _on_ad_failed)
 	_build_rows()
 	_refresh()
+	# Cüzdan çipleri: GoldIcon -> Row -> GoldChip (pop/parıltı hedefi).
+	_gold_chip = _gold_icon.get_parent().get_parent() as Control
+	_scrap_chip = _scrap_icon.get_parent().get_parent() as Control
 	# Dinamik kategori düğmeleri kurulduktan sonra tek yerden tıklama sesi.
 	UiSfx.bind(self)
 	UiMotion.fade_in(self)
-	UiMotion.stagger_pop(_cards)
+	UiMotion.stagger_slide(_cards)
 
 
 func _stylize() -> void:
@@ -87,6 +98,8 @@ func _build_rows() -> void:
 	_price.clear()
 	_locks.clear()
 	_cards.clear()
+	_card_nodes.clear()
+	_pip_nodes.clear()
 	var table: Dictionary = GameData.table(UPGRADES_TABLE)
 	for key: Variant in table.keys():
 		var category: String = String(key)
@@ -178,6 +191,7 @@ func _make_card(category: String) -> PanelContainer:
 	buttons.add_child(try_button)
 	_try_buttons[category] = try_button
 
+	_card_nodes[category] = card
 	return card
 
 
@@ -202,8 +216,18 @@ func _refresh() -> void:
 	_back_button.disabled = pending
 	var profile: ProfileData = SaveService.profile()
 	var wallet: Wallet = profile.wallet()
-	_gold_label.text = str(wallet.gold())
-	_scrap_label.text = str(wallet.scrap())
+	var gold: int = wallet.gold()
+	var scrap: int = wallet.scrap()
+	_gold_label.text = str(gold)
+	_scrap_label.text = str(scrap)
+	# Etiket metni EŞZAMANLI doğru değere kurulur (meta_probe determinizmi); değer
+	# değişiminde yalnızca çipe ufak pop/parıltı eklenir (sayaç hissi, görsel).
+	if _last_gold >= 0 and gold != _last_gold and _gold_chip != null:
+		UiMotion.chip_pop(_gold_chip, UiTheme.color("secondary"))
+	if _last_scrap >= 0 and scrap != _last_scrap and _scrap_chip != null:
+		UiMotion.chip_pop(_scrap_chip)
+	_last_gold = gold
+	_last_scrap = scrap
 	for key: Variant in _buttons.keys():
 		var category: String = String(key)
 		var cost: Dictionary = SaveService.upgrade_cost(category)
@@ -211,22 +235,25 @@ func _refresh() -> void:
 		var affordable: bool = wallet.can_afford(cost)
 		var level: int = profile.level(category)
 		var max_level: int = _max_level(category)
-		_rebuild_pips(_pips[category], level, max_level)
+		_rebuild_pips(category, _pips[category], level, max_level)
 		_rebuild_price(_price[category], cost, maxed)
 		(_locks[category]).visible = maxed or not affordable
 		# Yetersiz bakiyede kart içeriği soluk; maksimumda kilit zaten söyler.
 		(_content[category]).modulate.a = 0.55 if (not maxed and not affordable) else 1.0
 		var button: Button = _buttons[category]
 		button.text = UiStrings.MAX_LEVEL if maxed else UiStrings.BUY
-		button.disabled = pending or maxed or not affordable
+		# Yetersiz bakiyede düğme AÇIK kalır: basışta titreme/flaş geri bildirimi
+		# verilir (satın alma yapılmaz); maksimumda devre dışıdır.
+		button.disabled = pending or maxed
 		var try_button: Button = _try_buttons[category]
 		try_button.visible = not maxed
 		try_button.disabled = not can_try or maxed
 
 
-func _rebuild_pips(box: HBoxContainer, level: int, max_level: int) -> void:
+func _rebuild_pips(category: String, box: HBoxContainer, level: int, max_level: int) -> void:
 	for child: Node in box.get_children():
 		child.queue_free()
+	var built: Array = []
 	var total: int = maxi(max_level, 1)
 	for i: int in total:
 		var dot := Panel.new()
@@ -238,6 +265,8 @@ func _rebuild_pips(box: HBoxContainer, level: int, max_level: int) -> void:
 			else UiTheme.color("text_muted", 0.22)
 		dot.add_theme_stylebox_override("panel", style)
 		box.add_child(dot)
+		built.append(dot)
+	_pip_nodes[category] = built
 
 
 func _rebuild_price(box: HBoxContainer, cost: Dictionary, maxed: bool) -> void:
@@ -280,12 +309,33 @@ func _make_price_chip(icon_name: String, tint: Color, amount: int) -> PanelConta
 func _on_upgrade_pressed(category: String) -> void:
 	if not _trial_pending.is_empty():
 		return
-	# Disabled düğme programatik sinyalle de gelebilir: bakiyeyi burada da doğrula.
+	# Düğme programatik sinyalle de gelebilir: bakiyeyi burada da doğrula.
 	var cost: Dictionary = SaveService.upgrade_cost(category)
-	if cost.is_empty() or not SaveService.profile().wallet().can_afford(cost):
+	if cost.is_empty():
+		return
+	if not SaveService.profile().wallet().can_afford(cost):
+		# Yetersiz bakiye: satın alma yok; kısa yatay titreme + kırmızımsı flaş.
+		var card: Control = _card_nodes.get(category) as Control
+		if card != null:
+			UiMotion.deny_feedback(card)
 		return
 	if SaveService.purchase(category):
 		_refresh()
+		_celebrate_purchase(category)
+
+
+## Başarılı satın alma geri bildirimi: kartta pop + yeni dolan pip pop'u.
+func _celebrate_purchase(category: String) -> void:
+	var card: Control = _card_nodes.get(category) as Control
+	if card != null:
+		UiMotion.pop(card)
+	var pips: Array[Control] = _pip_nodes.get(category) as Array[Control]
+	if pips == null:
+		return
+	var level: int = SaveService.profile().level(category)
+	var index: int = level - 1
+	if index >= 0 and index < pips.size():
+		UiMotion.pop(pips[index])
 
 
 ## Deneme reklamı: başarılıysa kategori bir sonraki koşu için açılır; seviye
