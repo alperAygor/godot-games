@@ -131,5 +131,4 @@ Kullanıcı onayı gerektirenler: oyun hissi (Faz 2 kapısı), mağaza/yayın, �
 - [x] **F9.4** Parça kütüphanesi ve yeni engeller (segment sözleşmesi + `segment_probe`) [Z]
 - [x] **F9.5** HUD (level/mesafe/kasa), sonuç ve rekor arayüzü, öğretici ✅ (ekonomi dengesi: oyun denemesi sonrası)
 - [x] **F9.6** Çevre temaları (raf, mutfak…) [Z]
-- [ ] **F9.7** `endless_probe`, tam kabul, APK [K]
-
+- [x] **F9.7** `endless_probe`, tam kabul, APK [K]
