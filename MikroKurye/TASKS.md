@@ -122,3 +122,14 @@ Hedef: **low-poly'nin üstü**, pürüzsüz ve ürün kalitesinde stilize görü
 
 Bkz. `PROJECT_SPEC.md` §12 (ad: Micro Courier; Altın+Hurda; MVP modülü Şok Jeli; K1 onaylı).
 Kullanıcı onayı gerektirenler: oyun hissi (Faz 2 kapısı), mağaza/yayın, ücretli API.
+
+## Faz 9 — Sonsuz level modu
+
+- [ ] **F9.1** Tasarım kararları (PROJECT_SPEC §14) ✅
+- [ ] **F9.2** Çekirdek: `LevelProgression`, `EndlessReward`, `RunRecords` (ProfileData) + testler [Z]
+- [ ] **F9.3** Çalışma zamanı: parça dizici, sonsuz level, teslimat noktası, GameController entegrasyonu [Z]
+- [ ] **F9.4** Parça kütüphanesi ve yeni engeller (segment sözleşmesi + `segment_probe`) [Z]
+- [ ] **F9.5** HUD (level/mesafe), sonuç ve rekor arayüzü, dünya geri çekme, ekonomi dengesi [Z]
+- [ ] **F9.6** Çevre temaları (raf, mutfak…) [Z]
+- [ ] **F9.7** `endless_probe`, tam kabul, APK [K]
+

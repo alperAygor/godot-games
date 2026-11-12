@@ -197,3 +197,30 @@ Sıklık limitleri `AdManager` içinde, veriler `data/` altında. Reklam SDK ça
 > Referans: `docs/art/style_lab_sheet.png` (A sütunu) ve `assets/shaders/style_lab/`, `scenes/styles/style_a.tscn`. B ve C varyantları referans olarak kalır, kullanılmaz.
 
 > **Kalite hedefi güncellemesi (2026-11-12, kullanıcı geri bildirimi):** Görseller "pikselimsi" ve fazla basit bulundu. Yön: **low-poly'nin üstü** — stilize ama detaylı, pürüzsüz (kenar tırtığı yok: MSAA/FXAA, yumuşak toon bantları), daha zengin modeller (robot, kargo, masa eşyaları, oda/çevre), **modern, nazik, sade UI/UX** (çok ikon, yumuşak kartlar, bol boşluk, ince gölge, tutarlı ikon seti) ve ardından **animasyon/juice** (robot, dünya, UI, kamera, parçacık). Palet ve stil A (toon + anahat) korunur ama daha rafine uygulanır. Çokgen bütçeleri `CLAUDE.md` §8'de.
+
+---
+
+## 14. Faz 9 — Sonsuz level modu (karar: 2026-11-13)
+
+Oyun tek 72 m'lik masa yerine **sonsuz ama level'lı** akışa geçer. Kullanıcı kararları: kırılınca koşunun
+kazancı **yarı yarıya** ödenir; zor kargo **puan çarpanı** verir; rekor level + metre olarak tutulur.
+
+**Akış.** Koşu level 1'de başlar. Her level'ın sonunda teslimat noktası vardır: teslimat o level'ın ödülünü
+koşu kasasına yazar, bataryayı kısmen doldurur, kargoyu kısmen onarır ve bir sonraki level başlar. Koşu
+**kargo kırılınca** (kasanın %50'si ödenir) veya **batarya bitince / oyuncu menüye dönünce** (kasanın tamamı
+ödenir) biter. Rekor: en yüksek level, en uzun mesafe, en yüksek puan.
+
+**Level boyu.** `length(n) = min(60 + 12·(n−1), 240)` m. Yol 12 m'lik **parçalardan** (segment) kurulur;
+parça seçimi tohumlu ve deterministiktir (aynı tohum + level = aynı yol).
+
+**Zorluk.** Yoğunluk ve hız level ile artar (`intensity = clamp((n−1)/14, 0, 1)`); yeni engel türleri sırayla açılır:
+L1 klavye tuşları · L2 + masa eşyası engelleri (kupa, kitap) · L3 + yuvarlanan kalemler · L4 + fanlar ·
+L6 + karışık parçalar. Çevre/model temaları (raf, mutfak…) ayrı bir alt faz (9.6).
+
+**Ödül.** Level ödülü `taban_altın · (1 + 0.25·(n−1)) · hasar_çarpanı`; hurda benzer. Puan = mesafe · kargo çarpanı
+(`1 + 0.5·(zorluk−1)`: pil 1.0, SD kart 1.5, espresso 2.0); altın ödülü de aynı çarpanla büyür.
+
+**Kasa kuralı.** Kırılma: toplanan altın/hurdanın yarısı (aşağı yuvarlanır). Revive (reklam) korunur.
+
+**Bilinen sınır.** Çok uzun mesafede (>≈5 km) tek duyarlıklı kayan nokta titremesi; dünya geri çekme (origin rebase)
+9.5'te ele alınır, ölçüm probu 4 km'de bakar.
