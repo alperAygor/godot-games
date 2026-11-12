@@ -1,0 +1,205 @@
+{
+  "images": [
+    {
+      "name": "prop_keyboard_row_v2",
+      "tris": 868,
+      "dims": [
+        2.6,
+        1.018,
+        0.634
+      ],
+      "preview": "prop_keyboard_row_v2.png"
+    },
+    {
+      "name": "prop_mug_v2",
+      "tris": 1800,
+      "dims": [
+        2.3,
+        1.8,
+        2.375
+      ],
+      "preview": "prop_mug_v2.png"
+    },
+    {
+      "name": "prop_pencil_v2",
+      "tris": 326,
+      "dims": [
+        0.54,
+        8.0,
+        0.54
+      ],
+      "preview": "prop_pencil_v2.png"
+    },
+    {
+      "name": "prop_ruler_v2",
+      "tris": 1164,
+      "dims": [
+        1.2,
+        12.0,
+        0.106
+      ],
+      "preview": "prop_ruler_v2.png"
+    },
+    {
+      "name": "prop_book_v2",
+      "tris": 696,
+      "dims": [
+        3.5,
+        5.0,
+        0.67
+      ],
+      "preview": "prop_book_v2.png"
+    },
+    {
+      "name": "prop_monitor_v2",
+      "tris": 404,
+      "dims": [
+        2.7,
+        0.6,
+        2.7
+      ],
+      "preview": "prop_monitor_v2.png"
+    },
+    {
+      "name": "prop_lamp_v2",
+      "tris": 1296,
+      "dims": [
+        1.0,
+        1.35,
+        1.6
+      ],
+      "preview": "prop_lamp_v2.png"
+    },
+    {
+      "name": "prop_plant_v2",
+      "tris": 912,
+      "dims": [
+        1.699,
+        1.68,
+        2.05
+      ],
+      "preview": "prop_plant_v2.png"
+    },
+    {
+      "name": "prop_book_stack_v2",
+      "tris": 608,
+      "dims": [
+        2.453,
+        4.491,
+        2.2
+      ],
+      "preview": "prop_book_stack_v2.png"
+    },
+    {
+      "name": "prop_headphones_v2",
+      "tris": 816,
+      "dims": [
+        1.88,
+        1.82,
+        1.88
+      ],
+      "preview": "prop_headphones_v2.png"
+    },
+    {
+      "name": "prop_notebook_v2",
+      "tris": 1206,
+      "dims": [
+        3.481,
+        4.5,
+        0.236
+      ],
+      "preview": "prop_notebook_v2.png"
+    },
+    {
+      "name": "prop_pen_cup_v2",
+      "tris": 442,
+      "dims": [
+        1.098,
+        1.098,
+        2.58
+      ],
+      "preview": "prop_pen_cup_v2.png"
+    },
+    {
+      "name": "prop_sticky_notes_v2",
+      "tris": 264,
+      "dims": [
+        1.125,
+        1.091,
+        0.041
+      ],
+      "preview": "prop_sticky_notes_v2.png"
+    },
+    {
+      "name": "prop_coin_v2",
+      "tris": 512,
+      "dims": [
+        1.5,
+        1.5,
+        0.263
+      ],
+      "preview": "prop_coin_v2.png"
+    },
+    {
+      "name": "env_window_v2",
+      "tris": 804,
+      "dims": [
+        5.6,
+        0.5,
+        4.1
+      ],
+      "preview": "env_window_v2.png"
+    },
+    {
+      "name": "env_curtain_v2",
+      "tris": 576,
+      "dims": [
+        5.0,
+        0.8,
+        3.6
+      ],
+      "preview": "env_curtain_v2.png"
+    },
+    {
+      "name": "env_shelf_v2",
+      "tris": 796,
+      "dims": [
+        4.2,
+        1.1,
+        1.21
+      ],
+      "preview": "env_shelf_v2.png"
+    },
+    {
+      "name": "env_picture_frame_v2",
+      "tris": 212,
+      "dims": [
+        2.6,
+        0.12,
+        1.9
+      ],
+      "preview": "env_picture_frame_v2.png"
+    },
+    {
+      "name": "env_desk_edge_v2",
+      "tris": 348,
+      "dims": [
+        6.0,
+        1.5,
+        0.406
+      ],
+      "preview": "env_desk_edge_v2.png"
+    },
+    {
+      "name": "env_wall_panel_v2",
+      "tris": 216,
+      "dims": [
+        6.0,
+        0.32,
+        3.0
+      ],
+      "preview": "env_wall_panel_v2.png"
+    }
+  ],
+  "diorama": "diorama.png"
+}
