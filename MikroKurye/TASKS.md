@@ -104,10 +104,10 @@ Hedef: **low-poly'nin üstü**, pürüzsüz ve ürün kalitesinde stilize görü
 - [x] **F7.4** Kamera + ortam (oda derinliği, pencere ışığı, toz) ✅ (ilk sürüm; model v2 ile yenilenecek)
 - [x] **F7.9** **Render kalitesi:** MSAA/FXAA ile kenar tırtığı yok, doku/mip filtreleme, yumuşak toon bantları ve anti-aliased anahat, ölçek [O]
 - [x] **F7.10a** **Model v2 — robot, tekerlek, sepet, 3 kargo:** hero kalite (kavisli formlar, bevel, yumuşak normal, yüz/detaylar) [Z]
-- [ ] **F7.10b** **Model v2 — masa eşyaları ve oda/çevre kiti:** monitör, lamba, bitki, kitap yığını, kulaklık, defter, kalemlik, yapışkan not, pencere/raf/perde, klavye/kupa/kalem/cetvel/kitap yenileme [Z]
-- [ ] **F7.10c** Model v2 sahne entegrasyonu (Game/Proto/level/menü vitrini) [O]
-- [ ] **F7.6b** **Modern, nazik, sade UI/UX** + ikon sistemi (HUD, menü, sipariş, garaj, sonuç, ayarlar, rehber) [Z]
-- [ ] **F7.11** **Animasyon ve "juice":** robot (idle, sürüş, iniş squash, anten, yüz ifadeleri), dünya (tuş, fan, kalem, buhar, toz), UI (geçişler, sayaç, yıldız, düğme), kamera, parçacıklar, ses-senkron [Z]
+- [x] **F7.10b** **Model v2 — masa eşyaları ve oda/çevre kiti:** monitör, lamba, bitki, kitap yığını, kulaklık, defter, kalemlik, yapışkan not, pencere/raf/perde, klavye/kupa/kalem/cetvel/kitap yenileme [Z]
+- [x] **F7.10c** Model v2 sahne entegrasyonu (Game/Proto/level/menü vitrini) [O]
+- [x] **F7.6b** **Modern, nazik, sade UI/UX** + ikon sistemi (HUD, menü, sipariş, garaj, sonuç, ayarlar, rehber) [Z]
+- [ ] **F7.11** (robot ✅; UI/dünya F7.11a devam) **Animasyon ve "juice":** robot (idle, sürüş, iniş squash, anten, yüz ifadeleri), dünya (tuş, fan, kalem, buhar, toz), UI (geçişler, sayaç, yıldız, düğme), kamera, parçacıklar, ses-senkron [Z]
 - [ ] **F7.8** Görsel QA turu + kullanıcı onayı [U]
 
 ## Faz 8 — Final
