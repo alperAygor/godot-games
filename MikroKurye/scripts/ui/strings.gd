@@ -7,6 +7,7 @@ extends RefCounted
 const MENU_PLAY: String = "Oyna"
 const MENU_GARAGE: String = "Garaj"
 const MENU_SETTINGS: String = "Ayarlar"
+const MENU_SOUND: String = "Ses"
 const MENU_HINT: String = "Siparişini seç, kuryeni geliştir."
 const BACK: String = "Geri"
 const SETTINGS_TITLE: String = "Ayarlar"
@@ -45,6 +46,13 @@ const RECHARGE_HINT: String = "Reklam izle, batarya dolsun ve kısa süre hızla
 const DOUBLE_REWARD: String = "Ödülü 2× Yap"
 const GOLDEN_BOX: String = "Altın Kutu Bonusu"
 const TRY_BEFORE_BUY: String = "Dene"
+const RESULT_SUCCESS: String = "Teslimat Tamamlandı"
+const RESULT_FAIL: String = "Teslimat Hasarlı"
+const RESULT_RETRY: String = "Tekrar Oyna"
+const RESULT_MENU: String = "Ana Menü"
+const BUY: String = "Yükselt"
+const SOUND_ON_TEXT: String = "Açık"
+const SOUND_OFF_TEXT: String = "Kapalı"
 
 
 ## `data/cargo.json` içindeki `name_key` -> görünen ad. Bilinmeyen anahtar
@@ -78,6 +86,22 @@ static func category_name(category: String) -> String:
 			return "Şok Jeli"
 		_:
 			return category
+
+
+## Bir sonraki yükseltme seviyesinin etkisi (kısa, kart altında gösterilir).
+## Veri `data/upgrades.json` mod anahtarlarından gelir; değerler seviye başına aynıdır.
+static func category_effect(category: String) -> String:
+	match category:
+		"chassis":
+			return "Kargo sönümü iyileşir"
+		"wheels":
+			return "Yol tutuşu artar"
+		"battery":
+			return "Batarya kapasitesi artar"
+		"shock_gel":
+			return "Kırılmaya karşı 1 kez korur"
+		_:
+			return ""
 
 
 static func gold_label(amount: int) -> String:

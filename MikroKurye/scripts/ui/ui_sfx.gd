@@ -21,6 +21,8 @@ static func bind(root: Node) -> void:
 static func bind_button(button: BaseButton) -> void:
 	if not button.pressed.is_connected(_on_pressed):
 		button.pressed.connect(_on_pressed)
+	# F7.6b: basışta küçülme geri bildirimi tek yerden; sahne kodu tekrar etmez.
+	UiMotion.press_feedback(button)
 
 
 static func _on_pressed() -> void:

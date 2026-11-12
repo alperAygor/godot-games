@@ -1,19 +1,14 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/menu.gd" id="1_menu"]
+[ext_resource type="Texture2D" path="res://assets/ui/robot_showcase.png" id="2_robot"]
 
-[sub_resource type="StyleBoxFlat" id="TutorialPanelStyle"]
-content_margin_left = 44.0
-content_margin_top = 40.0
-content_margin_right = 44.0
-content_margin_bottom = 40.0
-bg_color = Color(0.96, 0.93, 0.88, 1)
-border_width_bottom = 6
-border_color = Color(0.851, 0.7412, 0.5765, 1)
-corner_radius_top_left = 36
-corner_radius_top_right = 36
-corner_radius_bottom_right = 36
-corner_radius_bottom_left = 36
+[sub_resource type="StyleBoxFlat" id="DotStyle"]
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
 
 [node name="Menu" type="Control"]
 layout_mode = 3
@@ -25,57 +20,144 @@ grow_vertical = 2
 script = ExtResource("1_menu")
 
 [node name="Background" type="ColorRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.96, 0.93, 0.88, 1)
-
-[node name="Center" type="CenterContainer" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Column" type="VBoxContainer" parent="Center"]
-custom_minimum_size = Vector2(620, 0)
-layout_mode = 2
-theme_override_constants/separation = 28
-
-[node name="Title" type="Label" parent="Center/Column"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 72
-text = "Micro Courier"
-horizontal_alignment = 1
-
-[node name="PlayButton" type="Button" parent="Center/Column"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(620, 132)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Safe" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 56
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 56
+
+[node name="Column" type="VBoxContainer" parent="Safe"]
 layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="WalletBar" type="HBoxContainer" parent="Safe/Column"]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="GoldChip" type="PanelContainer" parent="Safe/Column/WalletBar"]
+theme_type_variation = &"ChipPanel"
+layout_mode = 2
+
+[node name="Row" type="HBoxContainer" parent="Safe/Column/WalletBar/GoldChip"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="GoldIcon" type="TextureRect" parent="Safe/Column/WalletBar/GoldChip/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+size_flags_vertical = 4
+stretch_mode = 5
+
+[node name="GoldLabel" type="Label" parent="Safe/Column/WalletBar/GoldChip/Row"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "0"
+
+[node name="ScrapChip" type="PanelContainer" parent="Safe/Column/WalletBar"]
+theme_type_variation = &"ChipPanel"
+layout_mode = 2
+
+[node name="Row" type="HBoxContainer" parent="Safe/Column/WalletBar/ScrapChip"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ScrapIcon" type="TextureRect" parent="Safe/Column/WalletBar/ScrapChip/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+size_flags_vertical = 4
+stretch_mode = 5
+
+[node name="ScrapLabel" type="Label" parent="Safe/Column/WalletBar/ScrapChip/Row"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "0"
+
+[node name="TitleBox" type="VBoxContainer" parent="Safe/Column"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TitleRow" type="HBoxContainer" parent="Safe/Column/TitleBox"]
+layout_mode = 2
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="TitlePart1" type="Label" parent="Safe/Column/TitleBox/TitleRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "Micro "
+
+[node name="TitlePart2" type="Label" parent="Safe/Column/TitleBox/TitleRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "Courier"
+
+[node name="RobotShowcase" type="TextureRect" parent="Safe/Column"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 320)
+texture = ExtResource("2_robot")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PlayButton" type="Button" parent="Safe/Column"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(620, 140)
+layout_mode = 2
+size_flags_horizontal = 4
 text = "Oyna"
 
-[node name="GarageButton" type="Button" parent="Center/Column"]
+[node name="BottomBar" type="HBoxContainer" parent="Safe/Column"]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="GarageButton" type="Button" parent="Safe/Column/BottomBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(620, 132)
+custom_minimum_size = Vector2(260, 120)
 layout_mode = 2
 theme_type_variation = &"SecondaryButton"
 text = "Garaj"
 
-[node name="SettingsButton" type="Button" parent="Center/Column"]
+[node name="SettingsButton" type="Button" parent="Safe/Column/BottomBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(620, 120)
+custom_minimum_size = Vector2(260, 120)
 layout_mode = 2
 theme_type_variation = &"SecondaryButton"
 text = "Ayarlar"
 
-[node name="Hint" type="Label" parent="Center/Column"]
+[node name="SoundButton" type="Button" parent="Safe/Column/BottomBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 120)
+layout_mode = 2
+theme_type_variation = &"SecondaryButton"
+text = "Ses"
+
+[node name="Hint" type="Label" parent="Safe/Column"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.45, 0.4, 0.36, 1)
 theme_override_font_sizes/font_size = 26
 text = "Siparişini seç, kuryeni geliştir."
 horizontal_alignment = 1
@@ -98,7 +180,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.08, 0.07, 0.06, 0.55)
+color = Color(0.1, 0.12, 0.18, 0.55)
 
 [node name="Center" type="CenterContainer" parent="TutorialPanel"]
 layout_mode = 1
@@ -111,11 +193,11 @@ grow_vertical = 2
 [node name="Panel" type="PanelContainer" parent="TutorialPanel/Center"]
 custom_minimum_size = Vector2(860, 0)
 layout_mode = 2
-theme_override_styles/panel = SubResource("TutorialPanelStyle")
+theme_type_variation = &"CardPanel"
 
 [node name="Column" type="VBoxContainer" parent="TutorialPanel/Center/Panel"]
 layout_mode = 2
-theme_override_constants/separation = 28
+theme_override_constants/separation = 24
 
 [node name="TutorialTitle" type="Label" parent="TutorialPanel/Center/Panel/Column"]
 unique_name_in_owner = true
@@ -124,17 +206,30 @@ theme_override_font_sizes/font_size = 46
 text = "Mikro Kurye"
 horizontal_alignment = 1
 
-[node name="TutorialPage" type="Label" parent="TutorialPanel/Center/Panel/Column"]
+[node name="TutorialDots" type="HBoxContainer" parent="TutorialPanel/Center/Panel/Column"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.42, 0.38, 0.34, 1)
-theme_override_font_sizes/font_size = 28
-text = "1 / 3"
-horizontal_alignment = 1
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="Dot0" type="Panel" parent="TutorialPanel/Center/Panel/Column/TutorialDots"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+theme_override_styles/panel = SubResource("DotStyle")
+
+[node name="Dot1" type="Panel" parent="TutorialPanel/Center/Panel/Column/TutorialDots"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+theme_override_styles/panel = SubResource("DotStyle")
+
+[node name="Dot2" type="Panel" parent="TutorialPanel/Center/Panel/Column/TutorialDots"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+theme_override_styles/panel = SubResource("DotStyle")
 
 [node name="TutorialText" type="Label" parent="TutorialPanel/Center/Panel/Column"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(760, 360)
+custom_minimum_size = Vector2(760, 340)
 layout_mode = 2
 theme_override_font_sizes/font_size = 36
 text = "Sürüş: sol alttaki joystick ile kuryeni yönlendir."
@@ -144,13 +239,13 @@ autowrap_mode = 3
 
 [node name="TutorialNextButton" type="Button" parent="TutorialPanel/Center/Panel/Column"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(760, 132)
+custom_minimum_size = Vector2(760, 120)
 layout_mode = 2
 text = "Devam"
 
 [node name="TutorialSkipButton" type="Button" parent="TutorialPanel/Center/Panel/Column"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(760, 112)
+custom_minimum_size = Vector2(760, 104)
 layout_mode = 2
 theme_type_variation = &"SecondaryButton"
 text = "Atla"
