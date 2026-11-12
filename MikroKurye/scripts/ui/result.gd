@@ -13,6 +13,18 @@ const GOLDEN_SCRAP_DEFAULT: int = 10
 const STAR_TOTAL: int = 3
 const STAR_SIZE: float = 112.0
 const REWARD_ICON_SIZE: float = 44.0
+## Yıldızlar sırayla (200 ms arayla) büyüyerek + hafif dönerek dolar.
+const STAR_STAGGER: float = 0.2
+const STAR_FILL_SECONDS: float = 0.34
+const STAR_ROTATION_DEG: float = -18.0
+## Boş yıldız soluk çizgi; dolu yıldız tam sarı dolgu.
+const STAR_EMPTY_ALPHA: float = 0.35
+const STAR_FILLED_ICON: String = "res://assets/ui_icons/star_filled.svg"
+const SPARKLE_TEXTURE: String = "res://assets/ui_icons/sparkle.svg"
+const SPARKLE_AMOUNT: int = 10
+const COUNT_SECONDS: float = 0.6
+## Sayaçlar yıldızlar dolduktan SONRA başlar.
+const STAR_COUNT_DELAY: float = STAR_STAGGER * float(STAR_TOTAL - 1) + STAR_FILL_SECONDS
 
 @onready var title_label: Label = %Title
 @onready var _star_box: HBoxContainer = %Stars
@@ -96,36 +108,78 @@ func _build_stars(count: int) -> void:
 	for i: int in STAR_TOTAL:
 		var filled: bool = i < count
 		var star := TextureRect.new()
-		star.texture = Icons.texture("lucide/star")
-		star.modulate = UiTheme.color("secondary") if filled else UiTheme.color("text_muted")
+		# Dolu = sarı dolgu ikonu; boş = soluk çizgi ikonu (stil farkı net).
+		if filled:
+			star.texture = load(STAR_FILLED_ICON) as Texture2D
+			star.modulate = UiTheme.color("secondary")
+		else:
+			star.texture = Icons.texture("lucide/star")
+			star.modulate = UiTheme.color("text_muted")
 		star.custom_minimum_size = Vector2(STAR_SIZE, STAR_SIZE)
 		star.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		star.pivot_offset = Vector2(STAR_SIZE, STAR_SIZE) * 0.5
 		star.scale = Vector2.ONE * 0.3
+		star.rotation = deg_to_rad(STAR_ROTATION_DEG)
 		star.modulate.a = 0.0
 		_star_box.add_child(star)
-		_animate_star(star, float(i) * 0.12, 1.0 if filled else 0.30)
+		_animate_star(star, float(i) * STAR_STAGGER, filled)
 
 
-func _animate_star(star: Control, delay: float, target_alpha: float) -> void:
+func _animate_star(star: TextureRect, delay: float, filled: bool) -> void:
+	var target_alpha: float = 1.0 if filled else STAR_EMPTY_ALPHA
 	var tween: Tween = star.create_tween()
 	tween.tween_interval(delay)
 	tween.set_parallel(true)
-	tween.tween_property(star, "modulate:a", target_alpha, 0.25) \
+	tween.tween_property(star, "modulate:a", target_alpha, STAR_FILL_SECONDS * 0.6) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(star, "scale", Vector2.ONE, 0.32) \
+	tween.tween_property(star, "scale", Vector2.ONE, STAR_FILL_SECONDS) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(star, "rotation", 0.0, STAR_FILL_SECONDS) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	# Yıldız yerine oturunca küçük kıvılcım patlaması.
+	if filled:
+		var sparkle: Tween = star.create_tween()
+		sparkle.tween_interval(delay + STAR_FILL_SECONDS)
+		sparkle.tween_callback(_sparkle.bind(star))
+
+
+## Yıldız üstünde tek seferlik kıvılcım (CPUParticles2D, ≤12 parçacık); bitince
+## düğüm kendini temizler (bellek sızıntısı yok).
+func _sparkle(star: Control) -> void:
+	if not is_instance_valid(star):
+		return
+	var particles := CPUParticles2D.new()
+	particles.amount = SPARKLE_AMOUNT
+	particles.one_shot = true
+	particles.emitting = true
+	particles.explosiveness = 1.0
+	particles.lifetime = 0.45
+	particles.texture = load(SPARKLE_TEXTURE) as Texture2D
+	particles.direction = Vector2.UP
+	particles.spread = 180.0
+	particles.gravity = Vector2(0.0, 120.0)
+	particles.initial_velocity_min = 40.0
+	particles.initial_velocity_max = 90.0
+	particles.scale_amount_min = 0.4
+	particles.scale_amount_max = 1.0
+	particles.position = star.size * 0.5
+	particles.modulate = UiTheme.color("secondary")
+	star.add_child(particles)
+	particles.finished.connect(particles.queue_free)
 
 
 func _count_rewards(gold: int, scrap: int) -> void:
-	_count_up(_gold_reward_label, gold)
-	_count_up(_scrap_reward_label, scrap)
+	_gold_reward_label.text = "0"
+	_scrap_reward_label.text = "0"
+	_count_up(_gold_reward_label, gold, STAR_COUNT_DELAY)
+	_count_up(_scrap_reward_label, scrap, STAR_COUNT_DELAY)
 
 
-func _count_up(label: Label, target: int) -> void:
-	label.text = "0"
+func _count_up(label: Label, target: int, delay: float = 0.0) -> void:
 	var tween: Tween = create_tween()
-	tween.tween_method(func(value: float) -> void: _set_count(label, value), 0.0, float(target), 0.6) \
+	if delay > 0.0:
+		tween.tween_interval(delay)
+	tween.tween_method(func(value: float) -> void: _set_count(label, value), 0.0, float(target), COUNT_SECONDS) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
@@ -152,6 +206,10 @@ func _setup_reward_buttons() -> void:
 		_ad.connect("rewarded_finished", _on_ad_rewarded)
 	if not _ad.is_connected("ad_failed", _on_ad_failed):
 		_ad.connect("ad_failed", _on_ad_failed)
+	if _double_button.visible:
+		# Nabız basış ölçeğiyle çakışmasın; döngü ölçeği UiMotion'a bırakılır.
+		_double_button.add_to_group(UiMotion.NO_PRESS_SCALE_GROUP)
+		UiMotion.pulse(_double_button)
 
 
 func _can_offer(placement: int) -> bool:

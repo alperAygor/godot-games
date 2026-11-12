@@ -5,10 +5,21 @@ extends CanvasLayer
 ## `set_*` ile iter. Hesap `scripts/core/` sınıflarındadır (ARCHITECTURE §6).
 ## F7.6b: ince "hap" çubuklar + ikonlar, sağlık/batarya rengi token'dan canlı
 ## boyanır; düşük bataryada nazik nabız; revive kartı alttan kayarak girer.
+## F7.11a: sağlık çubuğu dolgusu yumuşak interpolasyonlu — ama yalnız dolgu
+## GÖRSELİ; `CargoHealthBar.value`/`BatteryBar.value` probe için ANINDA hedef
+## değerde kalır (flow_probe bunları okur). Hasar anında kalp ikonu "vuruş" yapar.
 
 const MIN_PERCENT: float = 0.0
 const MAX_PERCENT: float = 100.0
 const LOW_BATTERY: float = 30.0
+## Kalp ikonu hasar anında 1.25'e büyür, kısa sürede geri oturur (kırmızı flaş).
+const HEART_HIT_SCALE: float = 1.25
+const HEART_HIT_SECONDS: float = 0.24
+## Bu eşikten küçük düşüşler (küsurat gürültüsü) "vuruş" sayılmaz.
+const HIT_EPSILON: float = 0.5
+## Dolgu görselinin hedefe yumuşak yakınsama hızı (üs sönümü; tween her karede
+## yeniden kurulmaz, allocation yok).
+const BAR_SMOOTH_SPEED: float = 10.0
 
 signal revive_accepted()
 signal revive_declined()
@@ -30,7 +41,13 @@ signal recharge_requested()
 
 var _cargo_fill: StyleBoxFlat = StyleBoxFlat.new()
 var _battery_fill: StyleBoxFlat = StyleBoxFlat.new()
+## Yerleşik çubuğun dolgusu görünmez yapılır; yumuşak dolgu overlay'de çizilir.
+var _empty_fill: StyleBoxEmpty = StyleBoxEmpty.new()
+var _cargo_smooth: ProgressBar = null
+var _battery_smooth: ProgressBar = null
 var _pulse: Tween = null
+var _heart_flash: Tween = null
+var _last_cargo: float = MAX_PERCENT
 
 
 func _ready() -> void:
@@ -40,8 +57,13 @@ func _ready() -> void:
 		fill.corner_radius_top_right = radius
 		fill.corner_radius_bottom_right = radius
 		fill.corner_radius_bottom_left = radius
-	_cargo_bar.add_theme_stylebox_override("fill", _cargo_fill)
-	_battery_bar.add_theme_stylebox_override("fill", _battery_fill)
+	# Yerleşik `value` dolgusu gizlenir; görünür dolgu overlay'de yumuşak ilerler.
+	_cargo_bar.add_theme_stylebox_override("fill", _empty_fill)
+	_battery_bar.add_theme_stylebox_override("fill", _empty_fill)
+	_cargo_smooth = _make_smooth_overlay(_cargo_fill)
+	_battery_smooth = _make_smooth_overlay(_battery_fill)
+	_cargo_bar.add_child(_cargo_smooth)
+	_battery_bar.add_child(_battery_smooth)
 	# İkonlar tek ailede; renk `modulate` ile verilir.
 	_cargo_icon.texture = Icons.texture("lucide/heart")
 	_battery_icon.texture = Icons.texture("lucide/zap")
@@ -65,13 +87,30 @@ func _ready() -> void:
 	_decline_button.pressed.connect(func() -> void: revive_declined.emit())
 	_recharge_button.pressed.connect(func() -> void: recharge_requested.emit())
 	_refresh_colors(MAX_PERCENT, MAX_PERCENT)
+	_cargo_smooth.value = MAX_PERCENT
+	_battery_smooth.value = MAX_PERCENT
+
+
+func _process(delta: float) -> void:
+	# Yumuşak dolgu: overlay değeri hedefe üs sönümüyle yaklaşır; yerleşik `value`
+	# zaten anında hedeftedir (probe doğruluğu). Her karede tween kurulmaz.
+	if _cargo_smooth != null and _battery_smooth != null:
+		var weight: float = 1.0 - exp(-BAR_SMOOTH_SPEED * delta)
+		_cargo_smooth.value = lerpf(_cargo_smooth.value, _cargo_bar.value, weight)
+		_battery_smooth.value = lerpf(_battery_smooth.value, _battery_bar.value, weight)
 
 
 func set_cargo_health(percent: float) -> void:
-	_cargo_bar.value = clampf(percent, MIN_PERCENT, MAX_PERCENT)
-	_cargo_fill.bg_color = _health_color(_cargo_bar.value)
-	_cargo_icon.modulate = _cargo_fill.bg_color
-	_cargo_percent.text = "%d%%" % int(roundf(_cargo_bar.value))
+	var clamped: float = clampf(percent, MIN_PERCENT, MAX_PERCENT)
+	_cargo_bar.value = clamped
+	_cargo_fill.bg_color = _health_color(clamped)
+	# Vuruş flaşı sürerken ikon rengine dokunulmaz; tween rengi kendi yönetir.
+	if _heart_flash == null or not _heart_flash.is_valid():
+		_cargo_icon.modulate = _cargo_fill.bg_color
+	_cargo_percent.text = "%d%%" % int(roundf(clamped))
+	if clamped < _last_cargo - HIT_EPSILON:
+		_hit_heart()
+	_last_cargo = clamped
 
 
 func set_battery(percent: float) -> void:
@@ -113,12 +152,40 @@ func _health_color(percent: float) -> Color:
 	return yellow.lerp(red, clampf((50.0 - percent) / 50.0, 0.0, 1.0))
 
 
+## Yerleşik çubuğun üstünde, aynı geometriye sahip yumuşak dolgu overlay'i.
+func _make_smooth_overlay(fill: StyleBoxFlat) -> ProgressBar:
+	var overlay := ProgressBar.new()
+	overlay.max_value = MAX_PERCENT
+	overlay.value = MAX_PERCENT
+	overlay.show_percentage = false
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_theme_stylebox_override("background", _empty_fill)
+	overlay.add_theme_stylebox_override("fill", fill)
+	return overlay
+
+
 func _refresh_colors(cargo: float, battery: float) -> void:
 	_cargo_fill.bg_color = _health_color(cargo)
 	_cargo_icon.modulate = _cargo_fill.bg_color
 	_battery_fill.bg_color = UiTheme.color("primary")
 	_battery_bar.value = clampf(battery, MIN_PERCENT, MAX_PERCENT)
 	_cargo_bar.value = clampf(cargo, MIN_PERCENT, MAX_PERCENT)
+
+
+## Kalp ikonu "vuruş": 1.25'e büyür, kırmızı flaşla sağlık rengine döner.
+func _hit_heart() -> void:
+	if _heart_flash != null and _heart_flash.is_valid():
+		_heart_flash.kill()
+	_cargo_icon.pivot_offset = _cargo_icon.size * 0.5
+	_cargo_icon.scale = Vector2.ONE * HEART_HIT_SCALE
+	_cargo_icon.modulate = UiTheme.color("danger")
+	_heart_flash = _cargo_icon.create_tween()
+	_heart_flash.set_parallel(true)
+	_heart_flash.tween_property(_cargo_icon, "scale", Vector2.ONE, HEART_HIT_SECONDS) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_heart_flash.tween_property(_cargo_icon, "modulate", _cargo_fill.bg_color, HEART_HIT_SECONDS) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 
 ## Düşük bataryada nazik nabız: alfa 1.0 <-> 0.45, sonsuz döngü.
@@ -140,7 +207,7 @@ func _stop_pulse() -> void:
 	_battery_hap.modulate.a = 1.0
 
 
-## Revive kartı alttan kayarak girer (F7.6b mikro-etkileşim).
+## Revive kartı alttan yaylanarak girer (F7.11a: yumuşak yay, TRANS_BACK).
 func _slide_in(panel: Control) -> void:
 	panel.visible = true
 	var base: Vector2 = panel.position
@@ -148,7 +215,7 @@ func _slide_in(panel: Control) -> void:
 	panel.modulate.a = 0.0
 	var tween: Tween = panel.create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(panel, "position", base, 0.28) \
-		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(panel, "position", base, 0.32) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(panel, "modulate:a", 1.0, 0.22) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)

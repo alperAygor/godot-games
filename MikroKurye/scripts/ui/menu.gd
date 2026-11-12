@@ -53,9 +53,13 @@ func _ready() -> void:
 	sound_button.pressed.connect(_on_sound_toggle)
 	GameManager.back_requested.connect(_on_back)
 	_setup_tutorial()
+	# Birincil "Oyna" düğmesi hafifçe nefes alır; basış ölçeği animasyonu nefes
+	# tween'iyle çakışmasın diye bu düğme için kapatılır (UiMotion tek yerde).
+	play_button.add_to_group(UiMotion.NO_PRESS_SCALE_GROUP)
 	# Tıklama sesi + basışta küçülme tek yardımcıdan; sahne kodu tekrar etmez.
 	UiSfx.bind(self)
 	UiMotion.fade_in(self)
+	UiMotion.breathe(play_button)
 
 
 func _stylize() -> void:

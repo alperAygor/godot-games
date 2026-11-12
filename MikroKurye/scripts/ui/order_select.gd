@@ -42,7 +42,7 @@ func _ready() -> void:
 	# Dinamik kartlar kurulduktan sonra tıklama sesi + basış geri bildirimi.
 	UiSfx.bind(self)
 	UiMotion.fade_in(self)
-	UiMotion.stagger_pop(_cards)
+	UiMotion.stagger_slide(_cards)
 
 
 func _stylize() -> void:
