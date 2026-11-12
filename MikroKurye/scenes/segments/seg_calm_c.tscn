@@ -1,0 +1,100 @@
+[gd_scene load_steps=17 format=3]
+
+[ext_resource type="Material" path="res://assets/materials/wood.tres" id="wood"]
+[ext_resource type="Material" path="res://assets/materials/wood_edge.tres" id="wood_edge"]
+[ext_resource type="Material" path="res://assets/materials/stripe_yellow.tres" id="stripe"]
+[ext_resource type="Material" path="res://assets/materials/route_blue.tres" id="route"]
+[ext_resource type="Script" path="res://scripts/gameplay/segment.gd" id="segment_script"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_headphones_v2.glb" id="prop_glb_0"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_sticky_notes_v2.glb" id="prop_glb_1"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_pen_cup_v2.glb" id="prop_glb_2"]
+
+[sub_resource type="BoxShape3D" id="TileShape"]
+size = Vector3(10, 0.5, 12.04)
+
+[sub_resource type="BoxMesh" id="TileMesh"]
+material = ExtResource("wood")
+size = Vector3(10, 0.5, 12.04)
+
+[sub_resource type="BoxMesh" id="ApronTileMesh"]
+material = ExtResource("wood_edge")
+size = Vector3(10, 0.35, 12.04)
+
+[sub_resource type="BoxMesh" id="EdgeTileMesh"]
+material = ExtResource("stripe")
+size = Vector3(0.1, 0.012, 12)
+
+[sub_resource type="BoxMesh" id="RouteTileMesh"]
+material = ExtResource("route")
+size = Vector3(0.08, 0.01, 12)
+
+[sub_resource type="BoxShape3D" id="PropShape_0"]
+size = Vector3(1.88, 1.88, 1.82)
+
+[sub_resource type="BoxShape3D" id="PropShape_1"]
+size = Vector3(1.13, 0.05, 1.1)
+
+[sub_resource type="CylinderShape3D" id="PropShape_2"]
+radius = 0.55
+height = 2.58
+
+[node name="Segment" type="Node3D"]
+script = ExtResource("segment_script")
+segment_id = "seg_calm_c"
+length = 12
+
+[node name="Floor" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.25, -6)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("TileShape")
+
+[node name="Surface" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("TileMesh")
+
+[node name="Apron" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.65, -6)
+mesh = SubResource("ApronTileMesh")
+
+[node name="EdgeLeft" type="MeshInstance3D" parent="."]
+position = Vector3(-4.85, 0.008, -6)
+mesh = SubResource("EdgeTileMesh")
+
+[node name="EdgeRight" type="MeshInstance3D" parent="."]
+position = Vector3(4.85, 0.008, -6)
+mesh = SubResource("EdgeTileMesh")
+
+[node name="RouteLeft" type="MeshInstance3D" parent="."]
+position = Vector3(-1.5, 0.006, -6)
+mesh = SubResource("RouteTileMesh")
+
+[node name="RouteRight" type="MeshInstance3D" parent="."]
+position = Vector3(1.5, 0.006, -6)
+mesh = SubResource("RouteTileMesh")
+
+[node name="Phones" type="StaticBody3D" parent="."]
+position = Vector3(-3.6, 0, -6)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Phones"]
+position = Vector3(0, 0.94, 0)
+shape = SubResource("PropShape_0")
+
+[node name="Visual" parent="Phones" instance=ExtResource("prop_glb_0")]
+
+[node name="Notes" type="StaticBody3D" parent="."]
+position = Vector3(3.8, 0, -3)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Notes"]
+position = Vector3(0, 0.025, 0)
+shape = SubResource("PropShape_1")
+
+[node name="Visual" parent="Notes" instance=ExtResource("prop_glb_1")]
+
+[node name="Cup" type="StaticBody3D" parent="."]
+position = Vector3(-3.8, 0, -9)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Cup"]
+position = Vector3(0, 1.29, 0)
+shape = SubResource("PropShape_2")
+
+[node name="Visual" parent="Cup" instance=ExtResource("prop_glb_2")]

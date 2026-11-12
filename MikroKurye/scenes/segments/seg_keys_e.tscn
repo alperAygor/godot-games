@@ -1,0 +1,98 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/hazards/keyboard_key.gd" id="key"]
+[ext_resource type="PackedScene" path="res://assets/models/prop_keyboard_row.glb" id="keyboard_row"]
+[ext_resource type="Material" path="res://assets/materials/wood.tres" id="wood"]
+[ext_resource type="Material" path="res://assets/materials/wood_edge.tres" id="wood_edge"]
+[ext_resource type="Material" path="res://assets/materials/stripe_yellow.tres" id="stripe"]
+[ext_resource type="Material" path="res://assets/materials/route_blue.tres" id="route"]
+[ext_resource type="Script" path="res://scripts/gameplay/segment.gd" id="segment_script"]
+
+[sub_resource type="BoxShape3D" id="KeyShape"]
+size = Vector3(2.4, 0.54, 0.9)
+
+[sub_resource type="BoxShape3D" id="TileShape"]
+size = Vector3(10, 0.5, 12.04)
+
+[sub_resource type="BoxMesh" id="TileMesh"]
+material = ExtResource("wood")
+size = Vector3(10, 0.5, 12.04)
+
+[sub_resource type="BoxMesh" id="ApronTileMesh"]
+material = ExtResource("wood_edge")
+size = Vector3(10, 0.35, 12.04)
+
+[sub_resource type="BoxMesh" id="EdgeTileMesh"]
+material = ExtResource("stripe")
+size = Vector3(0.1, 0.012, 12)
+
+[sub_resource type="BoxMesh" id="RouteTileMesh"]
+material = ExtResource("route")
+size = Vector3(0.08, 0.01, 12)
+
+[node name="Segment" type="Node3D"]
+script = ExtResource("segment_script")
+segment_id = "seg_keys_e"
+length = 12
+
+[node name="Floor" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.25, -6)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("TileShape")
+
+[node name="Surface" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("TileMesh")
+
+[node name="Apron" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.65, -6)
+mesh = SubResource("ApronTileMesh")
+
+[node name="EdgeLeft" type="MeshInstance3D" parent="."]
+position = Vector3(-4.85, 0.008, -6)
+mesh = SubResource("EdgeTileMesh")
+
+[node name="EdgeRight" type="MeshInstance3D" parent="."]
+position = Vector3(4.85, 0.008, -6)
+mesh = SubResource("EdgeTileMesh")
+
+[node name="RouteLeft" type="MeshInstance3D" parent="."]
+position = Vector3(-1.5, 0.006, -6)
+mesh = SubResource("RouteTileMesh")
+
+[node name="RouteRight" type="MeshInstance3D" parent="."]
+position = Vector3(1.5, 0.006, -6)
+mesh = SubResource("RouteTileMesh")
+
+[node name="KeyC" type="AnimatableBody3D" parent="."]
+position = Vector3(0, 0.06, -4)
+script = ExtResource("key")
+phase_offset_seconds = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="KeyC"]
+position = Vector3(0, 0.27, 0)
+shape = SubResource("KeyShape")
+
+[node name="Visual" parent="KeyC" instance=ExtResource("keyboard_row")]
+
+[node name="KeyL" type="AnimatableBody3D" parent="."]
+position = Vector3(-3.3, 0.06, -9)
+script = ExtResource("key")
+phase_offset_seconds = 0.8
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="KeyL"]
+position = Vector3(0, 0.27, 0)
+shape = SubResource("KeyShape")
+
+[node name="Visual" parent="KeyL" instance=ExtResource("keyboard_row")]
+
+[node name="KeyR" type="AnimatableBody3D" parent="."]
+position = Vector3(3.3, 0.06, -9)
+script = ExtResource("key")
+phase_offset_seconds = 0.8
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="KeyR"]
+position = Vector3(0, 0.27, 0)
+shape = SubResource("KeyShape")
+
+[node name="Visual" parent="KeyR" instance=ExtResource("keyboard_row")]
