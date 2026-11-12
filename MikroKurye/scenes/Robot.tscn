@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/robot_controller.gd" id="1_robot"]
 [ext_resource type="Script" path="res://scripts/gameplay/suspension_wheel.gd" id="2_wheel"]
@@ -20,6 +20,17 @@ size = Vector3(0.66, 0.36, 0.5)
 friction = 0.0
 bounce = 0.0
 
+[sub_resource type="SphereMesh" id="DustPuffMesh"]
+radius = 0.06
+height = 0.12
+radial_segments = 6
+rings = 3
+
+[sub_resource type="StandardMaterial3D" id="DustPuffMat"]
+shading_mode = 0
+albedo_color = Color(0.96, 0.88, 0.76, 0.55)
+transparency = 1
+
 [node name="Robot" type="RigidBody3D" groups=["robot"]]
 physics_material_override = SubResource("BodyPhysics")
 continuous_cd = true
@@ -30,6 +41,23 @@ shape = SubResource("RobotShape")
 
 [node name="VisualRoot" type="Node3D" parent="."]
 script = ExtResource("5_visual")
+
+[node name="WheelDust" type="CPUParticles3D" parent="VisualRoot"]
+position = Vector3(0, -0.36, 0.5)
+emitting = false
+amount = 14
+lifetime = 0.5
+local_coords = false
+cast_shadow = 0
+mesh = SubResource("DustPuffMesh")
+direction = Vector3(0, 1, 0.6)
+spread = 35.0
+gravity = Vector3(0, -0.4, 0)
+initial_velocity_min = 0.2
+initial_velocity_max = 0.7
+scale_amount_min = 1.0
+scale_amount_max = 2.2
+color = Color(1, 1, 1, 0.7)
 
 [node name="BodyPivot" type="Node3D" parent="VisualRoot"]
 position = Vector3(0, -0.18, 0)

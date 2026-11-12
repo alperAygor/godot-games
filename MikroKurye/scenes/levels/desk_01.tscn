@@ -153,9 +153,9 @@ albedo_color = Color(1, 0.9, 0.7, 0.5)
 
 [sub_resource type="ShaderMaterial" id="BeamMat"]
 shader = ExtResource("beam_shader")
-shader_parameter/beam_color = Color(1, 0.88, 0.66, 0.9)
+shader_parameter/beam_color = Color(1, 0.88, 0.66, 0.4)
 shader_parameter/edge_fade = 0.38
-shader_parameter/top_brightness = 1.0
+shader_parameter/top_brightness = 0.7
 
 [sub_resource type="ShaderMaterial" id="RoomFloorMat"]
 shader = ExtResource("toon_shader")
@@ -527,7 +527,7 @@ transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 20, 14, -118)
 transform = Transform3D(6, 0, 0, 0, 6, 0, 0, 0, 6, 4, 22, -118.5)
 
 [node name="BgMonitor" parent="." instance=ExtResource("bg_monitor")]
-transform = Transform3D(4.5, 0, 0, 0, 4.5, 0, 0, 0, 4.5, 14, -6, -95)
+transform = Transform3D(3.2, 0, 0, 0, 3.2, 0, 0, 0, 3.2, 14, -6, -95)
 
 [node name="BgLamp" parent="." instance=ExtResource("bg_lamp")]
 transform = Transform3D(7, 0, 0, 0, 7, 0, 0, 0, 7, -16, -6, -82)
