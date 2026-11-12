@@ -46,6 +46,7 @@ func _ready() -> void:
 	garage_button.add_theme_constant_override("h_separation", 12)
 	settings_button.add_theme_constant_override("h_separation", 12)
 	_refresh_wallet()
+	_refresh_record()
 	_refresh_sound_button()
 	play_button.pressed.connect(_on_play)
 	garage_button.pressed.connect(_on_garage)
@@ -75,6 +76,21 @@ func _stylize() -> void:
 		part.add_theme_constant_override("shadow_offset_y", 4)
 		part.add_theme_constant_override("shadow_outline_size", 3)
 	hint_label.add_theme_color_override("font_color", UiTheme.color("text_muted"))
+
+
+## En iyi level/mesafe/puan; rekor yoksa ilk koşuya davet eder.
+func _refresh_record() -> void:
+	var label: Label = %RecordLabel
+	label.add_theme_color_override("font_color", UiTheme.color("text_muted"))
+	var save: Node = get_node_or_null("/root/SaveService")
+	var profile: ProfileData = null
+	if save != null:
+		profile = save.call("profile") as ProfileData
+	if profile == null or profile.records().best_level() <= 0:
+		label.text = UiStrings.RECORD_NONE
+		return
+	var records: RunRecords = profile.records()
+	label.text = UiStrings.RECORD_FORMAT % [records.best_level(), records.best_distance(), records.best_score()]
 
 
 func _refresh_wallet() -> void:

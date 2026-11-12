@@ -20,9 +20,9 @@ const TUTORIAL_START: String = "Başla"
 const TUTORIAL_SKIP: String = "Atla"
 ## İlk açılış rehberi: kısa, dikey ekranda tek bakışta okunur üç sayfa.
 const TUTORIAL_PAGES: Array[String] = [
-	"Sürüş: sol alttaki joystick ile kuryeni yönlendir. Dengeli sür, gereksiz çarpmadan kaçın.",
-	"Kargo: sallanma ve çarpmalar kargoyu yorar. Sağlık çubuğu biterse teslimat başarısız olur.",
-	"Garaj: altın ve hurdayla şasi, tekerlek, batarya ve şok jeli yükselt. Kazandıkça ilerle.",
+	"Amaç: kargoyu sağlam taşıyıp yeşil teslimat alanlarına ulaş. Her teslimat yeni bir level açar; yol sonsuza kadar sürer ve zorlaşır.",
+	"Sürüş: sol alttaki joystick ile yönlendir. Klavye tuşları, fanlar ve engellerden kaç; çarpmalar kargoyu yorar, sağlık biterse koşu biter.",
+	"Garaj: kazandığın altın ve hurdayla robotu geliştir, rekorunu kır. Kargo kırılırsa kasanın yarısını alırsın.",
 ]
 const ORDER_TITLE: String = "Sipariş Seç"
 const ORDER_HINT: String = "Taşımak istediğin kargoyu seç."
@@ -50,6 +50,22 @@ const RESULT_SUCCESS: String = "Teslimat Tamamlandı"
 const RESULT_FAIL: String = "Teslimat Hasarlı"
 const RESULT_RETRY: String = "Tekrar Oyna"
 const RESULT_MENU: String = "Ana Menü"
+
+## Sonsuz mod (PROJECT_SPEC §14).
+const HUD_RUN_FORMAT: String = "Level %d  ·  Teslimata %d m"
+const HUD_OBJECTIVE: String = "Kargoyu yeşil teslimat alanına götür!"
+const HUD_LEVEL_UP_FORMAT: String = "Level %d  ·  +%d altın"
+const ENDLESS_BROKEN: String = "Kargo Kırıldı"
+const ENDLESS_DONE: String = "Koşu Bitti"
+const ENDLESS_STATS_FORMAT: String = "Level %d  ·  %d m  ·  %d puan"
+const ENDLESS_HALF_PAY_FORMAT: String = "Kasa %d altın. Kargo kırıldığı için yarısı ödendi."
+const ENDLESS_FULL_PAY_FORMAT: String = "Kasa %d altın, tamamı ödendi."
+const NEW_RECORD_FORMAT: String = "Yeni rekor: %s!"
+const RECORD_LEVEL: String = "level"
+const RECORD_DISTANCE: String = "mesafe"
+const RECORD_SCORE: String = "puan"
+const RECORD_FORMAT: String = "Rekor: Level %d  ·  %d m  ·  %d puan"
+const RECORD_NONE: String = "Henüz rekor yok. İlk koşuna çık!"
 const BUY: String = "Yükselt"
 const SOUND_ON_TEXT: String = "Açık"
 const SOUND_OFF_TEXT: String = "Kapalı"
