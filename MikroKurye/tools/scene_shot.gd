@@ -13,6 +13,7 @@ var _frames: int = 240
 var _throttle: float = 0.0
 var _level_id: String = ""
 var _result_file: String = ""
+var _zone: int = -1
 var _count: int = 0
 var _scene: Node = null
 var _done: bool = false
@@ -28,6 +29,8 @@ func _initialize() -> void:
 			_frames = int(arg.split("=")[1])
 		elif arg.begins_with("--result="):
 			_result_file = arg.split("=")[1]
+		elif arg.begins_with("--zone="):
+			_zone = int(arg.split("=")[1])
 		elif arg.begins_with("--level="):
 			_level_id = arg.split("=")[1]
 		elif arg.begins_with("--throttle="):
@@ -55,6 +58,11 @@ func _process(_delta: float) -> bool:
 	if _done:
 		return true
 	_count += 1
+	if _zone >= 0 and _count == 3:
+		# `_ready` zinciri ilk karede tamamlanır; seviye düğümü bundan sonra vardır.
+		var zone_level: Node = _scene.get_node_or_null("Level")
+		if zone_level != null and zone_level.has_method("preview_zone"):
+			zone_level.call("preview_zone", _zone)
 	var robot: Node = get_first_node_in_group("robot")
 	if robot != null and robot.has_method("set_move_input"):
 		robot.call("set_move_input", Vector2(0.0, _throttle))

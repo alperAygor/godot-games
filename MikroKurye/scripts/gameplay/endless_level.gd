@@ -7,8 +7,14 @@ extends LevelRoot
 
 ## Yeni bir kontrol noktası eklendiğinde (konum dünyadadır).
 signal checkpoint_added(position: Vector3)
+## Robot yeni bir bölgenin ilk level'ına geçtiğinde (bölge adı, sıra).
+signal zone_changed(zone_name: String, zone_index: int)
 
 const TABLE_NAME: String = "segments"
+const ZONE_TABLE_NAME: String = "zones"
+const ZONE_BLEND_SECONDS: float = 1.4
+const WOOD_MATERIAL_PATH: String = "res://assets/materials/wood.tres"
+const WOOD_EDGE_MATERIAL_PATH: String = "res://assets/materials/wood_edge.tres"
 const DEFAULT_SEED: int = 20261113
 ## Robotun ilerisinde en az bu kadar yol hazır tutulur (sis ~130 m'de bitiyor).
 const BUILD_HORIZON: float = 150.0
@@ -35,16 +41,25 @@ var _built_level: int = 0
 var _built_end_z: float = 0.0
 var _frame: int = 0
 var _checkpoints: Array[Vector3] = []
+var _zones: Array = []
+var _zone_materials: Dictionary[int, Array] = {}
+var _zone_index: int = 0
+var _zone_tween: Tween = null
+var _sky_material: ProceduralSkyMaterial = null
+var _environment: Environment = null
 
 @onready var _segments_root: Node3D = $Segments
 @onready var _pad: Area3D = $DeliveryZone
 @onready var _backdrop: Node3D = $Backdrop
 @onready var _style: StyleA = $StyleA as StyleA
+@onready var _sun: DirectionalLight3D = $Sun as DirectionalLight3D
+@onready var _world_environment: WorldEnvironment = $WorldEnvironment as WorldEnvironment
 
 
 func _ready() -> void:
 	super._ready()
 	_load_library()
+	_load_zones()
 	_build_next_level()
 	_place_pad()
 
@@ -64,6 +79,7 @@ func advance() -> void:
 	while _built_level < current_level:
 		_build_next_level()
 	_place_pad()
+	_enter_zone_if_new()
 
 
 ## GameController her fizik karesinde çağırır; maliyet düşük tutulur.
@@ -88,6 +104,22 @@ func update_world(robot_z: float) -> void:
 ## Şimdiye kadar üretilen ara kontrol noktaları (GameController bağlanmadan önce de oluşur).
 func checkpoint_positions() -> Array[Vector3]:
 	return _checkpoints
+
+
+## Araç/önizleme: seçilen bölgenin paletini ve zemini hemen uygular (oyun akışında kullanılmaz).
+func preview_zone(index: int) -> void:
+	if _zones.is_empty():
+		return
+	var clamped: int = clampi(index, 0, _zones.size() - 1)
+	_apply_zone_instantly(clamped)
+	var pair: Array = _materials_for_zone(clamped)
+	for segment: Segment in _live:
+		segment.apply_floor(pair[0] as Material, pair[1] as Material)
+
+
+## Mevcut level'ın bölge sırası (0'dan).
+func zone_index() -> int:
+	return _zone_index
 
 
 func segment_count() -> int:
@@ -118,6 +150,7 @@ func _build_next_level() -> void:
 		segment.apply_level(level)
 		if _style != null:
 			_style.restyle(segment)
+		_theme_segment(segment, level)
 		_live.append(segment)
 	var length: float = LevelProgression.plan_length(plan)
 	if plan.is_empty():
@@ -150,3 +183,131 @@ func _instantiate_segment(segment_id: String) -> Segment:
 
 func _place_pad() -> void:
 	_pad.global_position = Vector3(0.0, PAD_HEIGHT, level_end_z())
+
+
+func _load_zones() -> void:
+	var data: Node = get_node_or_null("/root/GameData")
+	if data == null:
+		return
+	var table: Variant = data.call("table", ZONE_TABLE_NAME)
+	if table is Dictionary:
+		var entries: Variant = (table as Dictionary).get("zones", [])
+		if entries is Array:
+			_zones = entries as Array
+	if _world_environment != null:
+		_environment = _world_environment.environment
+		if _environment != null and _environment.sky != null:
+			_sky_material = _environment.sky.sky_material as ProceduralSkyMaterial
+	_apply_zone_instantly(0)
+
+
+## Parçanın zemini, ait olduğu level'ın bölge paletiyle boyanır (önceden üretilen
+## parçalar, robot oraya varmadan yeni bölgenin zeminini gösterir).
+func _theme_segment(segment: Segment, level: int) -> void:
+	if _zones.is_empty():
+		return
+	var index: int = ZoneCycle.zone_for(level, _zones.size())
+	var pair: Array = _materials_for_zone(index)
+	if pair.size() == 2:
+		segment.apply_floor(pair[0] as Material, pair[1] as Material)
+
+
+func _materials_for_zone(index: int) -> Array:
+	if _zone_materials.has(index):
+		return _zone_materials[index]
+	var zone: Dictionary = _zones[index] as Dictionary
+	var surface: ShaderMaterial = (load(WOOD_MATERIAL_PATH) as ShaderMaterial).duplicate() as ShaderMaterial
+	surface.set_shader_parameter("base_color", Color.html(String(zone.get("floor_base", "BFA07B"))))
+	surface.set_shader_parameter("wood_dark", Color.html(String(zone.get("floor_dark", "B07A45"))))
+	surface.set_shader_parameter("shadow_color", Color.html(String(zone.get("floor_shadow", "8F6B61"))))
+	var apron: ShaderMaterial = (load(WOOD_EDGE_MATERIAL_PATH) as ShaderMaterial).duplicate() as ShaderMaterial
+	apron.set_shader_parameter("base_color", Color.html(String(zone.get("apron_base", "8C592E"))))
+	apron.set_shader_parameter("wood_dark", Color.html(String(zone.get("apron_dark", "6B421F"))))
+	apron.set_shader_parameter("shadow_color", Color.html(String(zone.get("floor_shadow", "8F6B61"))))
+	var pair: Array = [surface, apron]
+	_zone_materials[index] = pair
+	return pair
+
+
+func _enter_zone_if_new() -> void:
+	if _zones.is_empty():
+		return
+	var index: int = ZoneCycle.zone_for(current_level, _zones.size())
+	if index == _zone_index:
+		return
+	_zone_index = index
+	_blend_environment(_zones[index] as Dictionary)
+	zone_changed.emit(String((_zones[index] as Dictionary).get("name", "")), index)
+
+
+func _apply_zone_instantly(index: int) -> void:
+	_zone_index = index
+	if _zones.is_empty():
+		return
+	_set_environment_palette(_palette_of(_zones[index] as Dictionary))
+
+
+## Gökyüzü/sis/ışık renkleri bölge değişiminde yumuşakça geçer.
+func _blend_environment(zone: Dictionary) -> void:
+	if _zone_tween != null:
+		_zone_tween.kill()
+	var from_palette: Dictionary = _current_palette()
+	var to_palette: Dictionary = _palette_of(zone)
+	_zone_tween = create_tween()
+	_zone_tween.tween_method(func(weight: float) -> void: _set_environment_palette(_mix_palettes(from_palette, to_palette, weight)),
+		0.0, 1.0, ZONE_BLEND_SECONDS)
+
+
+func _palette_of(zone: Dictionary) -> Dictionary:
+	return {
+		"sky_top": Color.html(String(zone.get("sky_top", "F4E4CE"))),
+		"sky_horizon": Color.html(String(zone.get("sky_horizon", "FFECD5"))),
+		"ground_bottom": Color.html(String(zone.get("ground_bottom", "EDD9C0"))),
+		"ground_horizon": Color.html(String(zone.get("ground_horizon", "FFECD5"))),
+		"fog": Color.html(String(zone.get("fog", "FFE6C2"))),
+		"sun": Color.html(String(zone.get("sun", "FFF0D3"))),
+		"ambient": Color.html(String(zone.get("ambient", "DBDBCC"))),
+		"sun_energy": float(zone.get("sun_energy", 1.0)),
+	}
+
+
+func _current_palette() -> Dictionary:
+	var palette: Dictionary = {}
+	if _sky_material != null:
+		palette["sky_top"] = _sky_material.sky_top_color
+		palette["sky_horizon"] = _sky_material.sky_horizon_color
+		palette["ground_bottom"] = _sky_material.ground_bottom_color
+		palette["ground_horizon"] = _sky_material.ground_horizon_color
+	if _environment != null:
+		palette["fog"] = _environment.fog_light_color
+		palette["ambient"] = _environment.ambient_light_color
+	if _sun != null:
+		palette["sun"] = _sun.light_color
+		palette["sun_energy"] = _sun.light_energy
+	return palette
+
+
+func _mix_palettes(from_palette: Dictionary, to_palette: Dictionary, weight: float) -> Dictionary:
+	var mixed: Dictionary = {}
+	for key: Variant in to_palette.keys():
+		var target: Variant = to_palette[key]
+		var start: Variant = from_palette.get(key, target)
+		if target is Color:
+			mixed[key] = (start as Color).lerp(target as Color, weight)
+		else:
+			mixed[key] = lerpf(float(start), float(target), weight)
+	return mixed
+
+
+func _set_environment_palette(palette: Dictionary) -> void:
+	if _sky_material != null:
+		_sky_material.sky_top_color = palette.get("sky_top", _sky_material.sky_top_color)
+		_sky_material.sky_horizon_color = palette.get("sky_horizon", _sky_material.sky_horizon_color)
+		_sky_material.ground_bottom_color = palette.get("ground_bottom", _sky_material.ground_bottom_color)
+		_sky_material.ground_horizon_color = palette.get("ground_horizon", _sky_material.ground_horizon_color)
+	if _environment != null:
+		_environment.fog_light_color = palette.get("fog", _environment.fog_light_color)
+		_environment.ambient_light_color = palette.get("ambient", _environment.ambient_light_color)
+	if _sun != null:
+		_sun.light_color = palette.get("sun", _sun.light_color)
+		_sun.light_energy = float(palette.get("sun_energy", _sun.light_energy))

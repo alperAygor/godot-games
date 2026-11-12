@@ -54,6 +54,7 @@ const RESULT_MENU: String = "Ana Menü"
 ## Sonsuz mod (PROJECT_SPEC §14).
 const HUD_RUN_FORMAT: String = "Level %d  ·  Teslimata %d m"
 const HUD_OBJECTIVE: String = "Kargoyu yeşil teslimat alanına götür!"
+const HUD_ZONE_FORMAT: String = "Yeni bölge: %s"
 const HUD_LEVEL_UP_FORMAT: String = "Level %d  ·  +%d altın"
 const ENDLESS_BROKEN: String = "Kargo Kırıldı"
 const ENDLESS_DONE: String = "Koşu Bitti"

@@ -58,6 +58,7 @@ var _levels_delivered: int = 0
 var _start_z: float = 0.0
 var _max_distance: float = 0.0
 var _empty_battery_seconds: float = 0.0
+var _pending_zone_name: String = ""
 var _level_id: String = DEFAULT_LEVEL_ID
 var _robot_start: Marker3D = null
 var _delivery_zone: Area3D = null
@@ -284,6 +285,7 @@ func _setup_endless() -> void:
 	for position_3d: Vector3 in _endless.checkpoint_positions():
 		_register_dynamic_checkpoint(position_3d)
 	_endless.checkpoint_added.connect(_register_dynamic_checkpoint)
+	_endless.zone_changed.connect(_on_zone_changed)
 	_hud.announce_objective()
 
 
@@ -414,6 +416,11 @@ func _on_delivery_body_entered(body: Node3D) -> void:
 	_finish_run(true)
 
 
+## Bölge adı level duyurusuna eklenir (`advance` içinde gelir, duyuru hemen ardından yapılır).
+func _on_zone_changed(zone_name: String, _zone_index: int) -> void:
+	_pending_zone_name = zone_name
+
+
 ## Sonsuz mod: level teslimatı. Ödül kasaya yazılır, hasar kısmen onarılır, batarya
 ## kısmen dolar, koşu bir sonraki level'a devam eder.
 func _complete_level() -> void:
@@ -432,7 +439,8 @@ func _complete_level() -> void:
 	_tracker.reach(pad_checkpoint)
 	_level_number += 1
 	_endless.advance()
-	_hud.announce_level(_level_number, int(reward.get("gold", 0)))
+	_hud.announce_level(_level_number, int(reward.get("gold", 0)), _pending_zone_name)
+	_pending_zone_name = ""
 	_refresh_hud()
 
 
