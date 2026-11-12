@@ -5,10 +5,10 @@
 [ext_resource type="Script" path="res://scripts/gameplay/hazards/fan_wind.gd" id="fan"]
 [ext_resource type="Script" path="res://scripts/gameplay/hazards/rolling_pencil.gd" id="pencil_script"]
 [ext_resource type="PackedScene" path="res://assets/models/prop_keyboard_row.glb" id="keyboard_row"]
-[ext_resource type="PackedScene" path="res://assets/models/prop_mug.glb" id="mug"]
-[ext_resource type="PackedScene" path="res://assets/models/prop_pencil.glb" id="pencil"]
-[ext_resource type="PackedScene" path="res://assets/models/prop_ruler.glb" id="ruler"]
-[ext_resource type="PackedScene" path="res://assets/models/prop_book.glb" id="book"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_mug_v2.glb" id="mug"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_pencil_v2.glb" id="pencil"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_ruler_v2.glb" id="ruler"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_book_v2.glb" id="book"]
 [ext_resource type="Material" path="res://assets/materials/wood.tres" id="wood"]
 [ext_resource type="Material" path="res://assets/materials/wood_edge.tres" id="wood_edge"]
 [ext_resource type="Material" path="res://assets/materials/stripe_yellow.tres" id="stripe"]
@@ -18,6 +18,16 @@
 [ext_resource type="Material" path="res://assets/materials/fan_blade.tres" id="fan_blade"]
 [ext_resource type="Material" path="res://assets/materials/golden.tres" id="golden"]
 [ext_resource type="Script" path="res://scripts/gameplay/style_a.gd" id="style_a"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_monitor_v2.glb" id="bg_monitor"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_lamp_v2.glb" id="bg_lamp"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_plant_v2.glb" id="bg_plant"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_book_stack_v2.glb" id="bg_books"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/env_wall_panel_v2.glb" id="bg_wall"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/env_window_v2.glb" id="bg_window"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/env_shelf_v2.glb" id="bg_shelf"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/env_picture_frame_v2.glb" id="bg_frame"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/env_curtain_v2.glb" id="bg_curtain"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_headphones_v2.glb" id="bg_headphones"]
 [ext_resource type="Shader" path="res://assets/shaders/toon.gdshader" id="toon_shader"]
 [ext_resource type="Shader" path="res://assets/shaders/light_beam.gdshader" id="beam_shader"]
 
@@ -159,54 +169,6 @@ size = Vector3(90, 0.2, 130)
 [sub_resource type="BoxMesh" id="EdgeShadowMesh"]
 material = SubResource("RoomFloorMat")
 size = Vector3(10.6, 0.02, 77.6)
-
-[sub_resource type="BoxMesh" id="MonitorScreenMesh"]
-material = SubResource("SilhouetteDark")
-size = Vector3(26, 16, 0.6)
-
-[sub_resource type="BoxMesh" id="MonitorStandMesh"]
-material = SubResource("SilhouetteDark")
-size = Vector3(7, 5, 7)
-
-[sub_resource type="CylinderMesh" id="LampBaseMesh"]
-material = SubResource("SilhouetteWarm")
-top_radius = 2.6
-bottom_radius = 2.6
-height = 1.2
-radial_segments = 10
-
-[sub_resource type="BoxMesh" id="LampStemMesh"]
-material = SubResource("SilhouetteWarm")
-size = Vector3(0.6, 9, 0.6)
-
-[sub_resource type="CylinderMesh" id="LampShadeMesh"]
-material = SubResource("SilhouetteAmber")
-top_radius = 0.8
-bottom_radius = 3.4
-height = 3.4
-radial_segments = 12
-
-[sub_resource type="CylinderMesh" id="PlantPotMesh"]
-material = SubResource("SilhouetteTerra")
-top_radius = 2.4
-bottom_radius = 1.8
-height = 3.2
-radial_segments = 12
-
-[sub_resource type="SphereMesh" id="PlantFoliageMesh"]
-material = SubResource("SilhouetteGreen")
-radius = 4.4
-height = 8.8
-radial_segments = 8
-rings = 5
-
-[sub_resource type="BoxMesh" id="BookMeshWarm"]
-material = SubResource("SilhouetteWarm")
-size = Vector3(7, 1.3, 4.6)
-
-[sub_resource type="BoxMesh" id="BookMeshTerra"]
-material = SubResource("SilhouetteTerra")
-size = Vector3(6.4, 1.3, 4.2)
 
 [sub_resource type="QuadMesh" id="BeamMesh"]
 material = SubResource("BeamMat")
@@ -527,63 +489,6 @@ mesh = SubResource("VoidMesh")
 position = Vector3(0, -0.02, -36.5)
 mesh = SubResource("EdgeShadowMesh")
 
-[node name="Monitor" type="Node3D" parent="."]
-position = Vector3(10, -6, -95)
-
-[node name="Screen" type="MeshInstance3D" parent="Monitor"]
-position = Vector3(0, 15, 0)
-mesh = SubResource("MonitorScreenMesh")
-
-[node name="Stand" type="MeshInstance3D" parent="Monitor"]
-position = Vector3(0, 2, -4)
-mesh = SubResource("MonitorStandMesh")
-
-[node name="Lamp" type="Node3D" parent="."]
-position = Vector3(-16, -6, -82)
-
-[node name="Base" type="MeshInstance3D" parent="Lamp"]
-position = Vector3(0, 0.6, 0)
-mesh = SubResource("LampBaseMesh")
-
-[node name="Stem" type="MeshInstance3D" parent="Lamp"]
-position = Vector3(0, 5, 0)
-mesh = SubResource("LampStemMesh")
-
-[node name="Shade" type="MeshInstance3D" parent="Lamp"]
-position = Vector3(0, 10.5, 0)
-mesh = SubResource("LampShadeMesh")
-
-[node name="Plant" type="Node3D" parent="."]
-position = Vector3(22, -6, -70)
-
-[node name="Pot" type="MeshInstance3D" parent="Plant"]
-position = Vector3(0, 1.6, 0)
-mesh = SubResource("PlantPotMesh")
-
-[node name="FoliageA" type="MeshInstance3D" parent="Plant"]
-position = Vector3(0, 4.5, 0)
-mesh = SubResource("PlantFoliageMesh")
-
-[node name="FoliageB" type="MeshInstance3D" parent="Plant"]
-position = Vector3(1.4, 3.4, 0.8)
-scale = Vector3(0.7, 0.7, 0.7)
-mesh = SubResource("PlantFoliageMesh")
-
-[node name="BookStack" type="Node3D" parent="."]
-position = Vector3(-12, -6, -90)
-
-[node name="BookA" type="MeshInstance3D" parent="BookStack"]
-position = Vector3(0, 0.65, 0)
-mesh = SubResource("BookMeshWarm")
-
-[node name="BookB" type="MeshInstance3D" parent="BookStack"]
-position = Vector3(0.3, 1.95, 0.2)
-mesh = SubResource("BookMeshTerra")
-
-[node name="BookC" type="MeshInstance3D" parent="BookStack"]
-position = Vector3(-0.2, 3.2, -0.1)
-mesh = SubResource("BookMeshWarm")
-
 [node name="LightBeam" type="MeshInstance3D" parent="."]
 position = Vector3(1.5, 6, -18)
 rotation_degrees = Vector3(0, -15, -12)
@@ -605,6 +510,36 @@ initial_velocity_max = 0.4
 scale_amount_min = 0.5
 scale_amount_max = 1.4
 mesh = SubResource("DustMesh")
+
+[node name="BgWall" parent="." instance=ExtResource("bg_wall")]
+transform = Transform3D(16, 0, 0, 0, 16, 0, 0, 0, 16, 0, -3, -120)
+
+[node name="BgWindow" parent="." instance=ExtResource("bg_window")]
+transform = Transform3D(6, 0, 0, 0, 6, 0, 0, 0, 6, -14, 12, -118.5)
+
+[node name="BgCurtain" parent="." instance=ExtResource("bg_curtain")]
+transform = Transform3D(7, 0, 0, 0, 7, 0, 0, 0, 7, -14, 12, -117.5)
+
+[node name="BgShelf" parent="." instance=ExtResource("bg_shelf")]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 20, 14, -118)
+
+[node name="BgFrame" parent="." instance=ExtResource("bg_frame")]
+transform = Transform3D(6, 0, 0, 0, 6, 0, 0, 0, 6, 4, 22, -118.5)
+
+[node name="BgMonitor" parent="." instance=ExtResource("bg_monitor")]
+transform = Transform3D(4.5, 0, 0, 0, 4.5, 0, 0, 0, 4.5, 14, -6, -95)
+
+[node name="BgLamp" parent="." instance=ExtResource("bg_lamp")]
+transform = Transform3D(7, 0, 0, 0, 7, 0, 0, 0, 7, -16, -6, -82)
+
+[node name="BgPlant" parent="." instance=ExtResource("bg_plant")]
+transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 22, -6, -70)
+
+[node name="BgBooks" parent="." instance=ExtResource("bg_books")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, -12, -6, -90)
+
+[node name="BgHeadphones" parent="." instance=ExtResource("bg_headphones")]
+transform = Transform3D(4, 0, 0, 0, 4, 0, 0, 0, 4, -24, -6, -96)
 
 [node name="StyleA" type="Node" parent="."]
 script = ExtResource("style_a")

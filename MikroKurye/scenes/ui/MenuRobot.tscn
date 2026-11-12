@@ -1,0 +1,98 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/menu_robot.gd" id="1_stage"]
+[ext_resource type="Script" path="res://scripts/gameplay/style_a.gd" id="2_style"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/robot_body_v2.glb" id="3_body"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/robot_wheel_v2.glb" id="4_wheel"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/cargo_basket_v2.glb" id="5_basket"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/cargo_pencil_battery_v2.glb" id="6_cargo"]
+
+[sub_resource type="CylinderMesh" id="ShadowDisc"]
+top_radius = 0.75
+bottom_radius = 0.75
+height = 0.01
+radial_segments = 32
+rings = 1
+
+[sub_resource type="StandardMaterial3D" id="ShadowMat"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.25, 0.18, 0.15, 0.12)
+
+[node name="MenuRobot" type="SubViewportContainer"]
+mouse_filter = 2
+stretch = true
+
+[node name="Viewport" type="SubViewport" parent="."]
+own_world_3d = true
+transparent_bg = true
+handle_input_locally = false
+msaa_3d = 1
+size = Vector2i(1000, 700)
+render_target_update_mode = 4
+
+[node name="Stage" type="Node3D" parent="Viewport"]
+script = ExtResource("1_stage")
+
+[node name="Camera3D" type="Camera3D" parent="Viewport/Stage"]
+position = Vector3(2.3, 1.7, 3.7)
+fov = 30.0
+
+[node name="Sun" type="DirectionalLight3D" parent="Viewport/Stage"]
+transform = Transform3D(0.866, -0.25, 0.433, 0, 0.866, 0.5, -0.5, -0.433, 0.75, 0, 3, 3)
+light_color = Color(1, 0.94, 0.83, 1)
+
+[node name="Shadow" type="MeshInstance3D" parent="Viewport/Stage"]
+transform = Transform3D(0.7, 0, 0, 0, 1, 0, 0, 0, 0.85, 0, -0.395, 0)
+mesh = SubResource("ShadowDisc")
+surface_material_override/0 = SubResource("ShadowMat")
+
+[node name="Pivot" type="Node3D" parent="Viewport/Stage" groups=["robot"]]
+
+[node name="BodyPivot" type="Node3D" parent="Viewport/Stage/Pivot"]
+unique_name_in_owner = true
+position = Vector3(0, -0.18, 0)
+
+[node name="Body" parent="Viewport/Stage/Pivot/BodyPivot" instance=ExtResource("3_body")]
+
+[node name="FrontLeft" type="Node3D" parent="Viewport/Stage/Pivot"]
+position = Vector3(-0.285, 0, -0.245)
+
+[node name="Mesh" parent="Viewport/Stage/Pivot/FrontLeft" instance=ExtResource("4_wheel")]
+position = Vector3(0, -0.126, 0)
+scale = Vector3(1.3, 1.3, 1.3)
+
+[node name="FrontRight" type="Node3D" parent="Viewport/Stage/Pivot"]
+position = Vector3(0.285, 0, -0.245)
+
+[node name="Mesh" parent="Viewport/Stage/Pivot/FrontRight" instance=ExtResource("4_wheel")]
+position = Vector3(0, -0.126, 0)
+scale = Vector3(1.3, 1.3, 1.3)
+
+[node name="RearLeft" type="Node3D" parent="Viewport/Stage/Pivot"]
+position = Vector3(-0.285, 0, 0.245)
+
+[node name="Mesh" parent="Viewport/Stage/Pivot/RearLeft" instance=ExtResource("4_wheel")]
+position = Vector3(0, -0.126, 0)
+scale = Vector3(1.3, 1.3, 1.3)
+
+[node name="RearRight" type="Node3D" parent="Viewport/Stage/Pivot"]
+position = Vector3(0.285, 0, 0.245)
+
+[node name="Mesh" parent="Viewport/Stage/Pivot/RearRight" instance=ExtResource("4_wheel")]
+position = Vector3(0, -0.126, 0)
+scale = Vector3(1.3, 1.3, 1.3)
+
+[node name="Basket" type="Node3D" parent="Viewport/Stage/Pivot" groups=["cargo"]]
+position = Vector3(0, 0.29, 0.24)
+
+[node name="BasketMesh" type="Node3D" parent="Viewport/Stage/Pivot/Basket"]
+scale = Vector3(1.5, 1.5, 1.5)
+
+[node name="Mesh" parent="Viewport/Stage/Pivot/Basket/BasketMesh" instance=ExtResource("5_basket")]
+
+[node name="Cargo" parent="Viewport/Stage/Pivot/Basket" instance=ExtResource("6_cargo")]
+transform = Transform3D(2.4, 0, 0, 0, 2.4, 0, 0, 0, 2.4, 0, 0.03, 0)
+
+[node name="StyleA" type="Node" parent="Viewport/Stage"]
+script = ExtResource("2_style")

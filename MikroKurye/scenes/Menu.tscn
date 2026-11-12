@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/menu.gd" id="1_menu"]
-[ext_resource type="Texture2D" path="res://assets/ui/robot_showcase.png" id="2_robot"]
+[ext_resource type="PackedScene" path="res://scenes/ui/MenuRobot.tscn" id="2_robot"]
 
 [sub_resource type="StyleBoxFlat" id="DotStyle"]
 bg_color = Color(1, 1, 1, 1)
@@ -112,15 +112,12 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 64
 text = "Courier"
 
-[node name="RobotShowcase" type="TextureRect" parent="Safe/Column"]
+[node name="RobotShowcase" parent="Safe/Column" instance=ExtResource("2_robot")]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-custom_minimum_size = Vector2(0, 320)
-texture = ExtResource("2_robot")
-expand_mode = 1
-stretch_mode = 5
+custom_minimum_size = Vector2(0, 420)
 
 [node name="PlayButton" type="Button" parent="Safe/Column"]
 unique_name_in_owner = true
