@@ -28,7 +28,7 @@ rings = 3
 
 [sub_resource type="StandardMaterial3D" id="DustPuffMat"]
 shading_mode = 0
-albedo_color = Color(0.96, 0.88, 0.76, 0.55)
+albedo_color = Color(0.96, 0.88, 0.76, 0.4)
 transparency = 1
 
 [node name="Robot" type="RigidBody3D" groups=["robot"]]
@@ -55,8 +55,8 @@ spread = 35.0
 gravity = Vector3(0, -0.4, 0)
 initial_velocity_min = 0.2
 initial_velocity_max = 0.7
-scale_amount_min = 1.0
-scale_amount_max = 2.2
+scale_amount_min = 0.35
+scale_amount_max = 0.9
 color = Color(1, 1, 1, 0.7)
 
 [node name="BodyPivot" type="Node3D" parent="VisualRoot"]
