@@ -4,14 +4,25 @@ extends Control
 ## kayda BİR KEZ işler. Sözleşme: ARCHITECTURE.md §5.4 + §5.5.
 ## Reklamlı bonuslar yalnız başarılı sonuçta ve `AdManager.can_offer` iken
 ## görünür; her biri tur başına en fazla bir kez ödül verir.
+##
+## F7.6b: büyük yıldızlar kademeli belirir, altın/hurda sayaçları sayarak
+## dolar; renk/ölçü `UiTheme` (data/theme.json) token'larından okunur.
 
 const GOLDEN_GOLD_DEFAULT: int = 150
 const GOLDEN_SCRAP_DEFAULT: int = 10
+const STAR_TOTAL: int = 3
+const STAR_SIZE: float = 112.0
+const REWARD_ICON_SIZE: float = 44.0
 
 @onready var title_label: Label = %Title
-@onready var stars_label: Label = %Stars
+@onready var _star_box: HBoxContainer = %Stars
 @onready var detail_label: Label = %Detail
 @onready var wallet_label: Label = %WalletLabel
+@onready var _reward_row: Control = %RewardRow
+@onready var _gold_reward_label: Label = %GoldRewardLabel
+@onready var _scrap_reward_label: Label = %ScrapRewardLabel
+@onready var _gold_reward_icon: TextureRect = %GoldRewardIcon
+@onready var _scrap_reward_icon: TextureRect = %ScrapRewardIcon
 @onready var _double_button: Button = %DoubleRewardButton
 @onready var _golden_button: Button = %GoldenBoxButton
 
@@ -37,11 +48,17 @@ func _ready() -> void:
 	var gold: int = int(_result.get("gold", 0))
 	var scrap: int = int(_result.get("scrap", 0))
 
-	title_label.text = "Teslimat Tamamlandı" if stars > 0 else "Teslimat Hasarlı"
-	stars_label.text = "Yıldız: %d / 3" % stars
-	# `fee` eski sonuçlarla uyum için korunur; yeni akışta gold ile aynıdır.
-	detail_label.text = "Hasar: %%%d    Ücret: %d\nAltın: %d    Hurda: %d" % [
-		int(roundf(damage * 100.0)), fee, gold, scrap]
+	_stylize()
+	title_label.text = UiStrings.RESULT_SUCCESS if stars > 0 else UiStrings.RESULT_FAIL
+	detail_label.text = "Hasar: %d%%  ·  Ücret: %d" % [int(roundf(damage * 100.0)), fee]
+	_build_stars(stars)
+	# Başarısız turda ödül çipi anlamsız; sakin görünüm için gizlenir.
+	_reward_row.visible = stars > 0
+	if stars > 0:
+		_count_rewards(gold, scrap)
+	else:
+		_gold_reward_label.text = "0"
+		_scrap_reward_label.text = "0"
 
 	# Kayıt yoksa (probe/izole sahne) sonuç değerleri gösterilir, çökme yok.
 	if _save != null:
@@ -53,15 +70,74 @@ func _ready() -> void:
 	if stars > 0:
 		AudioService.play("success")
 
+	(%RetryButton as Button).text = UiStrings.RESULT_RETRY
+	(%MenuButton as Button).text = UiStrings.RESULT_MENU
 	(%RetryButton as Button).pressed.connect(_on_retry)
 	(%MenuButton as Button).pressed.connect(_on_menu)
 	GameManager.back_requested.connect(_on_menu)
 	UiSfx.bind(self)
+	UiMotion.fade_in(self)
+
+
+func _stylize() -> void:
+	(%Background as ColorRect).color = UiTheme.color("background")
+	title_label.add_theme_color_override("font_color", UiTheme.color("text"))
+	detail_label.add_theme_color_override("font_color", UiTheme.color("text_muted"))
+	wallet_label.add_theme_color_override("font_color", UiTheme.color("text_muted"))
+	_gold_reward_icon.texture = Icons.texture("lucide/coins")
+	_scrap_reward_icon.texture = Icons.texture("lucide/cog")
+	_gold_reward_icon.modulate = UiTheme.color("secondary")
+	_scrap_reward_icon.modulate = UiTheme.color("text_muted")
+
+
+func _build_stars(count: int) -> void:
+	for child: Node in _star_box.get_children():
+		child.queue_free()
+	for i: int in STAR_TOTAL:
+		var filled: bool = i < count
+		var star := TextureRect.new()
+		star.texture = Icons.texture("lucide/star")
+		star.modulate = UiTheme.color("secondary") if filled else UiTheme.color("text_muted")
+		star.custom_minimum_size = Vector2(STAR_SIZE, STAR_SIZE)
+		star.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		star.pivot_offset = Vector2(STAR_SIZE, STAR_SIZE) * 0.5
+		star.scale = Vector2.ONE * 0.3
+		star.modulate.a = 0.0
+		_star_box.add_child(star)
+		_animate_star(star, float(i) * 0.12, 1.0 if filled else 0.30)
+
+
+func _animate_star(star: Control, delay: float, target_alpha: float) -> void:
+	var tween: Tween = star.create_tween()
+	tween.tween_interval(delay)
+	tween.set_parallel(true)
+	tween.tween_property(star, "modulate:a", target_alpha, 0.25) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(star, "scale", Vector2.ONE, 0.32) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _count_rewards(gold: int, scrap: int) -> void:
+	_count_up(_gold_reward_label, gold)
+	_count_up(_scrap_reward_label, scrap)
+
+
+func _count_up(label: Label, target: int) -> void:
+	label.text = "0"
+	var tween: Tween = create_tween()
+	tween.tween_method(func(value: float) -> void: _set_count(label, value), 0.0, float(target), 0.6) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+
+func _set_count(label: Label, value: float) -> void:
+	label.text = str(int(roundf(value)))
 
 
 func _setup_reward_buttons() -> void:
 	_double_button.text = UiStrings.DOUBLE_REWARD
 	_golden_button.text = UiStrings.GOLDEN_BOX
+	Icons.apply(_double_button, "lucide/circle-play", UiTheme.color("on_primary"), 40)
+	Icons.apply(_golden_button, "lucide/gift", UiTheme.color("on_surface"), 40)
 	_double_button.pressed.connect(_on_double_pressed)
 	_golden_button.pressed.connect(_on_golden_pressed)
 

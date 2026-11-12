@@ -2,8 +2,12 @@
 """data/theme.json -> assets/theme/ui_theme.tres
 
 Neden uretici: renk/boyut/kose yaricapi .tscn dosyalarina dagildiginda tutarlilik
-bozuluyor ve her ekran ayni StyleBox'lari tekrar yaziyor (GOTCHAS.md #19).
-Tek kaynak: data/theme.json. Degisiklik -> yeniden uret.
+bozuluyor ve her ekran ayni StyleBox'lari tekrar yaziyor. Tek kaynak:
+data/theme.json. Degisiklik -> yeniden uret.
+
+F7.6b gorsel faz: palet ve olcu token'lari buraya tasindi; UI kodunda renk sabiti
+kalmaz (kod yalniz UiTheme.token() ile okur). Tum yumusak golgeler ve pill
+butonlar tek yerden uretilir.
 
 Kullanim:
     python3 tools/build_theme.py [--project .] [--check]
@@ -44,85 +48,133 @@ def darken(hex_value, t):
     return rgb_to_color(mix(hex_to_rgb(hex_value), (0.0, 0.0, 0.0), t))
 
 
-def style(id_name, bg, border, radius, px, py, border_width, swap_padding=False):
-    top, bottom = (py + 4, py - 4) if swap_padding else (py, py + 4)
-    return """[sub_resource type="StyleBoxFlat" id="{id}"]
-content_margin_left = {px}.0
-content_margin_top = {top}.0
-content_margin_right = {px}.0
-content_margin_bottom = {bottom}.0
-bg_color = {bg}
-border_width_bottom = {bw}
-border_color = {border}
-corner_radius_top_left = {r}
-corner_radius_top_right = {r}
-corner_radius_bottom_right = {r}
-corner_radius_bottom_left = {r}
-""".format(id=id_name, px=px, top=top, bottom=bottom, bg=bg,
-           bw=border_width, border=border, r=radius)
+def stylebox(sid, bg_hex, border_hex, radius, px, py, border_width,
+             bg_alpha=1.0, border_alpha=1.0, shadow_hex=None, shadow_opacity=0.0,
+             shadow_size=0, shadow_offset_y=0):
+    """Tek stil kutusu; golge ve esit dort kenar cizgisi destekli."""
+    line = '[sub_resource type="StyleBoxFlat" id="%s"]\n' % sid
+    line += "content_margin_left = %d.0\n" % px
+    line += "content_margin_top = %d.0\n" % py
+    line += "content_margin_right = %d.0\n" % px
+    line += "content_margin_bottom = %d.0\n" % py
+    line += "bg_color = %s\n" % color(bg_hex, bg_alpha)
+    line += "border_width_left = %d\n" % border_width
+    line += "border_width_top = %d\n" % border_width
+    line += "border_width_right = %d\n" % border_width
+    line += "border_width_bottom = %d\n" % border_width
+    line += "border_color = %s\n" % color(border_hex, border_alpha)
+    line += "corner_radius_top_left = %d\n" % radius
+    line += "corner_radius_top_right = %d\n" % radius
+    line += "corner_radius_bottom_right = %d\n" % radius
+    line += "corner_radius_bottom_left = %d\n" % radius
+    if shadow_hex is not None and shadow_size > 0:
+        line += "shadow_color = %s\n" % color(shadow_hex, shadow_opacity)
+        line += "shadow_size = %d\n" % shadow_size
+        line += "shadow_offset = Vector2(0, %d)\n" % shadow_offset_y
+    line += "\n"
+    return line
 
 
 def build(theme):
     palette = theme["palette"]
     metrics = theme["metrics"]
     radius = int(metrics["radius"])
+    radius_pill = int(metrics["radius_pill"])
+    radius_chip = int(metrics["radius_chip"])
     border = int(metrics["border"])
     px = int(metrics["padding_x"])
     py = int(metrics["padding_y"])
+    px_card = int(metrics["padding_card"])
+    shadow_size = int(metrics["shadow_size"])
+    shadow_opacity = float(metrics["shadow_opacity"])
+    shadow_offset_y = int(metrics["shadow_offset_y"])
 
     blocks = []
-    blocks.append(style("SB_primary", color(palette["primary"]),
-                        color(palette["primary_dark"]), radius, px, py, border))
-    blocks.append(style("SB_primary_hover", lighten(palette["primary"], 0.18),
-                        color(palette["primary_dark"]), radius, px, py, border))
-    blocks.append(style("SB_primary_pressed", darken(palette["primary"], 0.10),
-                        color(palette["primary_dark"]), radius, px, py, max(1, border - 4), True))
-    blocks.append(style("SB_primary_disabled", color(palette["primary"], 0.55),
-                        color(palette["primary_dark"], 0.5), radius, px, py, border))
+    # Birincil: turkuaz pill. Basılı durumda içerik hafif aşağı kayar.
+    blocks.append(stylebox("SB_primary", palette["primary"], palette["primary_dark"],
+                           radius_pill, px, py, border,
+                           shadow_hex=palette["primary_dark"], shadow_opacity=0.28,
+                           shadow_size=shadow_size, shadow_offset_y=shadow_offset_y))
+    blocks.append(stylebox("SB_primary_hover", palette["primary"], palette["primary_dark"],
+                           radius_pill, px, py, border,
+                           shadow_hex=palette["primary_dark"], shadow_opacity=0.34,
+                           shadow_size=shadow_size, shadow_offset_y=shadow_offset_y))
+    blocks.append(stylebox("SB_primary_pressed", palette["primary_dark"], palette["primary_dark"],
+                           radius_pill, px, py + 4, border,
+                           shadow_hex=palette["primary_dark"], shadow_opacity=0.18,
+                           shadow_size=int(shadow_size * 0.6), shadow_offset_y=int(shadow_offset_y * 0.4)))
+    blocks.append(stylebox("SB_primary_disabled", palette["primary"], palette["primary_dark"],
+                           radius_pill, px, py, border, bg_alpha=0.45, border_alpha=0.4))
 
-    blocks.append(style("SB_secondary", color(palette["accent"]),
-                        color(palette["accent_dark"]), radius, px, py, max(1, border - 1)))
-    blocks.append(style("SB_secondary_hover", lighten(palette["accent"], 0.25),
-                        color(palette["accent_dark"]), radius, px, py, max(1, border - 1)))
-    blocks.append(style("SB_secondary_pressed", darken(palette["accent"], 0.10),
-                        color(palette["accent_dark"]), radius, px, py, 2, True))
-    blocks.append(style("SB_secondary_disabled", color(palette["accent"], 0.5),
-                        color(palette["accent_dark"], 0.45), radius, px, py, max(1, border - 1)))
+    # İkincil: beyaz kart, ince iç çizgi; ikincil eylemler.
+    blocks.append(stylebox("SB_secondary", palette["surface"], palette["text"],
+                           radius_pill, px, py, border, bg_alpha=0.92, border_alpha=0.10,
+                           shadow_hex=palette["text"], shadow_opacity=shadow_opacity,
+                           shadow_size=shadow_size, shadow_offset_y=shadow_offset_y))
+    blocks.append(stylebox("SB_secondary_hover", palette["surface"], palette["text"],
+                           radius_pill, px, py, border, bg_alpha=1.0, border_alpha=0.16,
+                           shadow_hex=palette["text"], shadow_opacity=shadow_opacity + 0.03,
+                           shadow_size=shadow_size, shadow_offset_y=shadow_offset_y))
+    blocks.append(stylebox("SB_secondary_pressed", palette["surface_soft"], palette["text"],
+                           radius_pill, px, py + 4, border, bg_alpha=1.0, border_alpha=0.16,
+                           shadow_hex=palette["text"], shadow_opacity=0.05,
+                           shadow_size=int(shadow_size * 0.6), shadow_offset_y=int(shadow_offset_y * 0.4)))
+    blocks.append(stylebox("SB_secondary_disabled", palette["surface"], palette["text"],
+                           radius_pill, px, py, border, bg_alpha=0.5, border_alpha=0.05))
+
+    # Kart: beyaz %90, buyuk radius, cok ince golge + ic cizgi.
+    blocks.append(stylebox("SB_card", palette["surface"], palette["text"],
+                           radius, px_card, px_card, border, bg_alpha=0.90, border_alpha=0.08,
+                           shadow_hex=palette["text"], shadow_opacity=shadow_opacity,
+                           shadow_size=shadow_size, shadow_offset_y=shadow_offset_y))
+
+    # Cip (hap): kucuk bilgi kapsulu (cuzdan, odul).
+    blocks.append(stylebox("SB_chip", palette["surface"], palette["text"],
+                           radius_chip, px_card, int(py * 0.7), border, bg_alpha=0.92, border_alpha=0.08))
+
+    # Ilerleme cubugu yolu ve dolgusu (dolgu rengi HUD'da canli degisir).
+    blocks.append(stylebox("SB_bar_track", palette["text"], palette["text"],
+                           radius_pill, 0, 0, 0, bg_alpha=0.10, border_alpha=0.0))
+    blocks.append(stylebox("SB_bar_fill", palette["primary"], palette["primary"],
+                           radius_pill, 0, 0, 0, bg_alpha=1.0, border_alpha=0.0))
 
     resources = []
     resources.append("default_font = ExtResource(\"1_font\")")
-    # default_font_size KULLANILMAZ: Godot onu varyasyon aramasindan once kontrol edip
-    # TitleLabel gibi tur varyasyonlarinin puntosunu golgeliyor (olculdu).
-    # Taban boyutu tip uzerinden acikca verilir.
+    resources.append("Label/colors/font_color = %s" % color(palette["text"]))
     resources.append("Label/font_sizes/font_size = %d" % int(theme["base_font_size"]))
-    resources.append("Button/font_sizes/font_size = %d" % int(metrics["button_font_size"]))
 
+    # Birincil buton (Buton turunun varsayilani).
     resources.append("Button/colors/font_color = %s" % color(palette["on_primary"]))
     resources.append("Button/colors/font_hover_color = %s" % color(palette["on_primary"]))
-    resources.append("Button/colors/font_pressed_color = %s" % darken(palette["on_primary"], 0.15))
-    resources.append("Button/colors/font_disabled_color = %s" % color(palette["on_primary"], 0.75))
+    resources.append("Button/colors/font_pressed_color = %s" % darken(palette["on_primary"], 0.12))
+    resources.append("Button/colors/font_disabled_color = %s" % color(palette["on_primary"], 0.7))
     resources.append("Button/font_sizes/font_size = %d" % int(metrics["button_font_size"]))
     resources.append('Button/styles/normal = SubResource("SB_primary")')
     resources.append('Button/styles/hover = SubResource("SB_primary_hover")')
     resources.append('Button/styles/pressed = SubResource("SB_primary_pressed")')
     resources.append('Button/styles/disabled = SubResource("SB_primary_disabled")')
 
+    # İkincil buton turu.
     resources.append('SecondaryButton/base_type = &"Button"')
-    resources.append("SecondaryButton/colors/font_color = %s" % color(palette["on_accent"]))
-    resources.append("SecondaryButton/colors/font_hover_color = %s" % color(palette["on_accent"]))
-    resources.append("SecondaryButton/colors/font_pressed_color = %s" % darken(palette["on_accent"], 0.15))
-    resources.append("SecondaryButton/colors/font_disabled_color = %s" % color(palette["on_accent"], 0.7))
+    resources.append("SecondaryButton/colors/font_color = %s" % color(palette["on_surface"]))
+    resources.append("SecondaryButton/colors/font_hover_color = %s" % color(palette["on_surface"]))
+    resources.append("SecondaryButton/colors/font_pressed_color = %s" % darken(palette["on_surface"], 0.12))
+    resources.append("SecondaryButton/colors/font_disabled_color = %s" % color(palette["on_surface"], 0.5))
     resources.append("SecondaryButton/font_sizes/font_size = %d" % int(metrics["secondary_button_font_size"]))
     resources.append('SecondaryButton/styles/normal = SubResource("SB_secondary")')
     resources.append('SecondaryButton/styles/hover = SubResource("SB_secondary_hover")')
     resources.append('SecondaryButton/styles/pressed = SubResource("SB_secondary_pressed")')
     resources.append('SecondaryButton/styles/disabled = SubResource("SB_secondary_disabled")')
 
-    resources.append("Label/colors/font_color = %s" % color(palette["text"]))
+    # Kart ve cip panel turleri (stil varyasyonlari Godot 4.7'de calisir).
+    resources.append('CardPanel/base_type = &"PanelContainer"')
+    resources.append('CardPanel/styles/panel = SubResource("SB_card")')
+    resources.append('ChipPanel/base_type = &"PanelContainer"')
+    resources.append('ChipPanel/styles/panel = SubResource("SB_chip")')
 
-    # NOT: Label tur varyasyonlari (TitleLabel vb.) Godot 4.7.2'de font_size/renk
-    # icin UYGULANMIYOR (olculdu; stil varyasyonlari calisiyor). Bu yuzden etiket
-    # punto/renkleri sahne icinde theme_override_* ile verilir (GOTCHAS.md #19).
+    # Ilerleme cubugu varsayilanlari.
+    resources.append('ProgressBar/styles/background = SubResource("SB_bar_track")')
+    resources.append('ProgressBar/styles/fill = SubResource("SB_bar_fill")')
 
     header = ('[gd_resource type="Theme" load_steps=%d format=3]\n\n'
               '[ext_resource type="FontFile" path="%s" id="1_font"]\n\n'
