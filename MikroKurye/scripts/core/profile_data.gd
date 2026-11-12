@@ -23,6 +23,7 @@ var _deliveries: int
 var _breaks: int
 var _best_stars: Dictionary
 var _settings: Dictionary
+var _records: RunRecords
 
 
 func _init() -> void:
@@ -34,6 +35,7 @@ func _init() -> void:
 	_breaks = 0
 	_best_stars = {}
 	_settings = DEFAULT_SETTINGS.duplicate()
+	_records = RunRecords.new()
 
 
 ## Canlı referans: çağıranın cüzdanı değiştirmesi profile yansır.
@@ -98,6 +100,11 @@ func stats() -> Dictionary:
 	}
 
 
+## Canlı referans: rekorlar (sonsuz mod). Koşu bitince `submit` çağrılır.
+func records() -> RunRecords:
+	return _records
+
+
 ## Ayarların kopyası; çağıranın değiştirmesi profili etkilemez.
 func settings() -> Dictionary:
 	return _settings.duplicate()
@@ -117,6 +124,7 @@ func to_dict() -> Dictionary:
 		"levels": levels(),
 		"stats": stats(),
 		"settings": settings(),
+		"records": _records.to_dict(),
 	}
 
 
@@ -143,6 +151,10 @@ static func from_dict(d: Dictionary) -> ProfileData:
 			# Eksik ya da bool olmayan ayar, varsayılanı korur (tolerans kuralı).
 			if value_raw is bool:
 				profile._settings[key_name] = bool(value_raw)
+
+	var records_raw: Variant = d.get("records")
+	if records_raw is Dictionary:
+		profile._records = RunRecords.from_dict(records_raw as Dictionary)
 
 	var stats_raw: Variant = d.get("stats")
 	if stats_raw is Dictionary:

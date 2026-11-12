@@ -17,6 +17,7 @@ const DEFAULT_DICT: Dictionary = {
 	"levels": {"chassis": 0, "wheels": 0, "battery": 0, "shock_gel": 0},
 	"stats": {"deliveries": 0, "breaks": 0, "best_stars": {}},
 	"settings": {"sound_on": true, "tutorial_done": false},
+	"records": {"best_level": 0, "best_distance": 0, "best_score": 0, "runs": 0},
 }
 
 
@@ -190,6 +191,7 @@ func test_to_dict_snapshot() -> void:
 		"levels": {"chassis": 2, "wheels": 1, "battery": 0, "shock_gel": 0},
 		"stats": {"deliveries": 1, "breaks": 1, "best_stars": {"sd_card": 3}},
 		"settings": {"sound_on": true, "tutorial_done": false},
+		"records": {"best_level": 0, "best_distance": 0, "best_score": 0, "runs": 0},
 	}
 	assert_eq(profile.to_dict(), expected)
 
@@ -279,6 +281,7 @@ func test_from_dict_accepts_whole_floats_from_json() -> void:
 		"levels": {"chassis": 2, "wheels": 1, "battery": 0, "shock_gel": 0},
 		"stats": {"deliveries": 3, "breaks": 1, "best_stars": {"sd_card": 3}},
 		"settings": {"sound_on": true, "tutorial_done": false},
+		"records": {"best_level": 0, "best_distance": 0, "best_score": 0, "runs": 0},
 	}
 	assert_eq(profile.to_dict(), expected, "küsuratsız JSON float tamsayı sayılmalı")
 	assert_eq(typeof(profile.wallet().gold()), TYPE_INT)
@@ -330,6 +333,7 @@ func test_from_dict_high_version_reads_known_fields() -> void:
 		"levels": {"chassis": 0, "wheels": 1, "battery": 0, "shock_gel": 0},
 		"stats": {"deliveries": 2, "breaks": 1, "best_stars": {"sd_card": 2}},
 		"settings": {"sound_on": true, "tutorial_done": false},
+		"records": {"best_level": 0, "best_distance": 0, "best_score": 0, "runs": 0},
 	}
 	assert_eq(profile.to_dict(), expected, "yüksek sürümde tanıdık alanlar okunmalı")
 	assert_false(profile.to_dict().has("unknown_key"), "bilinmeyen anahtar kayda yazılmamalı")
