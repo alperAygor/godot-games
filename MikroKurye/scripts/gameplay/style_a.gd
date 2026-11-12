@@ -96,7 +96,10 @@ func _restyle_mesh(mesh_instance: MeshInstance3D) -> void:
 		if material is StandardMaterial3D:
 			var std: StandardMaterial3D = material as StandardMaterial3D
 			var base: Color = _palette_color(String(std.resource_name), std.albedo_color)
-			mesh_instance.set_surface_override_material(surface, _toon_material(base, interactive))
+			var vertex_strength: float = 1.0 if std.vertex_color_use_as_albedo else 0.0
+			var glow: Color = std.emission if std.emission_enabled else Color(0.0, 0.0, 0.0, 1.0)
+			var glow_energy: float = std.emission_energy_multiplier if std.emission_enabled else 0.0
+			mesh_instance.set_surface_override_material(surface, _toon_material(base, interactive, vertex_strength, glow, glow_energy))
 
 
 ## İçe aktarılan yüzey adı palet eşlemesinde varsa onu, yoksa orijinal albedoyu verir.
@@ -104,15 +107,21 @@ func _palette_color(resource_name: String, fallback: Color) -> Color:
 	return PALETTE.get(resource_name, fallback)
 
 
-func _toon_material(base: Color, interactive: bool) -> ShaderMaterial:
-	# Renk + anahat bayrağına göre önbellek: aynı renk yüzeyler aynı malzemeyi paylaşır.
-	var key: String = base.to_html(false) + ("_o" if interactive else "")
+func _toon_material(base: Color, interactive: bool, vertex_strength: float = 0.0,
+		glow: Color = Color(0.0, 0.0, 0.0, 1.0), glow_energy: float = 0.0) -> ShaderMaterial:
+	# Renk + anahat + köşe rengi + emisyon bayrağına göre önbellek: aynı yüzeyler malzemeyi paylaşır.
+	var key: String = "%s_%s_%d_%s_%.2f" % [base.to_html(false), ("o" if interactive else "n"),
+		int(vertex_strength * 10.0), glow.to_html(false), glow_energy]
 	if _cache.has(key):
 		return _cache[key]
 	var material: ShaderMaterial = ShaderMaterial.new()
 	material.shader = _toon_shader
 	material.set_shader_parameter("base_color", base)
 	material.set_shader_parameter("shadow_color", SHADOW_COLOR)
+	material.set_shader_parameter("vertex_color_strength", vertex_strength)
+	if glow_energy > 0.0:
+		material.set_shader_parameter("emissive_color", glow)
+		material.set_shader_parameter("emissive_energy", glow_energy)
 	if interactive:
 		material.next_pass = _outline_material
 	_cache[key] = material

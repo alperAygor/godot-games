@@ -147,12 +147,17 @@ shader_parameter/beam_color = Color(1, 0.88, 0.66, 0.9)
 shader_parameter/edge_fade = 0.38
 shader_parameter/top_brightness = 1.0
 
+[sub_resource type="ShaderMaterial" id="RoomFloorMat"]
+shader = ExtResource("toon_shader")
+shader_parameter/base_color = Color(0.74, 0.58, 0.47, 1)
+shader_parameter/shadow_color = Color(0.62, 0.55, 0.5, 1)
+
 [sub_resource type="BoxMesh" id="VoidMesh"]
-material = SubResource("SilhouetteDark")
+material = SubResource("RoomFloorMat")
 size = Vector3(90, 0.2, 130)
 
 [sub_resource type="BoxMesh" id="EdgeShadowMesh"]
-material = SubResource("SilhouetteDark")
+material = SubResource("RoomFloorMat")
 size = Vector3(10.6, 0.02, 77.6)
 
 [sub_resource type="BoxMesh" id="MonitorScreenMesh"]

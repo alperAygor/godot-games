@@ -5,16 +5,16 @@ extends Node3D
 ## Renk/anahat stilini Robot.tscn içindeki StyleA düğümü üstlenir; bu düğüm yalnız
 ## doğru modeli örnekler, ölçekler ve sepete yerleştirir (vitrin gibi okunaklı).
 
-const MODEL_ROOT: String = "res://assets/models/"
+const MODEL_ROOT: String = "res://assets/models/v2/"
 const DEFAULT_CARGO_ID: String = "pencil_battery"
 const CARGO_MODELS: Dictionary = {
-	"pencil_battery": "cargo_pencil_battery.glb",
-	"sd_card": "cargo_sd_card.glb",
-	"espresso_capsule": "cargo_espresso_capsule.glb",
+	"pencil_battery": "cargo_pencil_battery_v2.glb",
+	"sd_card": "cargo_sd_card_v2.glb",
+	"espresso_capsule": "cargo_espresso_capsule_v2.glb",
 }
 ## Vitrin ölçeği: gerçek kargo 6-12 cm; sepetin içinde tek başına okunacak kadar
 ## büyütülür (stil laboratuvarı üç kargoyu birlikte 1.7× ile gösteriyordu).
-const CARGO_SCALE: float = 2.0
+const CARGO_SCALE: float = 2.4
 
 var _instance: Node3D = null
 
