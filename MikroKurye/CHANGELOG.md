@@ -15,9 +15,13 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/), sürümleme [Se
 - Faz 7.1: görsel stil laboratuvarı (toon+outline / soft clay / bold flat), `assets/shaders/`, `docs/art/style_lab_sheet.png`.
 - Faz 6: Şok Emici Jel modülü, SFX seti (offline sentez) ve olay→ses bağlantıları, ayarlar (ses aç/kapat), ilk açılış rehberi; `polish_probe`.
 - `DamageModel` (darbe/çalkalanma/düşme → 0..1 hasar) ve `CargoHealth` (birikim, Şok Jeli koruması, kırık kargo) + 25 birim test.
+- Faz 7 görsel paket: stil A (toon + anahat) shader sistemi, model v2 (robot, tekerlek, sepet, 3 kargo, 20 masa/oda modeli), ahşap masa, sıcak oda zemini ve arka plan dekoru, MSAA 2x.
+- Faz 7 arayüz: modern/sade UI + tek aile ikon seti (HUD'da ikon + yüzde, menü, sipariş, garaj, sonuç, ayarlar, rehber), `UiMotion` mikro-etkileşimleri, canlı 3B menü vitrini.
+- Faz 7 animasyon: robot eğimi/darbe sarsıntısı/göz ifadeleri/tekerlek tozu, sonuç yıldızı + sayaç animasyonu, kupa buharı, bitki/perde sallanması.
+- Faz 8: `tools/perf_measure.gd` (gerçek pencerede kare süresi/çizim çağrısı/üçgen), `tools/cargo_preview.tscn` (sipariş küçük resimleri), Android debug export ön ayarı (`export_presets.cfg`, arm64).
 
-### Eklenecek
-- Oyun mekaniği (Faz 1 kalanı, Faz 2 fizik prototipi)
+### Değişti
+- Sahne ışığı tek bölmeli gölge (`directional_shadow_mode = 0`, 22 m): çizim çağrısı ~376 → ~263, üçgen ~108k → ~75k.
 
 ---
 

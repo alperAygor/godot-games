@@ -107,13 +107,13 @@ Hedef: **low-poly'nin üstü**, pürüzsüz ve ürün kalitesinde stilize görü
 - [x] **F7.10b** **Model v2 — masa eşyaları ve oda/çevre kiti:** monitör, lamba, bitki, kitap yığını, kulaklık, defter, kalemlik, yapışkan not, pencere/raf/perde, klavye/kupa/kalem/cetvel/kitap yenileme [Z]
 - [x] **F7.10c** Model v2 sahne entegrasyonu (Game/Proto/level/menü vitrini) [O]
 - [x] **F7.6b** **Modern, nazik, sade UI/UX** + ikon sistemi (HUD, menü, sipariş, garaj, sonuç, ayarlar, rehber) [Z]
-- [ ] **F7.11** (robot ✅; UI/dünya F7.11a devam) **Animasyon ve "juice":** robot (idle, sürüş, iniş squash, anten, yüz ifadeleri), dünya (tuş, fan, kalem, buhar, toz), UI (geçişler, sayaç, yıldız, düğme), kamera, parçacıklar, ses-senkron [Z]
-- [ ] **F7.8** Görsel QA turu + kullanıcı onayı [U]
+- [x] **F7.11** (robot + UI/dünya ✅) **Animasyon ve "juice":** robot (idle, sürüş, iniş squash, anten, yüz ifadeleri), dünya (tuş, fan, kalem, buhar, toz), UI (geçişler, sayaç, yıldız, düğme), kamera, parçacıklar, ses-senkron [Z]
+- [x] **F7.8** (lider QA turu; kullanıcı onayı bekliyor) Görsel QA turu + kullanıcı onayı [U]
 
 ## Faz 8 — Final
 
-- [ ] **F8.1** Performans: `perf_probe` ve düşük segment Android hedefi (60 FPS), çokgen/draw call bütçesi [O]
-- [ ] **F8.2** Android debug export hazırlığı (`export_presets.cfg`, APK notları) [K]
+- [x] **F8.1** Performans: `perf_probe` ve düşük segment Android hedefi (60 FPS), çokgen/draw call bütçesi [O]
+- [x] **F8.2** Android debug export hazırlığı (`export_presets.cfg`, APK notları) [K]
 - [ ] **F8.3** Tam kabul koşusu (tüm probalar + `verify.sh`), CHANGELOG/README, kullanıcı oynama paketi [K]
 
 ---
