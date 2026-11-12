@@ -1,0 +1,92 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/hazards/rolling_pencil.gd" id="pencil_script"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_pencil_v2.glb" id="pencil"]
+[ext_resource type="Material" path="res://assets/materials/wood.tres" id="wood"]
+[ext_resource type="Material" path="res://assets/materials/wood_edge.tres" id="wood_edge"]
+[ext_resource type="Material" path="res://assets/materials/stripe_yellow.tres" id="stripe"]
+[ext_resource type="Material" path="res://assets/materials/route_blue.tres" id="route"]
+[ext_resource type="Script" path="res://scripts/gameplay/segment.gd" id="segment_script"]
+
+[sub_resource type="CylinderShape3D" id="PencilShape"]
+radius = 0.265
+height = 8.0
+
+[sub_resource type="BoxShape3D" id="TileShape"]
+size = Vector3(10, 0.5, 12.04)
+
+[sub_resource type="BoxMesh" id="TileMesh"]
+material = ExtResource("wood")
+size = Vector3(10, 0.5, 12.04)
+
+[sub_resource type="BoxMesh" id="ApronTileMesh"]
+material = ExtResource("wood_edge")
+size = Vector3(10, 0.35, 12.04)
+
+[sub_resource type="BoxMesh" id="EdgeTileMesh"]
+material = ExtResource("stripe")
+size = Vector3(0.1, 0.012, 12)
+
+[sub_resource type="BoxMesh" id="RouteTileMesh"]
+material = ExtResource("route")
+size = Vector3(0.08, 0.01, 12)
+
+[node name="Segment" type="Node3D"]
+script = ExtResource("segment_script")
+segment_id = "seg_pencil_c"
+length = 12
+
+[node name="Floor" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.25, -6)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("TileShape")
+
+[node name="Surface" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("TileMesh")
+
+[node name="Apron" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.65, -6)
+mesh = SubResource("ApronTileMesh")
+
+[node name="EdgeLeft" type="MeshInstance3D" parent="."]
+position = Vector3(-4.85, 0.008, -6)
+mesh = SubResource("EdgeTileMesh")
+
+[node name="EdgeRight" type="MeshInstance3D" parent="."]
+position = Vector3(4.85, 0.008, -6)
+mesh = SubResource("EdgeTileMesh")
+
+[node name="RouteLeft" type="MeshInstance3D" parent="."]
+position = Vector3(-1.5, 0.006, -6)
+mesh = SubResource("RouteTileMesh")
+
+[node name="RouteRight" type="MeshInstance3D" parent="."]
+position = Vector3(1.5, 0.006, -6)
+mesh = SubResource("RouteTileMesh")
+
+[node name="PencilA" type="RigidBody3D" parent="."]
+position = Vector3(2.6, 0.28, -5)
+continuous_cd = true
+script = ExtResource("pencil_script")
+travel_direction = Vector3(-1, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PencilA"]
+rotation_degrees = Vector3(90, 0, 0)
+shape = SubResource("PencilShape")
+
+[node name="Visual" parent="PencilA" instance=ExtResource("pencil")]
+position = Vector3(0, -0.265, 0)
+
+[node name="PencilB" type="RigidBody3D" parent="."]
+position = Vector3(-2.6, 0.28, -8)
+continuous_cd = true
+script = ExtResource("pencil_script")
+travel_direction = Vector3(1, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PencilB"]
+rotation_degrees = Vector3(90, 0, 0)
+shape = SubResource("PencilShape")
+
+[node name="Visual" parent="PencilB" instance=ExtResource("pencil")]
+position = Vector3(0, -0.265, 0)

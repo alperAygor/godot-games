@@ -1,0 +1,119 @@
+[gd_scene load_steps=20 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/ambient/mug_steam.gd" id="mug_steam"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_mug_v2.glb" id="mug"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_book_v2.glb" id="book"]
+[ext_resource type="Material" path="res://assets/materials/wood.tres" id="wood"]
+[ext_resource type="Material" path="res://assets/materials/wood_edge.tres" id="wood_edge"]
+[ext_resource type="Material" path="res://assets/materials/stripe_yellow.tres" id="stripe"]
+[ext_resource type="Material" path="res://assets/materials/route_blue.tres" id="route"]
+[ext_resource type="Script" path="res://scripts/gameplay/segment.gd" id="segment_script"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_headphones_v2.glb" id="prop_glb_0"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_notebook_v2.glb" id="prop_glb_1"]
+
+[sub_resource type="BoxShape3D" id="BookShape"]
+size = Vector3(2.45, 0.42, 3.5)
+
+[sub_resource type="CylinderShape3D" id="MugShape"]
+radius = 1.0
+height = 2.4
+
+[sub_resource type="BoxShape3D" id="TileShape"]
+size = Vector3(10, 0.5, 12.04)
+
+[sub_resource type="BoxMesh" id="TileMesh"]
+material = ExtResource("wood")
+size = Vector3(10, 0.5, 12.04)
+
+[sub_resource type="BoxMesh" id="ApronTileMesh"]
+material = ExtResource("wood_edge")
+size = Vector3(10, 0.35, 12.04)
+
+[sub_resource type="BoxMesh" id="EdgeTileMesh"]
+material = ExtResource("stripe")
+size = Vector3(0.1, 0.012, 12)
+
+[sub_resource type="BoxMesh" id="RouteTileMesh"]
+material = ExtResource("route")
+size = Vector3(0.08, 0.01, 12)
+
+[sub_resource type="BoxShape3D" id="PropShape_0"]
+size = Vector3(1.88, 1.88, 1.82)
+
+[sub_resource type="BoxShape3D" id="PropShape_1"]
+size = Vector3(3.48, 0.24, 4.5)
+
+[node name="Segment" type="Node3D"]
+script = ExtResource("segment_script")
+segment_id = "seg_obst_e"
+length = 12
+
+[node name="Floor" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.25, -6)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("TileShape")
+
+[node name="Surface" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("TileMesh")
+
+[node name="Apron" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.65, -6)
+mesh = SubResource("ApronTileMesh")
+
+[node name="EdgeLeft" type="MeshInstance3D" parent="."]
+position = Vector3(-4.85, 0.008, -6)
+mesh = SubResource("EdgeTileMesh")
+
+[node name="EdgeRight" type="MeshInstance3D" parent="."]
+position = Vector3(4.85, 0.008, -6)
+mesh = SubResource("EdgeTileMesh")
+
+[node name="RouteLeft" type="MeshInstance3D" parent="."]
+position = Vector3(-1.5, 0.006, -6)
+mesh = SubResource("RouteTileMesh")
+
+[node name="RouteRight" type="MeshInstance3D" parent="."]
+position = Vector3(1.5, 0.006, -6)
+mesh = SubResource("RouteTileMesh")
+
+[node name="MugL" type="StaticBody3D" parent="."]
+position = Vector3(-3.5, 0, -8)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="MugL"]
+position = Vector3(0, 1.2, 0)
+shape = SubResource("MugShape")
+
+[node name="Visual" parent="MugL" instance=ExtResource("mug")]
+
+[node name="Steam" type="CPUParticles3D" parent="MugL"]
+position = Vector3(0, 2.5, 0)
+script = ExtResource("mug_steam")
+
+[node name="BookR" type="StaticBody3D" parent="."]
+position = Vector3(3.5, 0, -10)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BookR"]
+position = Vector3(0, 0.21, 0)
+shape = SubResource("BookShape")
+
+[node name="Visual" parent="BookR" instance=ExtResource("book")]
+scale = Vector3(0.7, 0.7, 0.7)
+
+[node name="Phones" type="StaticBody3D" parent="."]
+position = Vector3(-3.5, 0, -4)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Phones"]
+position = Vector3(0, 0.94, 0)
+shape = SubResource("PropShape_0")
+
+[node name="Visual" parent="Phones" instance=ExtResource("prop_glb_0")]
+
+[node name="Pad" type="StaticBody3D" parent="."]
+position = Vector3(3, 0, -6)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Pad"]
+position = Vector3(0, 0.12, 0)
+shape = SubResource("PropShape_1")
+
+[node name="Visual" parent="Pad" instance=ExtResource("prop_glb_1")]

@@ -10,6 +10,24 @@
       "calm": true
     },
     {
+      "id": "seg_calm_b",
+      "scene": "res://scenes/segments/seg_calm_b.tscn",
+      "length": 12.0,
+      "min_level": 1,
+      "weight": 1.0,
+      "tags": [],
+      "calm": true
+    },
+    {
+      "id": "seg_calm_c",
+      "scene": "res://scenes/segments/seg_calm_c.tscn",
+      "length": 12.0,
+      "min_level": 1,
+      "weight": 1.0,
+      "tags": [],
+      "calm": true
+    },
+    {
       "id": "seg_keys_a",
       "scene": "res://scenes/segments/seg_keys_a.tscn",
       "length": 12.0,
@@ -32,8 +50,85 @@
       "calm": false
     },
     {
+      "id": "seg_keys_c",
+      "scene": "res://scenes/segments/seg_keys_c.tscn",
+      "length": 12.0,
+      "min_level": 1,
+      "weight": 2.0,
+      "tags": [
+        "keys"
+      ],
+      "calm": false
+    },
+    {
+      "id": "seg_keys_d",
+      "scene": "res://scenes/segments/seg_keys_d.tscn",
+      "length": 12.0,
+      "min_level": 1,
+      "weight": 2.0,
+      "tags": [
+        "keys"
+      ],
+      "calm": false
+    },
+    {
+      "id": "seg_keys_e",
+      "scene": "res://scenes/segments/seg_keys_e.tscn",
+      "length": 12.0,
+      "min_level": 1,
+      "weight": 2.0,
+      "tags": [
+        "keys"
+      ],
+      "calm": false
+    },
+    {
       "id": "seg_obst_a",
       "scene": "res://scenes/segments/seg_obst_a.tscn",
+      "length": 12.0,
+      "min_level": 2,
+      "weight": 2.0,
+      "tags": [
+        "obstacles"
+      ],
+      "calm": false
+    },
+    {
+      "id": "seg_obst_b",
+      "scene": "res://scenes/segments/seg_obst_b.tscn",
+      "length": 12.0,
+      "min_level": 2,
+      "weight": 2.0,
+      "tags": [
+        "obstacles"
+      ],
+      "calm": false
+    },
+    {
+      "id": "seg_obst_c",
+      "scene": "res://scenes/segments/seg_obst_c.tscn",
+      "length": 12.0,
+      "min_level": 2,
+      "weight": 2.0,
+      "tags": [
+        "obstacles"
+      ],
+      "calm": false
+    },
+    {
+      "id": "seg_obst_d",
+      "scene": "res://scenes/segments/seg_obst_d.tscn",
+      "length": 12.0,
+      "min_level": 2,
+      "weight": 2.0,
+      "tags": [
+        "obstacles"
+      ],
+      "calm": false
+    },
+    {
+      "id": "seg_obst_e",
+      "scene": "res://scenes/segments/seg_obst_e.tscn",
       "length": 12.0,
       "min_level": 2,
       "weight": 2.0,
@@ -54,6 +149,39 @@
       "calm": false
     },
     {
+      "id": "seg_pencil_b",
+      "scene": "res://scenes/segments/seg_pencil_b.tscn",
+      "length": 12.0,
+      "min_level": 3,
+      "weight": 2.0,
+      "tags": [
+        "pencils"
+      ],
+      "calm": false
+    },
+    {
+      "id": "seg_pencil_c",
+      "scene": "res://scenes/segments/seg_pencil_c.tscn",
+      "length": 12.0,
+      "min_level": 3,
+      "weight": 2.0,
+      "tags": [
+        "pencils"
+      ],
+      "calm": false
+    },
+    {
+      "id": "seg_pencil_d",
+      "scene": "res://scenes/segments/seg_pencil_d.tscn",
+      "length": 12.0,
+      "min_level": 3,
+      "weight": 2.0,
+      "tags": [
+        "pencils"
+      ],
+      "calm": false
+    },
+    {
       "id": "seg_fan_a",
       "scene": "res://scenes/segments/seg_fan_a.tscn",
       "length": 12.0,
@@ -61,6 +189,72 @@
       "weight": 2.0,
       "tags": [
         "fans"
+      ],
+      "calm": false
+    },
+    {
+      "id": "seg_fan_b",
+      "scene": "res://scenes/segments/seg_fan_b.tscn",
+      "length": 12.0,
+      "min_level": 4,
+      "weight": 2.0,
+      "tags": [
+        "fans"
+      ],
+      "calm": false
+    },
+    {
+      "id": "seg_fan_c",
+      "scene": "res://scenes/segments/seg_fan_c.tscn",
+      "length": 12.0,
+      "min_level": 4,
+      "weight": 2.0,
+      "tags": [
+        "fans"
+      ],
+      "calm": false
+    },
+    {
+      "id": "seg_fan_d",
+      "scene": "res://scenes/segments/seg_fan_d.tscn",
+      "length": 12.0,
+      "min_level": 4,
+      "weight": 2.0,
+      "tags": [
+        "fans"
+      ],
+      "calm": false
+    },
+    {
+      "id": "seg_mixed_a",
+      "scene": "res://scenes/segments/seg_mixed_a.tscn",
+      "length": 24.0,
+      "min_level": 6,
+      "weight": 1.5,
+      "tags": [
+        "mixed"
+      ],
+      "calm": false
+    },
+    {
+      "id": "seg_mixed_b",
+      "scene": "res://scenes/segments/seg_mixed_b.tscn",
+      "length": 12.0,
+      "min_level": 6,
+      "weight": 1.5,
+      "tags": [
+        "mixed"
+      ],
+      "calm": false
+    },
+    {
+      "id": "seg_mixed_c",
+      "scene": "res://scenes/segments/seg_mixed_c.tscn",
+      "length": 12.0,
+      "min_level": 6,
+      "weight": 1.5,
+      "tags": [
+        "mixed"
       ],
       "calm": false
     }
