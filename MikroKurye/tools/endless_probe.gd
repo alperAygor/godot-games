@@ -293,9 +293,22 @@ func _step_zone() -> void:
 		_fail("bölge: level 6'ya ulaşılamadı: %s" % str(st))
 	if _zone_changes != 1 or int(_level.call("zone_index")) != 1:
 		_fail("bölge level 6'da bir kez değişmeli (değişim=%d)" % _zone_changes)
-	if not ahead_color.is_equal_approx(Color.html("E6E1D3")):
-		_fail("ileride üretilen zemin yeni bölge paletinde olmalı: %s" % ahead_color.to_html(false))
+	var expected: Color = _zone_floor_color(1)
+	if not ahead_color.is_equal_approx(expected):
+		_fail("ileride üretilen zemin yeni bölge paletinde olmalı: %s (beklenen %s)" % [ahead_color.to_html(false), expected.to_html(false)])
 	_go(Phase.FARLOAD)
+
+
+## Beklenen zemin rengi veri dosyasından okunur (palet değişince probe kopmasın).
+func _zone_floor_color(index: int) -> Color:
+	var data: Node = root.get_node_or_null("/root/GameData")
+	if data == null:
+		return Color.BLACK
+	var table: Dictionary = data.call("table", "zones") as Dictionary
+	var zones: Array = table.get("zones", []) as Array
+	if index >= zones.size():
+		return Color.BLACK
+	return Color.html(String((zones[index] as Dictionary).get("floor_base", "000000")))
 
 
 ## Robotun ilerisindeki ilk parçanın zemin rengi (bölge paleti denetimi).
