@@ -61,16 +61,20 @@ func _ready() -> void:
 	var scrap: int = int(_result.get("scrap", 0))
 
 	_stylize()
-	title_label.text = UiStrings.RESULT_SUCCESS if stars > 0 else UiStrings.RESULT_FAIL
-	detail_label.text = "Hasar: %d%%  ·  Ücret: %d" % [int(roundf(damage * 100.0)), fee]
-	_build_stars(stars)
-	# Başarısız turda ödül çipi anlamsız; sakin görünüm için gizlenir.
-	_reward_row.visible = stars > 0
-	if stars > 0:
-		_count_rewards(gold, scrap)
+	var endless: bool = bool(_result.get("endless", false))
+	if endless:
+		_show_endless(gold, scrap)
 	else:
-		_gold_reward_label.text = "0"
-		_scrap_reward_label.text = "0"
+		title_label.text = UiStrings.RESULT_SUCCESS if stars > 0 else UiStrings.RESULT_FAIL
+		detail_label.text = "Hasar: %d%%  ·  Ücret: %d" % [int(roundf(damage * 100.0)), fee]
+		_build_stars(stars)
+		# Başarısız turda ödül çipi anlamsız; sakin görünüm için gizlenir.
+		_reward_row.visible = stars > 0
+		if stars > 0:
+			_count_rewards(gold, scrap)
+		else:
+			_gold_reward_label.text = "0"
+			_scrap_reward_label.text = "0"
 
 	# Kayıt yoksa (probe/izole sahne) sonuç değerleri gösterilir, çökme yok.
 	if _save != null:
@@ -79,7 +83,7 @@ func _ready() -> void:
 
 	_setup_reward_buttons()
 
-	if stars > 0:
+	if stars > 0 or (endless and _result_successful()):
 		AudioService.play("success")
 
 	(%RetryButton as Button).text = UiStrings.RESULT_RETRY
@@ -89,6 +93,41 @@ func _ready() -> void:
 	GameManager.back_requested.connect(_on_menu)
 	UiSfx.bind(self)
 	UiMotion.fade_in(self)
+
+
+## Sonsuz mod sonucu: level/mesafe/puan, kasa ödemesi ve kırılan rekorlar (PROJECT_SPEC §14).
+## Rekor bayrakları kayıt işlenirken (`apply_result`) hesaplandığından kayıt önce yapılır.
+func _show_endless(gold: int, scrap: int) -> void:
+	if _save != null:
+		_save.call("apply_result", _result)
+	var reason: String = String(_result.get("reason", ""))
+	var broken: bool = reason == "broken"
+	title_label.text = UiStrings.ENDLESS_BROKEN if broken else UiStrings.ENDLESS_DONE
+	_star_box.visible = false
+	var lines: Array[String] = [UiStrings.ENDLESS_STATS_FORMAT % [
+		int(_result.get("level", 1)), int(float(_result.get("distance", 0.0))), int(_result.get("score", 0))]]
+	var banked: int = int(_result.get("banked_gold", 0))
+	if banked > 0:
+		var pay_format: String = UiStrings.ENDLESS_HALF_PAY_FORMAT if broken else UiStrings.ENDLESS_FULL_PAY_FORMAT
+		lines.append(pay_format % banked)
+	var flags: Dictionary = _result.get("new_records", {}) as Dictionary
+	var broken_records: Array[String] = []
+	if bool(flags.get("new_level", false)):
+		broken_records.append(UiStrings.RECORD_LEVEL)
+	if bool(flags.get("new_distance", false)):
+		broken_records.append(UiStrings.RECORD_DISTANCE)
+	if bool(flags.get("new_score", false)):
+		broken_records.append(UiStrings.RECORD_SCORE)
+	if not broken_records.is_empty():
+		lines.append(UiStrings.NEW_RECORD_FORMAT % ", ".join(broken_records))
+	detail_label.text = "\n".join(lines)
+	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_reward_row.visible = gold > 0 or scrap > 0
+	_gold_reward_label.text = "0"
+	_scrap_reward_label.text = "0"
+	if _reward_row.visible:
+		_count_up(_gold_reward_label, gold)
+		_count_up(_scrap_reward_label, scrap)
 
 
 func _stylize() -> void:

@@ -12,6 +12,9 @@ extends CanvasLayer
 const MIN_PERCENT: float = 0.0
 const MAX_PERCENT: float = 100.0
 const LOW_BATTERY: float = 30.0
+## Duyuru bandı: okunacak kadar kalır, sonra yumuşakça kaybolur.
+const BANNER_HOLD_SECONDS: float = 2.4
+const BANNER_FADE_SECONDS: float = 0.5
 ## Kalp ikonu hasar anında 1.25'e büyür, kısa sürede geri oturur (kırmızı flaş).
 const HEART_HIT_SCALE: float = 1.25
 const HEART_HIT_SECONDS: float = 0.24
@@ -29,6 +32,14 @@ signal recharge_requested()
 @onready var _battery_bar: ProgressBar = %BatteryBar
 @onready var _cargo_percent: Label = %CargoPercent
 @onready var _battery_percent: Label = %BatteryPercent
+@onready var _run_hap: Control = %RunHap
+@onready var _run_icon: TextureRect = %RunIcon
+@onready var _run_label: Label = %RunLabel
+@onready var _bank_hap: Control = %BankHap
+@onready var _bank_icon: TextureRect = %BankIcon
+@onready var _bank_label: Label = %BankLabel
+@onready var _banner: Control = %Banner
+@onready var _banner_text: Label = %BannerText
 @onready var _cargo_icon: TextureRect = %CargoIcon
 @onready var _battery_icon: TextureRect = %BatteryIcon
 @onready var _battery_hap: Control = %BatteryHap
@@ -46,6 +57,7 @@ var _empty_fill: StyleBoxEmpty = StyleBoxEmpty.new()
 var _cargo_smooth: ProgressBar = null
 var _battery_smooth: ProgressBar = null
 var _pulse: Tween = null
+var _banner_tween: Tween = null
 var _heart_flash: Tween = null
 var _last_cargo: float = MAX_PERCENT
 
@@ -65,6 +77,10 @@ func _ready() -> void:
 	_cargo_bar.add_child(_cargo_smooth)
 	_battery_bar.add_child(_battery_smooth)
 	# İkonlar tek ailede; renk `modulate` ile verilir.
+	_run_icon.texture = Icons.texture("lucide/house")
+	_run_icon.modulate = UiTheme.color("primary")
+	_bank_icon.texture = Icons.texture("lucide/coins")
+	_bank_icon.modulate = UiTheme.color("secondary")
 	_cargo_icon.texture = Icons.texture("lucide/heart")
 	_battery_icon.texture = Icons.texture("lucide/zap")
 	_battery_icon.modulate = UiTheme.color("secondary")
@@ -98,6 +114,35 @@ func _process(delta: float) -> void:
 		var weight: float = 1.0 - exp(-BAR_SMOOTH_SPEED * delta)
 		_cargo_smooth.value = lerpf(_cargo_smooth.value, _cargo_bar.value, weight)
 		_battery_smooth.value = lerpf(_battery_smooth.value, _battery_bar.value, weight)
+
+
+## Sonsuz mod: level, teslimata kalan mesafe ve kasadaki altın. Klasik seviyede çağrılmaz;
+## çipler ilk çağrıda görünür.
+func set_run_info(level: int, distance_to_pad: float, banked_gold: int) -> void:
+	_run_hap.visible = true
+	_bank_hap.visible = true
+	_run_label.text = UiStrings.HUD_RUN_FORMAT % [level, int(ceilf(maxf(distance_to_pad, 0.0)))]
+	_bank_label.text = str(banked_gold)
+
+
+func announce_objective() -> void:
+	_show_banner(UiStrings.HUD_OBJECTIVE)
+
+
+func announce_level(level: int, gold: int) -> void:
+	_show_banner(UiStrings.HUD_LEVEL_UP_FORMAT % [level, gold])
+
+
+func _show_banner(text: String) -> void:
+	if _banner_tween != null:
+		_banner_tween.kill()
+	_banner_text.text = text
+	_banner.visible = true
+	_banner.modulate.a = 1.0
+	_banner_tween = _banner.create_tween()
+	_banner_tween.tween_interval(BANNER_HOLD_SECONDS)
+	_banner_tween.tween_property(_banner, "modulate:a", 0.0, BANNER_FADE_SECONDS)
+	_banner_tween.tween_callback(_banner.hide)
 
 
 func set_cargo_health(percent: float) -> void:

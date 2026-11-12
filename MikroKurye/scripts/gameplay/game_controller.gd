@@ -284,6 +284,7 @@ func _setup_endless() -> void:
 	for position_3d: Vector3 in _endless.checkpoint_positions():
 		_register_dynamic_checkpoint(position_3d)
 	_endless.checkpoint_added.connect(_register_dynamic_checkpoint)
+	_hud.announce_objective()
 
 
 func _register_dynamic_checkpoint(position_3d: Vector3) -> int:
@@ -431,6 +432,7 @@ func _complete_level() -> void:
 	_tracker.reach(pad_checkpoint)
 	_level_number += 1
 	_endless.advance()
+	_hud.announce_level(_level_number, int(reward.get("gold", 0)))
 	_refresh_hud()
 
 
@@ -660,11 +662,20 @@ func _place_robot(target: Transform3D) -> void:
 	_cargo.reset_sway()
 
 
+## Mevcut level'ın teslimat çizgisine kalan yatay mesafe (metre).
+func _distance_to_pad() -> float:
+	if _endless == null or _robot == null:
+		return 0.0
+	return absf(_robot.global_position.z - _endless.level_end_z())
+
+
 func _refresh_hud() -> void:
 	if _hud == null or _health == null or _battery == null:
 		return
 	_hud.set_cargo_health(_health.integrity() * PERCENT_SCALE)
 	_hud.set_battery(_battery.level() * PERCENT_SCALE)
+	if _endless != null:
+		_hud.set_run_info(_level_number, _distance_to_pad(), _banked_gold)
 	_update_recharge_availability()
 	_hud.set_ad_pending(_revive_pending or _recharge_pending)
 	_hud.set_revive_offered(_revive_offered)

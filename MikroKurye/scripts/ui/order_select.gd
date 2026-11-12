@@ -196,6 +196,7 @@ func _apply_card_style(card: Button) -> void:
 
 func _on_card_pressed(cargo_id: String) -> void:
 	GameManager.selected_cargo_id = cargo_id
+	GameManager.selected_level_id = GameController.ENDLESS_LEVEL_ID
 	GameManager.start_game()
 
 
