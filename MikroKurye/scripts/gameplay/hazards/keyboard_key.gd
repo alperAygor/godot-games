@@ -17,11 +17,15 @@ const KEYCAP_LUMINANCE: float = 0.4
 ## Normal hâlde tüm tuş kapakları kremdir; tehlike rengi yalnız telegraph/press anında.
 const KEYCAP_IDLE_COLOR: Color = Color("f2e8d5")
 const TELEGRAPH_EMISSION: float = 1.4
+## Haksız tuzak olmasın: uyarı süresi hiçbir zorluk düzeyinde bunun altına inmez.
+const MIN_WARNING_SECONDS: float = 0.5
 
 @export var phase_offset_seconds: float = 0.0
 
 var _parameters: Dictionary[String, Variant] = {}
 var _period: float = 0.0
+var _base_period: float = 0.0
+var _base_warning: float = 0.0
 var _warning_seconds: float = 0.0
 var _press_seconds: float = 0.0
 var _hold_seconds: float = 0.0
@@ -56,6 +60,8 @@ func _ready() -> void:
 	_release_seconds = maxf(_parameter("key_release_seconds", 0.25), 0.001)
 	_period = maxf(_parameter("key_period_seconds", 4.0),
 		_warning_seconds + _press_seconds + _hold_seconds + _release_seconds)
+	_base_period = _period
+	_base_warning = _warning_seconds
 	_press_depth = maxf(_parameter("key_press_depth", 0.28), 0.0)
 	_warning_color = Color.from_string(String(_parameters.get("key_warn_color", "f7b801")), Color.YELLOW)
 	_pressed_color = Color.from_string(String(_parameters.get("key_pressed_color", "ff4d4d")), Color.RED)
@@ -72,6 +78,18 @@ func _ready() -> void:
 	# İlk karede basılı başlayan tuş, sahne kurulurken yanlışlıkla "basıldı"
 	# olayı üretmesin; kenar yalnızca sonraki geçişlerde algılanır.
 	_was_pressed = _pressed
+
+
+## Sonsuz mod: level zorluğu uyarı süresini ve döngüyü ölçekler (LevelProgression).
+func apply_difficulty(params: Dictionary) -> void:
+	var telegraph: float = float(params.get("telegraph_scale", 1.0))
+	var cycle: float = float(params.get("cycle_scale", 1.0))
+	_warning_seconds = maxf(_base_warning * telegraph, MIN_WARNING_SECONDS)
+	var active: float = _warning_seconds + _press_seconds + _hold_seconds + _release_seconds
+	_period = maxf(_base_period * cycle, active)
+	_press_start = _period - _press_seconds - _hold_seconds - _release_seconds
+	_warning_start = _press_start - _warning_seconds
+	_phase = fposmod(_phase, _period)
 
 
 func is_telegraphing() -> bool:

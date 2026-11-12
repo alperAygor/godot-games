@@ -11,6 +11,7 @@ var _scene_path: String = "res://scenes/Proto.tscn"
 var _out: String = "/tmp/scene_shot.png"
 var _frames: int = 240
 var _throttle: float = 0.0
+var _level_id: String = ""
 var _count: int = 0
 var _scene: Node = null
 var _done: bool = false
@@ -24,8 +25,14 @@ func _initialize() -> void:
 			_out = arg.split("=")[1]
 		elif arg.begins_with("--frames="):
 			_frames = int(arg.split("=")[1])
+		elif arg.begins_with("--level="):
+			_level_id = arg.split("=")[1]
 		elif arg.begins_with("--throttle="):
 			_throttle = float(arg.split("=")[1])
+	if not _level_id.is_empty():
+		var manager: Node = root.get_node_or_null("GameManager")
+		if manager != null:
+			manager.set("selected_level_id", _level_id)
 	var packed: PackedScene = load(_scene_path) as PackedScene
 	if packed == null:
 		push_error("scene_shot: sahne yüklenemedi: %s" % _scene_path)

@@ -47,6 +47,11 @@ func _ready() -> void:
 	_apply(get_parent())
 
 
+## Çalışma zamanında eklenen alt ağaçlar (sonsuz mod parçaları) için dışarıdan çağrılır.
+func restyle(root: Node) -> void:
+	_apply(root)
+
+
 func _apply(root: Node) -> void:
 	if root == null:
 		return

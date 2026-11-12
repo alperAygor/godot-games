@@ -36,11 +36,28 @@ const MOD_KEYS: Array[String] = [MOD_CARGO_DAMPING, MOD_WHEEL_GRIP,
 
 const PERCENT_SCALE: float = 100.0
 
+## Sonsuz mod (PROJECT_SPEC §14).
+const ENDLESS_LEVEL_ID: String = "endless_desk"
+## Batarya bu süre boyunca boş kalırsa koşu biter (kasa tam ödenir).
+const EMPTY_BATTERY_GRACE_SECONDS: float = 3.0
+## Teslimat çizgisine bu kadar yakın olmayan bildirimler (ikinci gövde) yok sayılır.
+const PAD_TOLERANCE: float = 6.0
+const REASON_BATTERY: String = "battery"
+const REASON_QUIT: String = "quit"
+
 @onready var _robot: RobotController = $Robot as RobotController
 @onready var _cargo: CargoBasket = $Robot/CargoBasket as CargoBasket
 @onready var _hud: Hud = $HUD as Hud
 
 var _level: LevelRoot = null
+var _endless: EndlessLevel = null
+var _level_number: int = 1
+var _banked_gold: int = 0
+var _banked_scrap: int = 0
+var _levels_delivered: int = 0
+var _start_z: float = 0.0
+var _max_distance: float = 0.0
+var _empty_battery_seconds: float = 0.0
 var _level_id: String = DEFAULT_LEVEL_ID
 var _robot_start: Marker3D = null
 var _delivery_zone: Area3D = null
@@ -106,6 +123,7 @@ func _ready() -> void:
 	_setup_checkpoints()
 	_connect_signals()
 	_setup_golden_box()
+	_setup_endless()
 	_place_robot(_robot_start.global_transform)
 	_refresh_hud()
 
@@ -148,6 +166,7 @@ func _instantiate_level(id: String) -> bool:
 		level.free()
 		return false
 	_level = level
+	_endless = level as EndlessLevel
 	_level_id = level.level_id if not level.level_id.is_empty() else id
 	_robot_start = start
 	_delivery_zone = delivery
@@ -257,6 +276,29 @@ func _setup_checkpoints() -> void:
 	_tracker.reach(0)
 
 
+## Sonsuz mod: ara kontrol noktalarını kaydeder ve başlangıç mesafesini tutar.
+func _setup_endless() -> void:
+	_start_z = _robot_start.global_position.z
+	if _endless == null:
+		return
+	for position_3d: Vector3 in _endless.checkpoint_positions():
+		_register_dynamic_checkpoint(position_3d)
+	_endless.checkpoint_added.connect(_register_dynamic_checkpoint)
+
+
+func _register_dynamic_checkpoint(position_3d: Vector3) -> int:
+	var id: int = 1
+	if not _checkpoint_ids.is_empty():
+		id = _checkpoint_ids[_checkpoint_ids.size() - 1] + 1
+	var marker: Marker3D = Marker3D.new()
+	marker.position = position_3d
+	_level.add_child(marker)
+	_checkpoints[id] = marker
+	_checkpoint_ids.append(id)
+	_tracker.register(id, position_3d)
+	return id
+
+
 func _connect_signals() -> void:
 	_cargo.impact_reported.connect(_on_cargo_impact)
 	_cargo.slosh_reported.connect(_on_cargo_slosh)
@@ -292,12 +334,29 @@ func _physics_process(delta: float) -> void:
 		_respawn()
 		return
 	_reach_checkpoints()
+	if _endless != null:
+		_endless.update_world(_robot.global_position.z)
+		_max_distance = maxf(_max_distance, _start_z - _robot.global_position.z)
 	_battery.tick(delta)
 	_battery.drain_for_speed(_robot.speed(), delta)
 	_robot.set_speed_factor(_battery.speed_factor())
 	_refresh_hud()
+	if _endless != null and _check_battery_end(delta):
+		return
 	if _health.is_broken():
 		_handle_broken()
+
+
+## Sonsuz modda batarya uzun süre boşsa koşu biter (kasa tam ödenir).
+func _check_battery_end(delta: float) -> bool:
+	if not _battery.is_empty():
+		_empty_battery_seconds = 0.0
+		return false
+	_empty_battery_seconds += delta
+	if _empty_battery_seconds < EMPTY_BATTERY_GRACE_SECONDS:
+		return false
+	_finish_endless(REASON_BATTERY)
+	return true
 
 
 func _reach_checkpoints() -> void:
@@ -348,7 +407,72 @@ func _on_delivery_body_entered(body: Node3D) -> void:
 	# Sepet robotun altında top-level bir gövde; teslimat iki gruptan biriyle sayılır.
 	if not body.is_in_group("robot") and not body.is_in_group("cargo"):
 		return
+	if _endless != null:
+		_complete_level()
+		return
 	_finish_run(true)
+
+
+## Sonsuz mod: level teslimatı. Ödül kasaya yazılır, hasar kısmen onarılır, batarya
+## kısmen dolar, koşu bir sonraki level'a devam eder.
+func _complete_level() -> void:
+	if absf(_robot.global_position.z - _endless.level_end_z()) > PAD_TOLERANCE:
+		return
+	var reward: Dictionary = EndlessReward.level_reward(_level_number, _health.damage(), _profile)
+	_banked_gold += int(reward.get("gold", 0))
+	_banked_scrap += int(reward.get("scrap", 0))
+	_levels_delivered += 1
+	_health.repair(LevelProgression.heal_fraction(_level_number))
+	_battery.recharge(_battery_capacity * LevelProgression.battery_refill(_level_number))
+	_robot.set_speed_factor(_battery.speed_factor())
+	AudioService.play("delivery")
+	var pad_checkpoint: int = _register_dynamic_checkpoint(
+		Vector3(0.0, _robot_start.global_position.y, _endless.level_end_z()))
+	_tracker.reach(pad_checkpoint)
+	_level_number += 1
+	_endless.advance()
+	_refresh_hud()
+
+
+## Sonsuz mod koşusu biter: kırılmada kasanın yarısı, diğer nedenlerde tamamı ödenir.
+func _finish_endless(reason: String) -> void:
+	if _finished:
+		return
+	var payout: Dictionary = EndlessReward.payout(_banked_gold, _banked_scrap, reason)
+	var difficulty: int = int(_profile.get("difficulty", 1))
+	var result: Dictionary = {
+		"endless": true,
+		"reason": reason,
+		"success": reason != EndlessReward.REASON_BROKEN,
+		"damage": _health.damage(),
+		"stars": 0,
+		"multiplier": EndlessReward.cargo_multiplier(difficulty),
+		"gold": int(payout["gold"]),
+		"scrap": int(payout["scrap"]),
+		"fee": int(payout["gold"]),
+		"payout_fraction": float(payout["fraction"]),
+		"banked_gold": _banked_gold,
+		"banked_scrap": _banked_scrap,
+		"level": _level_number,
+		"levels_delivered": _levels_delivered,
+		"distance": _max_distance,
+		"score": EndlessReward.score(_max_distance, difficulty),
+		"cargo_id": _cargo_id,
+		"level_id": _level_id,
+		"time": _elapsed,
+		"golden_box": false,
+		"doubled": false,
+	}
+	_delivered = _levels_delivered > 0
+	_broken = _health.is_broken()
+	_finished = true
+	_revive_offered = false
+	_recharge_available = false
+	_refresh_hud()
+	finished.emit(result)
+	var manager: Node = get_node_or_null("/root/GameManager")
+	if manager != null:
+		manager.call("finish_run", result)
 
 
 ## Kargo kırıldı: teklif edilebiliyorsa tur beklemede kalır, aksi hâlde biter.
@@ -363,7 +487,7 @@ func _handle_broken() -> void:
 		_refresh_hud()
 		revive_offered.emit()
 		return
-	_finish_run(false)
+	_finish_or_endless(false)
 
 
 func accept_revive() -> void:
@@ -381,7 +505,7 @@ func decline_revive() -> void:
 	if _finished or not _revive_offered or _revive_pending:
 		return
 	_revive_offered = false
-	_finish_run(false)
+	_finish_or_endless(false)
 
 
 func request_recharge() -> void:
@@ -406,6 +530,9 @@ func _on_golden_box_body_entered(body: Node3D) -> void:
 
 func _on_back_requested() -> void:
 	if _revive_pending or _recharge_pending:
+		return
+	if _endless != null and not _finished and _levels_delivered > 0:
+		_finish_endless(REASON_QUIT)
 		return
 	var manager: Node = get_node_or_null("/root/GameManager")
 	if manager != null:
@@ -454,7 +581,7 @@ func _close_revive(success: bool) -> void:
 	_revive_pending = false
 	_set_ad_wait(false)
 	if not success:
-		_finish_run(false)
+		_finish_or_endless(false)
 		return
 	_revive_used = true
 	_broken = false
@@ -482,7 +609,7 @@ func _on_ad_failed(placement: int, _reason: String) -> void:
 	if placement == AdManager.Placement.CARGO_INSURANCE and _revive_pending:
 		_revive_pending = false
 		_revive_offered = false
-		_finish_run(false)
+		_finish_or_endless(false)
 	elif placement == AdManager.Placement.BATTERY_RECHARGE and _recharge_pending:
 		_recharge_pending = false
 		_set_ad_wait(false)
@@ -542,6 +669,14 @@ func _refresh_hud() -> void:
 	_hud.set_ad_pending(_revive_pending or _recharge_pending)
 	_hud.set_revive_offered(_revive_offered)
 	_hud.set_recharge_available(_recharge_available)
+
+
+## Kırılma bitişi: sonsuz modda kasa yarı yarıya ödenir, klasik seviyede eski sonuç.
+func _finish_or_endless(delivered: bool) -> void:
+	if _endless != null:
+		_finish_endless(EndlessReward.REASON_BROKEN)
+	else:
+		_finish_run(delivered)
 
 
 func _finish_run(delivered: bool) -> void:
@@ -608,6 +743,12 @@ func state() -> Dictionary:
 		"recharge_available": _recharge_available,
 		"boost_active": _battery != null and _battery.boost_active(),
 		"golden_box_collected": _golden_box_collected,
+		"endless": _endless != null,
+		"level_number": _level_number,
+		"levels_delivered": _levels_delivered,
+		"banked_gold": _banked_gold,
+		"banked_scrap": _banked_scrap,
+		"distance": _max_distance,
 	}
 
 

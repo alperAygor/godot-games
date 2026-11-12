@@ -1,0 +1,189 @@
+[gd_scene load_steps=29 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/ambient/sway.gd" id="sway"]
+[ext_resource type="Material" path="res://assets/materials/pad_green.tres" id="pad"]
+[ext_resource type="Script" path="res://scripts/gameplay/style_a.gd" id="style_a"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_monitor_v2.glb" id="bg_monitor"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_lamp_v2.glb" id="bg_lamp"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_plant_v2.glb" id="bg_plant"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_book_stack_v2.glb" id="bg_books"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/env_wall_panel_v2.glb" id="bg_wall"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/env_window_v2.glb" id="bg_window"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/env_shelf_v2.glb" id="bg_shelf"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/env_picture_frame_v2.glb" id="bg_frame"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/env_curtain_v2.glb" id="bg_curtain"]
+[ext_resource type="PackedScene" path="res://assets/models/v2/env/prop_headphones_v2.glb" id="bg_headphones"]
+[ext_resource type="Shader" path="res://assets/shaders/toon.gdshader" id="toon_shader"]
+[ext_resource type="Shader" path="res://assets/shaders/light_beam.gdshader" id="beam_shader"]
+[ext_resource type="Script" path="res://scripts/gameplay/endless_level.gd" id="endless_script"]
+[ext_resource type="PackedScene" path="res://scenes/segments/seg_calm_a.tscn" id="start_tile"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
+sky_top_color = Color(0.9569, 0.8941, 0.8078, 1)
+sky_horizon_color = Color(1, 0.9255, 0.8353, 1)
+ground_bottom_color = Color(0.9294, 0.851, 0.7529, 1)
+ground_horizon_color = Color(1, 0.9255, 0.8353, 1)
+
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMaterial")
+
+[sub_resource type="Environment" id="Room"]
+background_mode = 2
+sky = SubResource("Sky")
+ambient_light_source = 2
+ambient_light_color = Color(0.86, 0.86, 0.8, 1)
+ambient_light_energy = 0.35
+tonemap_mode = 0
+glow_enabled = true
+glow_intensity = 0.05
+glow_hdr_threshold = 1.1
+fog_enabled = true
+fog_mode = 1
+fog_depth_begin = 45.0
+fog_depth_end = 130.0
+fog_depth_curve = 1.2
+fog_light_color = Color(1, 0.9, 0.76, 1)
+fog_light_energy = 0.55
+fog_sky_affect = 0.4
+
+[sub_resource type="BoxShape3D" id="DeliveryShape"]
+size = Vector3(3, 3, 3)
+
+[sub_resource type="BoxMesh" id="PadMesh"]
+material = ExtResource("pad")
+size = Vector3(3, 0.012, 3)
+
+[sub_resource type="StandardMaterial3D" id="DustMat"]
+shading_mode = 0
+transparency = 1
+blend_mode = 1
+cull_mode = 2
+albedo_color = Color(1, 0.9, 0.7, 0.5)
+
+[sub_resource type="ShaderMaterial" id="BeamMat"]
+shader = ExtResource("beam_shader")
+shader_parameter/beam_color = Color(1, 0.88, 0.66, 0.4)
+shader_parameter/edge_fade = 0.38
+shader_parameter/top_brightness = 0.7
+
+[sub_resource type="ShaderMaterial" id="RoomFloorMat"]
+shader = ExtResource("toon_shader")
+shader_parameter/base_color = Color(0.74, 0.58, 0.47, 1)
+shader_parameter/shadow_color = Color(0.62, 0.55, 0.5, 1)
+
+[sub_resource type="BoxMesh" id="VoidMesh"]
+material = SubResource("RoomFloorMat")
+size = Vector3(90, 0.2, 130)
+
+[sub_resource type="QuadMesh" id="BeamMesh"]
+material = SubResource("BeamMat")
+size = Vector2(18, 30)
+
+[sub_resource type="SphereMesh" id="DustMesh"]
+material = SubResource("DustMat")
+radius = 0.16
+height = 0.32
+radial_segments = 4
+rings = 2
+
+[node name="EndlessDesk" type="Node3D"]
+script = ExtResource("endless_script")
+level_id = "endless_desk"
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Room")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-55, -25, 0)
+light_color = Color(1, 0.9412, 0.8275, 1)
+light_energy = 1.0
+shadow_enabled = true
+shadow_blur = 1.5
+directional_shadow_mode = 0
+directional_shadow_max_distance = 22.0
+
+[node name="RobotStart" type="Marker3D" parent="."]
+position = Vector3(0, 0.58, 0)
+
+[node name="Segments" type="Node3D" parent="."]
+
+[node name="StartTile" parent="." instance=ExtResource("start_tile")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12)
+
+[node name="DeliveryZone" type="Area3D" parent="."]
+position = Vector3(0, 1, -60)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DeliveryZone"]
+shape = SubResource("DeliveryShape")
+
+[node name="Pad" type="MeshInstance3D" parent="DeliveryZone"]
+position = Vector3(0, -0.99, 0)
+mesh = SubResource("PadMesh")
+
+[node name="Backdrop" type="Node3D" parent="."]
+
+[node name="BgWall" parent="Backdrop" instance=ExtResource("bg_wall")]
+transform = Transform3D(16, 0, 0, 0, 16, 0, 0, 0, 16, 0, -3, -120)
+
+[node name="BgWindow" parent="Backdrop" instance=ExtResource("bg_window")]
+transform = Transform3D(6, 0, 0, 0, 6, 0, 0, 0, 6, -14, 12, -118.5)
+
+[node name="BgCurtain" parent="Backdrop" instance=ExtResource("bg_curtain")]
+transform = Transform3D(7, 0, 0, 0, 7, 0, 0, 0, 7, -14, 12, -117.5)
+script = ExtResource("sway")
+amplitude_deg = 1.2
+period_seconds = 4.0
+
+[node name="BgShelf" parent="Backdrop" instance=ExtResource("bg_shelf")]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 20, 14, -118)
+
+[node name="BgFrame" parent="Backdrop" instance=ExtResource("bg_frame")]
+transform = Transform3D(6, 0, 0, 0, 6, 0, 0, 0, 6, 4, 22, -118.5)
+
+[node name="BgMonitor" parent="Backdrop" instance=ExtResource("bg_monitor")]
+transform = Transform3D(3.2, 0, 0, 0, 3.2, 0, 0, 0, 3.2, 14, -6, -95)
+
+[node name="BgLamp" parent="Backdrop" instance=ExtResource("bg_lamp")]
+transform = Transform3D(7, 0, 0, 0, 7, 0, 0, 0, 7, -16, -6, -82)
+
+[node name="BgPlant" parent="Backdrop" instance=ExtResource("bg_plant")]
+transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 22, -6, -70)
+script = ExtResource("sway")
+amplitude_deg = 1.5
+period_seconds = 3.5
+phase_offset_seconds = 1.1
+
+[node name="BgBooks" parent="Backdrop" instance=ExtResource("bg_books")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, -12, -6, -90)
+
+[node name="BgHeadphones" parent="Backdrop" instance=ExtResource("bg_headphones")]
+transform = Transform3D(4, 0, 0, 0, 4, 0, 0, 0, 4, -24, -6, -96)
+
+[node name="VoidFloor" type="MeshInstance3D" parent="Backdrop"]
+position = Vector3(0, -6, -35)
+mesh = SubResource("VoidMesh")
+
+[node name="LightBeam" type="MeshInstance3D" parent="Backdrop"]
+position = Vector3(1.5, 6, -18)
+rotation_degrees = Vector3(0, -15, -12)
+mesh = SubResource("BeamMesh")
+
+[node name="Dust" type="CPUParticles3D" parent="Backdrop"]
+position = Vector3(0, 3, -30)
+amount = 30
+lifetime = 6.0
+lifetime_randomness = 0.4
+preprocess = 3.0
+emission_shape = 3
+emission_box_extents = Vector3(9, 5, 26)
+direction = Vector3(0.05, 0.015, -0.03)
+spread = 30.0
+gravity = Vector3(0, -0.02, 0)
+initial_velocity_min = 0.1
+initial_velocity_max = 0.4
+scale_amount_min = 0.5
+scale_amount_max = 1.4
+mesh = SubResource("DustMesh")
+
+[node name="StyleA" type="Node" parent="."]
+script = ExtResource("style_a")

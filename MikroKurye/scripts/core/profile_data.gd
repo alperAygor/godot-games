@@ -64,6 +64,10 @@ func levels() -> Dictionary:
 ## Tur sonucunu işler. Başarıda ödül + teslimat + kargo başına en iyi yıldız;
 ## başarısızlıkta yalnız kırılma sayacı artar (para ve yıldız eklenmez).
 func record_result(result: Dictionary) -> void:
+	var endless_raw: Variant = result.get("endless", false)
+	if endless_raw is bool and bool(endless_raw):
+		_record_endless(result)
+		return
 	var success_raw: Variant = result.get("success", false)
 	var success: bool = success_raw is bool and bool(success_raw)
 	if not success:
@@ -85,6 +89,19 @@ func record_result(result: Dictionary) -> void:
 	# best_stars[cargo_id] = max(eski, stars) der; "hiç yok" ile "0 yıldız" farklıdır.
 	if stars > previous or not _best_stars.has(cargo_id):
 		_best_stars[cargo_id] = stars
+
+
+## Sonsuz koşu: ödenen kasa (kırılmada yarısı) her durumda cüzdana girer; teslim edilen
+## level sayısı teslimata eklenir; rekorlar güncellenir ve kırılanlar `new_records`a yazılır.
+func _record_endless(result: Dictionary) -> void:
+	_wallet.add(_whole_or_zero(result.get("gold", 0)), _whole_or_zero(result.get("scrap", 0)))
+	_deliveries += _whole_or_zero(result.get("levels_delivered", 0))
+	if String(result.get("reason", "")) == "broken":
+		_breaks += 1
+	var distance_raw: Variant = result.get("distance", 0.0)
+	var distance: float = float(distance_raw) if typeof(distance_raw) in [TYPE_INT, TYPE_FLOAT] else 0.0
+	result["new_records"] = _records.submit(
+		_whole_or_zero(result.get("level", 0)), distance, _whole_or_zero(result.get("score", 0)))
 
 
 ## İstatistiklerin kopyası; `best_stars` iç sözlüğü de kopyalanır, böylece

@@ -122,3 +122,25 @@ func test_cargo_instances_do_not_share_state() -> void:
 	a.apply_impact(15.0)
 	assert_almost_eq(a.damage(), 0.5, 0.0001)
 	assert_almost_eq(b.damage(), 0.0, 0.0001)
+
+
+func test_repair_heals_fraction_of_damage() -> void:
+	var health: CargoHealth = CargoHealth.new({"impact_threshold": 1.0, "impact_scale": 0.1, "mass": 1.0})
+	health.apply_fall(0.0)
+	health._damage = 0.6   # saf mantık testi: iç durumu doğrudan kuruyoruz
+	var healed: float = health.repair(0.5)
+	assert_almost_eq(healed, 0.3, 0.0001)
+	assert_almost_eq(health.damage(), 0.3, 0.0001)
+
+
+func test_repair_ignores_broken_and_bad_input() -> void:
+	var health: CargoHealth = CargoHealth.new({})
+	health._damage = 1.0
+	assert_almost_eq(health.repair(0.5), 0.0, 0.0001)
+	assert_true(health.is_broken())
+	var other: CargoHealth = CargoHealth.new({})
+	other._damage = 0.4
+	assert_almost_eq(other.repair(-1.0), 0.0, 0.0001)
+	assert_almost_eq(other.repair(NAN), 0.0, 0.0001)
+	assert_almost_eq(other.repair(5.0), 0.4, 0.0001)
+	assert_almost_eq(other.damage(), 0.0, 0.0001)

@@ -389,3 +389,34 @@ func test_settings_missing_and_wrong_types_use_defaults() -> void:
 
 	var wrong_container: ProfileData = ProfileData.from_dict({"settings": []})
 	assert_eq(wrong_container.settings(), {"sound_on": true, "tutorial_done": false})
+
+
+func test_endless_result_pays_wallet_and_updates_records() -> void:
+	var profile: ProfileData = ProfileData.new()
+	var result: Dictionary = {
+		"endless": true, "reason": "broken", "success": false,
+		"gold": 50, "scrap": 3, "levels_delivered": 2, "level": 3, "distance": 150.0, "score": 220,
+	}
+	profile.record_result(result)
+	assert_eq(profile.wallet().gold(), 50)
+	assert_eq(profile.wallet().scrap(), 3)
+	assert_eq(int(profile.stats()["deliveries"]), 2)
+	assert_eq(int(profile.stats()["breaks"]), 1)
+	assert_eq(profile.records().best_level(), 3)
+	assert_eq(profile.records().best_distance(), 150)
+	assert_true(bool((result["new_records"] as Dictionary)["new_level"]))
+
+
+func test_endless_non_broken_end_does_not_count_a_break() -> void:
+	var profile: ProfileData = ProfileData.new()
+	profile.record_result({"endless": true, "reason": "battery", "success": true, "gold": 10, "scrap": 1,
+		"levels_delivered": 1, "level": 2, "distance": 70.0, "score": 70})
+	assert_eq(int(profile.stats()["breaks"]), 0)
+	assert_eq(profile.wallet().gold(), 10)
+
+
+func test_classic_result_path_is_unchanged_by_endless_branch() -> void:
+	var profile: ProfileData = ProfileData.new()
+	profile.record_result({"success": false, "gold": 99})
+	assert_eq(profile.wallet().gold(), 0)
+	assert_eq(int(profile.stats()["breaks"]), 1)
