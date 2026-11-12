@@ -7,4 +7,4 @@
 shader = ExtResource("1_toon")
 next_pass = ExtResource("2_outline")
 shader_parameter/base_color = Color(0.9686, 0.7216, 0.0039, 1)
-shader_parameter/shadow_color = Color(0.2667, 0.2667, 0.4196, 1)
+shader_parameter/shadow_color = Color(0.38, 0.36, 0.5, 1)

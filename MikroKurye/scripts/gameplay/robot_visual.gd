@@ -19,6 +19,8 @@ const IDLE_BOB_AMPLITUDE: float = 0.012
 const SQUASH_STRENGTH: float = 0.16
 const SQUASH_XZ_FACTOR: float = 0.6
 const SQUASH_DURATION: float = 0.24
+## Görsel büyütme: fizik gövdesi aynı kalır; model gözle okunur olsun diye yalnız görünüm ölçeklenir.
+const VISUAL_SCALE: float = 1.3
 const MAX_STEER_RAD: float = 0.22
 const STEER_RESPONSE: float = 10.0
 const STEER_GAIN: float = 0.12
@@ -91,7 +93,7 @@ func _update_body(delta: float) -> void:
 		var envelope: float = sin((1.0 - _squash_timer / SQUASH_DURATION) * PI)
 		squash = SQUASH_STRENGTH * envelope
 	_body_pivot.position.y = _body_base_y + bob
-	_body_pivot.scale = Vector3(1.0 + squash * SQUASH_XZ_FACTOR, 1.0 - squash, 1.0 + squash * SQUASH_XZ_FACTOR)
+	_body_pivot.scale = Vector3(1.0 + squash * SQUASH_XZ_FACTOR, 1.0 - squash, 1.0 + squash * SQUASH_XZ_FACTOR) * VISUAL_SCALE
 
 
 func _read_wheel_radius() -> float:

@@ -7,6 +7,6 @@
 shader = ExtResource("1_toon")
 next_pass = ExtResource("2_outline")
 shader_parameter/base_color = Color(1, 0.7843, 0.2392, 1)
-shader_parameter/shadow_color = Color(0.2667, 0.2667, 0.4196, 1)
+shader_parameter/shadow_color = Color(0.38, 0.36, 0.5, 1)
 shader_parameter/emissive_color = Color(1, 0.7843, 0.2392, 1)
 shader_parameter/emissive_energy = 1.8

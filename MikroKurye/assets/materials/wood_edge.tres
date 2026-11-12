@@ -5,7 +5,7 @@
 [resource]
 shader = ExtResource("1_toon")
 shader_parameter/base_color = Color(0.549, 0.349, 0.1804, 1)
-shader_parameter/shadow_color = Color(0.2667, 0.2667, 0.4196, 1)
+shader_parameter/shadow_color = Color(0.56, 0.42, 0.38, 1)
 shader_parameter/wood_grain = true
 shader_parameter/wood_dark = Color(0.4196, 0.2588, 0.1216, 1)
 shader_parameter/wood_freq = 32.0

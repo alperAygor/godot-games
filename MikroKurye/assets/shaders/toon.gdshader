@@ -5,6 +5,8 @@ shader_type spatial;
 render_mode specular_disabled, ambient_light_disabled;
 
 uniform vec4 base_color : source_color = vec4(0.93, 0.62, 0.18, 1.0);
+// Model v2: köşe rengi (alt koyu / üst açık gradyan + pişirilmiş AO) tabanla çarpılır. 0 = kapalı.
+uniform float vertex_color_strength : hint_range(0.0, 1.0) = 0.0;
 // Gölge zemini rengi: gerçek düşen gölgenin içinde paleti korur (stil A: 44446b).
 uniform vec4 shadow_color : source_color = vec4(0.267, 0.267, 0.42, 1.0);
 uniform float middle_threshold : hint_range(0.0, 1.0) = 0.28;
@@ -31,7 +33,7 @@ uniform vec4 emissive_color : source_color = vec4(0.0, 0.0, 0.0, 1.0);
 uniform float emissive_energy : hint_range(0.0, 4.0) = 0.0;
 
 void fragment() {
-	ALBEDO = base_color.rgb;
+	ALBEDO = base_color.rgb * mix(vec3(1.0), COLOR.rgb, vertex_color_strength);
 	if (wood_grain) {
 		// Sıfır doku örneği; gölge içinde de damar okunsun diye ALBEDO'dan önce uygulanır.
 		// Kalaslar UV.x boyunca ayrılır: kalas kenarında ince koyu çizgi, kalas içinde
