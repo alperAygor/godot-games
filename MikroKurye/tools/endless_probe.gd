@@ -24,13 +24,15 @@ const IMPACT_BREAK: float = 5000.0
 const TELEPORT_BEFORE_PAD: float = 8.0
 const MAX_LIVE_SEGMENTS: int = 40
 ## Uzak mesafe: bu z'de robot durağan kalmalı (tek duyarlıklı kayan nokta sınırı, PROJECT_SPEC §14).
+const ZONE_TELEPORT_EVERY: int = 120
+const ZONE_MAX_FRAMES: int = 1800
 const FAR_Z: float = -4000.0
 const FAR_BUILD_CALLS: int = 120
 const FAR_SETTLE_FRAMES: int = 90
 const FAR_SAMPLE_FRAMES: int = 240
 const FAR_MAX_JITTER: float = 0.002
 
-enum Phase { LOAD, READY, LEVEL1, SETTLE, LEVEL2, BREAK, RELOAD, READY2, LEVEL1B, BATTERY, FARLOAD, FAR, DONE }
+enum Phase { LOAD, READY, LEVEL1, SETTLE, LEVEL2, BREAK, RELOAD, READY2, LEVEL1B, BATTERY, ZONELOAD, ZONE, FARLOAD, FAR, DONE }
 
 var _phase: Phase = Phase.LOAD
 var _frames: int = 0
@@ -63,13 +65,14 @@ func _physics_process(_delta: float) -> bool:
 	_frames += 1
 	_phase_frames += 1
 	match _phase:
-		Phase.LOAD, Phase.RELOAD, Phase.FARLOAD: _step_load()
+		Phase.LOAD, Phase.RELOAD, Phase.ZONELOAD, Phase.FARLOAD: _step_load()
 		Phase.READY, Phase.READY2: _step_ready()
 		Phase.LEVEL1, Phase.LEVEL1B: _step_level1()
 		Phase.SETTLE: _step_settle()
 		Phase.LEVEL2: _step_level2()
 		Phase.BREAK: _step_break()
 		Phase.BATTERY: _step_battery()
+		Phase.ZONE: _step_zone()
 		Phase.FAR: _step_far()
 		_: pass
 	if _setup_error != "" or _phase == Phase.DONE:
@@ -121,6 +124,7 @@ func _step_load() -> void:
 	match _phase:
 		Phase.LOAD: _go(Phase.READY)
 		Phase.RELOAD: _go(Phase.READY2)
+		Phase.ZONELOAD: _go(Phase.ZONE)
 		_: _go(Phase.FAR)
 
 
@@ -248,12 +252,81 @@ func _step_battery() -> void:
 		_fail("batarya bitişinde kasa tam ödenmeli")
 	if not bool(_last_result.get("success", false)):
 		_fail("batarya bitişi success=true sayılmalı (kırılma değil)")
-	_go(Phase.FARLOAD)
+	_go(Phase.ZONELOAD)
 
 
 ## Uzak mesafe: yol robotun önüne kadar üretilir, robot 4 km'ye ışınlanır; durağan
 ## y titremesi ve kaymasızlık ölçülür (dünya geri çekme gerekip gerekmediğini söyler).
 var _far_ys: Array[float] = []
+var _zone_changes: int = 0
+var _zone_name: String = ""
+
+
+func _on_zone_changed(zone_name: String, _zone_index: int) -> void:
+	_zone_changes += 1
+	_zone_name = zone_name
+
+
+## Bölge: level 6'ya kadar her level sonuna ışınlanıp geçilir; level 6'da bölge bir kez değişmeli,
+## ileride üretilen zemin yeni paletle boyanmalı.
+func _step_zone() -> void:
+	if _phase_frames == 1:
+		_ctl = get_first_node_in_group("game_controller")
+		_robot = get_first_node_in_group("robot") as Node3D
+		_level = _scene.get_node_or_null("Level")
+		if _ctl == null or _robot == null or _level == null or not _level.has_signal("zone_changed"):
+			_setup_fail("bölge: denetleyici/robot/Level veya zone_changed yok")
+			return
+		_zone_changes = 0
+		_level.connect("zone_changed", _on_zone_changed)
+	_robot.call("set_move_input", Vector2(0.0, 1.0))
+	if _phase_frames % ZONE_TELEPORT_EVERY == 1:
+		_teleport_to(float(_level.call("level_end_z")) + TELEPORT_BEFORE_PAD)
+	var st: Dictionary = _state()
+	if int(st.get("level_number", 1)) < 6 and _phase_frames < ZONE_MAX_FRAMES:
+		return
+	_robot.call("set_move_input", Vector2.ZERO)
+	var ahead_color: Color = _floor_color_ahead()
+	print("PROBE bölge level=%d değişim=%d ad=%s sıra=%d ileri_zemin=%s" % [
+		int(st.get("level_number", 0)), _zone_changes, _zone_name, int(_level.call("zone_index")), ahead_color.to_html(false)])
+	if int(st.get("level_number", 0)) != 6:
+		_fail("bölge: level 6'ya ulaşılamadı: %s" % str(st))
+	if _zone_changes != 1 or int(_level.call("zone_index")) != 1:
+		_fail("bölge level 6'da bir kez değişmeli (değişim=%d)" % _zone_changes)
+	var expected: Color = _zone_floor_color(1)
+	if not ahead_color.is_equal_approx(expected):
+		_fail("ileride üretilen zemin yeni bölge paletinde olmalı: %s (beklenen %s)" % [ahead_color.to_html(false), expected.to_html(false)])
+	_go(Phase.FARLOAD)
+
+
+## Beklenen zemin rengi veri dosyasından okunur (palet değişince probe kopmasın).
+func _zone_floor_color(index: int) -> Color:
+	var data: Node = root.get_node_or_null("/root/GameData")
+	if data == null:
+		return Color.BLACK
+	var table: Dictionary = data.call("table", "zones") as Dictionary
+	var zones: Array = table.get("zones", []) as Array
+	if index >= zones.size():
+		return Color.BLACK
+	return Color.html(String((zones[index] as Dictionary).get("floor_base", "000000")))
+
+
+## Robotun ilerisindeki ilk parçanın zemin rengi (bölge paleti denetimi).
+func _floor_color_ahead() -> Color:
+	var best: Node3D = null
+	for child: Node in _scene.get_node("Level/Segments").get_children():
+		var segment: Node3D = child as Node3D
+		if segment == null or segment.position.z > _robot.global_position.z - 20.0:
+			continue
+		if best == null or segment.position.z > best.position.z:
+			best = segment
+	if best == null:
+		return Color.BLACK
+	var surface: MeshInstance3D = best.get_node_or_null("Floor/Surface") as MeshInstance3D
+	if surface == null or surface.material_override == null:
+		return Color.BLACK
+	var value: Variant = (surface.material_override as ShaderMaterial).get_shader_parameter("base_color")
+	return value as Color if value is Color else Color.BLACK
 
 
 func _step_far() -> void:

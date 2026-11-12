@@ -129,8 +129,11 @@ func announce_objective() -> void:
 	_show_banner(UiStrings.HUD_OBJECTIVE)
 
 
-func announce_level(level: int, gold: int) -> void:
-	_show_banner(UiStrings.HUD_LEVEL_UP_FORMAT % [level, gold])
+func announce_level(level: int, gold: int, zone_name: String = "") -> void:
+	var text: String = UiStrings.HUD_LEVEL_UP_FORMAT % [level, gold]
+	if not zone_name.is_empty():
+		text += "\n" + UiStrings.HUD_ZONE_FORMAT % zone_name
+	_show_banner(text)
 
 
 func _show_banner(text: String) -> void:

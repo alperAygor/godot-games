@@ -24,3 +24,13 @@ func apply_level(level: int) -> void:
 func set_active(active: bool) -> void:
 	visible = active
 	process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
+
+
+## Bölge teması: zemin yüzeyi ve ahşap kenar malzemesi (şerit/rota çizgileri değişmez).
+func apply_floor(surface_material: Material, apron_material: Material) -> void:
+	var surface: MeshInstance3D = get_node_or_null("Floor/Surface") as MeshInstance3D
+	if surface != null:
+		surface.material_override = surface_material
+	var apron: MeshInstance3D = get_node_or_null("Apron") as MeshInstance3D
+	if apron != null:
+		apron.material_override = apron_material
