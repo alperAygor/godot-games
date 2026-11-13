@@ -34,3 +34,24 @@
 - [ ] **P5** Ana ekran (çamaşırhane), ekonomi, reklam yerleşimi
 - [x] **P6** Premium geçiş (2.5D): Blender render bahçe katmanları + askı, yeniden yapılan çamaşır/sepet/mandal modelleri (Cycles), yavaş ve yumuşak animasyonlar (`Motion`, kumaş sallanma shader'ı), ElevenLabs ses seti (`tools/make_el_sfx.py`)
 - [x] **PERF** Başarım turu: arka plan seviye üretimi (`LevelPrefetch`), VRAM sıkıştırma (ASTC), kare başı işlerin azaltılması, sızıntılar; ölçüm aracı `tools/perf_probe.gd`, sonuçlar `docs/perf/`. Gerçek Android cihazda doğrulanacak: ASTC görüntü kalitesi, kare süresi, açılış süresi.
+
+## Aşama 3 — birleşik plan (2026-11-13)
+Kural: her işçi kendi çalışma kopyasında ve yalnız kendi dosyalarında çalışır; ortak dosyalara
+(game.gd, strings.csv) yalnız işaretli küçük ekleme yapar; birleştirmeyi yönetmen yapar.
+
+Dalga 1 — paralel (çalışıyor)
+- [ ] **E1** Etkileşimler (Opus, `ci-machines`): çamaşır makinesi, kurutma makinesi, makine geliştirmeleri, tür sepetleri, kuşlar, yağmur bulutu, kedi — kural + Blender modelleri + görünümler + tanıtım kartları
+- [ ] **M1** Para kazanma (Sonnet, `ci-money`): jetonla devam kalkar, her geçişte reklam (4+), reklam kaldırma, AdMob/Billing sağlayıcıları, mağaza, mandal/ip görünümleri
+- [ ] **R1** Oyuncu tutma (Sonnet, `ci-retain`): günlük görevler, kilometre taşı sandıkları, haftalık etkinlik, geri dönüş ödülü, bildirim altyapısı
+- [ ] **P1** Mekânlar (Opus, `ci-places`): sahil ve çatı katı arka planları (Blender), mekân döngüsü
+- [x] **S1** Sesler (yönetmen): makine, kuş, yağmur, kedi, sandık, satın alma; sahil/çatı/gece ortam sesleri (ElevenLabs)
+- [x] **B1** Sepet 3B modeli; **A1** çamaşırhane su birikintisi ve tezgâh
+
+Dalga 2 — birleştirme (yönetmen, sırayla): P1 → R1 → M1 → E1; her birinden sonra test + problar.
+Bağlama işleri: yeni seslerin olaylara bağlanması; ana ekrana görev/sandık/haftalık satırı, makine
+geliştirme girişi; mekâna göre ortam sesi; AdMob/Billing eklentilerinin indirilmesi (kullanıcı onayı).
+
+Dalga 3 — sırayla (tek yazıcı)
+- [ ] **L2** Yeni metinlerin TR/EN/ES denetimi ve taşma kontrolü
+- [ ] **Z1** Paket boyutu küçültme
+- [ ] **F1** Son performans turu + Android derlemesi
