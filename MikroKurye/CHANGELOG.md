@@ -26,6 +26,7 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/), sürümleme [Se
 ### Eklendi (Faz 10)
 - Yükseltme kademeleri 5 → 8 (Şasi/Tekerlek/Batarya), Şok Jeli 2 kademe; yeni Sigorta (kırılma ödemesi en çok %80) ve Sözleşme (+%25 altın) yükseltmeleri.
 - 16 yeni bölge eşyası modeli (`assets/models/v3/zone/`); bölge değişince arka plan eşyaları yumuşakça değişir.
+- Minimal arayüz: HUD arka plansız ince çubuklar ve küçük yazı; düğme, kart, ikon ve yazı boyutları küçüldü, gölgeler hafifledi.
 - Bölge başına güneş yönü, ortam ışığı, ışıma ve dolgu ışığı (`data/zones.json`).
 
 ### Değişti

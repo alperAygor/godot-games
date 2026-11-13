@@ -10,16 +10,16 @@ extends Control
 const UPGRADES_TABLE: String = "upgrades"
 const BUTTON_PREFIX: String = "UpgradeButton_"
 const TRY_PREFIX: String = "TryButton_"
-const BACK_ICON_SIZE: int = 44
-const WALLET_ICON_SIZE: float = 40.0
-const CATEGORY_ICON_SIZE: float = 48.0
-const LOCK_ICON_SIZE: float = 44.0
-const PIP_SIZE: float = 22.0
-const CHIP_ICON_SIZE: float = 36.0
-const NAME_FONT_SIZE: int = 36
-const EFFECT_FONT_SIZE: int = 26
-const PRICE_FONT_SIZE: int = 30
-const WALLET_FONT_SIZE: int = 36
+const BACK_ICON_SIZE: int = 28
+const WALLET_ICON_SIZE: float = 26.0
+const CATEGORY_ICON_SIZE: float = 32.0
+const LOCK_ICON_SIZE: float = 28.0
+const PIP_SIZE: float = 14.0
+const CHIP_ICON_SIZE: float = 22.0
+const NAME_FONT_SIZE: int = 30
+const EFFECT_FONT_SIZE: int = 24
+const PRICE_FONT_SIZE: int = 26
+const WALLET_FONT_SIZE: int = 30
 
 @onready var _gold_label: Label = %GoldLabel
 @onready var _scrap_label: Label = %ScrapLabel
@@ -65,6 +65,7 @@ func _ready() -> void:
 			_ad.connect("rewarded_finished", _on_ad_rewarded)
 		if not _ad.is_connected("ad_failed", _on_ad_failed):
 			_ad.connect("ad_failed", _on_ad_failed)
+	_upgrade_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_build_rows()
 	_refresh()
 	# Cüzdan çipleri: GoldIcon -> Row -> GoldChip (pop/parıltı hedefi).
@@ -111,6 +112,7 @@ func _build_rows() -> void:
 func _make_card(category: String) -> PanelContainer:
 	var card := PanelContainer.new()
 	card.theme_type_variation = &"CardPanel"
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 16)

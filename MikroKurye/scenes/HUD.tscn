@@ -18,11 +18,11 @@ mouse_filter = 2
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 40.0
-offset_top = 48.0
-offset_right = -40.0
+offset_left = 32.0
+offset_top = 40.0
+offset_right = -32.0
 grow_horizontal = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 8
 
 [node name="CargoHap" type="PanelContainer" parent="Root/TopHaps"]
 theme_type_variation = &"ChipPanel"
@@ -31,18 +31,18 @@ size_flags_horizontal = 0
 
 [node name="Row" type="HBoxContainer" parent="Root/TopHaps/CargoHap"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 8
 
 [node name="CargoIcon" type="TextureRect" parent="Root/TopHaps/CargoHap/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 size_flags_vertical = 4
 stretch_mode = 5
 
 [node name="CargoHealthBar" type="ProgressBar" parent="Root/TopHaps/CargoHap/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(300, 28)
+custom_minimum_size = Vector2(230, 12)
 layout_mode = 2
 size_flags_vertical = 4
 max_value = 100.0
@@ -51,7 +51,7 @@ show_percentage = false
 
 [node name="CargoPercent" type="Label" parent="Root/TopHaps/CargoHap/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(96, 0)
+custom_minimum_size = Vector2(76, 0)
 layout_mode = 2
 size_flags_vertical = 4
 text = "100%"
@@ -65,18 +65,18 @@ size_flags_horizontal = 0
 
 [node name="Row" type="HBoxContainer" parent="Root/TopHaps/BatteryHap"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 8
 
 [node name="BatteryIcon" type="TextureRect" parent="Root/TopHaps/BatteryHap/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 size_flags_vertical = 4
 stretch_mode = 5
 
 [node name="BatteryBar" type="ProgressBar" parent="Root/TopHaps/BatteryHap/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(300, 28)
+custom_minimum_size = Vector2(230, 12)
 layout_mode = 2
 size_flags_vertical = 4
 max_value = 100.0
@@ -85,7 +85,7 @@ show_percentage = false
 
 [node name="BatteryPercent" type="Label" parent="Root/TopHaps/BatteryHap/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(96, 0)
+custom_minimum_size = Vector2(76, 0)
 layout_mode = 2
 size_flags_vertical = 4
 text = "100%"
@@ -100,11 +100,11 @@ size_flags_horizontal = 0
 
 [node name="Row" type="HBoxContainer" parent="Root/TopHaps/RunHap"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 8
 
 [node name="RunIcon" type="TextureRect" parent="Root/TopHaps/RunHap/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 size_flags_vertical = 4
 stretch_mode = 5
@@ -124,11 +124,11 @@ size_flags_horizontal = 0
 
 [node name="Row" type="HBoxContainer" parent="Root/TopHaps/BankHap"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 8
 
 [node name="BankIcon" type="TextureRect" parent="Root/TopHaps/BankHap/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 size_flags_vertical = 4
 stretch_mode = 5
@@ -147,10 +147,10 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -420.0
+offset_left = -300.0
 offset_top = 520.0
-offset_right = 420.0
-offset_bottom = 660.0
+offset_right = 300.0
+offset_bottom = 600.0
 grow_horizontal = 2
 mouse_filter = 2
 
@@ -170,10 +170,10 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -400.0
-offset_top = -220.0
-offset_right = -40.0
-offset_bottom = -96.0
+offset_left = -280.0
+offset_top = -170.0
+offset_right = -32.0
+offset_bottom = -90.0
 grow_horizontal = 0
 grow_vertical = 0
 text = "Hızlı Şarj"
@@ -187,43 +187,43 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -420.0
-offset_top = -300.0
-offset_right = 420.0
-offset_bottom = 300.0
+offset_left = -320.0
+offset_top = -220.0
+offset_right = 320.0
+offset_bottom = 220.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_type_variation = &"CardPanel"
 
 [node name="Column" type="VBoxContainer" parent="Root/RevivePanel"]
 layout_mode = 2
-theme_override_constants/separation = 22
+theme_override_constants/separation = 14
 alignment = 1
 
 [node name="ReviveTitle" type="Label" parent="Root/RevivePanel/Column"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 52
+theme_override_font_sizes/font_size = 36
 text = "Kargonu Kurtar"
 horizontal_alignment = 1
 
 [node name="ReviveText" type="Label" parent="Root/RevivePanel/Column"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 26
 text = "Reklam izle; kargo onarılsın."
 horizontal_alignment = 1
 autowrap_mode = 2
 
 [node name="ReviveButton" type="Button" parent="Root/RevivePanel/Column"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(760, 140)
+custom_minimum_size = Vector2(600, 104)
 layout_mode = 2
 text = "Reklam İzle ve Devam Et"
 
 [node name="DeclineButton" type="Button" parent="Root/RevivePanel/Column"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(760, 112)
+custom_minimum_size = Vector2(600, 88)
 layout_mode = 2
 theme_type_variation = &"SecondaryButton"
 text = "Bu Turu Bitir"

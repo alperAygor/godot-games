@@ -11,8 +11,8 @@ extends Control
 const GOLDEN_GOLD_DEFAULT: int = 150
 const GOLDEN_SCRAP_DEFAULT: int = 10
 const STAR_TOTAL: int = 3
-const STAR_SIZE: float = 112.0
-const REWARD_ICON_SIZE: float = 44.0
+const STAR_SIZE: float = 76.0
+const REWARD_ICON_SIZE: float = 30.0
 ## Yıldızlar sırayla (200 ms arayla) büyüyerek + hafif dönerek dolar.
 const STAR_STAGGER: float = 0.2
 const STAR_FILL_SECONDS: float = 0.34
@@ -232,8 +232,8 @@ func _set_count(label: Label, value: float) -> void:
 func _setup_reward_buttons() -> void:
 	_double_button.text = UiStrings.DOUBLE_REWARD
 	_golden_button.text = UiStrings.GOLDEN_BOX
-	Icons.apply(_double_button, "lucide/circle-play", UiTheme.color("on_primary"), 40)
-	Icons.apply(_golden_button, "lucide/gift", UiTheme.color("on_surface"), 40)
+	Icons.apply(_double_button, "lucide/circle-play", UiTheme.color("on_primary"), 28)
+	Icons.apply(_golden_button, "lucide/gift", UiTheme.color("on_surface"), 28)
 	_double_button.pressed.connect(_on_double_pressed)
 	_golden_button.pressed.connect(_on_golden_pressed)
 

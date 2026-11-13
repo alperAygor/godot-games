@@ -5,9 +5,9 @@ extends Control
 ## F7.6b: cüzdan çipleri, ikonlu gezinme düğmeleri ve nokta sayfa göstergesi
 ## eklendi; renkler UiTheme (data/theme.json) token'larından okunur.
 
-const PLAY_ICON_SIZE: int = 56
-const NAV_ICON_SIZE: int = 44
-const WALLET_ICON_SIZE: int = 44
+const PLAY_ICON_SIZE: int = 36
+const NAV_ICON_SIZE: int = 28
+const WALLET_ICON_SIZE: int = 28
 
 @onready var play_button: Button = %PlayButton
 @onready var garage_button: Button = %GarageButton

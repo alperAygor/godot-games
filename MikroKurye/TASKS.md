@@ -135,3 +135,4 @@ Kullanıcı onayı gerektirenler: oyun hissi (Faz 2 kapısı), mağaza/yayın, �
 - [x] **F10.1** Ekonomi: 8 kademe, Sigorta (kırılma ödemesi %50→%80) ve Sözleşme (+%25 altın) yükseltmeleri [Z]
 - [x] **F10.2** Bölge eşyaları: 16 yeni 3D model + bölgeye göre arka plan eşyaları [Z]
 - [x] **F10.3** Bölge ışığı: güneş yönü, ortam, ışıma ve dolgu ışığı bölgeye göre [Z]
+- [x] **F10.4** Minimal arayüz: ince HUD çubukları (arka plansız), küçük düğme/kart/ikon ölçüleri, sönük gölge [Z]

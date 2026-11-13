@@ -62,7 +62,31 @@ var _heart_flash: Tween = null
 var _last_cargo: float = MAX_PERCENT
 
 
+## Minimal görünüm: hap arka planı yok; ince çubuk, küçük ikon ve konturlu küçük yazı.
+const MINIMAL_FONT_SIZE: int = 26
+const MINIMAL_OUTLINE_SIZE: int = 7
+const MINIMAL_OUTLINE_ALPHA: float = 0.85
+
+
+func _make_minimal() -> void:
+	var haps: Array[Control] = [_cargo_icon.get_parent().get_parent() as Control, _battery_hap,
+		_run_hap, _bank_hap]
+	for hap: Control in haps:
+		hap.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	# İkon dokusu büyük olduğundan, boyut `custom_minimum_size`'dan gelsin diye yok sayılır.
+	var icons: Array[TextureRect] = [_cargo_icon, _battery_icon, _run_icon, _bank_icon]
+	for icon: TextureRect in icons:
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	var labels: Array[Label] = [_cargo_percent, _battery_percent, _run_label, _bank_label]
+	for label: Label in labels:
+		label.add_theme_font_size_override("font_size", MINIMAL_FONT_SIZE)
+		label.add_theme_color_override("font_color", Color.WHITE)
+		label.add_theme_color_override("font_outline_color", UiTheme.color("text", MINIMAL_OUTLINE_ALPHA))
+		label.add_theme_constant_override("outline_size", MINIMAL_OUTLINE_SIZE)
+
+
 func _ready() -> void:
+	_make_minimal()
 	var radius: int = int(UiTheme.metric("radius_pill", 120.0))
 	for fill: StyleBoxFlat in [_cargo_fill, _battery_fill]:
 		fill.corner_radius_top_left = radius
@@ -91,9 +115,9 @@ func _ready() -> void:
 	_decline_button.text = UiStrings.REVIVE_DECLINE
 	_recharge_button.text = UiStrings.RECHARGE
 	_recharge_button.tooltip_text = UiStrings.RECHARGE_HINT
-	Icons.apply(_revive_button, "lucide/circle-play", UiTheme.color("on_primary"), 44)
-	Icons.apply(_decline_button, "lucide/x", UiTheme.color("on_surface"), 40)
-	Icons.apply(_recharge_button, "lucide/zap", UiTheme.color("on_primary"), 40)
+	Icons.apply(_revive_button, "lucide/circle-play", UiTheme.color("on_primary"), 28)
+	Icons.apply(_decline_button, "lucide/x", UiTheme.color("on_surface"), 26)
+	Icons.apply(_recharge_button, "lucide/zap", UiTheme.color("on_primary"), 26)
 	_revive_button.add_theme_constant_override("h_separation", 14)
 	_decline_button.add_theme_constant_override("h_separation", 12)
 	_recharge_button.add_theme_constant_override("h_separation", 12)

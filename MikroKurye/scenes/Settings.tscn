@@ -42,7 +42,7 @@ theme_override_constants/separation = 24
 
 [node name="BackButton" type="Button" parent="Safe/Column/Header"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(220, 120)
+custom_minimum_size = Vector2(176, 96)
 layout_mode = 2
 theme_type_variation = &"SecondaryButton"
 text = "Geri"
@@ -51,14 +51,14 @@ text = "Geri"
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 60
+theme_override_font_sizes/font_size = 48
 text = "Ayarlar"
 vertical_alignment = 1
 
 [node name="Hint" type="Label" parent="Safe/Column"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 24
 text = "Ses ve oyun tercihleri."
 
 [node name="SoundCard" type="PanelContainer" parent="Safe/Column"]
@@ -66,13 +66,13 @@ theme_type_variation = &"CardPanel"
 layout_mode = 2
 
 [node name="SoundRow" type="HBoxContainer" parent="Safe/Column/SoundCard"]
-custom_minimum_size = Vector2(0, 160)
+custom_minimum_size = Vector2(0, 128)
 layout_mode = 2
 theme_override_constants/separation = 28
 
 [node name="SoundIcon" type="TextureRect" parent="Safe/Column/SoundCard/SoundRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(34, 38)
 layout_mode = 2
 size_flags_vertical = 4
 stretch_mode = 5
@@ -81,13 +81,13 @@ stretch_mode = 5
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 40
+theme_override_font_sizes/font_size = 32
 text = "Ses"
 vertical_alignment = 1
 
 [node name="SoundToggle" type="CheckButton" parent="Safe/Column/SoundCard/SoundRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(340, 120)
+custom_minimum_size = Vector2(272, 96)
 layout_mode = 2
 size_flags_vertical = 4
 button_pressed = true
