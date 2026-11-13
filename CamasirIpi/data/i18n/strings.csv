@@ -224,3 +224,5 @@ NET_TITLE,Bağlantı gerekli,Connection required,Se requiere conexión
 NET_BODY,Oynamak için internete bağlan.,Connect to the internet to play.,Conéctate a internet para jugar.
 NET_RETRY,Tekrar dene,Try again,Reintentar
 NET_CHECKING,Bağlantı denetleniyor...,Checking connection...,Comprobando la conexión...
+PATTERN_SETTING,Renk desenleri,Colour patterns,Patrones de color
+PATTERN_SETTING_HINT,Her rengin kendi deseni olur (renk körlüğü için),Each colour gets its own pattern (colour-blind friendly),Cada color tiene su propio patrón (para daltonismo)

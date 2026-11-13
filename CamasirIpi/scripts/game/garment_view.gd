@@ -553,6 +553,7 @@ func _shown_color() -> Color:
 func _apply_color() -> void:
 	if _sprite != null:
 		_sprite.modulate = _shown_color()
+		ColorPatterns.apply_garment(self, _material, color, _mystery, _open)  # [PATTERN] renk körü deseni (gizemde yok)
 	queue_redraw()
 
 
