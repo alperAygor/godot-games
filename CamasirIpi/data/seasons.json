@@ -1,0 +1,227 @@
+{
+  "_not": "Mevsim görünümü (SeasonLook). Mevsimin kendisi SeasonCycle'dan gelir (1-30 yaz, 31-60 sonbahar, 61-90 kış, 91-120 ilkbahar). 'grade': manzara katmanlarına uygulanan renk derecelendirmesi (scripts/game/season_fx/season_grade.gdshader): a = yeşillik maskesi (hue/width/sat_min HSV tonu 0..1; one/two = [ton kayması, doygunluk çarpanı, parlaklık çarpanı], gürültüyle karışır; split = gürültü eşiği, split_bright = ikinci varyantın aydınlık yüzeye bağlılığı; mix = [hedef renk, oran]), b = ikincil renk aralığı (kiremit, kum ...), sat/tint/lift genel; edge_snow = silüet üstü kar (edge_px kalınlık). grade null/eksik = gölgelendirici yok (yaz: bugünkü maliyet). 'sky': gün paletine (DayLook) mevsim ayarı: *_mix = [renk, oran], sun_lower = güneşin ufka doğru alçalması (0..1), sun_size_mul, sun_haze_add, firefly_mul, window_add; 'phases' aşama adına göre aynı anahtarlar. garment_mix çamaşır tonunu en fazla ~%8 koyulaştırabilir (test korur). 'places': mekân x mevsim: layers = katman dosya adına göre grade ezmesi (null = derecelendirme yok), swap = dosya adı -> mevsimlik doku (aynı boyut/çapa), decals = küçük zemin süsleri (pos sol-üst tasarım koordinatı, zemin katmanıyla aynı parallaksla kayar), decor = false ise mekânın süs bitkileri gizlenir. 'fx': ortam efektleri (SeasonFx).",
+  "fade_seconds": 2.4,
+  "banner_gap_seconds": 0.35,
+  "seasons": {
+    "summer": {
+      "arrive_key": "SEASON_ARRIVE_SUMMER",
+      "icon": "res://assets/sprites/season/fx/icon_summer.png",
+      "sky": {},
+      "grade": null,
+      "fx": {
+        "butterflies": {"count": 3, "area": [80, 380, 920, 820], "span": 40.0, "colors": ["#ffd0e0", "#fff0a8", "#cfe6ff"], "alpha": 0.95},
+        "motes": {"count": 7, "area": [40, 300, 1000, 1100], "radius": [9.0, 14.0], "rise": 14.0, "color": "#ffffff", "alpha": 0.55, "additive": false, "texture": "dot"}
+      }
+    },
+    "autumn": {
+      "arrive_key": "SEASON_ARRIVE_AUTUMN",
+      "icon": "res://assets/sprites/season/fx/icon_autumn.png",
+      "sky": {
+        "sky_top_mix": ["#a8bfe4", 0.18],
+        "sky_bottom_mix": ["#ffe6c6", 0.3],
+        "scenery_mix": ["#ffeedd", 0.35],
+        "cloud_mix": ["#fff1e2", 0.4],
+        "garment_mix": ["#fff8ee", 0.5],
+        "sun_color_mix": ["#ffd79a", 0.3],
+        "sun_lower": 0.08,
+        "firefly_mul": 0.5,
+        "phases": {
+          "afternoon": {"scenery_mix": ["#ffe4c4", 0.35], "sky_bottom_mix": ["#ffdcae", 0.3]},
+          "golden": {"scenery_mix": ["#ffcc94", 0.3], "sky_bottom_mix": ["#ffc58c", 0.35], "sun_color_mix": ["#ffa04e", 0.35], "sun_haze_add": 0.25},
+          "sunset": {"sky_bottom_mix": ["#ff9a72", 0.2], "sun_haze_add": 0.15}
+        }
+      },
+      "grade": {
+        "a": {"hue": 0.31, "width": 0.13, "sat_min": 0.06, "one": [-0.19, 1.25, 1.0], "two": [-0.24, 1.12, 0.99], "split": 0.5},
+        "sat": 1.0, "tint": "#fff8f0", "noise": 0.012
+      },
+      "fx": {
+        "falling": [
+          {"textures": ["res://assets/sprites/season/fx/leaf_round.png", "res://assets/sprites/season/fx/leaf_lobed.png"],
+           "count": 9, "area": [-40, -80, 1160, 2000], "size": [36.0, 50.0], "fall": [38.0, 62.0], "sway": [40.0, 80.0],
+           "sway_speed": [0.5, 0.9], "spin": [0.4, 1.1], "flutter": 1.0, "colors": ["#f6ad6c", "#ef9a80", "#f0c574", "#eba98a"],
+           "alpha": 0.92, "seed": 31}
+        ]
+      }
+    },
+    "winter": {
+      "arrive_key": "SEASON_ARRIVE_WINTER",
+      "icon": "res://assets/sprites/season/fx/icon_winter.png",
+      "sky": {
+        "sky_top_mix": ["#b4cdea", 0.4],
+        "sky_bottom_mix": ["#f2f6fc", 0.45],
+        "scenery_mix": ["#eef3ff", 0.3],
+        "cloud_mix": ["#eef3fa", 0.3],
+        "garment_mix": ["#f4f8ff", 0.5],
+        "sun_color_mix": ["#fffaf0", 0.5],
+        "sun_lower": 0.22,
+        "sun_size_mul": 0.88,
+        "firefly_mul": 0.0,
+        "window_add": 0.15,
+        "phases": {
+          "golden": {"scenery_mix": ["#ffe6d2", 0.2], "sky_bottom_mix": ["#ffe0cc", 0.25]},
+          "sunset": {"sky_bottom_mix": ["#f6b8b0", 0.2]},
+          "dusk": {"sky_top_mix": ["#3a4a8a", 0.25], "window_add": 0.1},
+          "night": {"sky_bottom_mix": ["#4a68a8", 0.25], "scenery_mix": ["#7488c0", 0.25]}
+        }
+      },
+      "grade": {
+        "a": {"hue": 0.31, "width": 0.13, "sat_min": 0.06, "one": [0.0, 0.35, 1.05], "mix": ["#f2f6fc", 0.85]},
+        "b": {"hue": 0.05, "width": 0.07, "sat_min": 0.25, "one": [0.0, 0.6, 1.0], "mix": ["#f4f6fb", 0.7]},
+        "sat": 0.75, "tint": "#eef3ff", "lift": ["#eef3fb", 0.1], "edge_snow": 0.9, "edge_px": 9.0, "snow": "#f4f8ff"
+      },
+      "fx": {
+        "falling": [
+          {"texture": "disc", "count": 26, "area": [-40, -40, 1160, 1980], "size": [7.0, 12.0], "fall": [28.0, 44.0],
+           "sway": [10.0, 24.0], "sway_speed": [0.3, 0.7], "spin": [0.0, 0.0], "flutter": 0.0, "colors": ["#ffffff"],
+           "alpha": 0.6, "seed": 41},
+          {"texture": "disc", "count": 16, "area": [-40, -40, 1160, 1980], "size": [14.0, 22.0], "fall": [52.0, 80.0],
+           "sway": [18.0, 36.0], "sway_speed": [0.3, 0.6], "spin": [0.0, 0.0], "flutter": 0.0, "colors": ["#ffffff"],
+           "alpha": 0.85, "seed": 43}
+        ],
+        "haze": {"count": 4, "band": [1080, 1240], "size": [520.0, 160.0], "alpha": 0.2, "color": "#f6f9ff", "drift": 26.0, "seed": 47}
+      }
+    },
+    "spring": {
+      "arrive_key": "SEASON_ARRIVE_SPRING",
+      "icon": "res://assets/sprites/season/fx/icon_spring.png",
+      "sky": {
+        "sky_top_mix": ["#9fdcff", 0.15],
+        "sky_bottom_mix": ["#f4fbec", 0.3],
+        "scenery_mix": ["#fbfff4", 0.25],
+        "garment_mix": ["#fffcff", 0.5],
+        "firefly_mul": 0.8,
+        "phases": {
+          "dawn": {"sky_bottom_mix": ["#ffd9e4", 0.3]},
+          "sunset": {"sky_bottom_mix": ["#ffb0c0", 0.2]}
+        }
+      },
+      "grade": {
+        "a": {"hue": 0.31, "width": 0.13, "sat_min": 0.06, "one": [-0.035, 1.3, 1.03], "two": [0.62, 0.75, 1.07], "split": 0.74, "split_bright": 1.0},
+        "sat": 1.05, "tint": "#fffbff", "noise": 0.02
+      },
+      "fx": {
+        "falling": [
+          {"textures": ["res://assets/sprites/season/fx/petal.png"], "count": 14, "area": [-80, -60, 1240, 2000], "size": [18.0, 26.0],
+           "fall": [30.0, 48.0], "sway": [30.0, 60.0], "sway_speed": [0.6, 1.1], "spin": [0.6, 1.6], "flutter": 1.0,
+           "colors": ["#fbc6d6", "#ffe3ec", "#ffffff", "#f7b2c8"], "alpha": 0.9, "drift": 22.0, "seed": 53}
+        ],
+        "motes": {"count": 8, "area": [40, 300, 1000, 1200], "radius": [8.0, 13.0], "rise": 6.0, "color": "#ffe9a0", "alpha": 0.5, "additive": true, "texture": "dot"}
+      }
+    }
+  },
+  "places": {
+    "garden": {
+      "autumn": {
+        "layers": {
+          "bg_grass": {"a": {"hue": 0.31, "width": 0.13, "sat_min": 0.06, "one": [-0.1, 1.05, 1.0], "two": [-0.13, 1.05, 1.0], "split": 0.5}, "tint": "#fff8f0", "noise": 0.004},
+          "tree_trunk": null
+        },
+        "swap": {"tree_crown": "res://assets/sprites/season/autumn/garden_crown.png"},
+        "decals": [
+          {"file": "res://assets/sprites/season/autumn/leaf_pile_1.png", "pos": [690, 1118], "scale": 0.8},
+          {"file": "res://assets/sprites/season/autumn/leaf_pile_2.png", "pos": [190, 1138], "scale": 0.75},
+          {"file": "res://assets/sprites/season/autumn/pumpkins.png", "pos": [806, 1658], "scale": 1.0},
+          {"file": "res://assets/sprites/season/autumn/leaf_pile_2.png", "pos": [-20, 1760], "scale": 1.0}
+        ]
+      },
+      "winter": {
+        "layers": {
+          "tree_trunk": {"sat": 0.85, "tint": "#f0f2ff"},
+          "bg_fence": null
+        },
+        "swap": {"tree_crown": "res://assets/sprites/season/winter/garden_crown.png", "bg_fence": "res://assets/sprites/season/winter/garden_fence.png"},
+        "decor": false,
+        "decals": [
+          {"file": "res://assets/sprites/season/winter/snow_drift_1.png", "pos": [690, 1132], "scale": 0.72},
+          {"file": "res://assets/sprites/season/winter/snow_drift_2.png", "pos": [150, 1136], "scale": 0.7},
+          {"file": "res://assets/sprites/season/winter/snowman.png", "pos": [44, 1480], "scale": 0.95},
+          {"file": "res://assets/sprites/season/winter/snow_drift_1.png", "pos": [800, 1720], "scale": 1.0}
+        ]
+      },
+      "spring": {
+        "layers": {
+          "bg_grass": {"a": {"hue": 0.31, "width": 0.13, "sat_min": 0.06, "one": [-0.04, 1.3, 1.03]}, "sat": 1.05},
+          "tree_trunk": null
+        },
+        "swap": {"tree_crown": "res://assets/sprites/season/spring/garden_crown.png"},
+        "decals": [
+          {"file": "res://assets/sprites/season/spring/tulips.png", "pos": [880, 1560], "scale": 0.9},
+          {"file": "res://assets/sprites/season/spring/blossom_bush.png", "pos": [-30, 1520], "scale": 0.9},
+          {"file": "res://assets/sprites/season/spring/tulips.png", "pos": [240, 1120], "scale": 0.55}
+        ]
+      }
+    },
+    "beach": {
+      "autumn": {
+        "layers": {"hero_trunk": null},
+        "swap": {"hero_crown": "res://assets/sprites/season/autumn/beach_crown.png"},
+        "decals": [
+          {"file": "res://assets/sprites/season/autumn/leaf_pile_2.png", "pos": [700, 1130], "scale": 0.7},
+          {"file": "res://assets/sprites/season/autumn/pumpkins.png", "pos": [20, 1690], "scale": 0.9}
+        ]
+      },
+      "winter": {
+        "layers": {
+          "hero_trunk": {"sat": 0.85, "tint": "#f0f2ff"},
+          "bg_fence": null,
+          "bg_ground": {"b": {"hue": 0.11, "width": 0.08, "sat_min": 0.08, "one": [0.0, 0.5, 1.03], "mix": ["#f3f5fa", 0.5]}, "sat": 0.85, "tint": "#f2f4ff", "lift": ["#eef3fb", 0.1]}
+        },
+        "swap": {"hero_crown": "res://assets/sprites/season/winter/beach_crown.png", "bg_fence": "res://assets/sprites/season/winter/beach_fence.png"},
+        "decals": [
+          {"file": "res://assets/sprites/season/winter/snow_drift_1.png", "pos": [560, 1120], "scale": 0.85},
+          {"file": "res://assets/sprites/season/winter/snow_drift_2.png", "pos": [60, 1690], "scale": 1.0},
+          {"file": "res://assets/sprites/season/winter/snowman.png", "pos": [880, 1500], "scale": 0.85}
+        ]
+      },
+      "spring": {
+        "layers": {"hero_trunk": null},
+        "swap": {"hero_crown": "res://assets/sprites/season/spring/beach_crown.png"},
+        "decals": [
+          {"file": "res://assets/sprites/season/spring/blossom_bush.png", "pos": [700, 1124], "scale": 0.55},
+          {"file": "res://assets/sprites/season/spring/tulips.png", "pos": [870, 1600], "scale": 0.8}
+        ]
+      }
+    },
+    "rooftop": {
+      "autumn": {
+        "layers": {
+          "bg_far": {"a": {"hue": 0.31, "width": 0.13, "sat_min": 0.06, "one": [-0.19, 1.25, 1.0], "two": [-0.24, 1.12, 0.99], "split": 0.5}, "tint": "#fff0e0", "sat": 1.05},
+          "bg_mid": {"a": {"hue": 0.31, "width": 0.13, "sat_min": 0.06, "one": [-0.19, 1.25, 1.0], "two": [-0.24, 1.12, 0.99], "split": 0.5}, "tint": "#fff2e4", "sat": 1.05},
+          "bg_ground": {"sat": 1.0, "tint": "#fff6ee"},
+          "hero_trunk": null
+        },
+        "swap": {"hero_crown": "res://assets/sprites/season/autumn/rooftop_crown.png"},
+        "decals": [
+          {"file": "res://assets/sprites/season/autumn/leaf_pile_1.png", "pos": [640, 1122], "scale": 0.7},
+          {"file": "res://assets/sprites/season/autumn/pumpkins.png", "pos": [60, 1700], "scale": 0.9}
+        ]
+      },
+      "winter": {
+        "layers": {
+          "hero_trunk": {"sat": 0.85, "tint": "#f0f2ff"},
+          "bg_fence": null,
+          "bg_ground": {"sat": 0.7, "tint": "#f0f2ff", "lift": ["#f4f6fb", 0.3]}
+        },
+        "swap": {"hero_crown": "res://assets/sprites/season/winter/rooftop_crown.png", "bg_fence": "res://assets/sprites/season/winter/rooftop_fence.png"},
+        "decals": [
+          {"file": "res://assets/sprites/season/winter/snow_drift_2.png", "pos": [700, 1124], "scale": 0.8},
+          {"file": "res://assets/sprites/season/winter/snowman.png", "pos": [860, 1520], "scale": 0.8}
+        ]
+      },
+      "spring": {
+        "layers": {
+          "bg_far": {"a": {"hue": 0.31, "width": 0.13, "sat_min": 0.06, "one": [-0.035, 1.3, 1.03]}, "tint": "#fff7fb", "sat": 1.05},
+          "bg_ground": null,
+          "hero_trunk": null
+        },
+        "swap": {"hero_crown": "res://assets/sprites/season/spring/rooftop_crown.png"},
+        "decals": [
+          {"file": "res://assets/sprites/season/spring/blossom_bush.png", "pos": [640, 1126], "scale": 0.55},
+          {"file": "res://assets/sprites/season/spring/tulips.png", "pos": [250, 1124], "scale": 0.5},
+          {"file": "res://assets/sprites/season/spring/tulips.png", "pos": [900, 1560], "scale": 0.8}
+        ]
+      }
+    }
+  }
+}

@@ -10,6 +10,11 @@ extends Node2D
 ## Gün döngüsü: `set_level(n)` günün saatini (DayCycle) ve mekânı seçer; görünüm ~1.5 sn'de,
 ## mekân değişirse katman seti ~1.8 sn'de yumuşakça geçer (eski set geçiş bitince bellekten atılır).
 ## Ana ekran `set_level` çağırmaz: kurulumda oyuncunun kayıtlı seviyesinin mekânı gösterilir.
+## Mevsim (SeasonCycle, 30 seviyede bir; mekândan bağımsız): aynı katman seti mevsime göre renk
+## derecelendirmesiyle boyanır (SeasonLook + season_grade.gdshader), taç/çit gibi küçük parçalar
+## mevsimlik dokuyla değişir, küçük zemin süsleri ve ortam efektleri (SeasonFx) eklenir. Mevsim
+## değişince set, mekân geçişiyle aynı yolla yumuşakça yeniden kurulur; yalnız etkin mekân x mevsim
+## dokuları bellekte kalır. Ana ekran da aynı yoldan oyuncunun güncel mevsimini gösterir.
 
 ## Ortak dokular (bulut, askı) ve bahçe dokuları burada.
 const BG_DIR: String = "res://assets/sprites/bg/"
@@ -89,6 +94,7 @@ var _forced_phase: int = -1
 var _sky_node: Node2D = null
 var _sky_view: SkyView = null
 var _fireflies: Fireflies = null
+var _season_fx: SeasonFx = null
 var _view: Vector2 = Vector2(DESIGN_WIDTH, 1920.0)
 var _cover: float = 1.0
 
@@ -104,6 +110,8 @@ var _active: PlaceSet = null
 var _leaving: PlaceSet = null
 var _sets: Array[PlaceSet] = []
 var _place_fade: float = 1.0
+## Etkin geçişin süresi: mekân değişiminde PLACE_FADE_SECONDS, yalnız mevsim değişiminde biraz daha uzun.
+var _place_fade_seconds: float = PLACE_FADE_SECONDS
 ## Son uygulanan fırtına/tehlike ve "ton yeniden uygulanmalı" bayrağı: değişmeyen kareler yazılmaz.
 var _applied_storm: float = -1.0
 var _applied_danger: float = -1.0
@@ -116,11 +124,14 @@ static var _textures: Dictionary[String, Texture2D] = {}
 static var _requested: Array[String] = []
 ## Bu oturumda "yeni yer" afişi gösterilmiş seviyeler (aynı seviye tekrarında yeniden çıkmasın).
 static var _banner_shown: Dictionary[int, bool] = {}
+## Aynı amaçla "mevsim geldi" afişi gösterilmiş seviyeler.
+static var _season_banner_shown: Dictionary[int, bool] = {}
 
 
 ## Bir mekânın sahnedeki düğümleri ve kare döngüsünün ihtiyaç duyduğu önceden hazır listeler.
 class PlaceSet:
 	var id: String = ""
+	var season: String = ""
 	var scenery_root: Node2D = null
 	var props_root: Node2D = null
 	var parallax: Array[Sprite2D] = []
@@ -219,8 +230,14 @@ class PlaceBanner extends CanvasLayer:
 	const IN_SECONDS: float = 0.7
 	const HOLD_SECONDS: float = 2.2
 	const OUT_SECONDS: float = 0.8
+	const ICON_SIZE: float = 56.0
+	const ICON_GAP: int = 14
+	## İkinci afişin beklemesi için bir afişin toplam ekranda kalma süresi.
+	const TOTAL_SECONDS: float = IN_SECONDS + HOLD_SECONDS + OUT_SECONDS
 
-	func show_text(text: String, view: Vector2) -> void:
+	## `delay`: aynı seviyede iki afiş (yeni yer + yeni mevsim) üst üste binmesin diye ikincisi bekler.
+	## `icon`: mevsim simgesi (yaprak, kar tanesi ...); yoksa yalnız yazı.
+	func show_text(text: String, view: Vector2, delay: float = 0.0, icon: Texture2D = null) -> void:
 		layer = LAYER
 		var box: CenterContainer = CenterContainer.new()
 		box.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -243,8 +260,23 @@ class PlaceBanner extends CanvasLayer:
 		style.anti_aliasing = true
 		panel.add_theme_stylebox_override("panel", style)
 		box.add_child(panel)
-		panel.add_child(UiKit.label(text, FONT_SIZE, UiKit.TEXT))
+		var row: HBoxContainer = HBoxContainer.new()
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		row.add_theme_constant_override("separation", ICON_GAP)
+		panel.add_child(row)
+		if icon != null:
+			var picture: TextureRect = TextureRect.new()
+			picture.texture = icon
+			picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			picture.custom_minimum_size = Vector2.ONE * ICON_SIZE
+			row.add_child(picture)
+		row.add_child(UiKit.label(text, FONT_SIZE, UiKit.TEXT))
 		var tween: Tween = box.create_tween()
+		if delay > 0.0:
+			tween.tween_interval(delay)
 		tween.tween_property(box, "modulate:a", 1.0, IN_SECONDS).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		tween.parallel().tween_property(box, "position:y", top, IN_SECONDS)\
 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
@@ -285,14 +317,20 @@ func setup(view_size: Vector2, rack_hook_y: float) -> void:
 	_fireflies = Fireflies.new()
 	_scenery.add_child(_fireflies)
 	_fireflies.setup()
+	# Mevsim efektleri ateş böceklerinin önünde, direk/askının arkasında (çamaşırın hep arkasında).
+	_season_fx = SeasonFx.new()
+	_scenery.add_child(_season_fx)
+	_season_fx.set_fade_seconds(SeasonLook.fade_seconds())
 	# Askı: kanca uçları oyunun askı hizasına (çamaşırın asıldığı nokta) oturur. Tüm mekânlarda ortak.
 	_rack = _sprite(_props, BG_DIR, RACK_FILE, Vector2((DESIGN_WIDTH - 1024.0) * 0.5, rack_hook_y - RACK_HOOK_TIP_PIXEL_Y))
 	var place_id: String = LocationCycle.location_for(start_level)
-	_active = _build_place(place_id)
+	var season: String = SeasonLook.season_for_level(start_level)
+	_active = _build_place(place_id, season)
 	_refresh_sets()
+	_season_fx.set_season(season, true)
 	# İlk set_level() çağrısı gelene kadar geçerli bir görünüm olsun: ana ekranda kayıtlı seviyenin
-	# mekânı, şafak (ya da zorlanan aşama) paletiyle.
-	_current.copy_from(LocationCycle.look_for(maxi(_forced_phase, 0), place_id))
+	# mekânı ve mevsimi, şafak (ya da zorlanan aşama) paletiyle.
+	_current.copy_from(LocationCycle.look_for(maxi(_forced_phase, 0), place_id, season))
 	_apply_look(0.0)
 
 
@@ -305,24 +343,30 @@ func set_level(level: int) -> void:
 	var first: bool = _level_seen < 0
 	_level_seen = level
 	var place_id: String = LocationCycle.location_for(level)
+	var season: String = SeasonLook.season_for_level(level)
 	_fade_from.copy_from(_current)
-	_fade_to = LocationCycle.look_for_level(level, place_id, _forced_phase)
+	_fade_to = LocationCycle.look_for_level(level, place_id, _forced_phase, season)
 	_fade = 1.0 if first else 0.0
-	if place_id != _active.id:
+	if place_id != _active.id or season != _active.season:
 		if first:
-			_replace_place_now(place_id)
+			_replace_place_now(place_id, season)
 		else:
-			_begin_place_fade(place_id)
+			# Yalnız mevsim değişiyorsa geçiş biraz daha uzun: "mevsim dönüyor" hissi, yolculuk değil.
+			_place_fade_seconds = PLACE_FADE_SECONDS if place_id != _active.id else SeasonLook.fade_seconds()
+			_begin_place_fade(place_id, season)
+	_season_fx.set_season(season, first)
 	if first:
 		_current.copy_from(_fade_to)
 		_apply_look(0.0)
 	_tints_dirty = true
-	_maybe_show_banner(level, place_id)
-	# Sonraki seviye yeni mekândaysa dokuları şimdiden iş parçacığında yüklenir: geçiş anında
+	var place_banner: bool = _maybe_show_banner(level, place_id)
+	_maybe_show_season_banner(level, season, PlaceBanner.TOTAL_SECONDS + SeasonLook.banner_gap() if place_banner else 0.0)
+	# Sonraki seviye yeni mekânda/mevsimdeyse dokuları şimdiden iş parçacığında yüklenir: geçiş anında
 	# ~4 MB doku eşzamanlı yüklenip seviye başında takılma yapmasın.
 	var next_id: String = LocationCycle.location_for(level + 1)
-	if next_id != place_id:
-		_request_paths(_all_paths(next_id))
+	var next_season: String = SeasonLook.season_for_level(level + 1)
+	if next_id != place_id or next_season != season:
+		_request_paths(_all_paths(next_id, next_season))
 
 
 ## Gökyüzü koyulaşınca (alacakaranlık/gece) koyu HUD yazısı okunmaz olur; bu yüzden
@@ -344,6 +388,11 @@ func sky_bottom(storm_color: Color, weight: float) -> Color:
 ## Etkin mekânın kimliği (ana ekran / testler için bilgi amaçlı).
 func place_id() -> String:
 	return _active.id if _active != null else ""
+
+
+## Etkin mevsim ("summer" | "autumn" | "winter" | "spring"): ses/analitik gibi sistemler için.
+func season_id() -> String:
+	return _active.season if _active != null else ""
 
 
 ## Fırtına rengi geceleyin de parlak gri kalmasın: aşamanın storm_dim değeriyle koyulur.
@@ -370,34 +419,51 @@ static func _saved_level() -> int:
 	return maxi(int(progress.call(&"level")), 1)
 
 
-func _maybe_show_banner(level: int, place_id: String) -> void:
+## "Yeni durak" afişi; gösterildiyse true (aynı seviyedeki mevsim afişi onun ardından gelir).
+func _maybe_show_banner(level: int, place_id: String) -> bool:
 	if level <= 1 or not LocationCycle.is_first_level_of_location(level) or _banner_shown.has(level):
-		return
+		return false
 	var key: String = LocationCycle.name_key(place_id)
 	if key.is_empty():
-		return
+		return false
 	_banner_shown[level] = true
 	var banner: PlaceBanner = PlaceBanner.new()
 	add_child(banner)
 	banner.show_text(Loc.f("PLACE_ARRIVE", [Loc.t(key)]), _view)
+	return true
+
+
+## "Sonbahar geldi" afişi: mevsimin ilk seviyesinde, simgesiyle; aynı seviyede yer afişi varsa ondan sonra.
+func _maybe_show_season_banner(level: int, season: String, delay: float) -> void:
+	if not SeasonLook.announces(level) or _season_banner_shown.has(level):
+		return
+	var key: String = SeasonLook.arrive_key(season)
+	if key.is_empty():
+		return
+	_season_banner_shown[level] = true
+	var icon_path: String = SeasonLook.icon_path(season)
+	var icon: Texture2D = load(icon_path) as Texture2D if ResourceLoader.exists(icon_path) else null
+	var banner: PlaceBanner = PlaceBanner.new()
+	add_child(banner)
+	banner.show_text(Loc.t(key), _view, delay, icon)
 
 
 ## İlk seviye farklı bir mekândaysa (ör. oyun doğrudan 52. seviyeden açıldı) geçiş beklenmeden kurulur.
-func _replace_place_now(place_id: String) -> void:
+func _replace_place_now(place_id: String, season: String) -> void:
 	var old: PlaceSet = _active
-	_active = _build_place(place_id)
+	_active = _build_place(place_id, season)
 	old.free_nodes()
 	_forget_textures(old, _active)
 	_refresh_sets()
 
 
-func _begin_place_fade(place_id: String) -> void:
+func _begin_place_fade(place_id: String, season: String) -> void:
 	if _leaving != null:
 		# Geçiş sürerken yine değişirse (pratikte olmaz) yarım kalan eski set hemen atılır.
 		_leaving.free_nodes()
 		_forget_textures(_leaving, _active)
 	_leaving = _active
-	_active = _build_place(place_id)
+	_active = _build_place(place_id, season)
 	_active.set_alpha(0.0)
 	_place_fade = 0.0
 	_refresh_sets()
@@ -419,12 +485,14 @@ func _refresh_sets() -> void:
 	_tints_dirty = true
 
 
-## Mekân setini kurar: manzara düğümü ateş böceklerinin hemen arkasına, direkler askının arkasına.
-func _build_place(place_id: String) -> PlaceSet:
+## Mekân x mevsim setini kurar: manzara düğümü ateş böceklerinin hemen arkasına, direkler askının
+## arkasına. Mevsim: katmanlara derecelendirme malzemesi, varsa mevsimlik doku, zemin süsleri.
+func _build_place(place_id: String, season: String) -> PlaceSet:
 	var data: Dictionary = LocationCycle.data_for(place_id)
 	var dir: String = String(data.get("dir", BG_DIR))
 	var place: PlaceSet = PlaceSet.new()
 	place.id = place_id
+	place.season = season
 	place.firefly_scale = float(data.get("fireflies", 1.0))
 	place.scenery_root = Node2D.new()
 	_scenery.add_child(place.scenery_root)
@@ -438,9 +506,9 @@ func _build_place(place_id: String) -> PlaceSet:
 	var hero: Dictionary = data.get("hero", {}) as Dictionary
 	var hero_base: Vector2 = _vec(hero, "base", TREE_BASE)
 	# Kahraman (ağaç/palmiye) çitin arkasında durur; taç ayrı sprite olduğu için rüzgârda sallanır.
-	place.tinted.append(_sprite(place.scenery_root, dir, String(hero.get("trunk", "tree_trunk")),
-		hero_base - _vec(hero, "trunk_base_px", TRUNK_BASE_PIXEL), place))
-	place.crown = _sprite(place.scenery_root, dir, String(hero.get("crown", "tree_crown")), Vector2.ZERO, place)
+	place.tinted.append(_season_sprite(place, dir, String(hero.get("trunk", "tree_trunk")),
+		hero_base - _vec(hero, "trunk_base_px", TRUNK_BASE_PIXEL)))
+	place.crown = _season_sprite(place, dir, String(hero.get("crown", "tree_crown")), Vector2.ZERO)
 	place.crown.offset = -_vec(hero, "crown_pivot_px", CROWN_PIVOT_PIXEL)
 	place.crown.position = _vec(hero, "crown_pivot", CROWN_PIVOT)
 	place.crown_sway = float(hero.get("sway", CROWN_SWAY_DEGREES))
@@ -452,6 +520,7 @@ func _build_place(place_id: String) -> PlaceSet:
 	var needed: float = _view.y / _cover - ground.position.y
 	if ground.texture != null and needed > ground.texture.get_size().y:
 		ground.scale.y = needed / ground.texture.get_size().y
+	_add_decals(place, place.parallax_amp[place.parallax_amp.size() - 1])
 	# Işıklar ait oldukları katmanın çocuğu: parallaks ile birlikte kayar, katman tonundan etkilenmez
 	# (katmanlar self_modulate ile tonlanır).
 	for raw: Variant in (data.get("lights", [{}]) as Array):
@@ -470,12 +539,19 @@ func _build_place(place_id: String) -> PlaceSet:
 		place.glints.setup(glint_spec)
 	# Direkler iki kenarda; sağdaki aynalanır. Oyun koordinatlarıyla hizalıdır (büyütülmez).
 	var pole_file: String = String(data.get("pole", "pole"))
-	_sprite(place.props_root, dir, pole_file, Vector2(POLE_AXIS_INSET - POLE_AXIS_PIXEL, POLE_TOP), place)
+	var pole_material: ShaderMaterial = SeasonLook.make_material(SeasonLook.prop_grade(place_id, season, pole_file))
+	var left_pole: Sprite2D = _sprite(place.props_root, dir, pole_file, Vector2(POLE_AXIS_INSET - POLE_AXIS_PIXEL, POLE_TOP), place)
+	left_pole.material = pole_material
 	var right_pole: Sprite2D = _sprite(place.props_root, dir, pole_file,
 		Vector2(DESIGN_WIDTH - POLE_AXIS_INSET - POLE_AXIS_PIXEL, POLE_TOP), place)
 	right_pole.flip_h = true
-	for spec: Dictionary in _decor_specs(data):
-		var decor: Sprite2D = _sprite(place.scenery_root, dir, String(spec.get("file", "")), Vector2.ZERO, place)
+	right_pole.material = pole_material
+	# Kışın bahçe çiçekleri gizlenir (karda lale olmaz); yerini mevsim süsleri alır.
+	var decor_specs: Array[Dictionary] = []
+	if SeasonLook.shows_decor(place_id, season):
+		decor_specs = _decor_specs(data)
+	for spec: Dictionary in decor_specs:
+		var decor: Sprite2D = _season_sprite(place, dir, String(spec.get("file", "")), Vector2.ZERO)
 		decor.offset = -_vec(spec, "pivot_px", FLOWER_PIVOT_PIXEL)
 		decor.position = _vec(spec, "pos", Vector2.ZERO)
 		decor.scale = Vector2.ONE * float(spec.get("scale", 1.0))
@@ -490,7 +566,7 @@ func _build_place(place_id: String) -> PlaceSet:
 func _add_layer(place: PlaceSet, dir: String, spec: Dictionary) -> Sprite2D:
 	var amp: float = float(spec.get("parallax", 0.0))
 	var top_left: Vector2 = _vec(spec, "pos", Vector2.ZERO)
-	var layer: Sprite2D = _sprite(place.scenery_root, dir, String(spec.get("file", "")), top_left, place)
+	var layer: Sprite2D = _season_sprite(place, dir, String(spec.get("file", "")), top_left)
 	if layer.texture != null and amp > 0.0:
 		var width: float = layer.texture.get_size().x
 		layer.scale.x = (width + 2.0 * amp) / width
@@ -499,6 +575,36 @@ func _add_layer(place: PlaceSet, dir: String, spec: Dictionary) -> Sprite2D:
 	place.parallax_amp.append(amp)
 	place.tinted.append(layer)
 	return layer
+
+
+## Manzara sprite'ı, mevsime göre: mevsimlik dokusu varsa o yüklenir (aynı boyut ve çapa), yoksa
+## mekânın dokusu derecelendirme malzemesiyle boyanır (yazın malzeme yok: bugünkü maliyet).
+func _season_sprite(place: PlaceSet, dir: String, file_name: String, top_left: Vector2) -> Sprite2D:
+	var swap: String = SeasonLook.swap_path(place.id, place.season, file_name)
+	var sprite: Sprite2D = null
+	if not swap.is_empty() and ResourceLoader.exists(swap):
+		sprite = _sprite_at(place.scenery_root, swap, top_left, place)
+	else:
+		sprite = _sprite(place.scenery_root, dir, file_name, top_left, place)
+	sprite.material = SeasonLook.make_material(SeasonLook.grade_for(place.id, place.season, file_name))
+	return sprite
+
+
+## Mevsimin küçük zemin süsleri (kar yığını, yaprak yığını, lale ...): zemin katmanının önünde,
+## süs bitkilerinin arkasında; zeminle aynı parallaksla kayar, gün tonunu alır.
+func _add_decals(place: PlaceSet, amp: float) -> void:
+	for spec: Dictionary in SeasonLook.decals(place.id, place.season):
+		var path: String = String(spec.get("file", ""))
+		if not ResourceLoader.exists(path):
+			continue
+		var top_left: Vector2 = _vec(spec, "pos", Vector2.ZERO)
+		var decal: Sprite2D = _sprite_at(place.scenery_root, path, top_left, place)
+		decal.scale = Vector2.ONE * float(spec.get("scale", 1.0))
+		decal.flip_h = bool(spec.get("flip", false))
+		place.parallax.append(decal)
+		place.parallax_base.append(top_left.x - amp)
+		place.parallax_amp.append(amp)
+		place.tinted.append(decal)
 
 
 ## Katman listesi: veride varsa o, yoksa bahçe sabitleri ([dosya, konum, genlik] -> sözlük).
@@ -571,7 +677,10 @@ func _animate_lights(time: float) -> void:
 
 
 func _sprite(parent: Node, dir: String, file_name: String, top_left: Vector2, place: PlaceSet = null) -> Sprite2D:
-	var path: String = dir + file_name + ".png"
+	return _sprite_at(parent, dir + file_name + ".png", top_left, place)
+
+
+func _sprite_at(parent: Node, path: String, top_left: Vector2, place: PlaceSet = null) -> Sprite2D:
 	var sprite: Sprite2D = Sprite2D.new()
 	sprite.texture = _texture_at(path)
 	sprite.centered = false
@@ -593,7 +702,8 @@ static func _forget_textures(old: PlaceSet, keep: PlaceSet) -> void:
 ## Açılışta (Boot beklemesi) ortak dokuları ve oyuncunun kayıtlı mekânının dokularını iş
 ## parçacıklarında paralel yüklemeye başlar. `_texture_at` hazır olanı alır; bitmemişse onu bekler.
 static func warm_up() -> void:
-	_request_paths(_all_paths(LocationCycle.location_for(_saved_level())))
+	var level: int = _saved_level()
+	_request_paths(_all_paths(LocationCycle.location_for(level), SeasonLook.season_for_level(level)))
 
 
 static func _request_paths(paths: Array[String]) -> void:
@@ -612,8 +722,9 @@ static func release_textures() -> void:
 	_textures.clear()
 
 
-## Bir mekânın ihtiyaç duyduğu tüm doku yolları (ortak bulut + askı dahil).
-static func _all_paths(place_id: String) -> Array[String]:
+## Bir mekân x mevsimin ihtiyaç duyduğu tüm doku yolları (ortak bulut + askı dahil; mevsimlik doku
+## yazınkinin yerine geçer, süsler ve efekt dokuları eklenir).
+static func _all_paths(place_id: String, season: String = SeasonCycle.SUMMER) -> Array[String]:
 	var paths: Array[String] = [BG_DIR + RACK_FILE + ".png"]
 	for spec: Array in CLOUDS:
 		paths.append(BG_DIR + String(spec[0]) + ".png")
@@ -627,7 +738,11 @@ static func _all_paths(place_id: String) -> Array[String]:
 	names.append(String(hero.get("crown", "tree_crown")))
 	names.append(String(data.get("pole", "pole")))
 	for file_name: String in names:
-		var path: String = dir + file_name + ".png"
+		var swap: String = SeasonLook.swap_path(place_id, season, file_name)
+		var path: String = swap if not swap.is_empty() else dir + file_name + ".png"
+		if not paths.has(path):
+			paths.append(path)
+	for path: String in SeasonLook.extra_paths(place_id, season, false):
 		if not paths.has(path):
 			paths.append(path)
 	return paths
@@ -657,7 +772,7 @@ func _process(delta: float) -> void:
 		_current.blend(_fade_from, _fade_to, smoothstep(0.0, 1.0, _fade))
 		look_changed = true
 	if _leaving != null:
-		_place_fade = minf(_place_fade + delta / PLACE_FADE_SECONDS, 1.0)
+		_place_fade = minf(_place_fade + delta / _place_fade_seconds, 1.0)
 		_active.set_alpha(smoothstep(0.0, PLACE_FADE_IN_END, _place_fade))
 		_leaving.set_alpha(1.0 - smoothstep(PLACE_FADE_OUT_START, 1.0, _place_fade))
 		if _place_fade >= 1.0:
@@ -685,6 +800,7 @@ func _process(delta: float) -> void:
 	if look_changed:
 		_apply_tints()
 	_animate_lights(time)
+	_season_fx.apply(_current, storm, time, delta)
 	if _rack != null and absf(danger - _applied_danger) > TINT_EPSILON:
 		_applied_danger = danger
 		_rack.modulate = Color.WHITE.lerp(DANGER_TINT, danger)

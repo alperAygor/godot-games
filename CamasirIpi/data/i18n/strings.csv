@@ -206,3 +206,7 @@ MACHINE_MOVES_ONE,%d hamle,%d move,%d movimiento
 MACHINE_MOVES_OTHER,%d hamle,%d moves,%d movimientos
 MACHINE_MAX,En üst seviye,Maxed,Al máximo
 MACHINE_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d
+SEASON_ARRIVE_SUMMER,Yaz geldi,Summer is here,Llegó el verano
+SEASON_ARRIVE_AUTUMN,Sonbahar geldi,Autumn is here,Llegó el otoño
+SEASON_ARRIVE_WINTER,Kış geldi,Winter is here,Llegó el invierno
+SEASON_ARRIVE_SPRING,İlkbahar geldi,Spring is here,Llegó la primavera
