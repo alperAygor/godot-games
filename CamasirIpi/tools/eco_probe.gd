@@ -1,14 +1,17 @@
 extends SceneTree
 
 ## Ekonomi probu (headless): GERÇEK oyun sahnesinde kazanma/kayıp akışını oynar ve doğrular:
-## jeton, seri, 3 galibiyetten sonra +1 askı, seviye başına tek devam, 2x jeton,
-## geçiş reklamı sıklığı. Reklam sağlayıcısı anında biten bir test sağlayıcısıdır
+## jeton, seri, 3 galibiyetten sonra +1 askı, seviye başına tek devam (YALNIZ ödüllü reklamla; jetonla
+## devam kaldırıldı), kayıpta jeton yok, 2x jeton (yalnız galibiyette), geçiş reklamı kuralları
+## (4. seviyeden itibaren HER geçişte; "reklamları kaldır" varsa asla; ödüllü sonrası asla; zaman aşımı). Reklam sağlayıcısı anında biten bir test sağlayıcısıdır
 ## (AdManager'ın gerçek akışı kullanılır; Mock'un 1.2 sn bekleyişi ve rastgele hatası yok).
 ##   godot --headless --path . -s res://tools/eco_probe.gd      çıkış 0 = geçti
 
 const WIN_LEVELS: Array[int] = [1, 2, 3, 4]
 const SETTLE_FRAMES: int = 2
 const MAX_WAIT_FRAMES: int = 2000000
+## Reklam gelmezse AdManager zaman aşımı (3 sn) + pay.
+const SILENT_WAIT_MSEC: int = 6000
 
 ## NOT: EcoFlow tipi burada ANILMAZ; `-s` kipinde autoload kimlikleri derleme anında yoktur.
 ## Anında ödül veren/vermeyen sağlayıcı.
@@ -26,6 +29,14 @@ class InstantProvider extends AdsProvider:
 			rewarded.emit()
 		else:
 			failed.emit("no_fill")
+
+## Hiç yanıt vermeyen sağlayıcı: AdManager'ın gösterim zaman aşımını sınar.
+class SilentProvider extends AdsProvider:
+	func is_ready(_placement: int) -> bool:
+		return true
+
+	func show(_placement: int) -> void:
+		pass
 
 var _failed: bool = false
 var _started: bool = false
@@ -91,13 +102,17 @@ func _run() -> void:
 	_game.set("debug_level", _losing_level())
 	_game.call("_start_level")
 	_check(_board().rack_slots() == 5 or _board().rack_slots() == 4, "kayıp seviyesi yüklendi")
+	var coins_before_loss: int = int(progress.call("coins"))
 	await _lose_current_level()
 	_check(int(progress.call("streak")) == 0, "kayıpta seri sıfırlanmalı")
 	_check(not bool(progress.call("streak_extra_slot")), "bonus askı kayıpla gitmeli")
 	var slots_before: int = _board().rack_slots()
-	var paid_before: int = int(progress.call("coins"))
-	_check(paid_before >= 100, "devam için yeterli jeton olmalı (%d)" % paid_before)
-	var cost: int = int(ProgressData.load_balance()["continue_cost"])
+	var coins_after_loss: int = int(progress.call("coins"))
+	_check(coins_after_loss == coins_before_loss, "kayıpta jeton verilmemeli/alınmamalı")
+	# Kayıp sayfasında jetonla devam düğmesi yok: yalnız "+1 askı" (reklam) ve "Tekrar dene".
+	var buttons: int = _count_buttons(_game.get("_overlay") as Node)
+	_check(buttons == 2, "kayıp sayfasında 2 düğme olmalı (reklamla devam + tekrar dene), gelen %d" % buttons)
+	_check(not _game.has_method("_on_revive_coins"), "jetonla devam yolu silinmiş olmalı")
 	# Sahte düğme ağaca eklenmez: iş bitince elle silinir (yoksa çıkışta düğüm/tema/yazı tipi sızıntısı).
 	var revive_button: Button = Button.new()
 	_game.call("_on_revive_ad", revive_button)
@@ -105,52 +120,60 @@ func _run() -> void:
 	revive_button.free()
 	_check(_board().rack_slots() == slots_before + 1, "reklamla devam +1 askı vermeli")
 	_check(_game.get("_overlay") == null, "devam sonrası katman kapanmalı")
-	# Aynı seviyede ikinci devam (jetonla) reddedilmeli.
-	_game.call("_on_revive_coins", cost)
-	_check(_board().rack_slots() == slots_before + 1, "seviye başına tek devam")
-	_check(int(progress.call("coins")) == paid_before, "ikinci devamda jeton harcanmamalı")
+	_check(bool(_game.get("_revived")), "seviyede devam kullanıldı")
+	_check(int(progress.call("coins")) == coins_after_loss, "reklamla devam jeton harcamaz")
 	_check(not bool(ads.call("can_offer", ads.Placement.REVIVE_EXTRA_SLOT)), "devam reklamı seviyede tükenmeli")
 
-	# Jetonla devam: yeni seviyede, reklam yerine jeton.
+	# --- Geçiş reklamı kuralları ---
+	# Yeni seviye başlar: önceki seviyedeki ödüllü izleme ("+1 askı") bu geçişi etkilemez.
 	_game.set("debug_level", {})
 	_game.call("_start_level")
-	_game.set("debug_level", _losing_level())
-	_game.call("_start_level")
-	await _lose_current_level()
-	var before_pay: int = int(progress.call("coins"))
-	var slots_pay: int = _board().rack_slots()
-	_game.call("_on_revive_coins", cost)
-	_check(int(progress.call("coins")) == before_pay - cost, "jetonla devam 100 jeton düşmeli")
-	_check(_board().rack_slots() == slots_pay + 1, "jetonla devam +1 askı")
-
-	# --- Geçiş reklamı sıklığı ---
 	_provider.shown_count = 0
 	var shown_logged: int = AnalyticsLog.count("interstitial_shown")
 	progress.call("reset_state")
-	var data: ProgressData = progress.get("data") as ProgressData
+	ads.call("reset_session_limits")
 	var flow: Node = _game.get("_eco") as Node
 	var ran: Array[int] = [0]
 	var next: Callable = func() -> void: ran[0] += 1
-	# Seviye 3'e geçiş: erken, reklam yok.
-	data.levels_since_interstitial = 5
+	# İlk 3 seviye reklamsız: 2., 3. ve 4. seviyeye geçişlerden yalnız 4.'ye geçişte reklam var.
+	flow.call("maybe_interstitial", 2, next)
 	flow.call("maybe_interstitial", 3, next)
-	_check(_provider.shown_count == 0 and ran[0] == 1, "seviye 4'ten önce geçiş reklamı yok")
-	# Yeterli seviye geçti ama az önce ödüllü izlendi: yok.
-	data.last_rewarded_time = Time.get_unix_time_from_system()
-	flow.call("maybe_interstitial", 5, next)
-	_check(_provider.shown_count == 0 and ran[0] == 2, "ödüllü sonrası geçiş reklamı yok")
-	# Ödüllü eski, süre ve seviye koşulu tamam: gösterilir ve sayaç sıfırlanır.
-	data.last_rewarded_time = 0.0
-	flow.call("maybe_interstitial", 5, next)
-	_check(_provider.shown_count == 1 and ran[0] == 3, "koşullar tamamsa geçiş reklamı gösterilmeli")
-	_check(data.levels_since_interstitial == 0, "gösterimden sonra sayaç sıfırlanmalı")
-	_check(AnalyticsLog.count("interstitial_shown") == shown_logged + 1, "interstitial_shown kaydı")
-	# Hemen ardından: seviye ve 90 sn koşulu yüzünden yok.
-	data.levels_since_interstitial = 5
-	flow.call("maybe_interstitial", 6, next)
-	_check(_provider.shown_count == 1 and ran[0] == 4, "90 sn dolmadan ikinci reklam yok")
+	_check(_provider.shown_count == 0 and ran[0] == 2, "seviye 4'ten önce geçiş reklamı yok")
+	# 4. seviyeden itibaren HER geçişte (aralık/süre koşulu yok): art arda üç geçiş = üç reklam.
+	for level: int in [4, 5, 6]:
+		flow.call("maybe_interstitial", level, next)
+	_check(_provider.shown_count == 3 and ran[0] == 5, "4. seviyeden itibaren her geçişte reklam: %d" % _provider.shown_count)
+	_check(AnalyticsLog.count("interstitial_shown") == shown_logged + 3, "her geçiş için interstitial_shown kaydı")
+	# Bu geçişte ödüllü reklam izlendiyse hemen ardından geçiş reklamı yok; sonraki geçişte yine var.
+	_provider.shown_count = 0
+	flow.call("watch", ads.Placement.DOUBLE_COINS, func() -> void: pass)
+	flow.call("maybe_interstitial", 7, next)
+	_check(_provider.shown_count == 1 and ran[0] == 6, "ödüllü reklamın kendisi sayılır, ardından geçiş reklamı eklenmemeli")
+	_game.call("_start_level")
+	_provider.shown_count = 0
+	flow.call("maybe_interstitial", 8, next)
+	_check(_provider.shown_count == 1, "sonraki geçişte reklam geri gelir")
+	# "Reklamları kaldır": geçiş reklamı asla; ödüllü reklam hâlâ sunulur.
+	progress.call("set_remove_ads_owned", true)
+	_provider.shown_count = 0
+	for level: int in [4, 9, 30]:
+		flow.call("maybe_interstitial", level, next)
+	_check(_provider.shown_count == 0, "reklamlar kaldırıldıysa geçiş reklamı yok")
+	_check(bool(ads.call("can_offer", ads.Placement.DOUBLE_COINS)), "ödüllü reklam açık kalmalı")
+	progress.call("set_remove_ads_owned", false)
+	# Reklam hiç gelmezse (zaman aşımı) akış sessizce devam eder; sayaç işaretlenmez.
+	var silent: SilentProvider = SilentProvider.new()
+	ads.call("set_provider", silent)
+	var ran_before: int = ran[0]
+	flow.call("maybe_interstitial", 10, next)
+	var waited_ms: int = Time.get_ticks_msec()
+	while ran[0] == ran_before and Time.get_ticks_msec() - waited_ms < SILENT_WAIT_MSEC:
+		await process_frame
+	_check(ran[0] == ran_before + 1, "gelmeyen reklam zaman aşımıyla akışı serbest bırakmalı")
+	_check(Time.get_ticks_msec() - waited_ms < SILENT_WAIT_MSEC, "zaman aşımı kısa olmalı")
+	ads.call("set_provider", _provider)
 	_check(AnalyticsLog.count("level_start") > 0 and AnalyticsLog.count("level_win") >= 4
-		and AnalyticsLog.count("level_lose") >= 2, "analitik olayları kaydedildi")
+		and AnalyticsLog.count("level_lose") >= 1, "analitik olayları kaydedildi")
 
 	# Reklam başarısızsa ödül verilmez.
 	_provider.reward = false
@@ -215,6 +238,15 @@ func _lose_current_level() -> void:
 		await _frames(4)
 	await _wait_overlay()
 	_check(_board().is_lost(), "seviye kaybedilmeli")
+
+
+func _count_buttons(node: Node) -> int:
+	if node == null:
+		return 0
+	var total: int = 1 if node is Button else 0
+	for child: Node in node.get_children():
+		total += _count_buttons(child)
+	return total
 
 
 func _wait_overlay() -> void:

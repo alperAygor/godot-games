@@ -115,6 +115,8 @@ var _persist: bool = true:
 		_persist = value
 		Progress.persist = value
 var _eco: EcoFlow = null
+## Seçili mandal/ip kaplaması (seviye kurulurken yenilenir).
+var _skins: SkinLook = SkinLook.new()
 ## [DAILY] Günlük bulmaca kipi: doluysa seviye dışarıdan gelir; ilerleme/seri/seviye no değişmez.
 var _daily_level: Dictionary = {}
 ## Öğretici (el imleci, tanıtım kartları, boşta ipucu): mantığı tutorial_director.gd'de.
@@ -534,11 +536,14 @@ func _start_level() -> void:
 	_board = LaundryBoard.new(_level)
 	_eco.on_level_start(_level_number, _board)
 	RetentionHooks.level_started(_level_number, not _daily_level.is_empty())  # [RETENTION]
+	_skins.reload()
 	_hud.set_level(_level_number)
 	if not _daily_level.is_empty():
 		_hud.set_title(UiStrings.daily_title())
 	_hud.set_coins(Progress.coins())
 	_backdrop.set_level(_level_number)
+	# Ortam sesi mekâna ve günün saatine göre değişir (gece her yerde cırcır böceği).
+	AudioService.play_ambience(_ambience_name())
 	_hud.set_title_color(_backdrop.hud_text_color(TEXT_COLOR))
 	AudioService.play_pitched("level_start", 1.0, -6.0)
 	_world = Node2D.new()
@@ -586,6 +591,7 @@ func _build_lines() -> void:
 		_world.add_child(view)
 		_line_views.append(view)
 		_views[int(item["id"])] = view
+		_skins.apply_pin(view)
 		if bool(item.get("wet", false)):
 			view.set_wet(true)
 		if bool(item.get("mystery", false)):
@@ -628,11 +634,7 @@ func _draw() -> void:
 	var width: float = get_viewport_rect().size.x
 	# İpler: hafif sarkan çizgi.
 	for y: float in _line_ys:
-		var points: PackedVector2Array = PackedVector2Array()
-		for step: int in range(25):
-			var t: float = float(step) / 24.0
-			points.append(Vector2(lerpf(ROPE_INSET, width - ROPE_INSET, t), y - 6.0 + 10.0 * sin(PI * t)))
-		draw_polyline(points, ROPE_COLOR, 5.0, true)
+		_skins.draw_rope(self, ROPE_INSET, width - ROPE_INSET, y - 6.0, 10.0)
 	# Sıradaki sepetler: küçük renk noktaları (soldan sağa sıra).
 	var queue: Array[int] = _board.queue()
 	var shown: int = mini(queue.size(), QUEUE_SHOWN)
@@ -788,11 +790,9 @@ func _show_lose(remaining: int) -> void:
 	AudioService.play_pitched("lose", 1.0, -3.0)
 	_hide_overlay()
 	var can_revive: bool = not _revived and _eco.can_watch(AdManager.Placement.REVIVE_EXTRA_SLOT)
-	var cost: int = 0 if _revived else int(Progress.balance_table().get("continue_cost", 0))
 	var sheet: ResultSheet = ResultSheet.lose(_ui, remaining, can_revive,
-		_board.lose_reason() == LaundryBoard.LOSE_MOVES, cost, Progress.coins() >= cost)
-	sheet.coins_pressed.connect(_on_revive_coins.bind(cost))
-	# "+1 askı" ödüllü reklamla verilir; reklam başarısızsa sayfa açık kalır.
+		_board.lose_reason() == LaundryBoard.LOSE_MOVES)
+	# Devam YALNIZ ödüllü reklamla (seviye başına bir kez); reklam başarısızsa sayfa açık kalır.
 	sheet.revive_pressed.connect(func() -> void:
 		_eco.watch(AdManager.Placement.REVIVE_EXTRA_SLOT, _revive, func() -> void: pass))
 	sheet.retry_pressed.connect(_start_level)
@@ -859,12 +859,7 @@ func _on_revive_ad(button: Button) -> void:
 	_eco.watch(AdManager.Placement.REVIVE_EXTRA_SLOT, _revive, failed)
 
 
-func _on_revive_coins(cost: int) -> void:
-	if not _revived and Progress.spend_coins(cost):
-		_revive()
-
-
-## Devam (reklamla ya da jetonla): +1 askı, seviye başına 1 kez.
+## Devam (yalnız ödüllü reklamla): +1 askı, seviye başına 1 kez.
 func _revive() -> void:
 	if _revived:
 		return
@@ -1430,4 +1425,18 @@ func _play_slide_event(event: Dictionary) -> bool:
 			_refresh_open()
 			return true
 	return false
+
+
+# --- Ortam sesi: mekân ve gün evresine göre -----------------------------------------------------
+const AMBIENCE_BY_PLACE: Dictionary = {
+	"garden": "garden_ambience", "beach": "beach_ambience", "rooftop": "rooftop_ambience",
+}
+const AMBIENCE_NIGHT: String = "night_ambience"
+const AMBIENCE_NIGHT_HINT: String = "crickets"
+
+
+func _ambience_name() -> String:
+	if DayCycle.ambience_for(_level_number) == AMBIENCE_NIGHT_HINT:
+		return AMBIENCE_NIGHT
+	return String(AMBIENCE_BY_PLACE.get(_backdrop.place_id(), "garden_ambience"))
 

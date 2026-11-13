@@ -25,7 +25,7 @@ func test_balance_file_matches_spec() -> void:
 	var loaded: Dictionary = ProgressData.load_balance()
 	assert_eq(int(loaded["win_coins"]), 20)
 	assert_eq(int(loaded["hard_win_coins"]), 40)
-	assert_eq(int(loaded["continue_cost"]), 100)
+	assert_false(loaded.has("continue_cost"), "jetonla devam kaldırıldı")
 	var cost: Dictionary = loaded["booster_cost"] as Dictionary
 	assert_eq([int(cost["undo"]), int(cost["pin_remover"]), int(cost["extra_slot"])], [60, 80, 100])
 	var unlock: Dictionary = loaded["booster_unlock_level"] as Dictionary

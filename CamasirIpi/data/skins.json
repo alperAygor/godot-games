@@ -1,0 +1,35 @@
+{
+  "_note": "kaynak turleri: default (herkeste), coins (jetonla alinir, fiyat price), collection (koleksiyonda 'set' seti tamamlaninca acilir; id, data/meta_collection.json'daki 'reward' ile AYNI). Mandal dokusu: assets/sprites/skins/<id>.png (yoksa varsayilan). Ip stilleri RopePainter tarafindan cizilir: pattern solid|alternate|dots.",
+  "pin": [
+    {"id": "pin_wood", "source": {"type": "default"}},
+    {"id": "pin_mint", "source": {"type": "coins", "price": 300}},
+    {"id": "pin_sky", "source": {"type": "coins", "price": 300}},
+    {"id": "pin_butter", "source": {"type": "coins", "price": 300}},
+    {"id": "pin_bamboo", "source": {"type": "coins", "price": 450}},
+    {"id": "pin_metal", "source": {"type": "coins", "price": 700}},
+    {"id": "pin_star", "source": {"type": "coins", "price": 900}},
+    {"id": "pin_tulip", "source": {"type": "collection", "set": "turkiye"}},
+    {"id": "pin_cactus", "source": {"type": "collection", "set": "meksika"}},
+    {"id": "pin_lotus", "source": {"type": "collection", "set": "hindistan"}}
+  ],
+  "rope": [
+    {"id": "rope_default", "source": {"type": "default"},
+      "style": {"pattern": "solid", "width": 5.0, "colors": ["#8a6a4a"]}},
+    {"id": "rope_twine", "source": {"type": "coins", "price": 250},
+      "style": {"pattern": "alternate", "width": 6.0, "run": 1, "steps": 48, "colors": ["#d9534f", "#fbf3e4"]}},
+    {"id": "rope_pastel", "source": {"type": "coins", "price": 300},
+      "style": {"pattern": "alternate", "width": 6.0, "run": 2, "steps": 48, "colors": ["#c3a8e8", "#9fdcc4", "#f7c1a8"]}},
+    {"id": "rope_gold", "source": {"type": "coins", "price": 700},
+      "style": {"pattern": "solid", "width": 6.0, "colors": ["#e2b04a"], "highlight": "#fff0b8"}},
+    {"id": "rope_lights", "source": {"type": "coins", "price": 1000},
+      "style": {"pattern": "dots", "width": 3.0, "colors": ["#6f8176"], "dot_every": 3, "dot_radius": 9.0,
+        "dot_colors": ["#ffd97a", "#ff9fb2", "#9fe0ff", "#b9f0a0"]}},
+    {"id": "rope_sakura", "source": {"type": "collection", "set": "japonya"},
+      "style": {"pattern": "dots", "width": 5.0, "colors": ["#d98aa6"], "dot_every": 2, "dot_radius": 6.5,
+        "dot_colors": ["#fbd5e0"], "dot_glow": false}},
+    {"id": "rope_tartan", "source": {"type": "collection", "set": "iskocya"},
+      "style": {"pattern": "alternate", "width": 6.0, "run": 1, "steps": 48, "colors": ["#c0392b", "#1f3a5f", "#2e6b4f"]}},
+    {"id": "rope_tulip", "source": {"type": "collection", "set": "hollanda"},
+      "style": {"pattern": "alternate", "width": 6.0, "run": 2, "steps": 48, "colors": ["#f28c38", "#fffaf0"]}}
+  ]
+}

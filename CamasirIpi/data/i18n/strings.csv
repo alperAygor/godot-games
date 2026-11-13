@@ -33,8 +33,6 @@ LOSE_LEFT_FEW_ONE,Sadece %s çamaşır kaldı,Only %s item left,Solo queda %s pr
 LOSE_LEFT_FEW_OTHER,Sadece %s çamaşır kaldı,Only %s items left,Solo quedan %s prendas
 LOSE_REVIVE,+1 askı,+1 slot,+1 espacio
 LOSE_REVIVE_MOVES,+5 hamle,+5 moves,+5 movimientos
-LOSE_COINS_ONE,%d jeton ile devam,Continue for %d coin,Seguir por %d moneda
-LOSE_COINS_OTHER,%d jeton ile devam,Continue for %d coins,Seguir por %d monedas
 LOSE_RETRY,Tekrar dene,Try again,Reintentar
 DAILY_TITLE,Günlük,Daily,Diario
 DAILY_PUZZLE_TITLE,Günün bulmacası,Daily puzzle,Puzzle del día
@@ -169,3 +167,19 @@ PLACE_ARRIVE,Yeni durak: %s,Next stop: %s,Próxima parada: %s
 PLACE_GARDEN,Bahçe,Garden,Jardín
 PLACE_BEACH,Sahil,Seaside,Playa
 PLACE_ROOFTOP,Çatı Katı,Rooftop,Azotea
+SHOP_TITLE,Mağaza,Shop,Tienda
+SHOP_BOOSTERS,Güçlendiriciler,Boosters,Potenciadores
+SHOP_SKINS,Görünümler,Looks,Estilos
+SHOP_PINS,Mandallar,Pegs,Pinzas
+SHOP_ROPES,İpler,Ropes,Cuerdas
+SHOP_REMOVE_ADS,Reklamları kaldır,Remove ads,Quitar anuncios
+SHOP_REMOVE_ADS_NOTE,Geçiş reklamları kapanır. İstersen ödüllü videolar kalır.,No more pop-up ads. Optional reward videos stay.,Sin anuncios entre niveles. Los vídeos con premio siguen.
+SHOP_OWNED,Satın alındı,Owned,Adquirido
+SHOP_RESTORE,Satın alımları geri yükle,Restore purchases,Restaurar compras
+SHOP_RESTORED,Geri yüklendi,Restored,Restaurado
+SHOP_NOTHING_TO_RESTORE,Geri yüklenecek bir şey yok,Nothing to restore,Nada que restaurar
+SHOP_STORE_UNAVAILABLE,Mağaza şu an kullanılamıyor,Store unavailable right now,Tienda no disponible ahora
+SHOP_PURCHASE_FAILED,Satın alma tamamlanmadı,Purchase did not go through,La compra no se completó
+SHOP_FREE_ONE,Bedava +1,Free +1,+1 gratis
+SHOP_NO_PRICE,Mağazaya bağlanıyor,Connecting to the store,Conectando con la tienda
+SHOP_AD_UNAVAILABLE,Reklam şu an hazır değil,No ad available right now,Anuncio no disponible ahora

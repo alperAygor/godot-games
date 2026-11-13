@@ -324,6 +324,13 @@ static func circle_texture() -> Texture2D:
 	return _circle
 
 
+## Mandal kaplaması: tüm mandalların dokusunu değiştirir (boyut/çapa aynı kalır, kaplamalar
+## `assets/sprites/pin.png` ile aynı ölçüdedir). Düşen mandal animasyonu da bu dokuyu kullanır.
+func set_pin_texture(texture: Texture2D) -> void:
+	for pin: Sprite2D in _pins:
+		pin.texture = texture
+
+
 ## Mandallar küçük ayrı sprite olarak fırlar, düşer ve solar (asıl mandallar gizlenir).
 func release_pins() -> void:
 	if not _show_pins:

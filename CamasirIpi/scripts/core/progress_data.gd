@@ -30,16 +30,17 @@ const DEFAULT_BALANCE: Dictionary = {
 	"win_coins": 20,
 	"hard_win_coins": 40,
 	"stars_per_level": 1,
-	"continue_cost": 100,
 	"double_coins_multiplier": 2,
 	"refill_booster_grant": 1,
 	"streak_wins_for_extra_slot": 3,
 	"booster_unlock_grant": 2,
 	"booster_cost": {"undo": 60, "pin_remover": 80, "extra_slot": 100},
 	"booster_unlock_level": {"undo": 6, "pin_remover": 12, "extra_slot": 18},
-	"interstitial": {
-		"first_level": 4, "min_levels_between": 2, "max_levels_between": 3,
-		"min_seconds_between": 90, "rewarded_cooldown_seconds": 120,
+	"interstitial": {"first_level": 4},
+	"shop": {
+		"pack_sizes": [1, 3, 5],
+		"pack_discount_percent": {"1": 0, "3": 10, "5": 20},
+		"skin_price_default": 300,
 	},
 	"mastery": {
 		"chain_window_taps": 4,

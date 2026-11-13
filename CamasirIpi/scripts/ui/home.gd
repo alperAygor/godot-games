@@ -6,12 +6,9 @@ extends Control
 
 const SKY_TOP: Color = Color("aee0ff")
 const SKY_BOTTOM: Color = Color("eef8e6")
-const ROPE_COLOR: Color = Color("8a6a4a")
 const ROPE_INSET: float = 100.0
 const ROPE_Y: float = 700.0
 const ROPE_SAG: float = 10.0
-const ROPE_STEPS: int = 24
-const ROPE_WIDTH: float = 5.0
 ## Arka plan askısının yüksekliği: alt çubuğun ve düğmenin arkasında kalmasın.
 const BACKDROP_RACK_Y: float = 1130.0
 const GARMENT_SIZE: float = 200.0
@@ -42,6 +39,10 @@ var _star_chip: UiChip = null
 var _play_button: Button = null
 var _flames: Array[TextureRect] = []
 var _sheet: Sheet = null
+## Seçili mandal/ip kaplaması; mağazadan dönünce süs ipine ve mandallara yeniden uygulanır.
+var _skins: SkinLook = SkinLook.new()
+var _rope_canvas: RopeCanvas = null
+var _garment_views: Array[GarmentView] = []
 
 
 const SIDE_BUTTON_STEP: float = 132.0
@@ -67,6 +68,9 @@ func _ready() -> void:
 	_build_counters(view, insets)
 	_build_play(view)
 	_build_tabs(view, insets)
+	# Oyuncu tutma: görevler / ödül yolu / haftalık etkinlik satırı ve varsa tek bir karşılama sayfası.
+	RetentionHub.build_entry_row(self)
+	RetentionHub.on_home_shown(self)
 	UiData.connect_changed(_refresh)
 	_refresh()
 	modulate.a = 0.0
@@ -104,21 +108,25 @@ func _build_garments(view: Vector2) -> void:
 	var world: Node2D = Node2D.new()
 	world.z_index = -1
 	add_child(world)
-	var rope: Line2D = Line2D.new()
-	rope.width = ROPE_WIDTH
-	rope.default_color = ROPE_COLOR
-	rope.antialiased = true
-	for step: int in range(ROPE_STEPS + 1):
-		var t: float = float(step) / float(ROPE_STEPS)
-		rope.add_point(Vector2(lerpf(ROPE_INSET, view.x - ROPE_INSET, t),
-			ROPE_Y - 6.0 + ROPE_SAG * sin(PI * t)))
-	world.add_child(rope)
+	# İp kaplamayı uygular: oyundaki ipler ile aynı çizim (RopePainter); kaplama değişince yeniden çizilir.
+	_rope_canvas = RopeCanvas.new()
+	world.add_child(_rope_canvas)
 	for index: int in range(GARMENT_KINDS.size()):
 		var garment: GarmentView = GarmentView.new()
 		garment.setup(index, GARMENT_COLORS[index], GARMENT_SIZE, GARMENT_KINDS[index], 0)
 		garment.position = Vector2(view.x * 0.5 + (float(index) - 2.0) * GARMENT_SPACING, ROPE_Y)
 		garment.set_open(true)
 		world.add_child(garment)
+		_garment_views.append(garment)
+	_apply_skins(view)
+
+
+## Seçili mandal + ip kaplamasını ana ekrandaki süs ipine uygular.
+func _apply_skins(view: Vector2) -> void:
+	_skins.reload()
+	_rope_canvas.setup(ROPE_INSET, view.x - ROPE_INSET, ROPE_Y - 6.0, ROPE_SAG, _skins.rope_style)
+	for garment: GarmentView in _garment_views:
+		_skins.apply_pin(garment)
 
 
 func _build_title(view: Vector2) -> void:
@@ -253,7 +261,10 @@ func _on_play() -> void:
 
 func _on_tab(index: int) -> void:
 	if index == TAB_SHOP:
-		_open_sheet(InfoSheet.soon(self, "lucide/shopping-bag"))
+		var shop: ShopScreen = ShopScreen.open(self)
+		_open_meta(shop)
+		# Mağazada kaplama değişmiş olabilir: kapanınca ana ekran süsü güncellenir.
+		shop.closed.connect(_apply_skins.bind(get_viewport_rect().size))
 	elif index == TAB_COLLECTION:
 		_open_meta(MetaCollection.open(self))
 

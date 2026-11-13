@@ -90,10 +90,6 @@ static func lose_revive_moves() -> String:
 	return Loc.t("LOSE_REVIVE_MOVES")
 
 
-static func lose_coins(cost: int) -> String:
-	return Loc.n("LOSE_COINS_ONE", "LOSE_COINS_OTHER", cost) % cost
-
-
 static func lose_retry() -> String:
 	return Loc.t("LOSE_RETRY")
 

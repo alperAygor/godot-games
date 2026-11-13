@@ -13,6 +13,9 @@ const BACKUP_SUFFIX: String = ".bak"
 const LEGACY_PATH: String = "user://progress.cfg"
 const LEGACY_DONE_SUFFIX: String = ".migrated"
 const LEGACY_SECTION: String = "progress"
+## "Reklamları kaldır" sahipliği: modül "shop", anahtar "remove_ads" (mağaza servisi de buradan okur).
+const SHOP_SECTION: String = "shop"
+const KEY_REMOVE_ADS: String = "remove_ads"
 
 ## false iken diske HİÇ yazılmaz (prob/test oyuncunun gerçek kaydını ezmesin).
 var persist: bool = true
@@ -133,6 +136,37 @@ func set_module_value(section: String, key: String, value: Variant) -> void:
 		data.modules[section] = {}
 	(data.modules[section] as Dictionary)[key] = value
 	_commit()
+
+
+## Jetonla güçlendirici alımı TEK kayıtta: jeton düşer + adet eklenir (arada çökme olursa
+## oyuncu jetonunu kaybedip ürünü alamamış olmasın). Yetersiz jeton/bilinmeyen id: false.
+func purchase_booster(id: String, quantity: int, price: int) -> bool:
+	if quantity <= 0 or not ProgressData.BOOSTER_IDS.has(id) or not data.spend_coins(price):
+		return false
+	data.add_booster(id, quantity)
+	_commit()
+	return true
+
+
+## Jetonla modül verisi alımı (ör. kaplama): jeton düşer + değer yazılır, tek kayıt.
+func purchase_module_value(price: int, section: String, key: String, value: Variant) -> bool:
+	if not data.spend_coins(price):
+		return false
+	if not data.modules.has(section):
+		data.modules[section] = {}
+	(data.modules[section] as Dictionary)[key] = value
+	_commit()
+	return true
+
+
+## "Reklamları kaldır" satın alındı mı (geçiş reklamları ve bannerlar kapanır; ödüllü reklam açık kalır).
+func remove_ads_owned() -> bool:
+	return bool(module_value(SHOP_SECTION, KEY_REMOVE_ADS, false))
+
+
+func set_remove_ads_owned(owned: bool) -> void:
+	if remove_ads_owned() != owned:
+		set_module_value(SHOP_SECTION, KEY_REMOVE_ADS, owned)
 
 
 func add_stars(amount: int) -> void:
