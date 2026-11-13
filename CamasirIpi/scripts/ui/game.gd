@@ -210,6 +210,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _booster_intercepts(get_canvas_transform().affine_inverse() * position):
 		return
+	if _guest_intercepts(get_canvas_transform().affine_inverse() * position):
+		return
 	var id: int = _pick(get_canvas_transform().affine_inverse() * position)
 	if id != LaundryBoard.EMPTY:
 		_tap(id)
@@ -234,6 +236,9 @@ func _pick(point: Vector2) -> int:
 
 
 func _tap(id: int) -> void:
+	if id < 0:
+		_tap_guest(id)
+		return
 	var events: Array[Dictionary] = _board.tap(id)
 	if events.is_empty():
 		return
@@ -243,7 +248,7 @@ func _tap(id: int) -> void:
 		events.push_front({"type": RunStats.EVENT_CHAIN_BREAK})
 	var first: String = String(events[0]["type"])
 	if first != LaundryBoard.EVENT_BLOCKED and first != LaundryBoard.EVENT_LOCKED \
-			and first != LaundryBoard.EVENT_RACK_FULL:
+			and first != LaundryBoard.EVENT_RACK_FULL and first != LaundryBoard.EVENT_MACHINE_FULL:
 		UiData.vibrate(12)
 		AudioService.play_variant("pin_click", SOUND_VARIANTS, randf_range(0.94, 1.08), 0.0)
 	_events.append_array(events)
@@ -338,6 +343,7 @@ func _play_event(event: Dictionary) -> void:
 			_hud.fade_chain()
 		LaundryBoard.EVENT_BASKET_NEW:
 			_baskets[int(event["basket"])].enter(_basket_tint(event), int(event.get("cap", LaundryBoard.BASKET_CAPACITY)), bool(event.get("joker", false)))
+			_on_basket_new(event)
 		LaundryBoard.EVENT_WIN:
 			if await _wait_flights():
 				await _wait(Motion.WIN_DELAY_SECONDS)
@@ -549,6 +555,7 @@ func _start_level() -> void:
 	# sonuç her durumda LevelGenerator.generate ile aynıdır).
 	_level = _daily_level if not _daily_level.is_empty() \
 		else (debug_level if not debug_level.is_empty() else LevelPrefetch.take_level(_level_number))  # [DAILY]
+	_level = _with_upgrades(_level)
 	_board = LaundryBoard.new(_level)
 	_eco.on_level_start(_level_number, _board)
 	_hud.set_level(_level_number)
@@ -564,6 +571,7 @@ func _start_level() -> void:
 	_build_lines()
 	_build_rack()
 	_build_baskets()
+	_build_extras()
 	_setup_boosters()
 	_setup_rules_hud()
 	_refresh_open()
@@ -933,6 +941,7 @@ func _decorate_view(view: GarmentView, item: Dictionary, spacing_x: float, spaci
 	if item.has("dye"):
 		view.set_dye(int(item["dye"]), COLORS[int(item["color"]) % COLORS.size()])
 	_decorate_rules_view(view, item)
+	_decorate_extras_view(view, item)
 
 
 ## `_refresh_open` kancası: tahtadan okunan sayaçlar ve güçlendirici çubuğu.
@@ -944,10 +953,13 @@ func _refresh_obstacle_views() -> void:
 			_views[id].set_dye_left(_board.dye_left(id))
 	_refresh_booster_bar()
 	_refresh_rules_views()
+	_refresh_extras()
 
 
 ## `_play_event` kancası: yeni olay türleri.
 func _play_obstacle_event(event: Dictionary) -> void:
+	if await _play_extras_event(event):
+		return
 	if await _play_rules_event(event):
 		return
 	var id: int = int(event.get("id", LaundryBoard.EMPTY))
@@ -1098,6 +1110,7 @@ func _rebuild_from_board() -> void:
 	_build_lines()
 	_build_rack()
 	_build_baskets()
+	_build_extras()
 	# Önce renk/durum (boya takası geri alınmış olabilir), sonra yerleşim: katlanan parçanın
 	# katlı dokusu rengini uçuş başında sprite'tan alır.
 	var off_line: Dictionary = {}
@@ -1106,6 +1119,7 @@ func _rebuild_from_board() -> void:
 	for index: int in range(_baskets.size()):
 		for id: int in _board.basket_contents(index):
 			off_line[id] = true
+	_extras_off_line(off_line)
 	for id: int in _views.keys().duplicate():
 		var view: GarmentView = _views[id]
 		if not _board.is_on_line(id) and not off_line.has(id):
@@ -1445,3 +1459,316 @@ func _play_slide_event(event: Dictionary) -> bool:
 			return true
 	return false
 
+
+
+# --- Derinleşme 3: makineler ve misafirler -----------------------------------------------------
+# Neden ayrı blok: kurallar `LaundryBoard` son bölümünde; burada yalnız görünüm bağlantısı var.
+# Mevcut akışa kısa kancalar eklendi (_unhandled_input, _tap, _start_level, _build_* sonrası,
+# _rebuild_from_board, _play_event: BASKET_NEW, _decorate_view, _refresh_obstacle_views,
+# _play_obstacle_event); geri kalanı buradadır.
+
+## Makineler çimde, sepetlerin sol/sağ altında durur (askı, sepet, kuyruk ve güçlendirici
+## çubuğuyla çakışmayan tek boş köşeler): taban y'si ve kenar payı, ekrandaki boy.
+const MACHINE_HEIGHT: float = 215.0
+const MACHINE_BASE_Y: float = 1912.0
+const MACHINE_MARGIN_X: float = 8.0
+const MACHINE_Z: int = 5
+## Makineye giren çamaşır kapağa küçülerek uçar; çıkarken buradan başlar.
+const MACHINE_GARMENT_SCALE: float = 0.32
+const GUEST_SOUND_DB: float = -8.0
+
+var _machine_views: Array[MachineView] = [null, null]
+## Makinedeki çamaşırlar (görünüm tarafı): iniş anında gizlenip gizlenmeyeceği bununla bilinir.
+var _machine_held: Dictionary = {}
+## Makine -> yuva başına son bilinen kalan hamle (olaylardan; iniş anında panele yazılır).
+var _slot_left: Array[PackedInt32Array] = [PackedInt32Array(), PackedInt32Array()]
+var _bird: BirdView = null
+var _cat: CatView = null
+var _cloud: RainCloudView = null
+var _kind_badges: Array[KindBadge] = []
+var _hinted_bird: int = LaundryBoard.EMPTY
+
+
+## Makineli seviyede oyuncunun yükseltmeleri seviyeye yazılır: tahta da, ipucu/prob çözücüsü de
+## aynı (yükseltilmiş) kuralla oynar. Makinesiz seviye olduğu gibi kalır.
+func _with_upgrades(level: Dictionary) -> Dictionary:
+	if not level.has("washer") and not level.has("dryer"):
+		return level
+	var copy: Dictionary = level.duplicate()
+	copy["upgrades"] = MachineUpgrades.board_params()
+	return copy
+
+
+## `_build_baskets` sonrası (seviye başı ve geri al): makineler, misafirler, türlü sepet rozetleri.
+func _build_extras() -> void:
+	_machine_held.clear()
+	_hinted_bird = LaundryBoard.EMPTY
+	_kind_badges.clear()
+	var width: float = get_viewport_rect().size.x
+	for machine: int in range(LaundryBoard.MACHINE_COUNT):
+		_machine_views[machine] = null
+		_slot_left[machine] = PackedInt32Array()
+		if not _board.has_machine(machine):
+			continue
+		var view: MachineView = MachineView.new()
+		view.z_index = MACHINE_Z
+		_world.add_child(view)
+		view.setup(machine, MACHINE_HEIGHT, _board.machine_capacity(machine))
+		var half: float = view.width * 0.5
+		view.position = Vector2(MACHINE_MARGIN_X + half if machine == LaundryBoard.MACHINE_WASHER
+			else width - MACHINE_MARGIN_X - half, MACHINE_BASE_Y)
+		_slot_left[machine].resize(_board.machine_capacity(machine))
+		for slot: int in range(_board.machine_capacity(machine)):
+			var entry: Vector2i = _board.machine_slot(machine, slot)
+			_slot_left[machine][slot] = entry.y
+		view.sync(_board, COLORS)
+		_machine_views[machine] = view
+	if _board.is_typed_level():
+		for index: int in range(_baskets.size()):
+			var badge: KindBadge = KindBadge.new()
+			_world.add_child(badge)
+			badge.setup(_baskets[index], BASKET_SIZE)
+			badge.set_kind(_board.basket_kind(index), _baskets[index].color)
+			_kind_badges.append(badge)
+	_bird = null
+	_cat = null
+	_cloud = null
+	if not _board.bird_targets().is_empty():
+		_bird = BirdView.new()
+		_world.add_child(_bird)
+		var garment: float = _views.values()[0].size if not _views.is_empty() else MAX_GARMENT_SIZE
+		_bird.setup(garment)
+		_world.add_child(_bird.make_hint())
+	if _board.cat_left() >= 0 or _board.cat_at() != LaundryBoard.EMPTY:
+		_cat = CatView.new()
+		_world.add_child(_cat)
+		_cat.setup(BASKET_SIZE)
+		_world.add_child(_cat.make_hint())
+	if _board.rain_left() >= 0:
+		_cloud = RainCloudView.new()
+		_world.add_child(_cloud)
+		var spacing: float = _line_ys[1] - _line_ys[0] if _line_ys.size() > 1 else MAX_LINE_SPACING
+		_cloud.setup(width - ROPE_INSET * 2.0, _center_x, spacing)
+	_sync_guests()
+
+
+## Geri al / seviye başı: misafirler tahtanın o anki durumuna oturur.
+func _sync_guests() -> void:
+	if _bird != null and _board.bird_on() != LaundryBoard.EMPTY and _live(_board.bird_on()):
+		_bird.land_on(_views[_board.bird_on()], _board.bird_on())
+	if _cat != null and _board.cat_at() != LaundryBoard.EMPTY and _board.cat_at() < _baskets.size():
+		_cat.land_in(_baskets[_board.cat_at()], _board.cat_at())
+	_show_cloud()
+
+
+func _show_cloud() -> void:
+	if _cloud == null:
+		return
+	var line: int = _board.rain_next_line()
+	if line == LaundryBoard.EMPTY or line >= _line_ys.size():
+		_cloud.hide_cloud()
+		return
+	_cloud.show_next(line, _line_ys[line], _board.rain_left(), ROPE_INSET)
+
+
+## `_decorate_view` kancası: çamur/kuş lekesi ve (geri al sonrası) yağmurla ıslanmış görünüm.
+func _decorate_extras_view(view: GarmentView, item: Dictionary) -> void:
+	var id: int = int(item["id"])
+	if not _board.has_extras():
+		return
+	if _board.is_dirty(id):
+		view.set_dirty(true, _board.is_bird_mess(id))
+	if _board.is_wet(id) and _board.is_on_line(id):
+		view.set_wet(true)
+
+
+## `_rebuild_from_board` kancası: makinedeki parçalar ipte değildir ama silinmemeli; gizli durur.
+func _extras_off_line(off_line: Dictionary) -> void:
+	for id: int in _views.keys():
+		if _board.machine_of(id) == LaundryBoard.EMPTY:
+			continue
+		off_line[id] = true
+		_machine_held[id] = true
+		_views[id].visible = false
+		_line_views.erase(_views[id])
+
+
+## `_refresh_obstacle_views` kancası: bir hamle önceden gelen haberler (kuş gölgesi, kedi silüeti).
+func _refresh_extras() -> void:
+	if _board == null or not _board.has_extras():
+		return
+	var target: int = _board.bird_next() if _board.bird_left() == 1 else LaundryBoard.EMPTY
+	if target != LaundryBoard.EMPTY and not _board.is_on_line(target):
+		target = LaundryBoard.EMPTY
+	if target != _hinted_bird and _bird != null:
+		if _live(target):
+			_bird.show_hint(_views[target])
+		else:
+			_bird.hide_hint()
+		_hinted_bird = target
+	if _cat != null:
+		var basket: int = _board.cat_next() if _board.cat_left() == 1 else LaundryBoard.EMPTY
+		if basket != LaundryBoard.EMPTY and basket < _baskets.size() and _board.cat_at() == LaundryBoard.EMPTY:
+			_cat.show_hint(_baskets[basket])
+		else:
+			_cat.hide_hint()
+
+
+## `_play_event` BASKET_NEW kancası: türlü sepetin rozeti yeni sepetle değişir.
+func _on_basket_new(event: Dictionary) -> void:
+	var index: int = int(event["basket"])
+	if index < _kind_badges.size():
+		_kind_badges[index].set_kind(int(event.get("kind", LaundryBoard.EMPTY)), _basket_tint(event))
+
+
+## `_unhandled_input` kancası: konmuş kuşa ya da uyuyan kediye dokunuş (ücretsiz eylem).
+func _guest_intercepts(point: Vector2) -> bool:
+	if _bird != null and _bird.hit(point, MIN_TOUCH):
+		_tap(LaundryBoard.TAP_BIRD)
+		return true
+	if _cat != null and _cat.hit(point, MIN_TOUCH):
+		_tap(LaundryBoard.TAP_CAT)
+		return true
+	return false
+
+
+## Ücretsiz eylem: hamle sayılmaz, zincir/istatistik etkilenmez; öğretici geçmişine yazılır ki
+## ipucu çözücüsü aynı durumdan devam etsin.
+func _tap_guest(id: int) -> void:
+	var events: Array[Dictionary] = _board.tap(id)
+	if events.is_empty():
+		return
+	_tutorial.on_tap(id, events)
+	UiData.vibrate(8)
+	_events.append_array(events)
+	_refresh_open()
+	_run_events()
+
+
+## `_play_obstacle_event` kancası. Döndürür: olay burada işlendi mi.
+func _play_extras_event(event: Dictionary) -> bool:
+	var id: int = int(event.get("id", LaundryBoard.EMPTY))
+	match String(event["type"]):
+		LaundryBoard.EVENT_TO_MACHINE:
+			_send_to_machine(id, int(event["machine"]), int(event["slot"]))
+			await _wait(Motion.stagger(_events.size()))
+		LaundryBoard.EVENT_MACHINE_FULL:
+			var full: MachineView = _machine_views[int(event["machine"])]
+			if full != null:
+				full.refuse()
+			if _live(id):
+				_views[id].wobble()
+			AudioService.play_pitched("blocked", randf_range(0.85, 0.95), -5.0)
+			_rack_refuse_until_msec = Time.get_ticks_msec() + RACK_REFUSE_MSEC
+		LaundryBoard.EVENT_MACHINE_TICK, LaundryBoard.EVENT_MACHINE_READY:
+			var machine: int = int(event["machine"])
+			var slot: int = int(event["slot"])
+			var left: int = int(event.get("left", 0))
+			if slot < _slot_left[machine].size():
+				_slot_left[machine][slot] = left
+			if _machine_views[machine] != null:
+				_machine_views[machine].set_left(slot, left)
+			if String(event["type"]) == LaundryBoard.EVENT_MACHINE_READY:
+				AudioService.play_pitched("note", 1.6, -12.0)
+		LaundryBoard.EVENT_MACHINE_OUT:
+			await _machine_out(id, int(event["machine"]), int(event["slot"]))
+		LaundryBoard.EVENT_MACHINE_RUSH:
+			if _machine_views[int(event["machine"])] != null:
+				_machine_views[int(event["machine"])].bounce()
+			AudioService.play_pitched("wind", 0.7, -10.0)
+		LaundryBoard.EVENT_BIRD_LAND:
+			if _bird != null and _live(id):
+				_bird.land_on(_views[id], id)
+				AudioService.play_pitched("note", 2.2, -10.0)
+		LaundryBoard.EVENT_BIRD_SIT:
+			if _bird != null:
+				_bird.hop(int(event["left"]) == 1)
+		LaundryBoard.EVENT_BIRD_SHOO, LaundryBoard.EVENT_BIRD_AWAY:
+			if _bird != null:
+				_bird.fly_off(String(event["type"]) == LaundryBoard.EVENT_BIRD_SHOO)
+				AudioService.play_pitched("cloth", 1.5, GUEST_SOUND_DB)
+		LaundryBoard.EVENT_BIRD_STAIN:
+			if _live(id):
+				_views[id].set_dirty(true, true, true)
+			if _bird != null:
+				_bird.fly_off(false)
+			AudioService.play_pitched("fold_puff", 0.7, -6.0)
+		LaundryBoard.EVENT_BIRD_PASS:
+			if _bird != null:
+				_bird.pass_by(_views[id].position if _live(id) else Vector2(_center_x, LINES_TOP))
+		LaundryBoard.EVENT_RAIN_TICK:
+			_show_cloud()
+		LaundryBoard.EVENT_RAIN:
+			var line: int = int(event["line"])
+			if _cloud != null and line >= 0 and line < _line_ys.size():
+				_cloud.pour(_line_ys[line])
+			AudioService.play_pitched("wind", 0.6, -8.0)
+			AudioService.play_pitched("wring", 0.7, -10.0)
+			if not await _wait(RainCloudView.POUR_SECONDS * 0.5):
+				return true
+			for wet: Variant in event["ids"] as Array:
+				if _live(int(wet)):
+					_views[int(wet)].set_wet(true)
+			_show_cloud()
+		LaundryBoard.EVENT_CAT_LAND:
+			var basket: int = int(event["basket"])
+			if _cat != null and basket < _baskets.size():
+				_cat.land_in(_baskets[basket], basket)
+				AudioService.play_pitched("fold_puff", 0.8, -6.0)
+		LaundryBoard.EVENT_CAT_PET, LaundryBoard.EVENT_CAT_LEAVE:
+			if _cat != null:
+				var petted: bool = String(event["type"]) == LaundryBoard.EVENT_CAT_PET
+				_cat.wake_and_leave(petted)
+				AudioService.play_pitched("note", 1.3 if petted else 0.9, GUEST_SOUND_DB)
+		LaundryBoard.EVENT_BIRD_TICK, LaundryBoard.EVENT_CAT_TICK, LaundryBoard.EVENT_CAT_STAY, \
+				LaundryBoard.EVENT_CAT_PASS:
+			pass
+		_:
+			return false
+	return true
+
+
+## Çamaşır kapağa küçülerek uçar; inince gizlenir ve tamburda dönen katlı parçaya dönüşür.
+func _send_to_machine(id: int, machine: int, slot: int) -> void:
+	var view: MachineView = _machine_views[machine]
+	if not _live(id) or view == null:
+		return
+	var garment: GarmentView = _views[id]
+	_leave_line(garment)
+	_machine_held[id] = true
+	if slot < _slot_left[machine].size():
+		_slot_left[machine][slot] = _board.machine_moves(machine)
+	_fly(garment, view.door_global(), MACHINE_GARMENT_SCALE, 0.0, 0.0)
+	garment.landed.connect(_on_machine_landed.bind(id, machine, slot), CONNECT_ONE_SHOT)
+
+
+func _on_machine_landed(id: int, machine: int, slot: int) -> void:
+	# Bu arada makineden çıktıysa (zaman atlama) gizlenmez: çıkış uçuşu sürüyor.
+	if not _machine_held.has(id) or not _live(id) or _machine_views[machine] == null:
+		return
+	_views[id].visible = false
+	var left: int = _slot_left[machine][slot] if slot < _slot_left[machine].size() else 0
+	_machine_views[machine].fill_slot(slot, COLORS[_board.color_of(id) % COLORS.size()], left)
+	AudioService.play_pitched("cloth", 0.75, GUEST_SOUND_DB)
+
+
+## Temiz çıktı: kapakta yeniden belirir; ardından gelen TO_BASKET/TO_RACK olayı onu uçurur.
+func _machine_out(id: int, machine: int, slot: int) -> void:
+	if not await _wait_flights():
+		return
+	_machine_held.erase(id)
+	var view: MachineView = _machine_views[machine]
+	if view != null:
+		view.clear_slot(slot)
+		view.bounce()
+	if not _live(id):
+		return
+	var garment: GarmentView = _views[id]
+	garment.visible = true
+	garment.modulate = Color.WHITE
+	garment.wash_clean()
+	garment.set_dirty(false)
+	if view != null:
+		garment.global_position = view.door_global()
+	garment.scale = Vector2.ONE * MACHINE_GARMENT_SCALE
+	AudioService.play_pitched("fold_puff", 1.25, -6.0)

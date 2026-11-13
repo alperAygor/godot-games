@@ -101,6 +101,7 @@ func setup(id: int, tint: Color, pixel_size: float, kind: int, item_layer: int) 
 	layer = item_layer
 	z_index = item_layer
 	_phase = float(id) * PHASE_PER_ID
+	_kind = posmod(kind, KINDS.size())
 	# Sallanma yalnız komşu itmesi/uçuş kick'i sürerken işlenir; boşta CPU harcanmaz.
 	set_process(false)
 	var path: String = SPRITE_PATH % KINDS[posmod(kind, KINDS.size())]
@@ -979,3 +980,60 @@ class WindBadge extends Node2D:
 		var base: Vector2 = Vector2(side * radius * 0.95, 0.0)
 		draw_colored_polygon(PackedVector2Array([tip, base + Vector2(0.0, -radius * 0.38),
 			base + Vector2(0.0, radius * 0.38)]), GarmentView.WIND_BADGE_COLOR)
+
+
+# --- Makineler ve misafirler: çamur/kuş lekesi ---------------------------------
+
+const MUD_PATH: String = "res://assets/sprites/machines/overlay_mud.png"
+const BIRD_MESS_PATH: String = "res://assets/sprites/machines/overlay_birdmess.png"
+## Leke genişliği (çamaşır boyuna oran) ve tür başına konum: lekenin her sprite'ta kumaşın
+## üstünde kalması için (pantolon bacak arası boştur, çorap dardır).
+const MESS_WIDTH_RATIO: float = 0.46
+const MESS_ANCHORS: Array[Vector2] = [
+	Vector2(0.0, 0.5), Vector2(0.0, 0.2), Vector2(0.0, 0.4), Vector2(0.04, 0.48),
+	Vector2(0.0, 0.24), Vector2(0.0, 0.5), Vector2(-0.06, 0.3),
+]
+const MESS_POP_SECONDS: float = 0.22
+const MESS_POP_FROM: float = 0.3
+var _kind: int = 0
+var _mess: Sprite2D = null
+
+
+func kind_index() -> int:
+	return _kind
+
+
+## Çamurlu (ya da kuş lekeli) görünüm. `animate`: leke küçükten "şap" diye belirir.
+func set_dirty(dirty: bool, bird: bool = false, animate: bool = false) -> void:
+	if not dirty:
+		if _mess != null:
+			_mess.visible = false
+		return
+	var path: String = BIRD_MESS_PATH if bird else MUD_PATH
+	if not ResourceLoader.exists(path):
+		return
+	if _mess == null:
+		_mess = Sprite2D.new()
+		_mess.z_index = 1
+		add_child(_mess)
+	_mess.texture = load(path) as Texture2D
+	var anchor: Vector2 = MESS_ANCHORS[_kind % MESS_ANCHORS.size()]
+	_mess.position = Vector2(anchor.x * size, anchor.y * size)
+	var base: float = size * MESS_WIDTH_RATIO / maxf(_mess.texture.get_size().x, 1.0)
+	_mess.visible = true
+	_mess.modulate = Color.WHITE
+	_pin_children_on_top()
+	if not animate:
+		_mess.scale = Vector2.ONE * base
+		return
+	_mess.scale = Vector2.ONE * base * MESS_POP_FROM
+	var pop: Tween = _mess.create_tween()
+	pop.tween_property(_mess, "scale", Vector2.ONE * base, MESS_POP_SECONDS)\
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+## Makineden temiz çıktı: leke yumuşakça söner (çağıran ayrıca ıslaklığı kapatır).
+func wash_clean() -> void:
+	if _mess != null:
+		_mess.visible = false
+	set_wet(false)

@@ -42,9 +42,17 @@ const MAX_SLIDES: int = 1
 const SLIDE_EVERY_MOVES: int = 4
 const SLIDE_EVERY_MOVES_LATE: int = 3
 const SLIDE_FAST_FROM_LEVEL: int = 90
+## Derinleşme 3: makineler ve misafirler (her biri kendi tanıtım seviyesinde TEK BAŞINA gelir).
+const WASHER_FROM_LEVEL: int = 64
+const DRYER_FROM_LEVEL: int = 70
+const TYPED_FROM_LEVEL: int = 76
+const BIRDS_FROM_LEVEL: int = 82
+const RAIN_FROM_LEVEL: int = 88
+const CAT_FROM_LEVEL: int = 94
 const INTRO_LEVELS: Array[int] = [WET_FROM_LEVEL, MYSTERY_FROM_LEVEL, LOCK_FROM_LEVEL,
 	JOKER_FROM_LEVEL, SHEET_FROM_LEVEL, BIG_FROM_LEVEL, SOCK_FROM_LEVEL, STAIN_FROM_LEVEL,
-	DYE_FROM_LEVEL, CHAIN_FROM_LEVEL, WIND_FROM_LEVEL, SLIDE_FROM_LEVEL]
+	DYE_FROM_LEVEL, CHAIN_FROM_LEVEL, WIND_FROM_LEVEL, SLIDE_FROM_LEVEL,
+	WASHER_FROM_LEVEL, DRYER_FROM_LEVEL, TYPED_FROM_LEVEL, BIRDS_FROM_LEVEL, RAIN_FROM_LEVEL, CAT_FROM_LEVEL]
 const MAX_JOKERS: int = 2
 const MAX_BIGS: int = 2
 const MAX_STAINS: int = 3
@@ -60,7 +68,8 @@ const MIX_SURE_LEVELS: int = 2
 const MIX_CHANCE: float = 0.55
 ## Mekanik başına ayrı tohum tuzu: karışım kararları birbirinden ve ana düzenden bağımsız olsun.
 const FEATURE_SALT: int = 104729
-const MIX_SALTS: Dictionary = {"joker": 11, "big": 23, "stain": 37, "chain": 41, "wind": 53, "slide": 67}
+const MIX_SALTS: Dictionary = {"joker": 11, "big": 23, "stain": 37, "chain": 41, "wind": 53, "slide": 67,
+	"washer": 71, "dryer": 79, "typed": 83, "birds": 89, "rain": 97, "cat": 101}
 const PLACE_ATTEMPTS: int = 24
 ## Yeni mekanik yerleşimlerinin doğrulama bütçesi: başarılı doğrulama çoğunlukla çözüm yolu
 ## uzunluğu kadar düğümde biter; başarısız aday bütün bütçeyi yer. Düşük bütçe yalnız "daha az
@@ -124,6 +133,12 @@ const BASE_COLUMNS: int = 4
 ## Geç seviyelerde çözücü doğrulama sınırı: başarısız aramalar bütçeyi tüketir; mobilde
 ## üretim süresi sınırlı kalsın diye düşük tutulur (reddedilen karıştırma güvenli taraftır).
 const LATE_NODE_LIMIT: int = 6000
+## Bu seviyeden sonra (yeni mekaniklerin geldiği yer) eski engellerin yerleşim denemeleri de
+## sınırlanır: en ağır seviyelerin üretimi mobilde birkaç saniyeyi aşıyordu. Öncesi birebir aynı.
+const LEAN_FROM_LEVEL: int = 64
+const LEAN_TRIES: int = 4
+const LEAN_ORDER_ATTEMPTS: int = 2
+const LEAN_NODE_LIMIT: int = 2500
 
 
 ## Zorluk parametreleri: {lines, columns, layers, colors, twist, active_baskets, hard}.
@@ -239,10 +254,11 @@ static func generate(level: int) -> Dictionary:
 	if chains > 0:
 		_add_chains(result, chains, features)
 	var gusts: int = mechanic_count(number, "wind")
-	if gusts > 0:
+	if gusts > 0 and _timed_ok(number, "wind"):
 		_add_wind(result, gusts, order, features)
-	if mechanic_count(number, "slide") > 0 and mode != LaundryBoard.MODE_BOSS:
+	if mechanic_count(number, "slide") > 0 and mode != LaundryBoard.MODE_BOSS and _timed_ok(number, "slide"):
 		_add_slide(result, number)
+	_add_extras(result, number)
 	_finish_mode(result, mode, number, features)
 	return result
 
@@ -297,6 +313,7 @@ static func _add_obstacles(level: Dictionary, rng: RandomNumberGenerator) -> voi
 			wet -= 1
 	# Kilit: çözülebilirlik bozulursa geri alınır.
 	var queue: Array = level["queue"] as Array
+	var tries: int = 0
 	for index: int in pool:
 		if locks <= 0 or queue.size() < 3:
 			break
@@ -306,11 +323,21 @@ static func _add_obstacles(level: Dictionary, rng: RandomNumberGenerator) -> voi
 		var key_color: int = int(queue[rng.randi_range(0, mini(2, queue.size() - 1))])
 		if key_color == int(entry["color"]):
 			continue
+		# Geç seviyelerde reddedilen her aday bütçenin tamamını yer: deneme sayısı sınırlanır.
+		tries += 1
+		if number >= LEAN_FROM_LEVEL and tries > LEAN_TRIES:
+			break
 		entry["lock"] = key_color
-		if LevelSolver.is_solvable(level, _lock_limit(number)):
+		if LevelSolver.is_solvable(level, _lock_limit(number) if number < LEAN_FROM_LEVEL else PLACE_NODE_LIMIT):
 			locks -= 1
 		else:
 			entry.erase("lock")
+
+
+## Hamle sınırı/sipariş için çözüm yolu bütçesi: 64 öncesi eskisi gibi (seviyeler birebir kalsın);
+## sonrasında başarısız arama bütçenin tamamını yediğinden düşük (bulunamazsa cömert sınır).
+static func _path_limit(level: int) -> int:
+	return LevelSolver.DEFAULT_NODE_LIMIT if level < LEAN_FROM_LEVEL else LATE_NODE_LIMIT
 
 
 ## Kilit doğrulama bütçesi: erken seviyeler eskisi gibi (birebir aynı kalsınlar); geç eğride
@@ -479,7 +506,7 @@ static func _twist_queue(level: Dictionary, twist: int, rng: RandomNumberGenerat
 
 ## Engelsiz, sıradan parça mı (yeni engeller birbirine ve eskilere binmesin).
 static func _plain(entry: Dictionary) -> bool:
-	for key: String in ["wet", "mystery", "lock", "sheet", "sock", "dye", "stain", "chain"]:
+	for key: String in ["wet", "mystery", "lock", "sheet", "sock", "dye", "stain", "chain", "dirty"]:
 		if entry.has(key):
 			return false
 	return true
@@ -589,19 +616,22 @@ static func _add_socks(level: Dictionary, order: Array[int], count: int, rng: Ra
 			starts.append(k)
 	_shuffle(starts, rng)
 	var left: int = count
+	var lean: bool = int(level["level"]) >= LEAN_FROM_LEVEL
+	var tries: int = 0
 	for k: int in starts:
-		if left <= 0:
+		if left <= 0 or (lean and tries >= LEAN_TRIES):
 			break
 		var first: Dictionary = items[_index_of(items, order[k])]
 		var second: Dictionary = items[_index_of(items, order[k + 1])]
 		if not _plain(first) or not _plain(second):
 			continue
 		var kinds: Array[int] = [int(first["kind"]), int(second["kind"])]
+		tries += 1
 		first["sock"] = order[k + 1]
 		second["sock"] = order[k]
 		first["kind"] = SOCK_KIND
 		second["kind"] = SOCK_KIND
-		if LevelSolver.is_solvable(level, LATE_NODE_LIMIT):
+		if LevelSolver.is_solvable(level, LATE_NODE_LIMIT if not lean else PLACE_NODE_LIMIT):
 			left -= 1
 		else:
 			first.erase("sock")
@@ -627,8 +657,10 @@ static func _add_dyes(level: Dictionary, count: int, rng: RandomNumberGenerator)
 		pool.append(index)
 	_shuffle(pool, rng)
 	var left: int = count
+	var lean: bool = int(level["level"]) >= LEAN_FROM_LEVEL
+	var tries: int = 0
 	for index: int in pool:
-		if left <= 0:
+		if left <= 0 or (lean and tries >= LEAN_TRIES):
 			break
 		var entry: Dictionary = items[index]
 		var id: int = int(entry["id"])
@@ -642,10 +674,12 @@ static func _add_dyes(level: Dictionary, count: int, rng: RandomNumberGenerator)
 		if targets.is_empty():
 			continue
 		var target: int = targets[rng.randi_range(0, targets.size() - 1)]
+		tries += 1
 		entry["dye"] = LaundryBoard.DEFAULT_DYE_MOVES
 		entry["dye_target"] = target
-		if LevelSolver.is_solvable(level, LATE_NODE_LIMIT) \
-				and LevelSolver.is_solvable(_bled_variant(level, id, target), LATE_NODE_LIMIT):
+		var budget: int = LATE_NODE_LIMIT if not lean else PLACE_NODE_LIMIT
+		if LevelSolver.is_solvable(level, budget) \
+				and LevelSolver.is_solvable(_bled_variant(level, id, target), budget):
 			left -= 1
 		else:
 			entry.erase("dye")
@@ -705,6 +739,18 @@ static func _mechanic_from(mechanic: String) -> int:
 			return WIND_FROM_LEVEL
 		"slide":
 			return SLIDE_FROM_LEVEL
+		"washer":
+			return WASHER_FROM_LEVEL
+		"dryer":
+			return DRYER_FROM_LEVEL
+		"typed":
+			return TYPED_FROM_LEVEL
+		"birds":
+			return BIRDS_FROM_LEVEL
+		"rain":
+			return RAIN_FROM_LEVEL
+		"cat":
+			return CAT_FROM_LEVEL
 	return 1 << 30
 
 
@@ -722,6 +768,18 @@ static func _mechanic_max(mechanic: String) -> int:
 			return MAX_WIND_STEPS
 		"slide":
 			return MAX_SLIDES
+		"washer":
+			return MAX_DIRTY
+		"dryer":
+			return 1
+		"typed":
+			return MAX_TYPED
+		"birds":
+			return MAX_BIRDS
+		"rain":
+			return MAX_RAIN_STEPS
+		"cat":
+			return MAX_CAT_NAPS
 	return 0
 
 
@@ -872,11 +930,12 @@ static func _apply_mode_setup(level: Dictionary, mode: String, number: int) -> v
 static func _finish_mode(level: Dictionary, mode: String, number: int, features: RandomNumberGenerator) -> void:
 	match mode:
 		LaundryBoard.MODE_MOVES:
-			var path: Array[int] = LevelSolver.solve(level, LevelSolver.DEFAULT_NODE_LIMIT)
+			var path: Array[int] = LevelSolver.solve(level, _path_limit(number))
 			var slack: int = clampi(MOVES_SLACK_START - (number - MOVES_FROM_LEVEL) / MOVES_SLACK_STEP,
 				MOVES_SLACK_MIN, MOVES_SLACK_START)
 			# Yol bulunamazsa (bütçe) cömert sınır: her parça + her ıslak sıkma, pay iki katı.
-			var base: int = path.size() if not path.is_empty() else _min_moves(level) + slack
+			# Kuşu kovalamak/kediyi sevmek (negatif kimlik) hamle sayılmaz.
+			var base: int = _real_moves(path) if not path.is_empty() else _min_moves(level) + slack
 			level["move_limit"] = base + slack
 		LaundryBoard.MODE_ORDERS:
 			_add_orders(level, features)
@@ -913,11 +972,12 @@ static func _add_orders(level: Dictionary, features: RandomNumberGenerator) -> v
 		var held: Array = candidates[index]
 		candidates[index] = candidates[other]
 		candidates[other] = held
-	for attempt: int in range(mini(ORDER_ATTEMPTS, candidates.size())):
+	var lean: bool = int(level["level"]) >= LEAN_FROM_LEVEL
+	for attempt: int in range(mini(ORDER_ATTEMPTS if not lean else LEAN_ORDER_ATTEMPTS, candidates.size())):
 		var strict: Dictionary = level.duplicate()
 		strict["orders"] = candidates[attempt]
 		strict["orders_strict"] = true
-		if LevelSolver.is_solvable(strict, PLACE_NODE_LIMIT):
+		if LevelSolver.is_solvable(strict, PLACE_NODE_LIMIT if not lean else LEAN_NODE_LIMIT):
 			level["orders"] = candidates[attempt]
 			return
 	level["orders"] = natural
@@ -925,7 +985,7 @@ static func _add_orders(level: Dictionary, features: RandomNumberGenerator) -> v
 
 static func _natural_orders(level: Dictionary) -> Array[int]:
 	var result: Array[int] = []
-	var path: Array[int] = LevelSolver.solve(level, LevelSolver.DEFAULT_NODE_LIMIT)
+	var path: Array[int] = LevelSolver.solve(level, _path_limit(int(level["level"])))
 	var board: LaundryBoard = LaundryBoard.new(level)
 	var queue: Array = level["queue"] as Array
 	var used: Dictionary = {}
@@ -1184,3 +1244,392 @@ static func _reaches(by_id: Dictionary, wind_steps: Array, top: int, bottom: int
 				return true
 			stack.append(blocker)
 	return false
+
+
+# --- Derinleşme 3: makineler ve misafirler ------------------------------------------------------
+# Kurallar `LaundryBoard` son bölümündedir. Her yerleşim çözücüyle YÜKSELTMESİZ makinelerle
+# (kapasite 2; yıkama 3, kurutma 2 hamle) doğrulanır: yükseltmeler yalnız kolaylaştırır. Kuş ve
+# kedi için ayrıca "oyuncu hiç kovalamaz/sevmez" varyantı doğrulanır (yardımsız da kazanılır);
+# yardımlı oyun kuşsuz/kedisiz tahtayla aynıdır, o zaten doğrulanmıştır. Doğrulanamayan yerleşim
+# geri alınır (daha az engel = güvenli taraf).
+
+const MAX_DIRTY: int = 3
+const MAX_TYPED: int = 1
+const MAX_BIRDS: int = 3
+const MAX_RAIN_STEPS: int = 2
+const MAX_CAT_NAPS: int = 2
+## Tanıtım seviyelerinde kaç parça: makinenin kapasitesini (2) bir kerede gösterir.
+const WASHER_INTRO_DIRTY: int = 2
+const DRYER_INTRO_WET: int = 2
+## Misafir aralıkları (hamle); geç seviyelerde kuş daha sık gelir.
+const BIRD_EVERY_MOVES: int = 5
+const BIRD_EVERY_MOVES_LATE: int = 4
+const BIRD_FAST_FROM_LEVEL: int = 110
+const RAIN_EVERY_MOVES: int = 6
+const CAT_EVERY_MOVES: int = 7
+## Bir yağmur adımı en az bu kadar açık parçayı ıslatmalı (yoksa bulut anlamsız kalır).
+const RAIN_MIN_SOAK: int = 2
+## Aday deneme sınırları (başarısız doğrulama bütün bütçeyi yer: üretim süresi için düşük).
+const EXTRA_TRIES: int = 3
+## Türlü sepetin seçebileceği türler (havlu çarşafla, çorap çiftle karışmasın diye yok).
+const TYPED_KINDS: Array[int] = [0, 1, 2, 4, 5]
+## Aynı anda en fazla bu kadar sayaçlı mekanik (rüzgâr, sürgü, kuş, yağmur, kedi): sağdaki
+## sayaç hapları ve oyuncunun dikkati sınırlı. Yeni gelen önceliklidir.
+const MAX_TIMED_MECHANICS: int = 2
+const TIMED_CAP_FROM_LEVEL: int = BIRDS_FROM_LEVEL
+const TIMED_PRIORITY: Array[String] = ["cat", "rain", "birds", "slide", "wind"]
+## Bir seviyede en fazla bu kadar yeni mekanik (makine/misafir) karışır; en yenisi önce.
+const MAX_NEW_MECHANICS: int = 2
+const NEW_PRIORITY: Array[String] = ["cat", "rain", "birds", "typed", "dryer", "washer"]
+## Yeni mekaniklerin kendi rastgele dizisi: eski mekaniklerin kararları değişmesin.
+const EXTRA_SALT: int = 7907
+
+
+## Sayaçlı mekanik bu seviyede yer alabilir mi (en fazla MAX_TIMED_MECHANICS; 82 öncesi sınırsız,
+## böylece eski seviyeler değişmez).
+static func _timed_ok(number: int, mechanic: String) -> bool:
+	if number < TIMED_CAP_FROM_LEVEL:
+		return true
+	var allowed: Array[String] = []
+	for name: String in TIMED_PRIORITY:
+		if mechanic_count(number, name) <= 0:
+			continue
+		if name == "slide" and mode_for(number) == LaundryBoard.MODE_BOSS:
+			continue
+		allowed.append(name)
+	var at: int = allowed.find(mechanic)
+	return at >= 0 and at < MAX_TIMED_MECHANICS
+
+
+## Bu seviyede yer alan yeni mekanikler (en yenisi önce, en fazla MAX_NEW_MECHANICS): her şey
+## her seviyede olursa tahta okunmaz ("abartma" kuralı). Sayaçlı olanlar ayrıca `_timed_ok`'a uyar.
+static func extras_for(number: int) -> Array[String]:
+	var chosen: Array[String] = []
+	if number < WASHER_FROM_LEVEL:
+		return chosen
+	# Tanıtımdan hemen sonraki "pekiştirme" seviyesindeki mekanik önce gelir; kalanlar seviyeye
+	# bağlı tohumla karışır (hep en yenisi seçilse eski makineler geç seviyelerde hiç görünmezdi).
+	var fresh: Array[String] = []
+	var others: Array[String] = []
+	for name: String in NEW_PRIORITY:
+		if mechanic_count(number, name) <= 0:
+			continue
+		if TIMED_PRIORITY.has(name) and not _timed_ok(number, name):
+			continue
+		if number - _mechanic_from(name) <= MIX_SURE_LEVELS:
+			fresh.append(name)
+		else:
+			others.append(name)
+	var roll: RandomNumberGenerator = RandomNumberGenerator.new()
+	roll.seed = number * FEATURE_SALT + EXTRA_SALT * 2
+	for index: int in range(others.size() - 1, 0, -1):
+		var other: int = roll.randi_range(0, index)
+		var held: String = others[index]
+		others[index] = others[other]
+		others[other] = held
+	for name: String in fresh + others:
+		if chosen.size() < MAX_NEW_MECHANICS:
+			chosen.append(name)
+	return chosen
+
+
+static func _add_extras(level: Dictionary, number: int) -> void:
+	var allowed: Array[String] = extras_for(number)
+	if allowed.is_empty():
+		return
+	var extra: RandomNumberGenerator = RandomNumberGenerator.new()
+	extra.seed = number * FEATURE_SALT + EXTRA_SALT
+	var rain: int = mechanic_count(number, "rain") if allowed.has("rain") else 0
+	var birds: int = mechanic_count(number, "birds") if allowed.has("birds") else 0
+	var cats: int = mechanic_count(number, "cat") if allowed.has("cat") else 0
+	if allowed.has("dryer"):
+		_add_dryer(level, number == DRYER_FROM_LEVEL, rain > 0, extra)
+	var dirty: int = mechanic_count(number, "washer") if allowed.has("washer") else 0
+	if dirty > 0 or birds > 0:
+		_add_washer(level, dirty, number == WASHER_FROM_LEVEL, birds > 0, extra)
+	var typed: int = mechanic_count(number, "typed") if allowed.has("typed") else 0
+	if typed > 0:
+		_add_typed(level, typed, extra)
+	if rain > 0:
+		_add_rain(level, rain, extra)
+	if birds > 0:
+		_add_birds(level, birds, number, extra)
+	if cats > 0:
+		_add_cats(level, cats, extra)
+
+
+## Engelsiz parçalar; tanıtımda (`open_first`) önce başta açık olanlar: oyuncu yeni şeyi hemen görür.
+static func _extra_pool(items: Array[Dictionary], rng: RandomNumberGenerator, open_first: bool) -> Array[int]:
+	var pool: Array[int] = _plain_pool(items, rng)
+	if not open_first:
+		return pool
+	var ordered: Array[int] = []
+	for strict: bool in [true, false]:
+		for index: int in pool:
+			if (items[index]["blockers"] as Array).is_empty() == strict:
+				ordered.append(index)
+	return ordered
+
+
+## Kurutucu: ıslak parçalar sıkılmaz, kurutucuya girer. Islak parça (ya da yağmur) yoksa anlamsızdır.
+## Tanıtımda eski engeller olmadığından iki ıslak parça yerleştirilir.
+static func _add_dryer(level: Dictionary, intro: bool, rainy: bool, rng: RandomNumberGenerator) -> void:
+	var items: Array[Dictionary] = level["items"] as Array[Dictionary]
+	level["dryer"] = {"capacity": LaundryBoard.DRYER_CAPACITY, "moves": LaundryBoard.DRYER_MOVES}
+	if intro:
+		_mark_some(level, "wet", DRYER_INTRO_WET, true, rng)
+	var wet: int = 0
+	for entry: Dictionary in items:
+		if bool(entry.get("wet", false)):
+			wet += 1
+	if (wet == 0 and not rainy) or not LevelSolver.is_solvable(level, PLACE_NODE_LIMIT):
+		level.erase("dryer")
+
+
+## Çamaşır makinesi + `count` çamurlu parça. Kuşlu seviyede (`keep`) çamurlu parça olmasa da makine kalır.
+static func _add_washer(level: Dictionary, count: int, intro: bool, keep: bool, rng: RandomNumberGenerator) -> void:
+	level["washer"] = {"capacity": LaundryBoard.WASHER_CAPACITY, "moves": LaundryBoard.WASHER_MOVES}
+	var wanted: int = WASHER_INTRO_DIRTY if intro else count
+	var placed: int = _mark_some(level, "dirty", wanted, intro, rng) if wanted > 0 else 0
+	if placed == 0 and not keep:
+		level.erase("washer")
+
+
+## `count` engelsiz parçaya `key` işaretini koyar; her biri doğrulanır. Konan sayıyı döndürür.
+static func _mark_some(level: Dictionary, key: String, count: int, open_first: bool, rng: RandomNumberGenerator) -> int:
+	var items: Array[Dictionary] = level["items"] as Array[Dictionary]
+	var placed: int = 0
+	var tries: int = 0
+	for index: int in _extra_pool(items, rng, open_first):
+		if placed >= count or tries >= count + EXTRA_TRIES:
+			break
+		tries += 1
+		items[index][key] = true
+		if LevelSolver.is_solvable(level, PLACE_NODE_LIMIT):
+			placed += 1
+		else:
+			items[index].erase(key)
+	return placed
+
+
+## Türlü sepet: başta aktif olmayan normal bir sepet (joker/büyük değil) tek türü ister. O renkten
+## üç parça bu türe çevrilir (görünüm türü kuralın parçası olur); aynı renkte bu türde başka parça
+## bırakılmaz ki rozet "tam bu üçü" desin. Renk sayıları değişmez -> kuyruk tutarlı kalır.
+static func _add_typed(level: Dictionary, count: int, rng: RandomNumberGenerator) -> void:
+	var items: Array[Dictionary] = level["items"] as Array[Dictionary]
+	var queue: Array = level["queue"] as Array
+	var big: Array = level.get("big", []) as Array
+	var jokers: Array = level.get("jokers", []) as Array
+	var candidates: Array[int] = []
+	for index: int in range(int(level["active_baskets"]), queue.size()):
+		if not big.has(index) and not jokers.has(index):
+			candidates.append(index)
+	_shuffle(candidates, rng)
+	# Boya akarsa renk takası ayrılmış üçlüyü bozar: boyaya karışan renkler türlü sepet olmaz.
+	var dyed: Dictionary = {}
+	for entry: Dictionary in items:
+		if entry.has("dye"):
+			dyed[int(entry["color"])] = true
+			for other: Dictionary in items:
+				if int(other["id"]) == int(entry["dye_target"]):
+					dyed[int(other["color"])] = true
+	var typed: Array = []
+	var tries: int = 0
+	for index: int in candidates:
+		if typed.size() >= count or tries >= EXTRA_TRIES:
+			break
+		var color: int = int(queue[index])
+		if dyed.has(color):
+			continue
+		var members: Array[int] = []
+		for at: int in range(items.size()):
+			var entry: Dictionary = items[at]
+			if int(entry["color"]) == color and not entry.has("sheet") and not entry.has("sock"):
+				members.append(at)
+		if members.size() < BASKET_CAPACITY:
+			continue
+		tries += 1
+		_shuffle(members, rng)
+		var kind: int = TYPED_KINDS[rng.randi_range(0, TYPED_KINDS.size() - 1)]
+		var saved: Dictionary = {}
+		for k: int in range(members.size()):
+			var entry: Dictionary = items[members[k]]
+			saved[members[k]] = int(entry["kind"])
+			if k < BASKET_CAPACITY:
+				entry["kind"] = kind
+			elif int(entry["kind"]) == kind:
+				entry["kind"] = TYPED_KINDS[(TYPED_KINDS.find(kind) + 1) % TYPED_KINDS.size()]
+		typed.append([index, kind])
+		level["typed"] = typed
+		if LevelSolver.is_solvable(level, PLACE_NODE_LIMIT):
+			continue
+		typed.pop_back()
+		for at: Variant in saved.keys():
+			items[int(at)]["kind"] = int(saved[at])
+	if typed.is_empty():
+		level.erase("typed")
+
+
+## Çözüm yolu oynanır: verilen hamle sayılarında açık parçalar ve dolu sepet yuvaları, ayrıca her
+## parçanın ipten ayrıldığı hamle kaydedilir (misafirin anlamlı bir hedef seçmesi için).
+static func _simulate(level: Dictionary, path: Array[int], marks: Array[int]) -> Dictionary:
+	var board: LaundryBoard = LaundryBoard.new(level)
+	var open: Dictionary = {}
+	var slots: Dictionary = {}
+	var left_at: Dictionary = {}
+	var remaining: Array[int] = board.item_ids()
+	for id: int in path:
+		board.tap(id)
+		var moves: int = board.moves()
+		for at: int in range(remaining.size() - 1, -1, -1):
+			if not board.is_on_line(remaining[at]):
+				left_at[remaining[at]] = moves
+				remaining.remove_at(at)
+		if marks.has(moves) and not open.has(moves):
+			open[moves] = board.open_ids()
+			var filled: Array[int] = []
+			var states: Array[Dictionary] = board.baskets()
+			for index: int in range(states.size()):
+				if not states[index].is_empty():
+					filled.append(index)
+			slots[moves] = filled
+	return {"open": open, "slots": slots, "left_at": left_at}
+
+
+static func _by_id(items: Array[Dictionary]) -> Dictionary:
+	var result: Dictionary = {}
+	for entry: Dictionary in items:
+		result[int(entry["id"])] = entry
+	return result
+
+
+## Hedef olabilir mi: ıslak/çamurlu/zincirli/çarşaf değil (kuş ve yağmur yalnız sıradan parçayı etkiler).
+static func _guest_target(entry: Dictionary) -> bool:
+	return not bool(entry.get("wet", false)) and not bool(entry.get("dirty", false)) \
+		and not entry.has("chain") and not entry.has("sheet")
+
+
+## Yağmur: her adım, o anda (çözüm yolunda) en çok açık parçanın beklediği ipe yağar. Adım o ipin
+## TÜM parçalarını listeler; tahta yağış anında yalnız açık olanları ıslatır.
+static func _add_rain(level: Dictionary, steps: int, rng: RandomNumberGenerator) -> void:
+	var path: Array[int] = LevelSolver.solve(level, LATE_NODE_LIMIT)
+	if path.is_empty():
+		return
+	var marks: Array[int] = []
+	for step: int in range(steps):
+		marks.append((step + 1) * RAIN_EVERY_MOVES)
+	var sim: Dictionary = _simulate(level, path, marks)
+	var items: Array[Dictionary] = level["items"] as Array[Dictionary]
+	var by_id: Dictionary = _by_id(items)
+	var left_at: Dictionary = sim["left_at"] as Dictionary
+	var chosen: Array = []
+	level["rain"] = {"every": RAIN_EVERY_MOVES, "steps": chosen}
+	for fire: int in marks:
+		if not (sim["open"] as Dictionary).has(fire):
+			break
+		var score: Dictionary = {}
+		for id: int in (sim["open"] as Dictionary)[fire] as Array[int]:
+			var entry: Dictionary = by_id[id] as Dictionary
+			if _guest_target(entry) and int(left_at.get(id, 0)) > fire:
+				score[int(entry["line"])] = int(score.get(int(entry["line"]), 0)) + 1
+		var lines: Array[int] = []
+		for line: Variant in score.keys():
+			if int(score[line]) >= RAIN_MIN_SOAK:
+				lines.append(int(line))
+		_shuffle(lines, rng)
+		lines.sort_custom(func(a: int, b: int) -> bool: return int(score[a]) > int(score[b]))
+		# Aynı ipe iki kez yağmasın (varsa başka ip): bulut tahtada gezinsin.
+		var used: Array[int] = []
+		for step: Variant in chosen:
+			used.append(int(by_id[int((step as Array)[0])]["line"]))
+		lines.sort_custom(func(a: int, b: int) -> bool: return not used.has(a) and used.has(b))
+		var placed: bool = false
+		for line: int in lines.slice(0, EXTRA_TRIES):
+			var ids: Array[int] = []
+			for entry: Dictionary in items:
+				if int(entry["line"]) == line:
+					ids.append(int(entry["id"]))
+			chosen.append(ids)
+			if LevelSolver.is_solvable(level, PLACE_NODE_LIMIT):
+				placed = true
+				break
+			chosen.pop_back()
+		if not placed:
+			break
+	if chosen.is_empty():
+		level.erase("rain")
+
+
+## Kuş: her konuşta, o an açık ve en az BIRD_STAIN_MOVES hamle daha ipte kalacak sıradan bir parça.
+## Yardımsız (hiç kovalanmayan) varyant doğrulanır; yardımlı oyun kuşsuz tahtayla aynıdır.
+static func _add_birds(level: Dictionary, count: int, number: int, rng: RandomNumberGenerator) -> void:
+	var path: Array[int] = LevelSolver.solve(level, LATE_NODE_LIMIT)
+	if path.is_empty():
+		return
+	var every: int = BIRD_EVERY_MOVES_LATE if number >= BIRD_FAST_FROM_LEVEL else BIRD_EVERY_MOVES
+	var marks: Array[int] = []
+	for step: int in range(count):
+		marks.append((step + 1) * every)
+	var sim: Dictionary = _simulate(level, path, marks)
+	var by_id: Dictionary = _by_id(level["items"] as Array[Dictionary])
+	var left_at: Dictionary = sim["left_at"] as Dictionary
+	var targets: Array[int] = []
+	level["birds"] = {"every": every, "targets": targets}
+	for fire: int in marks:
+		if not (sim["open"] as Dictionary).has(fire):
+			break
+		var candidates: Array[int] = []
+		for id: int in (sim["open"] as Dictionary)[fire] as Array[int]:
+			if _guest_target(by_id[id] as Dictionary) and not targets.has(id) \
+					and int(left_at.get(id, 0)) > fire + LaundryBoard.BIRD_STAIN_MOVES:
+				candidates.append(id)
+		_shuffle(candidates, rng)
+		var placed: bool = false
+		for id: int in candidates.slice(0, EXTRA_TRIES):
+			targets.append(id)
+			if LevelSolver.is_solvable(level, PLACE_NODE_LIMIT, false):
+				placed = true
+				break
+			targets.pop_back()
+		if not placed:
+			break
+	if targets.is_empty():
+		level.erase("birds")
+
+
+## Kedi: her uykuda o an dolu bir sepet yuvası. Yardımsız (hiç sevilmeyen) varyant doğrulanır.
+static func _add_cats(level: Dictionary, count: int, rng: RandomNumberGenerator) -> void:
+	var path: Array[int] = LevelSolver.solve(level, LATE_NODE_LIMIT)
+	if path.is_empty():
+		return
+	var marks: Array[int] = []
+	for step: int in range(count):
+		marks.append((step + 1) * CAT_EVERY_MOVES)
+	var sim: Dictionary = _simulate(level, path, marks)
+	var slots: Array[int] = []
+	level["cat"] = {"every": CAT_EVERY_MOVES, "baskets": slots}
+	for fire: int in marks:
+		if not (sim["slots"] as Dictionary).has(fire):
+			break
+		var candidates: Array[int] = ((sim["slots"] as Dictionary)[fire] as Array[int]).duplicate()
+		_shuffle(candidates, rng)
+		var placed: bool = false
+		for slot: int in candidates.slice(0, EXTRA_TRIES):
+			slots.append(slot)
+			if LevelSolver.is_solvable(level, PLACE_NODE_LIMIT, false):
+				placed = true
+				break
+			slots.pop_back()
+		if not placed:
+			break
+	if slots.is_empty():
+		level.erase("cat")
+
+
+## Çözüm yolundaki gerçek hamle sayısı (ücretsiz eylemler negatif kimliklidir, sayılmaz).
+static func _real_moves(path: Array[int]) -> int:
+	var total: int = 0
+	for id: int in path:
+		if id >= 0:
+			total += 1
+	return total

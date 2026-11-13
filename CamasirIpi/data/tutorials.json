@@ -20,7 +20,13 @@
     "undo",
     "pin_remover",
     "extra_slot",
-    "slide"
+    "slide",
+    "washer",
+    "dryer",
+    "typed_basket",
+    "birds",
+    "rain",
+    "cat"
   ],
   "cards": {
     "wet": {
@@ -123,6 +129,36 @@
       "level_key": "slide",
       "demo": "icon",
       "icon": "lucide/rotate-ccw"
+    },
+    "washer": {
+      "level_key": "washer",
+      "demo": "icon",
+      "icon": "lucide/rotate-ccw"
+    },
+    "dryer": {
+      "level_key": "dryer",
+      "demo": "icon",
+      "icon": "lucide/flame"
+    },
+    "typed_basket": {
+      "level_key": "typed",
+      "demo": "icon",
+      "icon": "lucide/shirt"
+    },
+    "birds": {
+      "level_key": "birds",
+      "demo": "icon",
+      "icon": "lucide/music"
+    },
+    "rain": {
+      "level_key": "rain",
+      "demo": "icon",
+      "icon": "lucide/zap"
+    },
+    "cat": {
+      "level_key": "cat",
+      "demo": "icon",
+      "icon": "lucide/heart"
     }
   },
   "levels": {

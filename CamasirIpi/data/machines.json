@@ -1,0 +1,15 @@
+{
+  "_not": "Makine yükseltmeleri (yalnız oyuncuyu kolaylaştırır; üretici seviye 0 ile kanıtlar). capacity/moves: seviye başına değer; *_cost: o seviyeden bir sonrakine geçiş bedeli (jeton). Seviye başına kazanç ~20-47 jeton.",
+  "washer": {
+    "capacity": [2, 3, 4],
+    "capacity_cost": [250, 700],
+    "moves": [3, 2, 1],
+    "moves_cost": [300, 900]
+  },
+  "dryer": {
+    "capacity": [2, 3, 4],
+    "capacity_cost": [200, 600],
+    "moves": [2, 1],
+    "moves_cost": [500]
+  }
+}
