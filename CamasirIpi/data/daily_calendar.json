@@ -1,0 +1,12 @@
+{
+  "reset_on_miss": true,
+  "days": [
+    { "coins": 30 },
+    { "coins": 40 },
+    { "coins": 50, "booster": "undo", "count": 1 },
+    { "coins": 60 },
+    { "coins": 80, "booster": "pin_remover", "count": 1 },
+    { "coins": 100 },
+    { "coins": 250, "booster": "extra_slot", "count": 2 }
+  ]
+}

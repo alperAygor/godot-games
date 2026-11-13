@@ -1,0 +1,24 @@
+{
+  "unlock_level": 4,
+  "base_coins": 60,
+  "streak_bonus_per_day": 10,
+  "streak_bonus_max_days": 6,
+  "booster_every_streak": 3,
+  "boosters": [
+    { "id": "undo", "min_level": 6 },
+    { "id": "pin_remover", "min_level": 12 },
+    { "id": "extra_slot", "min_level": 18 }
+  ],
+  "difficulty": {
+    "bucket_size": 10,
+    "lift_base": 4,
+    "lift_per_bucket": 1,
+    "lift_max": 9,
+    "spread": 6,
+    "extra_twist_base": 3,
+    "extra_twist_per_bucket": 1,
+    "extra_twist_max": 8,
+    "node_budget": 60000,
+    "max_attempts": 8
+  }
+}
