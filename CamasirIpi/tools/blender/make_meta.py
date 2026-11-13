@@ -43,10 +43,15 @@ ARGV = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 PREVIEW = "--preview" in ARGV
 COMPOSE = next((a.split("=", 1)[1] for a in ARGV if a.startswith("--compose=")), "")
 WANTED = {a for a in ARGV if not a.startswith("--")}
+_OUT = next((a.split("=", 1)[1] for a in ARGV if a.startswith("--out=")), "")
+if _OUT:  # deneme çıktısı: gerçek varlıklara dokunmadan başka klasöre yaz
+    OUT_DIR = os.path.abspath(_OUT)
+    MANIFEST = os.path.join(OUT_DIR, "laundromat_layers.json")
+_RES = next((a.split("=", 1)[1] for a in ARGV if a.startswith("--res=")), "")
 
 CANVAS_W = 1080
 CANVAS_H = 1920
-SAMPLES = 24 if PREVIEW else 128
+SAMPLES = 48 if (PREVIEW and _RES) else (24 if PREVIEW else 128)
 # Kamera: duvardan D uzakta, h yükseklikte, yatay bakış; kadraj üstü duvarda z=TOP_Z.
 CAM_D = 14.0
 CAM_H = 4.0
@@ -111,7 +116,7 @@ def reset():
     scene.view_settings.look = "None"
     scene.render.resolution_x = CANVAS_W
     scene.render.resolution_y = CANVAS_H
-    scene.render.resolution_percentage = 25 if PREVIEW else 100
+    scene.render.resolution_percentage = int(_RES) if _RES else (25 if PREVIEW else 100)
     lights()
     camera()
     return scene
@@ -544,8 +549,8 @@ DOOR_X0, DOOR_X1, DOOR_Z1 = 1.22, 2.08, 2.2
 WIN_X0, WIN_X1, WIN_Z0, WIN_Z1 = -2.0, -0.62, 2.05, 3.62
 SHELF_Z = 1.52
 PLANT_POS = (1.12, -0.5)
-# Tezgâh kadrajın sol kenarından girer: makineyi örtmesin, oda kadrajın dışına "devam etsin".
-COUNTER_C = (-1.78, -2.1)
+# Tezgâh dar bir yan dolap: tamamen kadraj içinde (sol kenardan ~15 px pay), makineyi örtmez.
+COUNTER_C = (-1.46, -2.1)
 RUG_C = (0.35, -2.75)
 LAMP_POS = (-0.05, -1.6, 2.95)
 SIGN_C = (1.15, 3.12)
@@ -944,18 +949,165 @@ def build_plant(state):
         sphere(tip, (0.13, 0.045, 0.21), leaf, rot=(rng.uniform(-15, 15), rot_y, 0))
 
 
+def _organic(cx, cy, rx, ry, seed, n=120, tongue=0.0):
+    """Düzensiz, organik su lekesi dış hattı (yerde düz; tongue: makineye doğru dil)."""
+    rng = random.Random(seed)
+    ph = [rng.uniform(0, math.tau) for _ in range(4)]
+    pts = []
+    for i in range(n):
+        t = math.tau * i / n
+        r = (1.0 + 0.11 * math.sin(2 * t + ph[0]) + 0.09 * math.sin(3 * t + ph[1])
+             + 0.05 * math.sin(5 * t + ph[2]) + 0.025 * math.sin(7 * t + ph[3]))
+        if tongue:
+            d = math.atan2(math.sin(t - math.pi * 0.55), math.cos(t - math.pi * 0.55))
+            r += tongue * math.exp(-(d / 0.16) ** 2)
+        pts.append((cx + rx * r * math.cos(t), cy + ry * r * math.sin(t)))
+    return pts
+
+
+def _no_cast(obj):
+    obj.visible_shadow = False
+    return obj
+
+
+def _glossy_only(obj):
+    """Yalnız yansıma ışınlarına görünür: kamerada, gölgede ve dolaylı ışıkta YOK (katmana sızmaz)."""
+    for attr in ("visible_camera", "visible_shadow", "visible_diffuse", "visible_transmission",
+                 "visible_volume_scatter"):
+        setattr(obj, attr, False)
+    obj.visible_glossy = True
+    return obj
+
+
+def _soft_glow(name, color, strength):
+    """Merkezi parlak, kenarı sıfıra sönen emisyon malzemesi (Y'ye bakan düzlem)."""
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    nt.nodes.clear()
+    out = nt.nodes.new("ShaderNodeOutputMaterial")
+    em = nt.nodes.new("ShaderNodeEmission")
+    em.inputs[0].default_value = (*lin(color), 1.0)
+    coord = nt.nodes.new("ShaderNodeTexCoord")
+    grad = nt.nodes.new("ShaderNodeTexGradient")
+    grad.gradient_type = "SPHERICAL"
+    sub = nt.nodes.new("ShaderNodeVectorMath")
+    sub.operation = "SUBTRACT"
+    sub.inputs[1].default_value = (0.5, 0.5, 0.5)
+    flat = nt.nodes.new("ShaderNodeVectorMath")
+    flat.operation = "MULTIPLY"
+    flat.inputs[1].default_value = (1.0, 0.0, 1.0)
+    nt.links.new(coord.outputs["Generated"], sub.inputs[0])
+    nt.links.new(sub.outputs[0], flat.inputs[0])
+    nt.links.new(flat.outputs[0], grad.inputs["Vector"])
+    ramp = nt.nodes.new("ShaderNodeValToRGB")
+    ramp.color_ramp.elements[0].position = 0.5
+    ramp.color_ramp.elements[0].color = (0, 0, 0, 1)
+    ramp.color_ramp.elements[1].position = 1.0
+    ramp.color_ramp.elements[1].color = (1, 1, 1, 1)
+    ramp.color_ramp.interpolation = "EASE"
+    mul = nt.nodes.new("ShaderNodeMath")
+    mul.operation = "MULTIPLY"
+    mul.inputs[1].default_value = strength
+    nt.links.new(grad.outputs["Fac"], ramp.inputs["Fac"])
+    nt.links.new(ramp.outputs["Color"], mul.inputs[0])
+    nt.links.new(mul.outputs[0], em.inputs["Strength"])
+    nt.links.new(em.outputs[0], out.inputs["Surface"])
+    return m
+
+
+def _puddle_world():
+    """Cam ışınları aynen kalır; yalnız yansıma (glossy) ışınları odanın sıcak-duvar rengini görür:
+    su, gökyüzü-krem 'beyaz disk' yerine odayı yansıtır."""
+    world = bpy.context.scene.world
+    nt = world.node_tree
+    bg = nt.nodes["Background"]
+    lp = nt.nodes.new("ShaderNodeLightPath")
+    mix = nt.nodes.new("ShaderNodeMix")
+    mix.data_type = "RGBA"
+    mix.inputs[6].default_value = bg.inputs[0].default_value
+    mix.inputs[7].default_value = (*lin("#9C8672"), 1.0)
+    nt.links.new(lp.outputs["Is Glossy Ray"], mix.inputs["Factor"])
+    nt.links.new(mix.outputs[2], bg.inputs[0])
+
+
+def _water_mat(name, color, alpha, rough=0.05):
+    m = mat(name, color, rough=rough, spec=1.0)
+    nt = m.node_tree
+    bsdf = nt.nodes["Principled BSDF"]
+    bsdf.inputs["Alpha"].default_value = alpha
+    bsdf.inputs["IOR"].default_value = 1.33
+    tex = nt.nodes.new("ShaderNodeTexNoise")
+    tex.inputs["Scale"].default_value = 9.0
+    tex.inputs["Detail"].default_value = 3.0
+    coord = nt.nodes.new("ShaderNodeTexCoord")
+    nt.links.new(coord.outputs["Object"], tex.inputs["Vector"])
+    bump = nt.nodes.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = 0.035
+    bump.inputs["Distance"].default_value = 0.02
+    nt.links.new(tex.outputs["Fac"], bump.inputs["Height"])
+    nt.links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
+    return m
+
+
+def build_puddle():
+    """Eski makineden sızan SIĞ su birikintisi: düzensiz hat, parlak yansıtıcı yüzey, ıslak koyu
+    kenar halkası, makineye uzanan dil, ikincil küçük birikintiler ve damlalar."""
+    _puddle_world()
+    # Yansıma sahnesi (kameraya görünmez, gölge düşürmez): makinenin ön yüzü + sıcak ışık paneli.
+    stand = mat("refl_machine", "#B3A292", rough=0.7)
+    obj = rbox((M1_X, -0.43, 0.6), (M_W, M_D, 1.15), 0.1, stand, segments=4, name="ReflMachine")
+    _glossy_only(obj)
+    # Yumuşak kenarlı ışık lekeleri (pencere ışığı): sert dikdörtgen yerine eriyen parlama.
+    for gx, gz, gw, gh, strength, tint in ((0.12, 0.22, 0.9, 0.34, 3.4, "#EAF5FF"),
+                                           (0.72, 0.2, 0.5, 0.28, 2.4, "#FFEBD2")):
+        glow = _soft_glow("refl_glow_%d" % int(gx * 10), tint, strength)
+        card = rbox((M1_X + gx, -0.95, gz), (gw, 0.02, gh), 0.0, glow, segments=1, name="ReflGlow")
+        _glossy_only(card)
+
+    cx, cy = M1_X + 0.02, -1.22
+    wet = mat("wet_rim", "#3A2C22", rough=0.45)
+    wet.node_tree.nodes["Principled BSDF"].inputs["Alpha"].default_value = 0.11
+    shapes = []
+    # Islak koyu halka: büyükten küçüğe 4 katman -> kenara doğru yumuşak koyuluk.
+    for k, grow in enumerate((1.26, 1.17, 1.09, 1.03)):
+        pts = _organic(cx, cy, 0.52 * grow, 0.255 * grow, 7, tongue=0.35)
+        slab(pts, 0.004, 0.0015, wet, y=0.0, name="Wet%d" % k)
+        o = bpy.context.view_layer.objects.active
+        o.rotation_euler = (0.0, 0.0, 0.0)
+        o.location = (0.0, 0.0, 0.0015 + k * 0.0004)
+        _no_cast(o)
+    water = _water_mat("puddle", "#7FB2C4", 0.55)
+    slab(_organic(cx, cy, 0.52, 0.255, 7, tongue=0.35), 0.018, 0.007, water, y=0.0, name="Puddle")
+    o = bpy.context.view_layer.objects.active
+    o.rotation_euler = (0.0, 0.0, 0.0)
+    o.location = (0.0, 0.0, 0.004)
+    _no_cast(o)
+    # İkincil küçük birikintiler + damlalar.
+    for i, (dx, dy, rx, ry) in enumerate(((0.74, -0.08, 0.10, 0.05), (-0.64, 0.1, 0.07, 0.038),
+                                         (0.5, -0.4, 0.05, 0.03))):
+        for grow, mm, al in ((1.25, wet, None), (1.0, water, None)):
+            pts = _organic(cx + dx, cy + dy, rx * grow, ry * grow, 20 + i)
+            slab(pts, 0.014 if mm is water else 0.004, 0.005 if mm is water else 0.0015, mm, y=0.0,
+                 name="Small%d" % i)
+            o = bpy.context.view_layer.objects.active
+            o.rotation_euler = (0.0, 0.0, 0.0)
+            o.location = (0.0, 0.0, 0.004 if mm is water else 0.0015)
+            _no_cast(o)
+    for dx, dy, r in ((0.30, -0.42, 0.022), (-0.18, -0.46, 0.017), (1.03, 0.0, 0.014),
+                      (-0.95, 0.2, 0.013), (0.12, 0.55, 0.012)):
+        o = sphere((cx + dx, cy + dy, 0.0), (r, r * 0.9, r * 0.55), water, name="Drop")
+        _no_cast(o)
+    # Damla izi: makine ayağından birikintiye doğru küçülen damlalar (sızıntı kaynağı).
+    for k in range(4):
+        o = sphere((M1_X + 0.12 - k * 0.012, -0.9 - k * 0.07, 0.0), (0.02 - k * 0.003, 0.026 - k * 0.003, 0.011),
+                   water, name="Trail")
+        _no_cast(o)
+
+
 def build_rug(state):
     if state == "old":
-        # Bozuk makineden sızan su birikintisi: parlak, yassı.
-        water = mat("puddle", "#B9D2DA", rough=0.04, coat=1.0, spec=0.8)
-        cx, cy = M1_X + 0.1, -1.25
-        slab([(cx + x, cy + z) for x, z in ellipse(0.0, 0.0, 0.62, 0.32)], 0.012, 0.005, water, y=0.0,
-             name="Puddle")
-        obj = bpy.context.view_layer.objects.active
-        obj.rotation_euler = (0.0, 0.0, 0.0)
-        obj.location = (0.0, 0.0, 0.003)
-        for dx, dy, r in ((0.55, -0.15, 0.14), (-0.5, 0.1, 0.1)):
-            sphere((cx + dx, cy + dy, 0.0), (r, r * 0.8, 0.008), water)
+        build_puddle()
         return
     cx, cy = RUG_C
     rug_m = mat("rug_%d" % state, "#FFFFFF", rough=0.95, sheen=0.9, bands=RUG_BANDS[state], band_scale=0.55)
@@ -968,38 +1120,43 @@ def build_rug(state):
 def build_counter(state):
     cx, cy = COUNTER_C
     if state == "old":
-        # Eski tahta kasa + üstünde kol: geçici "tezgâh".
+        # Eski tahta kasa (dört yüzü de tahtalı) + üstünde koli: geçici "tezgâh". Dar ayak izi.
         slat = mat("slat", "#C4A27C", rough=0.85, tone_jitter=0.18, noise=0.3)
-        w, d, h = 1.0, 0.65, 0.62
+        w, d, h = 0.58, 0.5, 0.56
         for k in range(4):
-            z = 0.08 + k * 0.155
-            rbox((cx, cy - d * 0.5, z), (w, 0.04, 0.12), 0.02, slat, segments=3, name="Slat")
-            rbox((cx - w * 0.5, cy, z), (0.04, d, 0.12), 0.02, slat, segments=3, name="Slat")
+            z = 0.08 + k * 0.14
+            rbox((cx, cy - d * 0.5, z), (w, 0.04, 0.115), 0.02, slat, segments=3, name="Slat")
+            rbox((cx, cy + d * 0.5, z), (w, 0.04, 0.115), 0.02, slat, segments=3, name="Slat")
+            rbox((cx - w * 0.5, cy, z), (0.04, d, 0.115), 0.02, slat, segments=3, name="Slat")
+            rbox((cx + w * 0.5, cy, z), (0.04, d, 0.115), 0.02, slat, segments=3, name="Slat")
         for sx in (-w * 0.5, w * 0.5):
-            rbox((cx + sx, cy - d * 0.5, h * 0.5), (0.07, 0.07, h), 0.02, slat, segments=3, name="Post")
-        rbox((cx, cy, h + 0.02), (w + 0.04, d + 0.02, 0.04), 0.015, slat, segments=3, name="Lid")
+            for sy in (-d * 0.5, d * 0.5):
+                rbox((cx + sx, cy + sy, h * 0.5), (0.065, 0.065, h), 0.02, slat, segments=3, name="Post")
+        rbox((cx, cy, h + 0.02), (w + 0.05, d + 0.04, 0.04), 0.015, slat, segments=3, name="Lid")
         card = mat("card", CARDBOARD, rough=0.85, tone_jitter=0.12)
-        rbox((cx + 0.1, cy + 0.02, h + 0.22), (0.5, 0.42, 0.36), 0.04, card, segments=4, rot=(0, 0, -8))
+        rbox((cx + 0.02, cy, h + 0.22), (0.4, 0.32, 0.36), 0.04, card, segments=4, rot=(0, 0, -8))
         return
-    w, d, h = 1.25, 0.7, 0.95
+    w, d, h = 0.56, 0.55, 0.9
     body = mat("counter_%d" % state, COUNTER_COLORS[state], rough=0.45, coat=0.4)
     rbox((cx, cy, h * 0.5), (w, d, h - 0.06), 0.06, body, segments=6, name="Cabinet")
-    for dx in (-w * 0.25, w * 0.25):
-        slab(rounded_rect(cx + dx - w * 0.21, 0.14, cx + dx + w * 0.21, h - 0.2, 0.06), 0.03, 0.012, body,
-             y=cy - d * 0.5 - 0.01, name="CPanel")
-        sphere((cx + dx + (0.16 if dx < 0 else -0.16), cy - d * 0.5 - 0.05, h - 0.32), (0.03, 0.03, 0.03),
-               mat("knob", "#F0C66B", rough=0.25, metallic=0.8, coat=0.5))
+    knob = mat("knob", "#F0C66B", rough=0.25, metallic=0.8, coat=0.5)
+    slab(rounded_rect(cx - w * 0.38, 0.12, cx + w * 0.38, h - 0.3, 0.06), 0.03, 0.012, body,
+         y=cy - d * 0.5 - 0.01, name="CPanel")
+    sphere((cx + w * 0.26, cy - d * 0.5 - 0.05, h - 0.4), (0.03, 0.03, 0.03), knob)
+    slab(rounded_rect(cx - w * 0.38, h - 0.25, cx + w * 0.38, h - 0.1, 0.05), 0.03, 0.012, body,
+         y=cy - d * 0.5 - 0.01, name="CDrawer")
+    sphere((cx, cy - d * 0.5 - 0.05, h - 0.175), (0.035, 0.03, 0.03), knob)
     top = mat("countertop", WOOD_OAK, rough=0.4, coat=0.4)
-    rbox((cx, cy - 0.02, h), (w + 0.12, d + 0.1, 0.08), 0.035, top, segments=5, name="Top")
+    rbox((cx, cy - 0.02, h), (w + 0.06, d + 0.08, 0.08), 0.035, top, segments=5, name="Top")
     # Üstte katlanmış çamaşır yığını + küçük zil.
     for k, hexc in enumerate(TOWEL_SETS[state][:3]):
         tm = mat("ctowel_%d_%d" % (state, k), hexc, rough=0.9, sheen=0.8)
-        rbox((cx + 0.12 + (k % 2) * 0.02, cy - 0.05, h + 0.075 + k * 0.07), (0.38, 0.3, 0.07), 0.032, tm,
+        rbox((cx - 0.07 + (k % 2) * 0.02, cy - 0.04, h + 0.075 + k * 0.07), (0.3, 0.26, 0.07), 0.032, tm,
              segments=6, name="CTowel")
     bell = mat("bell", "#F0C66B", rough=0.2, metallic=0.85, coat=0.5)
-    dome((cx + 0.47, cy - 0.12, h + 0.05), 0.09, 0.08, bell, thickness=0.01, name="Bell")
-    sphere((cx + 0.47, cy - 0.12, h + 0.15), (0.022, 0.022, 0.022), bell)
-    rcyl((cx + 0.47, cy - 0.12, h + 0.05), 0.11, 0.02, 0.008, mat("bellbase", "#FFFFFF", rough=0.3))
+    dome((cx + 0.17, cy - 0.14, h + 0.05), 0.075, 0.07, bell, thickness=0.01, name="Bell")
+    sphere((cx + 0.17, cy - 0.14, h + 0.14), (0.02, 0.02, 0.02), bell)
+    rcyl((cx + 0.17, cy - 0.14, h + 0.05), 0.09, 0.02, 0.008, mat("bellbase", "#FFFFFF", rough=0.3))
 
 
 BUILDERS = {
