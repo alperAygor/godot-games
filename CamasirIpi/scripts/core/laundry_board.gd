@@ -25,6 +25,7 @@ const EVENT_LOSE: String = "lose"
 const EVENT_WRING: String = "wring"
 const EVENT_LOCKED: String = "locked"
 const EVENT_UNLOCK: String = "unlock"
+const EVENT_RACK_FULL: String = "rack_full"
 
 ## Çamaşır kimliği -> {color:int, blockers:Array[int], ...yerleşim alanları}.
 var _items: Dictionary = {}
@@ -211,7 +212,8 @@ func tap(id: int) -> Array[Dictionary]:
 	var color: int = color_of(id)
 	var basket_index: int = _basket_for(color)
 	if basket_index == EMPTY and _free_rack_slot() == EMPTY:
-		# Askı dolu ve eşleşen sepet yok: hamle yapılamaz (zaten kayıp durumu).
+		# Askı dolu ve eşleşen sepet yok: bu parça alınamaz (askı sallanır), oyun sürer.
+		events.append({"type": EVENT_RACK_FULL, "id": id})
 		return events
 	_on_line.erase(id)
 	_moves += 1
@@ -254,7 +256,9 @@ func _settle(events: Array[Dictionary]) -> void:
 	if _on_line.is_empty() and rack_count() == 0:
 		_won = true
 		events.append({"type": EVENT_WIN})
-	elif _free_rack_slot() == EMPTY:
+	elif _free_rack_slot() == EMPTY and not has_basket_move():
+		# Askının dolması tek başına kayıp değildir: dört slot da kullanılabilir. Kayıp, askı
+		# doluyken sepete gidebilecek hiçbir açık çamaşır kalmadığında olur (hamle yok).
 		_lost = true
 		events.append({"type": EVENT_LOSE, "remaining": _on_line.size() + rack_count()})
 
@@ -266,6 +270,14 @@ func _complete_color(color: int, events: Array[Dictionary]) -> void:
 	for id: int in item_ids():
 		if _on_line.has(id) and lock_color(id) == color:
 			events.append({"type": EVENT_UNLOCK, "id": id})
+
+
+## Aktif bir sepete doğrudan gidebilecek açık ve kilitsiz bir çamaşır var mı?
+func has_basket_move() -> bool:
+	for id: int in open_ids():
+		if _basket_for(color_of(id)) != EMPTY:
+			return true
+	return false
 
 
 func _put_in_basket(id: int, basket_index: int, event_type: String,

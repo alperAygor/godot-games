@@ -17,6 +17,7 @@ var _wait: int = 0
 var _phase: String = "load"
 var _failed: bool = false
 var _drain_frames: int = 0
+var _lose_taps: Array[int] = []
 
 
 func _initialize() -> void:
@@ -60,28 +61,17 @@ func _process(_delta: float) -> bool:
 				_fail("seviye kazanılmadı ya da katman yok")
 			_phase = "load"
 		"lose_load":
-			_load_level(30)
+			# Kesin kayıp: askı dolunca sepete gidebilecek açık parça kalmayan elle kurulmuş seviye.
+			_load_level(1, _losing_level())
+			_lose_taps = [0, 1, 2, 3]
 			_phase = "lose_play"
 			_wait = 2
 		"lose_play":
-			var board: LaundryBoard = _game.get("_board") as LaundryBoard
-			if board.is_lost():
+			if _lose_taps.is_empty():
 				_phase = "lose_check"
 				_wait = SETTLE_FRAMES
 				return false
-			# Bilerek kötü oyna: sepete gitmeyen açık parçaları seç.
-			var pick: int = -1
-			for id: int in board.open_ids():
-				var matches: bool = false
-				for basket: Dictionary in board.baskets():
-					if not basket.is_empty() and int(basket["color"]) == board.color_of(id):
-						matches = true
-				if not matches:
-					pick = id
-					break
-			if pick == -1:
-				pick = board.open_ids()[0]
-			_game.call("_tap", pick)
+			_game.call("_tap", _lose_taps.pop_front())
 			_wait = FRAMES_PER_TAP
 		"lose_check":
 			_drain_frames += 1
@@ -96,6 +86,7 @@ func _process(_delta: float) -> bool:
 			_game.call("_revive")
 			if board.is_lost() or board.rack_slots() != 5 or _game.get("_overlay") != null:
 				_fail("+1 askı çalışmadı")
+			_game.set("debug_level", {})
 			_game.call("_start_level")
 			var fresh: LaundryBoard = _game.get("_board") as LaundryBoard
 			if fresh.is_over() or fresh.rack_count() != 0:
@@ -109,7 +100,7 @@ func _process(_delta: float) -> bool:
 	return false
 
 
-func _load_level(level: int) -> void:
+func _load_level(level: int, custom: Dictionary = {}) -> void:
 	if _game != null:
 		_game.queue_free()
 	var packed: PackedScene = load("res://scenes/Game.tscn") as PackedScene
@@ -118,7 +109,18 @@ func _load_level(level: int) -> void:
 	current_scene = _game
 	_game.set("_persist", false)
 	_game.set("_level_number", level)
+	_game.set("debug_level", custom)
 	_game.call("_start_level")
+
+
+func _losing_level() -> Dictionary:
+	var colors: Array[int] = [2, 2, 3, 3, 2, 3, 0, 0, 0, 1, 1, 1]
+	var blockers: Dictionary = {6: [4], 7: [4], 8: [4], 9: [5], 10: [5], 11: [5]}
+	var items: Array[Dictionary] = []
+	for index: int in range(colors.size()):
+		items.append({"id": index, "color": colors[index], "blockers": blockers.get(index, []),
+			"line": index / 6, "layer": 0 if index < 6 else 1, "slot": float(index % 6) * 0.6, "kind": index % 6})
+	return {"level": 1, "items": items, "queue": [0, 1, 2, 3], "active_baskets": 2, "rack_slots": 4, "hard": false}
 
 
 func _fail(message: String) -> void:

@@ -66,6 +66,7 @@ const HARD_WIN_COINS: int = 40
 const MIN_TOUCH: float = 126.0
 ## Mandal ve kumaş seslerinin çeşit sayısı (aynı ses art arda tekrarlamasın).
 const SOUND_VARIANTS: int = 3
+const RACK_REFUSE_MSEC: int = 350
 const COIN_SOUND_DELAY: float = 0.7
 ## Art arda sepet tamamlandıkça nota perdesi yükselir (yarım ton adımları).
 const COMBO_SEMITONE: float = 1.0594631
@@ -93,7 +94,9 @@ var _ui: CanvasLayer = null
 var _level_label: Label = null
 var _overlay: Control = null
 var _danger: float = 0.0
+var debug_level: Dictionary = {}
 var _revived: bool = false
+var _rack_refuse_until_msec: int = 0
 var _backdrop: GardenBackdrop = null
 var _combo: int = 0
 var _last_fold_msec: int = 0
@@ -140,7 +143,7 @@ func _process(delta: float) -> void:
 	_sky_gradient.set_color(1, SKY_SUNNY_BOTTOM.lerp(SKY_STORM_BOTTOM, _sky_weight))
 	if _backdrop != null:
 		_backdrop.storm = _sky_weight
-		_backdrop.danger = _danger
+		_backdrop.danger = 1.0 if Time.get_ticks_msec() < _rack_refuse_until_msec else _danger
 	_update_sway()
 	# Tehlike: askıda tek boş slot kalınca askı kırmızı nabız atar. Nabzın şiddeti
 	# yumuşakça açılıp kapanır (ani kırmızı parlama rahatsız eder).
@@ -201,7 +204,8 @@ func _tap(id: int) -> void:
 	if events.is_empty():
 		return
 	var first: String = String(events[0]["type"])
-	if first != LaundryBoard.EVENT_BLOCKED and first != LaundryBoard.EVENT_LOCKED:
+	if first != LaundryBoard.EVENT_BLOCKED and first != LaundryBoard.EVENT_LOCKED \
+			and first != LaundryBoard.EVENT_RACK_FULL:
 		Input.vibrate_handheld(12)
 		AudioService.play_variant("pin_click", SOUND_VARIANTS, randf_range(0.94, 1.08), 0.0)
 	_events.append_array(events)
@@ -251,6 +255,11 @@ func _play_event(event: Dictionary) -> void:
 			_views[int(event["id"])].wobble()
 			for blocker: Variant in event["by"] as Array:
 				_views[int(blocker)].flash()
+		LaundryBoard.EVENT_RACK_FULL:
+			# Askı dolu: parça alınamaz. Çamaşır sallanır, askı kısa bir an kırmızıya döner.
+			AudioService.play_pitched("blocked", randf_range(0.85, 0.95), -5.0)
+			_views[int(event["id"])].wobble()
+			_rack_refuse_until_msec = Time.get_ticks_msec() + RACK_REFUSE_MSEC
 		LaundryBoard.EVENT_LOCKED:
 			AudioService.play_pitched("lock_rattle", randf_range(0.95, 1.05), -5.0)
 			_views[int(event["id"])].wobble()
@@ -487,7 +496,8 @@ func _start_level() -> void:
 	_line_ys.clear()
 	_revived = false
 	_combo = 0
-	_level = LevelGenerator.generate(_level_number)
+	# Prob, belirli bir durumu (ör. kesin kayıp) sınamak için elle kurulmuş seviye verebilir.
+	_level = debug_level if not debug_level.is_empty() else LevelGenerator.generate(_level_number)
 	_board = LaundryBoard.new(_level)
 	_level_label.text = "Seviye %d" % _level_number
 	AudioService.play_pitched("level_start", 1.0, -6.0)
