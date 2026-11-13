@@ -24,6 +24,12 @@ const CARDS: Dictionary = {
 	"undo": {"title": "TUT_UNDO_TITLE", "line": "TUT_UNDO_LINE"},
 	"pin_remover": {"title": "TUT_PIN_REMOVER_TITLE", "line": "TUT_PIN_REMOVER_LINE"},
 	"extra_slot": {"title": "TUT_EXTRA_SLOT_TITLE", "line": "TUT_EXTRA_SLOT_LINE"},
+	"washer": {"title": "TUT_WASHER_TITLE", "line": "TUT_WASHER_LINE"},
+	"dryer": {"title": "TUT_DRYER_TITLE", "line": "TUT_DRYER_LINE"},
+	"typed_basket": {"title": "TUT_TYPED_TITLE", "line": "TUT_TYPED_LINE"},
+	"birds": {"title": "TUT_BIRDS_TITLE", "line": "TUT_BIRDS_LINE"},
+	"rain": {"title": "TUT_RAIN_TITLE", "line": "TUT_RAIN_LINE"},
+	"cat": {"title": "TUT_CAT_TITLE", "line": "TUT_CAT_LINE"},
 }
 
 

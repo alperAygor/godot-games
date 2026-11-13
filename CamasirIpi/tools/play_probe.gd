@@ -5,10 +5,13 @@ extends SceneTree
 ## Ayrıca bir seviyede bilerek kaybedip "+1 askı" ve "tekrar dene" yollarını dener.
 ## Yeni engeller: 26 çarşaf, 32 çorap, 40 boya, 47 karışık. Kural çeşitlemeleri: 23 joker,
 ## 29 büyük sepet, 36 lekeli, 44 zincir, 52 rüzgâr; kipler: 16 hamle, 21 kısa askı, 30 patron,
-## 33 sipariş. Son aşamada güçlendiriciler (geri al, +1 askı, mandal sökücü) gerçek sahnede denenir.
+## 33 sipariş. Makineler ve misafirler: 64 çamaşır makinesi, 70 kurutucu, 76 türlü sepet, 82 kuş,
+## 88 yağmur, 94 kedi, 100 karışık (yol kuşu kovalar/kediyi sever: ücretsiz dokunuşlar negatif kimlik).
+## Son aşamada güçlendiriciler (geri al, +1 askı, mandal sökücü) gerçek sahnede denenir.
 ##   godot --headless --path . -s res://tools/play_probe.gd      çıkış 0 = geçti
 
-const LEVELS: Array[int] = [1, 2, 3, 7, 16, 21, 23, 25, 26, 29, 30, 32, 33, 36, 40, 44, 47, 52, 58]
+const LEVELS: Array[int] = [1, 2, 3, 7, 16, 21, 23, 25, 26, 29, 30, 32, 33, 36, 40, 44, 47, 52, 58,
+	64, 70, 76, 82, 88, 94, 100]
 const BOOST_LEVEL: int = 40
 const BOOST_TAPS: int = 3
 const FRAMES_PER_TAP: int = 4
@@ -85,6 +88,7 @@ func _process(_delta: float) -> bool:
 			_check_basket_colors()
 			if not board.is_won() or overlay == null or not (_game.get("_events") as Array).is_empty():
 				_fail("seviye kazanılmadı ya da katman yok")
+			_check_machines(board)
 			_phase = "load"
 		"lose_load":
 			# Seri bonusu (+1 askı) kayıp senaryosunu bozmasın diye ilerleme sıfırlanır.
@@ -191,6 +195,17 @@ func _check_basket_colors() -> void:
 		var capacity: int = (views[index] as BasketView).capacity
 		if capacity != board.basket_capacity(index):
 			_fail("sepet %d kapasitesi yanlış: görünen %d, kural %d" % [index, capacity, board.basket_capacity(index)])
+
+
+## Makineli seviye bittiğinde makinede (görünüm tarafında da) çamaşır kalmamalı; makine görünümü
+## tahtadaki makinelerle eşleşmeli.
+func _check_machines(board: LaundryBoard) -> void:
+	var views: Array = _game.get("_machine_views") as Array
+	for machine: int in range(LaundryBoard.MACHINE_COUNT):
+		if board.has_machine(machine) != (views[machine] != null):
+			_fail("makine %d görünümü kuralla uyuşmuyor" % machine)
+	if not (_game.get("_machine_held") as Dictionary).is_empty():
+		_fail("seviye sonunda makinede çamaşır görünüyor")
 
 
 func _fail(message: String) -> void:

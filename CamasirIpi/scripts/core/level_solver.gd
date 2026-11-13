@@ -7,12 +7,15 @@ extends RefCounted
 const DEFAULT_NODE_LIMIT: int = 20000
 
 
-static func is_solvable(level: Dictionary, node_limit: int = DEFAULT_NODE_LIMIT) -> bool:
-	return not solve(level, node_limit).is_empty() or (level.get("items", []) as Array).is_empty()
+## `help_critters`: kuş konar konmaz kovalanır, kedi yatar yatmaz sevilir (ücretsiz eylemler yola
+## TAP_BIRD/TAP_CAT olarak yazılır). false: oyuncu hiç kovalamaz/sevmez (üretici "yardımsız da
+## kazanılır" güvencesini bununla sınar).
+static func is_solvable(level: Dictionary, node_limit: int = DEFAULT_NODE_LIMIT, help_critters: bool = true) -> bool:
+	return not solve(level, node_limit, help_critters).is_empty() or (level.get("items", []) as Array).is_empty()
 
 
 ## Kazandıran dokunuş sırası; bulunamazsa (ya da sınır aşılırsa) boş dizi.
-static func solve(level: Dictionary, node_limit: int = DEFAULT_NODE_LIMIT) -> Array[int]:
+static func solve(level: Dictionary, node_limit: int = DEFAULT_NODE_LIMIT, help_critters: bool = true) -> Array[int]:
 	if not counts_fit(level):
 		return []
 	var budget: Array[int] = [node_limit]
@@ -22,7 +25,7 @@ static func solve(level: Dictionary, node_limit: int = DEFAULT_NODE_LIMIT) -> Ar
 	# alınır. Arama sırası ve bütçe sayımı eskisiyle birebir aynıdır -> aynı seviyeler üretilir.
 	var board: LaundryBoard = LaundryBoard.new(level)
 	board.enable_history()
-	if _search(board, path, seen, budget):
+	if _search(board, path, seen, budget, help_critters):
 		return path
 	return []
 
@@ -36,12 +39,15 @@ static func solve_from(level: Dictionary, taps: Array[int], node_limit: int = DE
 	board.enable_history()
 	var path: Array[int] = taps.duplicate()
 	var budget: Array[int] = [node_limit]
+	# Oyuncu kuşu henüz kovalamadıysa öneri yolu da oradan (kovalayarak) devam eder.
+	_help_critters(board, path)
 	if _search(board, path, {}, budget):
 		return path
 	return []
 
 
-static func _search(board: LaundryBoard, path: Array[int], seen: Dictionary, budget: Array[int]) -> bool:
+static func _search(board: LaundryBoard, path: Array[int], seen: Dictionary, budget: Array[int],
+		help_critters: bool = true) -> bool:
 	if board.is_won():
 		return true
 	if board.is_lost():
@@ -57,7 +63,7 @@ static func _search(board: LaundryBoard, path: Array[int], seen: Dictionary, bud
 	var direct: Array[int] = []
 	var parked: Array[int] = []
 	for id: int in board.open_ids():
-		if board.accepts(board.color_of(id)):
+		if board.accepts_item(id):
 			direct.append(id)
 		else:
 			parked.append(id)
@@ -70,11 +76,30 @@ static func _search(board: LaundryBoard, path: Array[int], seen: Dictionary, bud
 			budget[0] -= 1
 			continue
 		path.append(id)
-		if _search(board, path, seen, budget):
+		var helped: int = _help_critters(board, path) if help_critters else 0
+		if _search(board, path, seen, budget, help_critters):
 			return true
-		path.pop_back()
+		path.resize(path.size() - 1 - helped)
 		board.undo()
 	return false
+
+
+## Konan kuşu kovalar, yatan kediyi sever (ikisi de ücretsiz; hep yapmak en iyisidir: kuş yalnız
+## zarar verir, kedi yalnız sepet kapatır). Yola eklenen ücretsiz eylem sayısını döndürür. Geri al
+## son HAMLEYİ bunlarla birlikte geri sardığından ayrıca geri alınmaz.
+static func _help_critters(board: LaundryBoard, path: Array[int]) -> int:
+	var helped: int = 0
+	if board.is_over():
+		return helped
+	if board.bird_on() != LaundryBoard.EMPTY:
+		board.tap(LaundryBoard.TAP_BIRD)
+		path.append(LaundryBoard.TAP_BIRD)
+		helped += 1
+	if board.cat_at() != LaundryBoard.EMPTY and not board.is_over():
+		board.tap(LaundryBoard.TAP_CAT)
+		path.append(LaundryBoard.TAP_CAT)
+		helped += 1
+	return helped
 
 
 ## Durum anahtarı tahtadadır (iç alanlara kopyasız erişir); burada geriye uyum için durur.

@@ -15,6 +15,8 @@ extends RefCounted
 ## Kural çeşitlemeleri (derinleşme 2): joker sepet, büyük sepet, lekeli çamaşır, zincirli mandal,
 ## rüzgâr; seviye hedefi kipleri: hamle sınırı, kısa askı, sipariş, iki ekranlı patron seviyesi.
 ## Her birinin kuralı dosyanın sonundaki kendi bölümündedir.
+## Derinleşme 3 (makineler ve misafirler): çamaşır/kurutma makinesi, türlü sepet, kuş, yağmur
+## bulutu, kedi. Kuralları dosyanın en sonundaki "Makineler ve misafirler" bölümündedir.
 
 const BASKET_CAPACITY: int = 3
 ## Büyük sepet 5 parça ister: renk grubunun sayısı da üreticide buna göre 5 olur.
@@ -162,8 +164,11 @@ var _max_screen: int = 0
 var _screen: int = 0
 
 ## `level`: {items:[{id,color,blockers,...}], queue:[renk...], active_baskets:int, rack_slots:int}
-## İsteğe bağlı: jokers/big (kuyruk sıraları), wind {every, steps}, mode, move_limit, orders.
-func _init(level: Dictionary) -> void:
+## İsteğe bağlı: jokers/big (kuyruk sıraları), wind {every, steps}, mode, move_limit, orders,
+## washer/dryer {capacity, moves}, typed [[sıra, tür]], birds/rain/cat (bkz. son bölüm).
+## `upgrades`: oyuncunun makine yükseltmeleri (yalnız oyuncuyu kolaylaştırır; boşsa
+## `level["upgrades"]` okunur, o da yoksa yükseltmesiz kurallar geçerlidir).
+func _init(level: Dictionary, upgrades: Dictionary = {}) -> void:
 	for entry: Variant in level.get("items", []) as Array:
 		var item: Dictionary = (entry as Dictionary).duplicate(true)
 		var id: int = int(item.get("id", 0))
@@ -210,6 +215,7 @@ func _init(level: Dictionary) -> void:
 	_setup_wind(level.get("wind", {}) as Dictionary)
 	_setup_slide(level.get("slide", {}) as Dictionary)
 	_setup_mode(level)
+	_setup_extras(level, upgrades)
 	var slots: int = maxi(int(level.get("rack_slots", DEFAULT_RACK_SLOTS)), 1)
 	for _i: int in range(slots):
 		_rack.append(EMPTY)
@@ -421,6 +427,8 @@ func add_rack_slot() -> void:
 ## Açık çamaşıra dokunuş. Dönen olay listesi sırayla canlandırılır.
 func tap(id: int) -> Array[Dictionary]:
 	var events: Array[Dictionary] = []
+	if id == TAP_BIRD or id == TAP_CAT:
+		return _free_action(id)
 	if is_over() or not _on_line.has(id) or is_hidden(id):
 		return events
 	var blockers: Array[int] = blockers_of(id)
@@ -430,6 +438,11 @@ func tap(id: int) -> Array[Dictionary]:
 	if is_locked(id):
 		events.append({"type": EVENT_LOCKED, "id": id, "color": lock_color(id)})
 		return events
+	if _has_machines:
+		var machine: int = machine_for(id)
+		if machine != EMPTY:
+			_load_machine(id, machine, events)
+			return events
 	if is_wet(id):
 		_record_history()
 		var ticking: Array[int] = _open_dyes()
@@ -443,7 +456,9 @@ func tap(id: int) -> Array[Dictionary]:
 		changed = _dry_stains(drying_before, events) or changed
 		changed = _wind_tick(events) or changed
 		changed = _slide_tick(events) or changed
-		if changed:
+		changed = _tick_extras(events) or changed
+		# Yeni kurallı seviyede her hamle yerleşme ister (makine çıkışı, kayıp/zaman atlama denetimi).
+		if changed or _extras:
 			_settle(events)
 		else:
 			_check_move_limit(events)
@@ -458,7 +473,7 @@ func tap(id: int) -> Array[Dictionary]:
 func _take(id: int, events: Array[Dictionary], prefix: Dictionary = {}) -> bool:
 	var color: int = color_of(id)
 	var stained: bool = is_stained(id)
-	var basket_index: int = EMPTY if stained else _basket_for(color)
+	var basket_index: int = EMPTY if stained else _basket_for(color, kind_of(id))
 	var partner: int = chain_partner(id)
 	if partner != EMPTY and not _on_line.has(partner):
 		partner = EMPTY
@@ -490,6 +505,7 @@ func _take(id: int, events: Array[Dictionary], prefix: Dictionary = {}) -> bool:
 	_dry_stains(drying_before, events)
 	_wind_tick(events)
 	_slide_tick(events)
+	_tick_extras(events)
 	_settle(events)
 	return true
 
@@ -510,6 +526,10 @@ func _hang(id: int, events: Array[Dictionary]) -> void:
 func force_take(id: int) -> Array[Dictionary]:
 	var events: Array[Dictionary] = []
 	if is_over() or not _on_line.has(id) or is_hidden(id):
+		return events
+	# Çamurlu parça sökülse de yıkanmalıdır: sökücü erişimi açar, kuralı delmez.
+	if _has_machines and is_dirty(id) and _machine_on[MACHINE_WASHER]:
+		_load_machine(id, MACHINE_WASHER, events, {"type": EVENT_PIN_REMOVED, "id": id})
 		return events
 	var was_wet: bool = is_wet(id)
 	if was_wet:
@@ -690,6 +710,8 @@ func undo() -> bool:
 	_order_progress = int(snap["order_progress"])
 	_order_broken = bool(snap["order_broken"])
 	_screen = int(snap["screen"])
+	if _extras:
+		_restore_extras(snap)
 	return true
 
 
@@ -711,7 +733,7 @@ func _record_history() -> void:
 	var saved: Dictionary = {}
 	for id: int in _mutable_ids:
 		saved[id] = (_items[id] as Dictionary).duplicate()
-	_history.append({
+	var snap: Dictionary = {
 		"items": saved, "on_line": _on_line.duplicate(), "rack": _rack.duplicate(),
 		"baskets": baskets(), "basket_ids": _basket_ids.duplicate(true), "queue": _queue.duplicate(),
 		"queue_kinds": _queue_kinds.duplicate(),
@@ -721,7 +743,10 @@ func _record_history() -> void:
 		"wind_done": _wind_done, "wind_left": _wind_left, "wind_void": _wind_void.duplicate(),
 		"slide_phase": _slide_phase, "slide_left": _slide_left,
 		"order_progress": _order_progress, "order_broken": _order_broken, "screen": _screen,
-	})
+	}
+	if _extras:
+		_snapshot_extras(snap)
+	_history.append(snap)
 
 
 func _settle(events: Array[Dictionary]) -> void:
@@ -745,17 +770,22 @@ func _settle(events: Array[Dictionary]) -> void:
 					arrival["cap"] = _cap(fresh)
 				if bool(fresh.get("joker", false)):
 					arrival["joker"] = true
+				if fresh.has("kind"):
+					arrival["kind"] = int(fresh["kind"])
 				events.append(arrival)
 			changed = true
 		for slot: int in range(_rack.size()):
 			var id: int = _rack[slot]
 			if id == EMPTY or _stuck.has(id) or _drying.has(id):
 				continue
-			var target: int = _basket_for(color_of(id))
+			var target: int = _basket_for(color_of(id), kind_of(id))
 			if target == EMPTY:
 				continue
 			_rack[slot] = EMPTY
 			_put_in_basket(id, target, EVENT_RACK_TO_BASKET, events, slot)
+			changed = true
+		# Makinesi biten parçalar askıdakilerden SONRA çıkar (askıdakiler daha uzun bekledi).
+		if _has_machines and _machine_exits(events):
 			changed = true
 		# İp boşaldıysa kuruyan lekeliler hemen kurur (artık "sonraki hamle" yok; yoksa son parça
 		# lekeliyse seviye ne kazanılır ne kaybedilirdi). Patron seviyesinde ekran geçişi.
@@ -765,6 +795,9 @@ func _settle(events: Array[Dictionary]) -> void:
 		if _max_screen > 0 and _advance_screen(events):
 			changed = true
 	if _lost:
+		return
+	if _extras:
+		_settle_extras_end(events)
 		return
 	if _on_line.is_empty() and rack_count() == 0:
 		_won = true
@@ -802,7 +835,7 @@ func has_basket_move() -> bool:
 	for id: int in open_ids():
 		if is_stained(id) or _on_line.has(chain_partner(id)):
 			continue
-		if _basket_for(color_of(id)) != EMPTY:
+		if _basket_for(color_of(id), kind_of(id)) != EMPTY:
 			return true
 	return false
 
@@ -821,18 +854,28 @@ func _put_in_basket(id: int, basket_index: int, event_type: String,
 	events.append(event)
 
 
-func _basket_for(color: int) -> int:
+## `kind`: parçanın türü (türlü sepet yalnız kendi türünü alır). Kedinin yattığı sepet hiçbir
+## şey almaz. Türlü sepet/kedi yoksa davranış eskisiyle birebir aynıdır.
+func _basket_for(color: int, kind: int = EMPTY) -> int:
+	if _has_typed:
+		# Önce türü tutan türlü sepet: ayrılmış parçalar sıradan sepete kaçmasın.
+		for index: int in range(_baskets.size()):
+			var typed: Dictionary = _baskets[index]
+			if typed.has("kind") and index != _cat_at and int(typed["kind"]) == kind \
+					and int(typed["color"]) == color and int(typed["count"]) < _cap(typed):
+				return index
 	for index: int in range(_baskets.size()):
 		var basket: Dictionary = _baskets[index]
-		if basket.is_empty():
+		if basket.is_empty() or index == _cat_at:
 			continue
-		if int(basket["color"]) == color and int(basket["count"]) < _cap(basket):
+		if int(basket["color"]) == color and int(basket["count"]) < _cap(basket) \
+				and (not _has_typed or not basket.has("kind")):
 			return index
 	# Renkli sepet yoksa rengini henüz almamış joker (önce renkli sepet: joker son çaredir).
 	for index: int in range(_baskets.size()):
 		var basket: Dictionary = _baskets[index]
-		if not basket.is_empty() and bool(basket.get("joker", false)) and int(basket["color"]) == EMPTY \
-				and joker_accepts(basket, color):
+		if not basket.is_empty() and index != _cat_at and bool(basket.get("joker", false)) \
+				and int(basket["color"]) == EMPTY and joker_accepts(basket, color):
 			return index
 	return EMPTY
 
@@ -840,6 +883,12 @@ func _basket_for(color: int) -> int:
 ## Bu renkte bir parçayı şu an kabul eden aktif sepet var mı (çözücü sıralaması için).
 func accepts(color: int) -> bool:
 	return _basket_for(color) != EMPTY
+
+
+## Bu parçayı (rengi + türü) şu an kabul eden aktif sepet var mı; türlü sepetli seviyede
+## çözücü sıralaması bununla doğru kalır (türsüz seviyede `accepts` ile aynıdır).
+func accepts_item(id: int) -> bool:
+	return _basket_for(color_of(id), kind_of(id)) != EMPTY
 
 
 func _cap(basket: Dictionary) -> int:
@@ -872,6 +921,10 @@ func _next_basket() -> Dictionary:
 		return {}
 	var color: int = _queue.pop_front()
 	var kind: int = _queue_kinds.pop_front()
+	if _has_typed:
+		var garment_kind: int = _queue_types.pop_front()
+		if garment_kind != EMPTY and kind == KIND_NORMAL:
+			return {"color": color, "count": 0, "kind": garment_kind}
 	match kind:
 		KIND_BIG:
 			return {"color": color, "count": 0, "cap": BIG_BASKET_CAPACITY}
@@ -895,7 +948,9 @@ func state_key() -> PackedInt32Array:
 	var rack_colors: Array[int] = []
 	for id: int in _rack:
 		if id != EMPTY:
-			rack_colors.append(int((_items[id] as Dictionary)["color"]))
+			# Türlü sepetli seviyede askıdaki parçanın türü de geleceği değiştirir.
+			rack_colors.append(int((_items[id] as Dictionary)["color"]) if not _has_typed \
+				else int((_items[id] as Dictionary)["color"]) * KIND_KEY_BASE + kind_of(id) + 1)
 	rack_colors.sort()
 	key.append(rack_colors.size())
 	for color: int in rack_colors:
@@ -937,6 +992,8 @@ func state_key() -> PackedInt32Array:
 	key.append(_screen)
 	# Hamle sınırlı seviyede aynı dizilim farklı kalan hamleyle farklı gelecektir.
 	key.append(_moves if _move_limit > 0 else 0)
+	if _extras:
+		_append_extras_key(key)
 	return key
 
 
@@ -967,9 +1024,15 @@ func joker_accepts(basket: Dictionary, color: int) -> bool:
 	if color == int(basket.get("ref", EMPTY)):
 		return true
 	for index: int in range(_queue.size()):
-		if _queue[index] == color and _queue_kinds[index] == KIND_NORMAL:
+		if _queue[index] == color and _queue_kinds[index] == KIND_NORMAL and _untyped_at(index):
 			return true
 	return false
+
+
+## Kuyruktaki sepet türsüz mü: joker takası türlü sepetin rengini değiştirmesin (ayrılmış parçalar
+## başka renkte kalırdı).
+func _untyped_at(index: int) -> bool:
+	return not _has_typed or _queue_types[index] == EMPTY
 
 
 func is_joker_basket(index: int) -> bool:
@@ -983,7 +1046,7 @@ func _fix_joker(index: int, color: int, events: Array[Dictionary]) -> void:
 	var swap: int = EMPTY
 	if color != ref:
 		for position: int in range(_queue.size()):
-			if _queue[position] == color and _queue_kinds[position] == KIND_NORMAL:
+			if _queue[position] == color and _queue_kinds[position] == KIND_NORMAL and _untyped_at(position):
 				_queue[position] = ref
 				swap = position
 				break
@@ -1042,7 +1105,7 @@ func _any_legal_move() -> bool:
 	for id: int in open_ids():
 		if is_wet(id):
 			return true
-		var needed: int = 1 if is_stained(id) or _basket_for(color_of(id)) == EMPTY else 0
+		var needed: int = 1 if is_stained(id) or _basket_for(color_of(id), kind_of(id)) == EMPTY else 0
 		if _on_line.has(chain_partner(id)):
 			needed += 1
 		if needed <= free:
@@ -1310,3 +1373,670 @@ func result_summary() -> Dictionary:
 		"order_bonus_earned": order_bonus_earned(), "boss": _mode == MODE_BOSS,
 		"screens": screen_count(), "won": _won, "lose_reason": _lose_reason,
 	}
+
+
+# --- Makineler ve misafirler (derinleşme 3) --------------------------------------------------
+# Her şey HAMLE ile sayılır (gerçek zaman yok). "Hamle" = durum değiştiren dokunuş (alma, sıkma,
+# makineye koyma). Kuşu kovalamak ve kediyi sevmek ücretsizdir: hamle sayılmaz, geçmişe yazılmaz
+# (geri al son HAMLEYİ, o hamlenin ardından yapılan ücretsiz eylemlerle birlikte geri sarar).
+#
+# Çamaşır makinesi (`washer`): çamurlu (`dirty`) parça sepete/askıya gidemez; açıkken dokunulunca
+# makineye girer (hamle). Makine `capacity` parça alır; her parçanın kendi sayacı vardır: girdiği
+# hamleden SONRAKİ her hamlede 1 azalır, `moves` hamle sonra 0 olur ve parça temiz çıkar. Çıkan
+# parça sıradan alınmış parça gibi davranır: uygun sepet varsa sepete, yoksa askıya; ikisi de
+# olmazsa kapakta bekler (yuvasını işgal eder) ve ilk fırsatta çıkar. Makine doluysa yeni parça
+# reddedilir (askı-dolu gibi; durum değişmez).
+# Kurutma makinesi (`dryer`): yalnız bu seviyelerde ıslak parça sıkılmaz, aynı kuralla kurutucuya
+# girer ve kuru çıkar. Kurutucusuz seviyelerde eski "iki dokunuş" kuralı aynen geçerlidir.
+# Zaman atlama: oyuncunun durum değiştirebilecek HİÇBİR dokunuşu kalmadıysa beklenen her şey
+# kendiliğinden biter: makinelerdeki sayaçlar 0 olur, kedi uyanıp gider. Böylece seviye asla
+# sessizce kilitlenmez; kayıp ancak dokunuş yok VE atlanacak bir şey de yoksa ilan edilir
+# (askı dolu + makineden çıkamayan parça da "ilerleme yok" sayılır).
+# Türlü sepet (`typed`): kuyruktaki bazı sepetler yalnız kendi rengindeki TEK bir türü (tişört,
+# pantolon...) alır. Aynı renk-türdeki parçalar önce türlü sepete gider.
+# Kuş (`birds`): her `every` hamlede bir kuş, üretimde belirlenmiş parçaya konar (o an ipte ve
+# çamursuzsa; değilse geçip gider). Sıradaki hedef sayaçla bilinir. Konan kuş kovalanmazsa
+# BIRD_STAIN_MOVES hamle sonra parçayı kirletir (çamurlu sayılır, makine ister); parça alınırsa
+# kuş zararsızca uçar.
+# Yağmur bulutu (`rain`): her `every` hamlede sıradaki adımın ipine yağar; o an AÇIK olan, çamursuz
+# ve zincirsiz parçalar ıslanır (kurutucu varsa kurutucuya, yoksa iki dokunuşla sıkılır).
+# Kedi (`cat`): her `every` hamlede sıradaki adımın sepet yuvasına yatar (yuva boş değilse); o
+# sepet hiçbir şey almaz. Sevilince (ücretsiz) ya da CAT_STAY_MOVES hamle sonra kalkar.
+
+const MACHINE_WASHER: int = 0
+const MACHINE_DRYER: int = 1
+const MACHINE_COUNT: int = 2
+## Seviye sözlüğündeki makine anahtarları (MACHINE_* sırasıyla).
+const MACHINE_KEYS: Array[String] = ["washer", "dryer"]
+## Yükseltmesiz (seviye 0) değerler: üretici çözülebilirliği bunlarla kanıtlar; yükseltmeler yalnız
+## oyuncuya kolaylık getirir (daha çok yuva, daha az bekleme).
+const WASHER_CAPACITY: int = 2
+const WASHER_MOVES: int = 3
+const DRYER_CAPACITY: int = 2
+const DRYER_MOVES: int = 2
+const MACHINE_MAX_CAPACITY: int = 4
+const MACHINE_MIN_MOVES: int = 1
+## Kuş konduktan sonra kaç hamlede leke bırakır; kedi kaç hamle yatar.
+const BIRD_STAIN_MOVES: int = 2
+const CAT_STAY_MOVES: int = 3
+## Ücretsiz eylemlerin dokunuş kimlikleri (çamaşır kimlikleri 0+; çözücü yolunda da bunlar durur).
+const TAP_BIRD: int = -2
+const TAP_CAT: int = -3
+## Durum anahtarında renk+tür paketlemesi (tür 0..6 < 16).
+const KIND_KEY_BASE: int = 16
+## Yükseltme sözlüğü anahtarları (MachineRules ile aynı).
+const UPGRADE_SUFFIX_CAPACITY: String = "_capacity"
+const UPGRADE_SUFFIX_MOVES: String = "_moves"
+
+## Makineye girdi ({id, machine, slot}) / makine dolu ({id, machine}) / sayaç ({id, machine, slot,
+## left}) / bitti ({id, machine, slot}) / çıktı ({id, machine, slot}; ardından TO_BASKET ya da
+## TO_RACK) / zaman atlandı ({machine}).
+const EVENT_TO_MACHINE: String = "to_machine"
+const EVENT_MACHINE_FULL: String = "machine_full"
+const EVENT_MACHINE_TICK: String = "machine_tick"
+const EVENT_MACHINE_READY: String = "machine_ready"
+const EVENT_MACHINE_OUT: String = "machine_out"
+const EVENT_MACHINE_RUSH: String = "machine_rush"
+## Kuş: sayaç ({left, id: sıradaki hedef}) / kondu ({id}) / bekliyor ({id, left}) / kovalandı ({id})
+## / parça alındı, uçtu ({id}) / leke bıraktı ({id}) / hedef yoktu, geçti ({id}).
+const EVENT_BIRD_TICK: String = "bird_tick"
+const EVENT_BIRD_LAND: String = "bird_land"
+const EVENT_BIRD_SIT: String = "bird_sit"
+const EVENT_BIRD_SHOO: String = "bird_shoo"
+const EVENT_BIRD_AWAY: String = "bird_away"
+const EVENT_BIRD_STAIN: String = "bird_stain"
+const EVENT_BIRD_PASS: String = "bird_pass"
+## Yağmur: sayaç ({left, line}) / yağdı ({line, ids: ıslananlar, left}).
+const EVENT_RAIN_TICK: String = "rain_tick"
+const EVENT_RAIN: String = "rain"
+## Kedi: sayaç ({left, basket}) / yattı ({basket}) / yatıyor ({basket, left}) / sevildi ({basket})
+## / kalktı ({basket}) / yuva boştu, gelmedi ({basket}).
+const EVENT_CAT_TICK: String = "cat_tick"
+const EVENT_CAT_LAND: String = "cat_land"
+const EVENT_CAT_STAY: String = "cat_stay"
+const EVENT_CAT_PET: String = "cat_pet"
+const EVENT_CAT_LEAVE: String = "cat_leave"
+const EVENT_CAT_PASS: String = "cat_pass"
+
+## Bu seviyede yeni kurallardan biri var mı: genel kayıp/zaman atlama denetimi bununla açılır.
+## Yoksa eski seviyeler birebir eski yoldan işler (aynı olaylar, aynı çözücü araması).
+var _extras: bool = false
+var _has_machines: bool = false
+var _has_typed: bool = false
+var _machine_on: Array[bool] = [false, false]
+var _machine_cap: Array[int] = [0, 0]
+var _machine_moves: Array[int] = [0, 0]
+## Yuva başına Vector2i(kimlik, kalan hamle); boş yuva EMPTY kimliklidir.
+var _washer_slots: Array[Vector2i] = []
+var _dryer_slots: Array[Vector2i] = []
+## Bu hamlede giren parçanın (makine, yuva): sayacı bu hamlede işlemez.
+var _fresh: Vector2i = Vector2i(EMPTY, EMPTY)
+## Kuyruktaki sepetlerin istediği parça türü (türsüz EMPTY); `_queue` ile aynı hizada.
+var _queue_types: Array[int] = []
+## Çamurlu olabilen parçalar (başta çamurlu + kuş hedefleri): anahtar ve görünüm yalnız bunları tarar.
+var _dirty_pool: Array[int] = []
+var _bird_every: int = 0
+var _bird_targets: Array[int] = []
+var _bird_done: int = 0
+var _bird_left: int = 0
+var _bird_on: int = EMPTY
+var _bird_sit: int = 0
+var _rain_every: int = 0
+var _rain_steps: Array[Array] = []
+var _rain_done: int = 0
+var _rain_left: int = 0
+var _cat_every: int = 0
+var _cat_slots: Array[int] = []
+var _cat_done: int = 0
+var _cat_left: int = 0
+var _cat_at: int = EMPTY
+var _cat_stay: int = 0
+
+
+func _setup_extras(level: Dictionary, upgrades: Dictionary) -> void:
+	var boost: Dictionary = upgrades if not upgrades.is_empty() else level.get("upgrades", {}) as Dictionary
+	_setup_typed(level.get("typed", []) as Array)
+	for machine: int in range(MACHINE_COUNT):
+		var spec: Variant = level.get(MACHINE_KEYS[machine])
+		if spec is Dictionary:
+			_enable_machine(machine, spec as Dictionary, boost)
+	_setup_birds(level.get("birds", {}) as Dictionary)
+	_setup_rain(level.get("rain", {}) as Dictionary)
+	_setup_cat(level.get("cat", {}) as Dictionary)
+	# Kuş lekesi makine ister: veri eksik olsa da kuşlu seviyede yıkama makinesi bulunur.
+	if not _bird_targets.is_empty() and not _machine_on[MACHINE_WASHER]:
+		_enable_machine(MACHINE_WASHER, {}, boost)
+	for id: int in _ids:
+		if bool(_field(id, "dirty", false)) and not _dirty_pool.has(id):
+			_dirty_pool.append(id)
+	var mutable: Array[int] = _dirty_pool.duplicate()
+	for step: Array in _rain_steps:
+		for entry: Variant in step:
+			mutable.append(int(entry))
+	for id: int in mutable:
+		if _items.has(id) and not _mutable_ids.has(id):
+			_mutable_ids.append(id)
+	_mutable_ids.sort()
+	_dirty_pool.sort()
+	_extras = _has_machines or _has_typed or not _bird_targets.is_empty() or not _rain_steps.is_empty() \
+		or not _cat_slots.is_empty()
+
+
+func _enable_machine(machine: int, spec: Dictionary, boost: Dictionary) -> void:
+	var key: String = MACHINE_KEYS[machine]
+	var base_cap: int = WASHER_CAPACITY if machine == MACHINE_WASHER else DRYER_CAPACITY
+	var base_moves: int = WASHER_MOVES if machine == MACHINE_WASHER else DRYER_MOVES
+	var cap: int = maxi(int(spec.get("capacity", base_cap)), int(boost.get(key + UPGRADE_SUFFIX_CAPACITY, 0)))
+	var moves: int = int(spec.get("moves", base_moves))
+	if boost.has(key + UPGRADE_SUFFIX_MOVES):
+		moves = mini(moves, int(boost[key + UPGRADE_SUFFIX_MOVES]))
+	_machine_on[machine] = true
+	_machine_cap[machine] = clampi(cap, 1, MACHINE_MAX_CAPACITY)
+	_machine_moves[machine] = maxi(moves, MACHINE_MIN_MOVES)
+	var slots: Array[Vector2i] = _slots(machine)
+	slots.clear()
+	for _i: int in range(_machine_cap[machine]):
+		slots.append(Vector2i(EMPTY, 0))
+	_has_machines = true
+
+
+func _slots(machine: int) -> Array[Vector2i]:
+	return _washer_slots if machine == MACHINE_WASHER else _dryer_slots
+
+
+func _setup_typed(typed: Array) -> void:
+	if typed.is_empty():
+		return
+	_has_typed = true
+	_queue_types.resize(_queue.size())
+	_queue_types.fill(EMPTY)
+	for entry: Variant in typed:
+		var pair: Array = entry as Array
+		var index: int = int(pair[0])
+		if index >= 0 and index < _queue_types.size():
+			_queue_types[index] = int(pair[1])
+
+
+func _setup_birds(spec: Dictionary) -> void:
+	for target: Variant in spec.get("targets", []) as Array:
+		if _items.has(int(target)):
+			_bird_targets.append(int(target))
+			if not _dirty_pool.has(int(target)):
+				_dirty_pool.append(int(target))
+	if _bird_targets.is_empty():
+		return
+	# Kuş, önceki kuş lekesini bırakmadan gelmesin: aralık bekleme süresinden uzun tutulur.
+	_bird_every = maxi(int(spec.get("every", 0)), BIRD_STAIN_MOVES + 1)
+	_bird_left = _bird_every
+
+
+func _setup_rain(spec: Dictionary) -> void:
+	for raw: Variant in spec.get("steps", []) as Array:
+		var step: Array[int] = []
+		for entry: Variant in raw as Array:
+			if _items.has(int(entry)):
+				step.append(int(entry))
+		if not step.is_empty():
+			_rain_steps.append(step)
+	for step: Array in _rain_steps:
+		for entry: Variant in step:
+			if not _wet_pool.has(int(entry)):
+				_wet_pool.append(int(entry))
+	_wet_pool.sort()
+	if _rain_steps.is_empty():
+		return
+	_rain_every = maxi(int(spec.get("every", 0)), 1)
+	_rain_left = _rain_every
+
+
+func _setup_cat(spec: Dictionary) -> void:
+	for slot: Variant in spec.get("baskets", []) as Array:
+		_cat_slots.append(int(slot))
+	if _cat_slots.is_empty():
+		return
+	# Kedi kalkmadan yeni kedi gelmesin: aralık yatma süresinden uzun tutulur.
+	_cat_every = maxi(int(spec.get("every", 0)), CAT_STAY_MOVES + 1)
+	_cat_left = _cat_every
+
+
+# --- Sorgular (görünüm, çözücü, testler) --------------------------------------------------------
+
+func has_extras() -> bool:
+	return _extras
+
+
+func is_dirty(id: int) -> bool:
+	return bool(_field(id, "dirty", false))
+
+
+## Kirliliği kuş bıraktı mı (görünüm: çamur yerine beyaz leke).
+func is_bird_mess(id: int) -> bool:
+	return bool(_field(id, "bird", false))
+
+
+## Parçanın türü (GarmentView.KINDS sırası); türlü sepet bununla eşleşir.
+func kind_of(id: int) -> int:
+	return int(_field(id, "kind", EMPTY))
+
+
+func has_machine(machine: int) -> bool:
+	return machine >= 0 and machine < MACHINE_COUNT and _machine_on[machine]
+
+
+func machine_capacity(machine: int) -> int:
+	return _machine_cap[machine] if has_machine(machine) else 0
+
+
+func machine_moves(machine: int) -> int:
+	return _machine_moves[machine] if has_machine(machine) else 0
+
+
+## Yuva içeriği: Vector2i(kimlik, kalan hamle); boş yuva x = EMPTY.
+func machine_slot(machine: int, slot: int) -> Vector2i:
+	if not has_machine(machine):
+		return Vector2i(EMPTY, 0)
+	var slots: Array[Vector2i] = _slots(machine)
+	return slots[slot] if slot >= 0 and slot < slots.size() else Vector2i(EMPTY, 0)
+
+
+## Parça bir makinenin içinde mi (geri al sonrası görünüm kurulumu için).
+func machine_of(id: int) -> int:
+	for machine: int in range(MACHINE_COUNT):
+		if _machine_on[machine]:
+			for entry: Vector2i in _slots(machine):
+				if entry.x == id:
+					return machine
+	return EMPTY
+
+
+## Açık parçaya dokununca gideceği makine (yoksa EMPTY): çamurlu -> yıkama, ıslak -> kurutucu.
+func machine_for(id: int) -> int:
+	if is_dirty(id) and _machine_on[MACHINE_WASHER]:
+		return MACHINE_WASHER
+	if is_wet(id) and _machine_on[MACHINE_DRYER]:
+		return MACHINE_DRYER
+	return EMPTY
+
+
+func is_typed_level() -> bool:
+	return _has_typed
+
+
+## Aktif sepetin istediği tür (türsüz EMPTY).
+func basket_kind(index: int) -> int:
+	if index < 0 or index >= _baskets.size():
+		return EMPTY
+	return int(_baskets[index].get("kind", EMPTY))
+
+
+## Kuyruktaki `index`. sepetin istediği tür (türsüz EMPTY).
+func queue_type(index: int) -> int:
+	return _queue_types[index] if _has_typed and index >= 0 and index < _queue_types.size() else EMPTY
+
+
+## Sıradaki kuşa kalan hamle (kuş yoksa/bittiyse -1).
+func bird_left() -> int:
+	return _bird_left if _bird_done < _bird_targets.size() else -1
+
+
+func bird_next() -> int:
+	return _bird_targets[_bird_done] if _bird_done < _bird_targets.size() else EMPTY
+
+
+## Kuşun konduğu parça (yoksa EMPTY) ve leke bırakmasına kalan hamle.
+func bird_on() -> int:
+	return _bird_on
+
+
+func bird_sit_left() -> int:
+	return _bird_sit if _bird_on != EMPTY else -1
+
+
+func bird_targets() -> Array[int]:
+	return _bird_targets.duplicate()
+
+
+func rain_left() -> int:
+	return _rain_left if _rain_done < _rain_steps.size() else -1
+
+
+## Sıradaki yağmurun ipi (adımın ilk parçasının ipi; yoksa EMPTY).
+func rain_next_line() -> int:
+	if _rain_done >= _rain_steps.size():
+		return EMPTY
+	return int(_field(int((_rain_steps[_rain_done] as Array)[0]), "line", EMPTY))
+
+
+func cat_left() -> int:
+	return _cat_left if _cat_done < _cat_slots.size() else -1
+
+
+func cat_next() -> int:
+	return _cat_slots[_cat_done] if _cat_done < _cat_slots.size() else EMPTY
+
+
+## Kedinin yattığı sepet yuvası (yoksa EMPTY) ve kalkmasına kalan hamle.
+func cat_at() -> int:
+	return _cat_at
+
+
+func cat_stay_left() -> int:
+	return _cat_stay if _cat_at != EMPTY else -1
+
+
+# --- Hamle akışı ---------------------------------------------------------------------------------
+
+## Ücretsiz eylem (kuşu kovala / kediyi sev). Hamle sayılmaz; kedi kalkınca askıdakiler yerleşir.
+func _free_action(id: int) -> Array[Dictionary]:
+	var events: Array[Dictionary] = []
+	if is_over():
+		return events
+	if id == TAP_BIRD and _bird_on != EMPTY:
+		events.append({"type": EVENT_BIRD_SHOO, "id": _bird_on})
+		_bird_on = EMPTY
+	elif id == TAP_CAT and _cat_at != EMPTY:
+		events.append({"type": EVENT_CAT_PET, "basket": _cat_at})
+		_cat_at = EMPTY
+		_settle(events)
+	return events
+
+
+## Parçayı makineye koyar (engel/kilit denetimi çağırana aittir). Doluysa reddedilir.
+func _load_machine(id: int, machine: int, events: Array[Dictionary], prefix: Dictionary = {}) -> bool:
+	var slot: int = _free_machine_slot(machine)
+	if slot == EMPTY:
+		events.append({"type": EVENT_MACHINE_FULL, "id": id, "machine": machine})
+		return false
+	_record_history()
+	if not prefix.is_empty():
+		events.append(prefix)
+	var ticking: Array[int] = _open_dyes()
+	var drying_before: Array = [] if _drying.is_empty() else _drying.keys()
+	_on_line.erase(id)
+	_moves += 1
+	_slots(machine)[slot] = Vector2i(id, _machine_moves[machine])
+	_fresh = Vector2i(machine, slot)
+	events.append({"type": EVENT_TO_MACHINE, "id": id, "machine": machine, "slot": slot})
+	_apply_sock_rule(id, events)
+	_tick_dyes(ticking, events)
+	_dry_stains(drying_before, events)
+	_wind_tick(events)
+	_slide_tick(events)
+	_tick_extras(events)
+	_fresh = Vector2i(EMPTY, EMPTY)
+	_settle(events)
+	return true
+
+
+func _free_machine_slot(machine: int) -> int:
+	var slots: Array[Vector2i] = _slots(machine)
+	for slot: int in range(slots.size()):
+		if slots[slot].x == EMPTY:
+			return slot
+	return EMPTY
+
+
+## Hamle sonu sayaçları. Döndürür: durum değişti mi (yerleşme gerekir).
+func _tick_extras(events: Array[Dictionary]) -> bool:
+	if not _extras:
+		return false
+	var changed: bool = _tick_machines(events)
+	changed = _tick_birds(events) or changed
+	changed = _tick_rain(events) or changed
+	changed = _tick_cat(events) or changed
+	return changed
+
+
+func _tick_machines(events: Array[Dictionary]) -> bool:
+	var ready: bool = false
+	for machine: int in range(MACHINE_COUNT):
+		if not _machine_on[machine]:
+			continue
+		var slots: Array[Vector2i] = _slots(machine)
+		for slot: int in range(slots.size()):
+			var entry: Vector2i = slots[slot]
+			if entry.x == EMPTY or entry.y <= 0 or (_fresh.x == machine and _fresh.y == slot):
+				continue
+			entry.y -= 1
+			slots[slot] = entry
+			events.append({"type": EVENT_MACHINE_TICK, "id": entry.x, "machine": machine, "slot": slot, "left": entry.y})
+			if entry.y == 0:
+				events.append({"type": EVENT_MACHINE_READY, "id": entry.x, "machine": machine, "slot": slot})
+				ready = true
+	return ready
+
+
+## Biten parçalar çıkar: sepete (lekeli değilse ve uygun sepet varsa), değilse askıya; ikisi de
+## yoksa kapakta bekler. Döndürür: en az bir parça çıktı mı.
+func _machine_exits(events: Array[Dictionary]) -> bool:
+	var moved: bool = false
+	for machine: int in range(MACHINE_COUNT):
+		if not _machine_on[machine]:
+			continue
+		var slots: Array[Vector2i] = _slots(machine)
+		for slot: int in range(slots.size()):
+			var entry: Vector2i = slots[slot]
+			if entry.x == EMPTY or entry.y > 0:
+				continue
+			var id: int = entry.x
+			var basket: int = EMPTY if is_stained(id) else _basket_for(color_of(id), kind_of(id))
+			if basket == EMPTY and _free_rack_slot() == EMPTY:
+				continue
+			slots[slot] = Vector2i(EMPTY, 0)
+			var item: Dictionary = _items[id] as Dictionary
+			item["dirty"] = false
+			item["wet"] = false
+			events.append({"type": EVENT_MACHINE_OUT, "id": id, "machine": machine, "slot": slot})
+			if basket != EMPTY:
+				_put_in_basket(id, basket, EVENT_TO_BASKET, events)
+			else:
+				_hang(id, events)
+			moved = true
+	return moved
+
+
+func _machines_empty() -> bool:
+	for machine: int in range(MACHINE_COUNT):
+		if _machine_on[machine]:
+			for entry: Vector2i in _slots(machine):
+				if entry.x != EMPTY:
+					return false
+	return true
+
+
+func _tick_birds(events: Array[Dictionary]) -> bool:
+	if _bird_targets.is_empty():
+		return false
+	var changed: bool = false
+	if _bird_on != EMPTY:
+		var perch: int = _bird_on
+		if not _on_line.has(perch):
+			_bird_on = EMPTY
+			events.append({"type": EVENT_BIRD_AWAY, "id": perch})
+		else:
+			_bird_sit -= 1
+			if _bird_sit <= 0:
+				_bird_on = EMPTY
+				var item: Dictionary = _items[perch] as Dictionary
+				item["dirty"] = true
+				item["bird"] = true
+				# Kirlenen parça makinede yıkanırken kurur da: ıslaklık ayrıca sayılmaz.
+				item["wet"] = false
+				events.append({"type": EVENT_BIRD_STAIN, "id": perch})
+				changed = true
+			else:
+				events.append({"type": EVENT_BIRD_SIT, "id": perch, "left": _bird_sit})
+	if _bird_done < _bird_targets.size():
+		_bird_left -= 1
+		if _bird_left > 0:
+			events.append({"type": EVENT_BIRD_TICK, "left": _bird_left, "id": _bird_targets[_bird_done]})
+		else:
+			var target: int = _bird_targets[_bird_done]
+			_bird_done += 1
+			_bird_left = _bird_every if _bird_done < _bird_targets.size() else 0
+			if _on_line.has(target) and not is_dirty(target) and _bird_on == EMPTY:
+				_bird_on = target
+				_bird_sit = BIRD_STAIN_MOVES
+				events.append({"type": EVENT_BIRD_LAND, "id": target, "left": bird_left()})
+			else:
+				events.append({"type": EVENT_BIRD_PASS, "id": target, "left": bird_left()})
+	return changed
+
+
+func _tick_rain(events: Array[Dictionary]) -> bool:
+	if _rain_done >= _rain_steps.size():
+		return false
+	_rain_left -= 1
+	var line: int = rain_next_line()
+	if _rain_left > 0:
+		events.append({"type": EVENT_RAIN_TICK, "left": _rain_left, "line": line})
+		return false
+	var step: Array = _rain_steps[_rain_done]
+	_rain_done += 1
+	_rain_left = _rain_every if _rain_done < _rain_steps.size() else 0
+	var soaked: Array[int] = []
+	for entry: Variant in step:
+		var id: int = int(entry)
+		if _on_line.has(id) and is_open(id) and not is_dirty(id) and not is_wet(id) \
+				and chain_partner(id) == EMPTY:
+			(_items[id] as Dictionary)["wet"] = true
+			soaked.append(id)
+	events.append({"type": EVENT_RAIN, "line": line, "ids": soaked, "left": rain_left()})
+	return not soaked.is_empty()
+
+
+func _tick_cat(events: Array[Dictionary]) -> bool:
+	if _cat_slots.is_empty():
+		return false
+	var changed: bool = false
+	if _cat_at != EMPTY:
+		_cat_stay -= 1
+		if _cat_stay <= 0:
+			events.append({"type": EVENT_CAT_LEAVE, "basket": _cat_at})
+			_cat_at = EMPTY
+			changed = true
+		else:
+			events.append({"type": EVENT_CAT_STAY, "basket": _cat_at, "left": _cat_stay})
+	if _cat_done < _cat_slots.size():
+		_cat_left -= 1
+		var slot: int = _cat_slots[_cat_done]
+		if _cat_left > 0:
+			events.append({"type": EVENT_CAT_TICK, "left": _cat_left, "basket": slot})
+		else:
+			_cat_done += 1
+			_cat_left = _cat_every if _cat_done < _cat_slots.size() else 0
+			if slot >= 0 and slot < _baskets.size() and not _baskets[slot].is_empty() and _cat_at == EMPTY:
+				_cat_at = slot
+				_cat_stay = CAT_STAY_MOVES
+				events.append({"type": EVENT_CAT_LAND, "basket": slot, "left": cat_left()})
+			else:
+				events.append({"type": EVENT_CAT_PASS, "basket": slot, "left": cat_left()})
+	return changed
+
+
+## `_settle` sonu (yeni kurallı seviye): kazanma, ilerleme denetimi, zaman atlama, kayıp.
+func _settle_extras_end(events: Array[Dictionary]) -> void:
+	if _on_line.is_empty() and rack_count() == 0 and _machines_empty():
+		_won = true
+		events.append({"type": EVENT_WIN})
+		return
+	if _any_progress_tap():
+		_check_move_limit(events)
+		return
+	if _skip_time(events):
+		_settle(events)
+		return
+	_lose(LOSE_RACK, events)
+
+
+## Durum değiştirecek bir dokunuş var mı (makineye koyma, sıkma, sepete/askıya alma).
+func _any_progress_tap() -> bool:
+	var free: int = _free_slot_count()
+	# Dizi üretmeden ve ilk bulunan dokunuşta çıkarak tarar: çözücü bunu her düğümde çağırır.
+	for id: int in _ids:
+		if not _on_line.has(id) or not is_open(id) or is_locked(id):
+			continue
+		var machine: int = machine_for(id) if _has_machines else EMPTY
+		if machine != EMPTY:
+			if _free_machine_slot(machine) != EMPTY:
+				return true
+			continue
+		if is_wet(id):
+			return true
+		var needed: int = 1 if is_stained(id) or _basket_for(color_of(id), kind_of(id)) == EMPTY else 0
+		if _on_line.has(chain_partner(id)):
+			needed += 1
+		if needed <= free:
+			return true
+	return false
+
+
+## Hiç dokunuş kalmadığında beklenenler kendiliğinden biter. Döndürür: bir şey atlandı mı.
+func _skip_time(events: Array[Dictionary]) -> bool:
+	var skipped: bool = false
+	for machine: int in range(MACHINE_COUNT):
+		if not _machine_on[machine]:
+			continue
+		var slots: Array[Vector2i] = _slots(machine)
+		var rushed: bool = false
+		for slot: int in range(slots.size()):
+			var entry: Vector2i = slots[slot]
+			if entry.x != EMPTY and entry.y > 0:
+				slots[slot] = Vector2i(entry.x, 0)
+				events.append({"type": EVENT_MACHINE_READY, "id": entry.x, "machine": machine, "slot": slot})
+				rushed = true
+		if rushed:
+			events.append({"type": EVENT_MACHINE_RUSH, "machine": machine})
+			skipped = true
+	if _cat_at != EMPTY:
+		events.append({"type": EVENT_CAT_LEAVE, "basket": _cat_at})
+		_cat_at = EMPTY
+		skipped = true
+	return skipped
+
+
+# --- Geri al ve durum anahtarı -------------------------------------------------------------------
+
+func _snapshot_extras(snap: Dictionary) -> void:
+	snap["washer"] = _washer_slots.duplicate()
+	snap["dryer"] = _dryer_slots.duplicate()
+	snap["queue_types"] = _queue_types.duplicate()
+	snap["critters"] = PackedInt32Array([_bird_done, _bird_left, _bird_on, _bird_sit, _rain_done, _rain_left,
+		_cat_done, _cat_left, _cat_at, _cat_stay])
+
+
+func _restore_extras(snap: Dictionary) -> void:
+	_washer_slots.assign(snap["washer"] as Array)
+	_dryer_slots.assign(snap["dryer"] as Array)
+	_queue_types.assign(snap["queue_types"] as Array)
+	var values: PackedInt32Array = snap["critters"] as PackedInt32Array
+	_bird_done = values[0]
+	_bird_left = values[1]
+	_bird_on = values[2]
+	_bird_sit = values[3]
+	_rain_done = values[4]
+	_rain_left = values[5]
+	_cat_done = values[6]
+	_cat_left = values[7]
+	_cat_at = values[8]
+	_cat_stay = values[9]
+
+
+func _append_extras_key(key: PackedInt32Array) -> void:
+	key.append(BASKET_KEY_EMPTY)
+	for machine: int in range(MACHINE_COUNT):
+		if _machine_on[machine]:
+			for entry: Vector2i in _slots(machine):
+				key.append(entry.x)
+				key.append(entry.y)
+	key.append(BASKET_KEY_EMPTY)
+	for id: int in _dirty_pool:
+		if _on_line.has(id) and is_dirty(id):
+			key.append(id)
+	key.append(BASKET_KEY_EMPTY)
+	for basket: Dictionary in _baskets:
+		key.append(int(basket.get("kind", EMPTY)))
+	for kind: int in _queue_types:
+		key.append(kind)
+	key.append_array(PackedInt32Array([_bird_done, _bird_left, _bird_on, _bird_sit, _rain_done, _rain_left,
+		_cat_done, _cat_left, _cat_at, _cat_stay]))

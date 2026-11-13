@@ -183,3 +183,26 @@ SHOP_PURCHASE_FAILED,Satın alma tamamlanmadı,Purchase did not go through,La co
 SHOP_FREE_ONE,Bedava +1,Free +1,+1 gratis
 SHOP_NO_PRICE,Mağazaya bağlanıyor,Connecting to the store,Conectando con la tienda
 SHOP_AD_UNAVAILABLE,Reklam şu an hazır değil,No ad available right now,Anuncio no disponible ahora
+TUT_WASHER_TITLE,Çamaşır makinesi,Washing machine,Lavadora
+TUT_WASHER_LINE,"Çamurlu çamaşıra dokun: makinede birkaç hamlede yıkanır, temiz çıkar.","Tap a muddy item: the machine washes it in a few moves, then it comes out clean.","Toca una prenda embarrada: la lavadora la lava en unos movimientos y sale limpia."
+TUT_DRYER_TITLE,Kurutma makinesi,Dryer,Secadora
+TUT_DRYER_LINE,"Islak çamaşıra dokun: kurutucuya girer, birkaç hamlede kuru çıkar.","Tap a wet item: it goes into the dryer and comes out dry a few moves later.","Toca una prenda mojada: entra en la secadora y sale seca unos movimientos después."
+TUT_TYPED_TITLE,Seçici sepet,Picky basket,Cesta exigente
+TUT_TYPED_LINE,Bu sepet yalnız rozetindeki türü alır.,This basket only takes the item type on its badge.,Esta cesta solo acepta el tipo de prenda de su insignia.
+TUT_BIRDS_TITLE,Kuş,Bird,Pájaro
+TUT_BIRDS_LINE,"Kuş konunca ona dokun, uçup gider. Bırakırsan çamaşırı kirletir.","When a bird lands, tap it to shoo it. Leave it and it soils the item.","Cuando un pájaro se pose, tócalo para espantarlo. Si lo dejas, ensucia la prenda."
+TUT_RAIN_TITLE,Yağmur bulutu,Rain cloud,Nube de lluvia
+TUT_RAIN_LINE,Sayaç bitince bulutun altındaki açık çamaşırlar ıslanır.,"When the count ends, open items under the cloud get wet.","Cuando acabe la cuenta, las prendas descubiertas bajo la nube se mojan."
+TUT_CAT_TITLE,Çamaşırhane kedisi,Laundromat cat,Gato de la lavandería
+TUT_CAT_LINE,"Kedi bir sepette uyur; sevmek için dokun, sepet yeniden açılır.","The cat naps in a basket; tap to pet it and the basket opens again.","El gato duerme en una cesta; tócalo para acariciarlo y la cesta se libera."
+MACHINES_TITLE,Makineler,Machines,Máquinas
+MACHINES_SUB,Yükseltmeler her seviyede geçerlidir.,Upgrades apply to every level.,Las mejoras sirven en todos los niveles.
+MACHINE_WASHER,Çamaşır makinesi,Washing machine,Lavadora
+MACHINE_DRYER,Kurutma makinesi,Dryer,Secadora
+MACHINE_CAPACITY,Kapasite,Capacity,Capacidad
+MACHINE_SPEED,Süre,Cycle,Ciclo
+MACHINE_CAPACITY_VALUE,%d parça,%d items,%d prendas
+MACHINE_MOVES_ONE,%d hamle,%d move,%d movimiento
+MACHINE_MOVES_OTHER,%d hamle,%d moves,%d movimientos
+MACHINE_MAX,En üst seviye,Maxed,Al máximo
+MACHINE_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d

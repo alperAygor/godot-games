@@ -1,14 +1,16 @@
 extends TestCase
 
 ## Zorluk eğrisi, engellerin/mekaniklerin üretimi ve seviye hedefi kipleri; 1..120 seviyenin
-## üretilip çözücüyle çözülmesi (süreler yazdırılır).
+## üretilip çözücüyle çözülmesi (süreler yazdırılır). 1..150: makineler ve misafirler de (64+).
 
 const NEW_KEYS: Array[String] = ["sheet", "sock", "dye"]
 const OLD_KEYS: Array[String] = ["wet", "mystery", "lock"]
 const RULE_ITEM_KEYS: Array[String] = ["stain", "chain"]
 const RULE_LEVEL_KEYS: Array[String] = ["jokers", "big", "wind"]
 const LATE_LEVEL: int = 100
-const CURVE_LEVELS: int = 120
+const CURVE_LEVELS: int = 150
+## Karışım denetimi bu aralıkta (her seviyede olmamalı).
+const MIX_FROM: int = 61
 ## 1..15 öğretici seviyeleri: içerik değişmesin (öğretici akışı bunlara bağlı).
 const EARLY_LEVELS: int = 15
 const EARLY_HASH: String = "298f419f2f3dec287e9e8b04011abfa4"
@@ -99,7 +101,7 @@ func test_rule_mechanics_are_introduced_alone() -> void:
 
 func test_rule_mechanics_mix_in_later() -> void:
 	var seen: Dictionary = {}
-	for number: int in range(61, CURVE_LEVELS + 1):
+	for number: int in range(MIX_FROM, CURVE_LEVELS + 1):
 		var level: Dictionary = LevelCache.level(number)
 		for key: String in RULE_ITEM_KEYS:
 			if _count(level, key) > 0:
@@ -109,7 +111,7 @@ func test_rule_mechanics_mix_in_later() -> void:
 				seen[key] = int(seen.get(key, 0)) + 1
 	for key: String in RULE_ITEM_KEYS + RULE_LEVEL_KEYS:
 		assert_greater(int(seen.get(key, 0)), 10, "%s geç seviyelerde karışır (%d)" % [key, int(seen.get(key, 0))])
-		assert_true(int(seen.get(key, 0)) < 60, "%s her seviyede değil" % key)
+		assert_true(int(seen.get(key, 0)) < CURVE_LEVELS - MIX_FROM, "%s her seviyede değil" % key)
 
 
 func test_mode_schedule_one_mode_per_level() -> void:
@@ -234,9 +236,9 @@ func test_boss_replaces_very_hard_every_fifteenth() -> void:
 	assert_false(bool(LevelGenerator.params_for(35).get("boss", false)))
 
 
-## 1..120: hepsi üretilir, düğüm bütçesi içinde çözülür, yol oynanınca kazanır; hamle sınırlı
+## 1..150: hepsi üretilir, düğüm bütçesi içinde çözülür, yol oynanınca kazanır; hamle sınırlı
 ## seviyelerde yol sınıra sığar. Süreler yazdırılır (performans aşaması için).
-func test_levels_1_to_120_are_solvable_within_budget() -> void:
+func test_levels_1_to_150_are_solvable_within_budget() -> void:
 	var total_gen: int = 0
 	var total_solve: int = 0
 	var slowest: int = 0

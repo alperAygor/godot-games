@@ -10,6 +10,8 @@ extends Node2D
 ##  - Sipariş: sırayla doldurulacak sepet renkleri; tamamlanan beneğin içi beyaz, bozulunca soluk.
 ##  - Patron: kupa + "1/2".
 ##  - Rüzgâr (sağda): rüzgâr ikonu + kalan hamle; rüzgâr bitince gizlenir.
+##  - Kuş / yağmur / kedi (sağda, alt alta): sıradakine kalan hamle; kuş/kedi oradayken kalkmasına
+##    kalan hamle (kırmızı). Görünen haplar sağ sütunda boşluksuz dizilir.
 
 const PILL_Y: float = 182.0
 const PILL_HEIGHT: float = 76.0
@@ -33,6 +35,9 @@ const ICON_BOSS: String = "lucide/trophy"
 const ICON_WIND: String = "lucide/wind"
 const ICON_SLIDE: String = "lucide/rotate-ccw"
 const SLIDE_PILL_OFFSET_Y: float = 84.0
+const ICON_BIRD: String = "res://assets/sprites/critters/icon_bird.png"
+const ICON_RAIN: String = "res://assets/sprites/critters/icon_cloud.png"
+const ICON_CAT: String = "res://assets/sprites/critters/icon_cat.png"
 
 var _mode_pill: Pill = null
 var _wind_pill: Pill = null
@@ -62,6 +67,16 @@ func setup(screen_width: float, palette: Array[Color]) -> void:
 	add_child(_slide_pill)
 	_slide_pill.set_icon(Icons.texture(ICON_SLIDE))
 	_slide_pill.visible = false
+	_guest_pills.clear()
+	for path: String in [ICON_BIRD, ICON_RAIN, ICON_CAT]:
+		var pill: Pill = Pill.new()
+		pill.align_right = true
+		pill.position = Vector2(screen_width - PILL_MARGIN_X, PILL_Y)
+		add_child(pill)
+		pill.set_icon(load(path) as Texture2D if ResourceLoader.exists(path) else null)
+		pill.visible = false
+		_guest_pills.append(pill)
+	_right_x = screen_width - PILL_MARGIN_X
 
 
 ## Yeni seviye: kipe göre sol hap kurulur, sayaçlar sıfırlanır.
@@ -71,6 +86,7 @@ func start(board: LaundryBoard) -> void:
 	_shown_slide = -2
 	_shown_orders = Vector2i(-1, -1)
 	_shown_screen = -1
+	_shown_guests = [-2, -2, -2]
 	_mode_pill.visible = board.mode() != LaundryBoard.MODE_NONE
 	_mode_pill.set_dots([] as Array[Color], 0, false)
 	_mode_pill.set_urgent(false)
@@ -133,6 +149,7 @@ func refresh(board: LaundryBoard) -> void:
 		if _shown_slide != -2 and slide > 0:
 			_slide_pill.pulse()
 		_shown_slide = slide
+	_refresh_guests(board)
 
 
 func mode_pill() -> Node2D:
@@ -246,3 +263,53 @@ class Pill extends Node2D:
 			draw_circle(at, radius * scale_by, tint, true, -1.0, true)
 			if index < _done:
 				draw_circle(at, radius * 0.42, RulesHud.DONE_DOT, true, -1.0, true)
+
+
+# --- Misafir sayaçları (kuş, yağmur, kedi) -------------------------------------------------------
+
+var _guest_pills: Array[Pill] = []
+var _shown_guests: Array[int] = [-2, -2, -2]
+var _right_x: float = 0.0
+## Önbellek kodu: misafir oradayken aynı sayı farklı anlam taşır.
+const GUEST_PRESENT_CODE: int = 1000
+
+
+## Kuş/kedi oradayken kalkmasına kalan hamle kırmızı gösterilir; yoksa sıradakine kalan hamle.
+## Değer değişince hap nabız atar; ardından sağ sütun yeniden dizilir (kare başına değil, tazelemede).
+func _refresh_guests(board: LaundryBoard) -> void:
+	if _guest_pills.is_empty():
+		return
+	var bird_here: bool = board.bird_on() != LaundryBoard.EMPTY
+	var cat_here: bool = board.cat_at() != LaundryBoard.EMPTY
+	_show_guest(0, board.bird_sit_left() if bird_here else board.bird_left(), bird_here)
+	_show_guest(1, board.rain_left(), false)
+	_show_guest(2, board.cat_stay_left() if cat_here else board.cat_left(), cat_here)
+	_stack()
+
+
+## `present`: misafir şu an tahtada (sayı kalkışa kalan hamle, kırmızı).
+func _show_guest(index: int, left: int, present: bool) -> void:
+	var code: int = left + (GUEST_PRESENT_CODE if present else 0)
+	if code == _shown_guests[index]:
+		return
+	var pill: Pill = _guest_pills[index]
+	pill.visible = left > 0
+	pill.set_text(str(left))
+	pill.set_urgent(present or left == 1)
+	if _shown_guests[index] != -2 and pill.visible:
+		pill.pulse()
+	_shown_guests[index] = code
+
+
+## Sağ sütun: görünen haplar yukarıdan aşağı boşluksuz (rüzgâr, sürgü, kuş, yağmur, kedi).
+func _stack() -> void:
+	var row: int = 0
+	for pill: Pill in [_wind_pill, _slide_pill] + _guest_pills:
+		if not pill.visible:
+			continue
+		pill.position = Vector2(_right_x, PILL_Y + SLIDE_PILL_OFFSET_Y * float(row))
+		row += 1
+
+
+func guest_pill(index: int) -> Node2D:
+	return _guest_pills[index] if index >= 0 and index < _guest_pills.size() else null
