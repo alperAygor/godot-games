@@ -30,6 +30,11 @@ const CARDS: Dictionary = {
 	"birds": {"title": "TUT_BIRDS_TITLE", "line": "TUT_BIRDS_LINE"},
 	"rain": {"title": "TUT_RAIN_TITLE", "line": "TUT_RAIN_LINE"},
 	"cat": {"title": "TUT_CAT_TITLE", "line": "TUT_CAT_LINE"},
+	"dual": {"title": "TUT_DUAL_TITLE", "line": "TUT_DUAL_LINE"},
+	"sun_fade": {"title": "TUT_SUN_FADE_TITLE", "line": "TUT_SUN_FADE_LINE"},
+	"leaves": {"title": "TUT_LEAVES_TITLE", "line": "TUT_LEAVES_LINE"},
+	"frost": {"title": "TUT_FROST_TITLE", "line": "TUT_FROST_LINE"},
+	"pollen": {"title": "TUT_POLLEN_TITLE", "line": "TUT_POLLEN_LINE"},
 }
 
 

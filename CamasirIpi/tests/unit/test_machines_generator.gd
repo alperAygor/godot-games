@@ -4,9 +4,10 @@ extends TestCase
 ## karışım, tutarlılık (türlü sepet sayıları, yağmur ipi, kuş hedefi), yardımsız ve yükseltmeli
 ## çözülebilirlik; 1..63 seviyelerinin değişmediği.
 
-## 1..63 (makineler öncesi) seviyelerin birebir aynı kaldığının kanıtı.
-const LEGACY_LEVELS: int = 63
-const LEGACY_HASH: String = "ae5acd083668ec4bb2b9a2a50c7b2d5d"
+## 1..63 (makineler öncesi) seviyeler: 1..15 birebir aynı; 16..63 yalnız çift renk ve mevsim tanıtımı
+## yüzünden değişebilir (kasıtlı; ayrıntılı kanıt test_dual_identity.gd'de, seviye başına eski özetlerle).
+const LEGACY_LEVELS: int = 15
+const LEGACY_HASH: String = "298f419f2f3dec287e9e8b04011abfa4"
 const LAST_LEVEL: int = 150
 const ITEM_KEYS: Array[String] = ["wet", "mystery", "lock", "sheet", "sock", "dye", "stain", "chain", "dirty"]
 const LEVEL_KEYS: Array[String] = ["jokers", "big", "wind", "slide", "washer", "dryer", "typed", "birds", "rain", "cat"]
@@ -36,7 +37,7 @@ func test_legacy_levels_are_byte_identical() -> void:
 	var text: String = ""
 	for number: int in range(1, LEGACY_LEVELS + 1):
 		text += JSON.stringify(LevelCache.level(number), "", true)
-	assert_eq(text.md5_text(), LEGACY_HASH, "1..63 seviyeleri değişmemeli")
+	assert_eq(text.md5_text(), LEGACY_HASH, "1..15 seviyeleri değişmemeli (16..63: test_dual_identity)")
 
 
 func test_unlock_schedule() -> void:

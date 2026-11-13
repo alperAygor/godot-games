@@ -17,6 +17,8 @@ extends RefCounted
 ## Her birinin kuralı dosyanın sonundaki kendi bölümündedir.
 ## Derinleşme 3 (makineler ve misafirler): çamaşır/kurutma makinesi, türlü sepet, kuş, yağmur
 ## bulutu, kedi. Kuralları dosyanın en sonundaki "Makineler ve misafirler" bölümündedir.
+## Derinleşme 4 (çift renk ve mevsim olayları): çift renkli çamaşır, güneşte solma, düşen yaprak,
+## don, polen. Kuralları en sondaki "Çift renk ve mevsimler" bölümündedir.
 
 const BASKET_CAPACITY: int = 3
 ## Büyük sepet 5 parça ister: renk grubunun sayısı da üreticide buna göre 5 olur.
@@ -117,14 +119,20 @@ var _basket_ids: Array[Array] = []
 ## Geri al geçmişi (yalnız oyunda açılır; çözücü binlerce tahta kurar, kopya maliyeti istemez).
 var _history: Array[Dictionary] = []
 var _history_enabled: bool = false
+## Geri al günlükleri: alan değişiklikleri [kimlik, anahtar, eski değer] ve ipten ayrılanlar.
+## Anlık görüntü yalnız günlüklerin o anki boyunu tutar; geri alda fazlası tersten geri sarılır.
+var _field_log: Array[Array] = []
+var _line_log: Array[int] = []
+## Günlükte "alan yoktu" işareti (geri alda alan silinir).
+const _ABSENT: String = "<yok>"
 ## Boyalı parça kimlikleri (kurulumda bir kez): her hamlede tüm parçaları taramamak için.
 var _dye_ids: Array[int] = []
-## Kurallar gereği alanı değişebilen parçalar (ıslak, boyalı, boya hedefi, lekeli). Geri al anlık
-## görüntüsü yalnız bunları kopyalar: çözücü her düğümde anlık görüntü alır, ucuz olmalı.
-var _mutable_ids: Array[int] = []
 ## Sıralı tüm kimlikler (kurulumda bir kez): çözücü her düğümde parçaları tarar; her seferinde
 ## sözlük anahtarlarını sıralamak üretimin en pahalı kısmıydı.
 var _ids: Array[int] = []
+## İpteki kimlikler, sıralı (paketli). `_on_line` ile birlikte tutulur: sıcak döngüler (açık parçalar,
+## durum anahtarı) tüm parçaları değil yalnız iptekileri tarasın diye.
+var _line_ids: PackedInt32Array = PackedInt32Array()
 ## Kimlik -> sabit kapatanlar (kurulumda bir kez, tipli dizi): sorgularda geçici dizi üretilmez.
 var _blockers: Dictionary = {}
 ## Islak olabilen (başta ıslak) ve kilitli parçalar: sıcak döngüler yalnız bunları tarar.
@@ -150,6 +158,13 @@ var _slide_ids: Array[int] = []
 var _slide_phase: int = 0
 var _slide_left: int = 0
 var _has_chains: bool = false
+var _has_jokers: bool = false
+## Renk -> o rengi şu an alan sepet (türsüz ve jokersiz seviyelerde). Sepetler değişince kirlenir ve
+## ilk sorguda yeniden kurulur. Neden: `_basket_for` çözücünün en sık çağırdığı sorgu (her açık parça,
+## her askı slotu); sepet döngüsü yerine tek dizi okuması. Sonuç döngüyle birebir aynıdır.
+var _accept: PackedInt32Array = PackedInt32Array()
+var _accept_dirty: bool = true
+var _fast_route: bool = false
 ## Kip alanları.
 var _mode: String = MODE_NONE
 var _move_limit: int = 0
@@ -184,8 +199,6 @@ func _init(level: Dictionary, upgrades: Dictionary = {}) -> void:
 			_wet_pool.append(id)
 		if item.has("lock") and int(item["lock"]) != EMPTY:
 			_lock_of[id] = int(item["lock"])
-		if item.has("wet") or item.has("dye") or item.has("stain"):
-			_mutable_ids.append(id)
 		if item.has("chain"):
 			_has_chains = true
 		var screen: int = int(item.get("screen", 0))
@@ -197,16 +210,13 @@ func _init(level: Dictionary, upgrades: Dictionary = {}) -> void:
 	for id: Variant in _items.keys():
 		_ids.append(int(id))
 	_ids.sort()
-	for id: int in _dye_ids:
-		var target: int = dye_target(id)
-		if _items.has(target) and not _mutable_ids.has(target):
-			_mutable_ids.append(target)
-	_mutable_ids.sort()
+	_line_ids = PackedInt32Array(_ids)
 	var kinds: Dictionary = {}
 	for index: Variant in level.get("big", []) as Array:
 		kinds[int(index)] = KIND_BIG
 	for index: Variant in level.get("jokers", []) as Array:
 		kinds[int(index)] = KIND_JOKER
+	_has_jokers = not (level.get("jokers", []) as Array).is_empty()
 	var position: int = 0
 	for color: Variant in level.get("queue", []) as Array:
 		_queue.append(int(color))
@@ -216,6 +226,7 @@ func _init(level: Dictionary, upgrades: Dictionary = {}) -> void:
 	_setup_slide(level.get("slide", {}) as Dictionary)
 	_setup_mode(level)
 	_setup_extras(level, upgrades)
+	_setup_season(level)
 	var slots: int = maxi(int(level.get("rack_slots", DEFAULT_RACK_SLOTS)), 1)
 	for _i: int in range(slots):
 		_rack.append(EMPTY)
@@ -223,6 +234,7 @@ func _init(level: Dictionary, upgrades: Dictionary = {}) -> void:
 	for _i: int in range(active):
 		_baskets.append(_next_basket())
 		_basket_ids.append([])
+	_setup_accept(level)
 
 
 func is_won() -> bool:
@@ -248,6 +260,25 @@ func item(id: int) -> Dictionary:
 
 func item_ids() -> Array[int]:
 	return _ids.duplicate()
+
+
+## Parça alanı yazıcı: geri al açıksa eski değeri günlüğe yazar. Neden günlük: eskiden her hamlede
+## değişebilen tüm parçaların sözlükleri kopyalanıyordu; çözücü bunu düğüm başına yapınca üretimin
+## en pahalı işi buydu. Günlükle yalnız GERÇEKTEN değişen alan kaydedilir (geri al birebir aynı).
+func _set_item(id: int, key: String, value: Variant) -> void:
+	var entry: Dictionary = _items[id] as Dictionary
+	if _history_enabled:
+		_field_log.append([id, key, entry.get(key, _ABSENT)])
+	entry[key] = value
+
+
+## İpten ayrılma tek yerden: geri al günlüğü için (bkz. `_set_item`).
+func _take_off_line(id: int) -> void:
+	if not _on_line.erase(id):
+		return
+	_line_ids.remove_at(_line_ids.bsearch(id))
+	if _history_enabled:
+		_line_log.append(id)
 
 
 ## Parça alanı okuyucu. Neden `get(id)` + null: `get(id, {})` her çağrıda yeni sözlük üretir;
@@ -355,9 +386,8 @@ func open_ids() -> Array[int]:
 	var result: Array[int] = []
 	var screened: bool = _max_screen > 0
 	var windy: bool = not _wind_by_target.is_empty()
-	for id: int in _ids:
-		if not _on_line.has(id):
-			continue
+	var sliding: bool = not _slide_phases.is_empty()
+	for id: int in _line_ids:
 		var open: bool = true
 		for blocker: int in _blockers[id] as Array[int]:
 			if _on_line.has(blocker):
@@ -367,7 +397,12 @@ func open_ids() -> Array[int]:
 			continue
 		if _lock_of.has(id) and not _completed.has(_lock_of[id]):
 			continue
-		if (screened or windy) and not is_open(id):
+		# Ekran/rüzgâr/sürgü yalnız ilgili parçalarda yeniden denetlenir (is_open ile aynı sonuç).
+		# Eski davranış birebir: sürgü örtmesi yalnız ekranlı/rüzgârlı seviyede denetlenir (çözücü
+		# bütçe sayımı ve böylece üretilen seviyeler değişmesin).
+		if (screened or windy) and ((screened and int(_screen_of.get(id, 0)) > _screen) \
+				or _wind_by_target.has(id) or (sliding and _slide_phases[_slide_phase].has(id))) \
+				and not is_open(id):
 			continue
 		result.append(id)
 	return result
@@ -431,10 +466,14 @@ func tap(id: int) -> Array[Dictionary]:
 		return _free_action(id)
 	if is_over() or not _on_line.has(id) or is_hidden(id):
 		return events
-	var blockers: Array[int] = blockers_of(id)
-	if not blockers.is_empty():
-		events.append({"type": EVENT_BLOCKED, "id": id, "by": blockers})
+	# Önce dizi üretmeyen açıklık sorgusu: çözücü her çocukta buradan geçer (kapatan listesi yalnız
+	# engelli dokunuşta, olay için kurulur).
+	if not is_open(id):
+		events.append({"type": EVENT_BLOCKED, "id": id, "by": blockers_of(id)})
 		return events
+	# Yapraklı parça: ilk dokunuş yaprağı süpürür (ücretsiz, hamle değil; kilit de engellemez).
+	if _season and _leafy.has(id):
+		return _brush_leaf(id)
 	if is_locked(id):
 		events.append({"type": EVENT_LOCKED, "id": id, "color": lock_color(id)})
 		return events
@@ -443,16 +482,24 @@ func tap(id: int) -> Array[Dictionary]:
 		if machine != EMPTY:
 			_load_machine(id, machine, events)
 			return events
-	if is_wet(id):
+	var faded: bool = _season and is_faded(id)
+	if is_wet(id) or faded:
 		_record_history()
 		var ticking: Array[int] = _open_dyes()
+		var sunning: Array[int] = _open_suns()
 		var drying_before: Array = [] if _drying.is_empty() else _drying.keys()
-		(_items[id] as Dictionary)["wet"] = false
 		_moves += 1
-		events.append({"type": EVENT_WRING, "id": id})
+		if faded:
+			# Solmuş parça silkelenir (ıslak sıkma gibi tek ek hamle): ceza hiçbir zaman kayıp değildir.
+			_set_item(id, "faded", false)
+			events.append({"type": EVENT_SHAKE, "id": id})
+		else:
+			_set_item(id, "wet", false)
+			events.append({"type": EVENT_WRING, "id": id})
 		# Sıkmak da bir hamledir: boya sayacı, kuruma ve rüzgâr işler. Durum değişirse (boya aktı,
 		# leke kurudu, rüzgâr esti) yerleşme ve kayıp denetimi gerekir.
 		var changed: bool = _tick_dyes(ticking, events)
+		changed = _tick_season(sunning, events) or changed
 		changed = _dry_stains(drying_before, events) or changed
 		changed = _wind_tick(events) or changed
 		changed = _slide_tick(events) or changed
@@ -471,9 +518,8 @@ func tap(id: int) -> Array[Dictionary]:
 ## sepet yoksa alınamaz: EVENT_RACK_FULL eklenir, durum değişmez. Lekeli parça her zaman askıya,
 ## zincir eşi de askıya düştüğünden gereken boş slot sayısı önceden hesaplanır.
 func _take(id: int, events: Array[Dictionary], prefix: Dictionary = {}) -> bool:
-	var color: int = color_of(id)
-	var stained: bool = is_stained(id)
-	var basket_index: int = EMPTY if stained else _basket_for(color, kind_of(id))
+	var stained: bool = _rests(id)
+	var basket_index: int = EMPTY if stained else _route(id)
 	var partner: int = chain_partner(id)
 	if partner != EMPTY and not _on_line.has(partner):
 		partner = EMPTY
@@ -488,20 +534,22 @@ func _take(id: int, events: Array[Dictionary], prefix: Dictionary = {}) -> bool:
 	# Sayaç, bu hamleden ÖNCE açık olan boyalılarda işler: hamlenin açtığı boyalı ilk
 	# hamlesini kaybetmesin; alınan boyalı da artık ipte olmadığı için sayılmaz.
 	var ticking: Array[int] = _open_dyes()
+	var sunning: Array[int] = _open_suns()
 	# Yalnız bu hamleden önce askıda olan lekeliler kurur ("en az bir sonraki hamle").
 	var drying_before: Array = [] if _drying.is_empty() else _drying.keys()
-	_on_line.erase(id)
+	_take_off_line(id)
 	_moves += 1
 	if basket_index != EMPTY:
 		_put_in_basket(id, basket_index, EVENT_TO_BASKET, events)
 	else:
 		_hang(id, events)
 	if partner != EMPTY:
-		_on_line.erase(partner)
+		_take_off_line(partner)
 		events.append({"type": EVENT_CHAIN_DROP, "id": partner, "by": id})
 		_hang(partner, events)
 	_apply_sock_rule(id, events)
 	_tick_dyes(ticking, events)
+	_tick_season(sunning, events)
 	_dry_stains(drying_before, events)
 	_wind_tick(events)
 	_slide_tick(events)
@@ -515,9 +563,9 @@ func _hang(id: int, events: Array[Dictionary]) -> void:
 	var slot: int = _free_rack_slot()
 	_rack[slot] = id
 	events.append({"type": EVENT_TO_RACK, "id": id, "slot": slot})
-	if is_stained(id):
+	if _rests(id):
 		_drying[id] = true
-		events.append({"type": EVENT_STAIN_WAIT, "id": id})
+		events.append({"type": EVENT_FROST_WAIT if is_frozen(id) else EVENT_STAIN_WAIT, "id": id})
 
 
 ## Mandal sökücü (güçlendirici): ipteki herhangi bir parçayı engel, kilit ve ıslaklığa
@@ -533,9 +581,9 @@ func force_take(id: int) -> Array[Dictionary]:
 		return events
 	var was_wet: bool = is_wet(id)
 	if was_wet:
-		(_items[id] as Dictionary)["wet"] = false
+		_set_item(id, "wet", false)
 	if not _take(id, events, {"type": EVENT_PIN_REMOVED, "id": id}) and was_wet:
-		(_items[id] as Dictionary)["wet"] = true
+		_set_item(id, "wet", true)
 	return events
 
 
@@ -643,7 +691,7 @@ func _tick_dyes(ticking: Array[int], events: Array[Dictionary]) -> bool:
 		if not _on_line.has(id):
 			continue
 		var left: int = dye_left(id) - 1
-		(_items[id] as Dictionary)["dye"] = left
+		_set_item(id, "dye", left)
 		events.append({"type": EVENT_DYE_TICK, "id": id, "left": left})
 		if left <= 0:
 			bled = _bleed(id, events) or bled
@@ -658,8 +706,8 @@ func _bleed(id: int, events: Array[Dictionary]) -> bool:
 	var other: int = color_of(target)
 	if own == other:
 		return false
-	(_items[id] as Dictionary)["color"] = other
-	(_items[target] as Dictionary)["color"] = own
+	_set_item(id, "color", other)
+	_set_item(target, "color", own)
 	events.append({"type": EVENT_DYE_BLEED, "id": id, "target": target, "color": other, "target_color": own})
 	return true
 
@@ -682,37 +730,60 @@ func undo() -> bool:
 	# Anlık görüntü yığından çıktı, başka kimse tutmuyor: kopyalamadan sahiplenilir (çözücü her
 	# düğümde geri alır; çift kopya üretimi belirgin yavaşlatıyordu).
 	var snap: Dictionary = _history.pop_back()
-	var saved: Dictionary = snap["items"] as Dictionary
-	for id: Variant in saved.keys():
-		_items[id] = saved[id]
-	_on_line = snap["on_line"] as Dictionary
+	var counters: PackedInt32Array = snap["counters"] as PackedInt32Array
+	# Günlükler tersten geri sarılır: anlık görüntüden sonraki her değişiklik geri alınır.
+	var field_mark: int = counters[0]
+	while _field_log.size() > field_mark:
+		var change: Array = _field_log.pop_back()
+		var entry: Dictionary = _items[int(change[0])] as Dictionary
+		if change[2] is String and String(change[2]) == _ABSENT:
+			entry.erase(String(change[1]))
+		else:
+			entry[String(change[1])] = change[2]
+	var line_mark: int = counters[1]
+	while _line_log.size() > line_mark:
+		var back: int = _line_log.pop_back()
+		_on_line[back] = true
+		_line_ids.insert(_line_ids.bsearch(back), back)
 	var slots: int = _rack.size()
 	_rack.assign(snap["rack"] as Array)
 	while _rack.size() < slots:
 		_rack.append(EMPTY)
 	_baskets.assign(snap["baskets"] as Array)
+	_accept_dirty = true
 	_basket_ids.assign(snap["basket_ids"] as Array)
 	_queue.assign(snap["queue"] as Array)
 	_queue_kinds.assign(snap["queue_kinds"] as Array)
-	_won = bool(snap["won"])
-	_lost = bool(snap["lost"])
+	_won = counters[2] != 0
+	_lost = counters[3] != 0
 	_lose_reason = String(snap["lose_reason"])
-	_moves = int(snap["moves"])
-	_completed = snap["completed"] as Dictionary
-	_sock_waiting = int(snap["sock_waiting"])
-	_stuck = snap["stuck"] as Dictionary
-	_drying = snap["drying"] as Dictionary
-	_wind_done = int(snap["wind_done"])
-	_wind_left = int(snap["wind_left"])
-	_wind_void = snap["wind_void"] as Dictionary
-	_slide_phase = int(snap["slide_phase"])
-	_slide_left = int(snap["slide_left"])
-	_order_progress = int(snap["order_progress"])
-	_order_broken = bool(snap["order_broken"])
-	_screen = int(snap["screen"])
+	_moves = counters[4]
+	_sock_waiting = counters[5]
+	_wind_done = counters[6]
+	_wind_left = counters[7]
+	_slide_phase = counters[8]
+	_slide_left = counters[9]
+	_order_progress = counters[10]
+	_order_broken = counters[11] != 0
+	_screen = counters[12]
+	# Boş sözlükler kopyalanmadan saklanmaz (null): yeni boş sözlük verilir.
+	_completed = _restored(snap["completed"])
+	_stuck = _restored(snap["stuck"])
+	_drying = _restored(snap["drying"])
+	_wind_void = _restored(snap["wind_void"])
 	if _extras:
 		_restore_extras(snap)
+	if _season:
+		_restore_season(snap)
 	return true
+
+
+static func _kept(source: Dictionary) -> Variant:
+	return null if source.is_empty() else source.duplicate()
+
+
+static func _restored(saved: Variant) -> Dictionary:
+	return {} if saved == null else saved as Dictionary
 
 
 func history_size() -> int:
@@ -730,22 +801,20 @@ func basket_contents(index: int) -> Array[int]:
 func _record_history() -> void:
 	if not _history_enabled:
 		return
-	var saved: Dictionary = {}
-	for id: int in _mutable_ids:
-		saved[id] = (_items[id] as Dictionary).duplicate()
+	var counters: PackedInt32Array = PackedInt32Array([_field_log.size(), _line_log.size(),
+		1 if _won else 0, 1 if _lost else 0, _moves, _sock_waiting, _wind_done, _wind_left,
+		_slide_phase, _slide_left, _order_progress, 1 if _order_broken else 0, _screen])
 	var snap: Dictionary = {
-		"items": saved, "on_line": _on_line.duplicate(), "rack": _rack.duplicate(),
+		"counters": counters, "rack": _rack.duplicate(),
 		"baskets": baskets(), "basket_ids": _basket_ids.duplicate(true), "queue": _queue.duplicate(),
-		"queue_kinds": _queue_kinds.duplicate(),
-		"won": _won, "lost": _lost, "lose_reason": _lose_reason, "moves": _moves,
-		"completed": _completed.duplicate(),
-		"sock_waiting": _sock_waiting, "stuck": _stuck.duplicate(), "drying": _drying.duplicate(),
-		"wind_done": _wind_done, "wind_left": _wind_left, "wind_void": _wind_void.duplicate(),
-		"slide_phase": _slide_phase, "slide_left": _slide_left,
-		"order_progress": _order_progress, "order_broken": _order_broken, "screen": _screen,
+		"queue_kinds": _queue_kinds.duplicate(), "lose_reason": _lose_reason,
+		"completed": _kept(_completed), "stuck": _kept(_stuck), "drying": _kept(_drying),
+		"wind_void": _kept(_wind_void),
 	}
 	if _extras:
 		_snapshot_extras(snap)
+	if _season:
+		_snapshot_season(snap)
 	_history.append(snap)
 
 
@@ -762,6 +831,7 @@ func _settle(events: Array[Dictionary]) -> void:
 			_complete_color(int(basket["color"]), events)
 			_track_order(int(basket["color"]), events)
 			_baskets[index] = _next_basket()
+			_accept_dirty = true
 			_basket_ids[index] = []
 			var fresh: Dictionary = _baskets[index]
 			if not fresh.is_empty():
@@ -778,7 +848,7 @@ func _settle(events: Array[Dictionary]) -> void:
 			var id: int = _rack[slot]
 			if id == EMPTY or _stuck.has(id) or _drying.has(id):
 				continue
-			var target: int = _basket_for(color_of(id), kind_of(id))
+			var target: int = _route(id)
 			if target == EMPTY:
 				continue
 			_rack[slot] = EMPTY
@@ -832,21 +902,41 @@ func _complete_color(color: int, events: Array[Dictionary]) -> void:
 ## Aktif bir sepete doğrudan gidebilecek açık ve kilitsiz bir çamaşır var mı? (Askı doluyken
 ## sorulur: lekeli ve ipte eşi duran zincirli parça askı ister, sayılmaz.)
 func has_basket_move() -> bool:
-	for id: int in open_ids():
-		if is_stained(id) or _on_line.has(chain_partner(id)):
+	# Dizi üretmeden, ilk bulunan hamlede çıkarak (open_ids ile aynı açıklık kuralı): askı doluyken
+	# çözücü bunu her düğümde sorar; eskiden tüm açık listeyi kurmak yerleşmenin yarısını yiyordu.
+	for id: int in _line_ids:
+		if not _open_for_list(id) or _rests(id) or _on_line.has(chain_partner(id)):
 			continue
-		if _basket_for(color_of(id), kind_of(id)) != EMPTY:
+		if _route(id) != EMPTY:
 			return true
 	return false
+
+
+## `open_ids` listesine girer mi (aynı kural; tek parça için).
+func _open_for_list(id: int) -> bool:
+	for blocker: int in _blockers[id] as Array[int]:
+		if _on_line.has(blocker):
+			return false
+	if _lock_of.has(id) and not _completed.has(_lock_of[id]):
+		return false
+	var screened: bool = _max_screen > 0
+	if screened or not _wind_by_target.is_empty():
+		if (screened and int(_screen_of.get(id, 0)) > _screen) or _wind_by_target.has(id) \
+				or (not _slide_phases.is_empty() and _slide_phases[_slide_phase].has(id)):
+			return is_open(id)
+	return true
 
 
 func _put_in_basket(id: int, basket_index: int, event_type: String,
 		events: Array[Dictionary], from_slot: int = EMPTY) -> void:
 	var basket: Dictionary = _baskets[basket_index]
+	if _has_duals and is_dual(id):
+		_commit_dual(id, basket, events)
 	if bool(basket.get("joker", false)) and int(basket["color"]) == EMPTY:
 		_fix_joker(basket_index, color_of(id), events)
 	var position: int = int(basket["count"])
 	basket["count"] = position + 1
+	_accept_dirty = true
 	_basket_ids[basket_index].append(id)
 	var event: Dictionary = {"type": event_type, "id": id, "basket": basket_index, "index": position}
 	if from_slot != EMPTY:
@@ -857,6 +947,10 @@ func _put_in_basket(id: int, basket_index: int, event_type: String,
 ## `kind`: parçanın türü (türlü sepet yalnız kendi türünü alır). Kedinin yattığı sepet hiçbir
 ## şey almaz. Türlü sepet/kedi yoksa davranış eskisiyle birebir aynıdır.
 func _basket_for(color: int, kind: int = EMPTY) -> int:
+	if _fast_route and color >= 0 and color < _accept.size():
+		if _accept_dirty:
+			_rebuild_accept()
+		return _accept[color]
 	if _has_typed:
 		# Önce türü tutan türlü sepet: ayrılmış parçalar sıradan sepete kaçmasın.
 		for index: int in range(_baskets.size()):
@@ -872,6 +966,9 @@ func _basket_for(color: int, kind: int = EMPTY) -> int:
 				and (not _has_typed or not basket.has("kind")):
 			return index
 	# Renkli sepet yoksa rengini henüz almamış joker (önce renkli sepet: joker son çaredir).
+	# Jokersiz seviyede tarama atlanır (sonuç aynı: EMPTY).
+	if not _has_jokers:
+		return EMPTY
 	for index: int in range(_baskets.size()):
 		var basket: Dictionary = _baskets[index]
 		if not basket.is_empty() and index != _cat_at and bool(basket.get("joker", false)) \
@@ -888,7 +985,7 @@ func accepts(color: int) -> bool:
 ## Bu parçayı (rengi + türü) şu an kabul eden aktif sepet var mı; türlü sepetli seviyede
 ## çözücü sıralaması bununla doğru kalır (türsüz seviyede `accepts` ile aynıdır).
 func accepts_item(id: int) -> bool:
-	return _basket_for(color_of(id), kind_of(id)) != EMPTY
+	return _route(id) != EMPTY
 
 
 func _cap(basket: Dictionary) -> int:
@@ -941,11 +1038,11 @@ func _next_basket() -> Dictionary:
 ## renkler 0+ olduğundan içerikle çakışmaz) ayrılır -> kodlama birebirdir.
 func state_key() -> PackedInt32Array:
 	var key: PackedInt32Array = PackedInt32Array()
-	key.append(_on_line.size())
-	for id: int in _ids:
-		if _on_line.has(id):
-			key.append(id)
-	var rack_colors: Array[int] = []
+	key.append(_line_ids.size())
+	key.append_array(_line_ids)
+	# Askı renkleri sıralı (slot sırası geleceği değiştirmez). Paketli dizi yerinde sıralanır: geçici
+	# Array üretimi düğüm başına pahalıydı. Kodlama içerik olarak eskisiyle aynıdır.
+	var rack_colors: PackedInt32Array = PackedInt32Array()
 	for id: int in _rack:
 		if id != EMPTY:
 			# Türlü sepetli seviyede askıdaki parçanın türü de geleceği değiştirir.
@@ -953,8 +1050,7 @@ func state_key() -> PackedInt32Array:
 				else int((_items[id] as Dictionary)["color"]) * KIND_KEY_BASE + kind_of(id) + 1)
 	rack_colors.sort()
 	key.append(rack_colors.size())
-	for color: int in rack_colors:
-		key.append(color)
+	key.append_array(rack_colors)
 	key.append(_baskets.size())
 	for basket: Dictionary in _baskets:
 		_append_basket_key(key, basket)
@@ -974,8 +1070,12 @@ func state_key() -> PackedInt32Array:
 	if not _stuck.is_empty():
 		key.append_array(PackedInt32Array(stuck_ids()))
 	key.append(BASKET_KEY_EMPTY)
-	if not _dye_ids.is_empty():
-		key.append_array(PackedInt32Array(dye_state()))
+	for id: int in _dye_ids:
+		var target: int = dye_target(id)
+		key.append(id)
+		key.append(dye_left(id))
+		key.append(color_of(id))
+		key.append(color_of(target))
 	key.append(BASKET_KEY_EMPTY)
 	if not _drying.is_empty():
 		key.append_array(PackedInt32Array(drying_ids()))
@@ -994,6 +1094,8 @@ func state_key() -> PackedInt32Array:
 	key.append(_moves if _move_limit > 0 else 0)
 	if _extras:
 		_append_extras_key(key)
+	if _season_keyed:
+		_append_season_key(key)
 	return key
 
 
@@ -1043,6 +1145,7 @@ func _fix_joker(index: int, color: int, events: Array[Dictionary]) -> void:
 	var basket: Dictionary = _baskets[index]
 	var ref: int = int(basket.get("ref", EMPTY))
 	basket["color"] = color
+	_accept_dirty = true
 	var swap: int = EMPTY
 	if color != ref:
 		for position: int in range(_queue.size()):
@@ -1083,8 +1186,13 @@ func _dry_stains(ids: Array, events: Array[Dictionary]) -> bool:
 		if not _drying.has(id):
 			continue
 		_drying.erase(id)
-		(_items[id] as Dictionary)["stain"] = false
-		events.append({"type": EVENT_STAIN_DRY, "id": id})
+		# Don de aynı "askıda bir hamle bekle" kuralıyla çözülür (genelleştirilmiş leke kuralı).
+		if is_frozen(id):
+			_set_item(id, "frost", false)
+			events.append({"type": EVENT_FROST_THAW, "id": id})
+		else:
+			_set_item(id, "stain", false)
+			events.append({"type": EVENT_STAIN_DRY, "id": id})
 		dried = true
 	return dried
 
@@ -1103,9 +1211,9 @@ func chain_partner(id: int) -> int:
 func _any_legal_move() -> bool:
 	var free: int = _free_slot_count()
 	for id: int in open_ids():
-		if is_wet(id):
+		if is_wet(id) or (_season and is_faded(id)):
 			return true
-		var needed: int = 1 if is_stained(id) or _basket_for(color_of(id), kind_of(id)) == EMPTY else 0
+		var needed: int = 1 if _rests(id) or _route(id) == EMPTY else 0
 		if _on_line.has(chain_partner(id)):
 			needed += 1
 		if needed <= free:
@@ -1509,14 +1617,6 @@ func _setup_extras(level: Dictionary, upgrades: Dictionary) -> void:
 	for id: int in _ids:
 		if bool(_field(id, "dirty", false)) and not _dirty_pool.has(id):
 			_dirty_pool.append(id)
-	var mutable: Array[int] = _dirty_pool.duplicate()
-	for step: Array in _rain_steps:
-		for entry: Variant in step:
-			mutable.append(int(entry))
-	for id: int in mutable:
-		if _items.has(id) and not _mutable_ids.has(id):
-			_mutable_ids.append(id)
-	_mutable_ids.sort()
 	_dirty_pool.sort()
 	_extras = _has_machines or _has_typed or not _bird_targets.is_empty() or not _rain_steps.is_empty() \
 		or not _cat_slots.is_empty()
@@ -1653,7 +1753,7 @@ func machine_of(id: int) -> int:
 func machine_for(id: int) -> int:
 	if is_dirty(id) and _machine_on[MACHINE_WASHER]:
 		return MACHINE_WASHER
-	if is_wet(id) and _machine_on[MACHINE_DRYER]:
+	if (is_wet(id) or is_frozen(id)) and _machine_on[MACHINE_DRYER]:
 		return MACHINE_DRYER
 	return EMPTY
 
@@ -1737,6 +1837,7 @@ func _free_action(id: int) -> Array[Dictionary]:
 	elif id == TAP_CAT and _cat_at != EMPTY:
 		events.append({"type": EVENT_CAT_PET, "basket": _cat_at})
 		_cat_at = EMPTY
+		_accept_dirty = true
 		_settle(events)
 	return events
 
@@ -1751,14 +1852,16 @@ func _load_machine(id: int, machine: int, events: Array[Dictionary], prefix: Dic
 	if not prefix.is_empty():
 		events.append(prefix)
 	var ticking: Array[int] = _open_dyes()
+	var sunning: Array[int] = _open_suns()
 	var drying_before: Array = [] if _drying.is_empty() else _drying.keys()
-	_on_line.erase(id)
+	_take_off_line(id)
 	_moves += 1
 	_slots(machine)[slot] = Vector2i(id, _machine_moves[machine])
 	_fresh = Vector2i(machine, slot)
 	events.append({"type": EVENT_TO_MACHINE, "id": id, "machine": machine, "slot": slot})
 	_apply_sock_rule(id, events)
 	_tick_dyes(ticking, events)
+	_tick_season(sunning, events)
 	_dry_stains(drying_before, events)
 	_wind_tick(events)
 	_slide_tick(events)
@@ -1819,13 +1922,15 @@ func _machine_exits(events: Array[Dictionary]) -> bool:
 			if entry.x == EMPTY or entry.y > 0:
 				continue
 			var id: int = entry.x
-			var basket: int = EMPTY if is_stained(id) else _basket_for(color_of(id), kind_of(id))
+			# Kurutucu donu da çözer: yön seçilmeden önce (çözülmüş parça sepete gidebilir).
+			if is_frozen(id) and machine == MACHINE_DRYER:
+				_set_item(id, "frost", false)
+			var basket: int = EMPTY if _rests(id) else _route(id)
 			if basket == EMPTY and _free_rack_slot() == EMPTY:
 				continue
 			slots[slot] = Vector2i(EMPTY, 0)
-			var item: Dictionary = _items[id] as Dictionary
-			item["dirty"] = false
-			item["wet"] = false
+			_set_item(id, "dirty", false)
+			_set_item(id, "wet", false)
 			events.append({"type": EVENT_MACHINE_OUT, "id": id, "machine": machine, "slot": slot})
 			if basket != EMPTY:
 				_put_in_basket(id, basket, EVENT_TO_BASKET, events)
@@ -1857,11 +1962,10 @@ func _tick_birds(events: Array[Dictionary]) -> bool:
 			_bird_sit -= 1
 			if _bird_sit <= 0:
 				_bird_on = EMPTY
-				var item: Dictionary = _items[perch] as Dictionary
-				item["dirty"] = true
-				item["bird"] = true
+				_set_item(perch, "dirty", true)
+				_set_item(perch, "bird", true)
 				# Kirlenen parça makinede yıkanırken kurur da: ıslaklık ayrıca sayılmaz.
-				item["wet"] = false
+				_set_item(perch, "wet", false)
 				events.append({"type": EVENT_BIRD_STAIN, "id": perch})
 				changed = true
 			else:
@@ -1899,7 +2003,7 @@ func _tick_rain(events: Array[Dictionary]) -> bool:
 		var id: int = int(entry)
 		if _on_line.has(id) and is_open(id) and not is_dirty(id) and not is_wet(id) \
 				and chain_partner(id) == EMPTY:
-			(_items[id] as Dictionary)["wet"] = true
+			_set_item(id, "wet", true)
 			soaked.append(id)
 	events.append({"type": EVENT_RAIN, "line": line, "ids": soaked, "left": rain_left()})
 	return not soaked.is_empty()
@@ -1914,6 +2018,7 @@ func _tick_cat(events: Array[Dictionary]) -> bool:
 		if _cat_stay <= 0:
 			events.append({"type": EVENT_CAT_LEAVE, "basket": _cat_at})
 			_cat_at = EMPTY
+			_accept_dirty = true
 			changed = true
 		else:
 			events.append({"type": EVENT_CAT_STAY, "basket": _cat_at, "left": _cat_stay})
@@ -1927,6 +2032,7 @@ func _tick_cat(events: Array[Dictionary]) -> bool:
 			_cat_left = _cat_every if _cat_done < _cat_slots.size() else 0
 			if slot >= 0 and slot < _baskets.size() and not _baskets[slot].is_empty() and _cat_at == EMPTY:
 				_cat_at = slot
+				_accept_dirty = true
 				_cat_stay = CAT_STAY_MOVES
 				events.append({"type": EVENT_CAT_LAND, "basket": slot, "left": cat_left()})
 			else:
@@ -1953,17 +2059,17 @@ func _settle_extras_end(events: Array[Dictionary]) -> void:
 func _any_progress_tap() -> bool:
 	var free: int = _free_slot_count()
 	# Dizi üretmeden ve ilk bulunan dokunuşta çıkarak tarar: çözücü bunu her düğümde çağırır.
-	for id: int in _ids:
-		if not _on_line.has(id) or not is_open(id) or is_locked(id):
+	for id: int in _line_ids:
+		if not is_open(id) or is_locked(id):
 			continue
 		var machine: int = machine_for(id) if _has_machines else EMPTY
 		if machine != EMPTY:
 			if _free_machine_slot(machine) != EMPTY:
 				return true
 			continue
-		if is_wet(id):
+		if is_wet(id) or (_season and is_faded(id)):
 			return true
-		var needed: int = 1 if is_stained(id) or _basket_for(color_of(id), kind_of(id)) == EMPTY else 0
+		var needed: int = 1 if _rests(id) or _route(id) == EMPTY else 0
 		if _on_line.has(chain_partner(id)):
 			needed += 1
 		if needed <= free:
@@ -1991,6 +2097,7 @@ func _skip_time(events: Array[Dictionary]) -> bool:
 	if _cat_at != EMPTY:
 		events.append({"type": EVENT_CAT_LEAVE, "basket": _cat_at})
 		_cat_at = EMPTY
+		_accept_dirty = true
 		skipped = true
 	return skipped
 
@@ -2019,6 +2126,7 @@ func _restore_extras(snap: Dictionary) -> void:
 	_cat_done = values[6]
 	_cat_left = values[7]
 	_cat_at = values[8]
+	_accept_dirty = true
 	_cat_stay = values[9]
 
 
@@ -2040,3 +2148,397 @@ func _append_extras_key(key: PackedInt32Array) -> void:
 		key.append(kind)
 	key.append_array(PackedInt32Array([_bird_done, _bird_left, _bird_on, _bird_sit, _rain_done, _rain_left,
 		_cat_done, _cat_left, _cat_at, _cat_stay]))
+
+
+# --- Çift renk ve mevsimler (derinleşme 4) ----------------------------------------------------------
+# Her şey HAMLE ile sayılır. Ayrıntılı kurallar:
+#
+# Çift renkli çamaşır (`twin`: eşin kimliği): iki renk gösterir ve A ya da B sepetine
+# gidebilir. Dokunuş onu A'nın aktif sepetine, yoksa B'ninkine, ikisi de yoksa askıya gönderir;
+# ikisi de aktifse TAMAMLANMAYA DAHA YAKIN olana (kalan yer daha az), eşitlikte A'ya. Askıdaki
+# çift renkli parça da aynı kuralla kendiliğinden geçer.
+# Renk muhasebesi (neden asla çıkmaz yol yok): çift renkliler hep TAMAMLAYICI ÇİFT gelir: A|B
+# (evi A) ve B|A (evi B). Seviye verisinde yalnız `twin` vardır; ikinci renk eşin renginden kurulumda
+# türetilir (renk eşlemesi/ayna gibi dönüşümler veriyi bozamasın). Görünen sıra [A, B] = [küçük
+# kimlikli eşin rengi, büyük kimliklinin]. `color` alanı parçanın "evi"dir; her rengin ev sayısı o rengin sepet
+# kapasitesine eşittir (üretici böyle kurar). Çiftin İLK parçası bir sepete girdiği an çift
+# "yerleşir": ilk parça diğer renge gittiyse iki parçanın evleri takas edilir (ikisi de hâlâ
+# yerleşmemiş olduğundan takas her rengin ev sayısını korur); ikinci parça artık yalnız kalan
+# renge gider (tek renkli görünür). Böylece her an "yerleşmemiş evler = kalan kapasite" değişmezi
+# korunur: hiçbir renk taşmaz, hiçbir sepet eksik kalmaz (bkz. test_dual_garment.gd özellik testi).
+#
+# Güneşte solma (`sun: N`): AÇIK ve ipteki işaretli parça her hamlede (kendisi alınmadıkça) bir
+# azalır; 0 olunca solar (`faded`). Solmuş parça iki dokunuş ister: ilki silkeler (bir hamle),
+# ikincisi alır. Ceza yalnız bir ek hamledir, asla kayıp değildir. Sayaç bitmeden alınırsa ceza yok.
+# Düşen yapraklar (`leaves: {every, targets}`): her `every` hamlede bir yaprak, üretimde belirlenmiş
+# parçaya düşer (o an ipteyse; değilse süzülüp geçer). Sıradaki hedef bir hamle önceden bilinir.
+# Yapraklı parçaya ilk dokunuş yaprağı süpürür: ücretsizdir (hamle değil, geçmişe yazılmaz; kuşu
+# kovalamak gibi), sonra parça normal alınır.
+# Don (`frost`): donmuş parça sepete doğrudan gidemez; lekeli gibi askıya asılır ve SONRAKİ ilk
+# hamlenin sonunda çözülür (lekenin "askıda bir hamle bekle" kuralının genellemesi, `_rests`).
+# Kurutuculu seviyede ıslak gibi kurutucuya girer ve çözülmüş çıkar.
+# Polen (`pollen: {every, lines, hide}`): her `every` hamlede bir polen bulutu sıradaki ipin
+# renklerini `hide` hamle boyunca tozla örter. Yalnız BİLGİ mekaniğidir: parçalar alınabilir, kural
+# değişmez; çözücü etkilenmez (durum anahtarına girmez).
+
+const EVENT_DUAL_SETTLE: String = "dual_settle"
+const EVENT_SUN_TICK: String = "sun_tick"
+const EVENT_SUN_FADE: String = "sun_fade"
+const EVENT_SHAKE: String = "shake"
+const EVENT_LEAF_TICK: String = "leaf_tick"
+const EVENT_LEAF_LAND: String = "leaf_land"
+const EVENT_LEAF_PASS: String = "leaf_pass"
+const EVENT_LEAF_BRUSH: String = "leaf_brush"
+const EVENT_FROST_WAIT: String = "frost_wait"
+const EVENT_FROST_THAW: String = "frost_thaw"
+const EVENT_POLLEN_TICK: String = "pollen_tick"
+const EVENT_POLLEN: String = "pollen"
+const EVENT_POLLEN_CLEAR: String = "pollen_clear"
+## Güneş sayacının varsayılanı (hamle); polen örtüsünün varsayılan süresi.
+const DEFAULT_SUN_MOVES: int = 4
+const DEFAULT_POLLEN_HIDE: int = 3
+## Durum anahtarında çift renk paketlemesi (renk 0..7, ikinci renk -1..7).
+const DUAL_KEY_BASE: int = 16
+
+var _season: bool = false
+var _season_keyed: bool = false
+var _has_duals: bool = false
+var _dual_ids: Array[int] = []
+var _sun_ids: Array[int] = []
+var _leaf_every: int = 0
+var _leaf_targets: Array[int] = []
+var _leaf_done: int = 0
+var _leaf_left: int = 0
+## Üstünde yaprak olan parçalar.
+var _leafy: Dictionary = {}
+var _pollen_every: int = 0
+var _pollen_lines: Array[int] = []
+var _pollen_hide: int = 0
+var _pollen_done: int = 0
+var _pollen_left: int = 0
+var _dust_line: int = EMPTY
+var _dust_left: int = 0
+
+
+func _setup_season(level: Dictionary) -> void:
+	for id: int in _ids:
+		var twin: int = int(_field(id, "twin", EMPTY))
+		if twin == EMPTY or not _items.has(twin):
+			continue
+		_dual_ids.append(id)
+		var item: Dictionary = _items[id] as Dictionary
+		item["dual"] = color_of(twin)
+		var low: int = mini(id, twin)
+		var high: int = maxi(id, twin)
+		item["split"] = [color_of(low), color_of(high)]
+	for id: int in _ids:
+		if _field(id, "sun", null) != null:
+			_sun_ids.append(id)
+	_has_duals = not _dual_ids.is_empty()
+	var leaves: Dictionary = level.get("leaves", {}) as Dictionary
+	for target: Variant in leaves.get("targets", []) as Array:
+		if _items.has(int(target)):
+			_leaf_targets.append(int(target))
+	if not _leaf_targets.is_empty():
+		_leaf_every = maxi(int(leaves.get("every", 0)), 1)
+		_leaf_left = _leaf_every
+	var pollen: Dictionary = level.get("pollen", {}) as Dictionary
+	for line: Variant in pollen.get("lines", []) as Array:
+		_pollen_lines.append(int(line))
+	if not _pollen_lines.is_empty():
+		_pollen_every = maxi(int(pollen.get("every", 0)), 1)
+		_pollen_hide = maxi(int(pollen.get("hide", DEFAULT_POLLEN_HIDE)), 1)
+		_pollen_left = _pollen_every
+	var frosty: bool = false
+	for id: int in _ids:
+		if bool(_field(id, "frost", false)):
+			frosty = true
+			break
+	_season = not _sun_ids.is_empty() or not _leaf_targets.is_empty() or not _pollen_lines.is_empty() or frosty
+	# Durum anahtarına yalnız kuralı etkileyen mevsim alanları girer (polen ve don girmez: don, lekeyle
+	# aynı `_drying` + parça alanı üzerinden zaten anahtardadır).
+	_season_keyed = _has_duals or not _sun_ids.is_empty() or not _leaf_targets.is_empty()
+
+
+# --- Sorgular ----------------------------------------------------------------------------------------
+
+func has_season() -> bool:
+	return _season
+
+
+## Çift renkli ve henüz yerleşmemiş (iki renge de gidebilir).
+func is_dual(id: int) -> bool:
+	return int(_field(id, "dual", EMPTY)) != EMPTY
+
+
+## Görünen iki renk [A, B] (çift renkli değilse boş). Yerleşince de değişmez: görünüm sırası.
+func split_colors(id: int) -> Array[int]:
+	var result: Array[int] = []
+	var raw: Variant = _field(id, "split", null)
+	if raw is Array:
+		for color: Variant in raw as Array:
+			result.append(int(color))
+	return result
+
+
+func dual_partner(id: int) -> int:
+	return int(_field(id, "twin", EMPTY))
+
+
+func dual_ids() -> Array[int]:
+	return _dual_ids.duplicate()
+
+
+func sun_left(id: int) -> int:
+	return int(_field(id, "sun", 0))
+
+
+func is_sunny(id: int) -> bool:
+	return _field(id, "sun", null) != null
+
+
+func sun_ids() -> Array[int]:
+	return _sun_ids.duplicate()
+
+
+func is_faded(id: int) -> bool:
+	return bool(_field(id, "faded", false))
+
+
+func is_frozen(id: int) -> bool:
+	return bool(_field(id, "frost", false))
+
+
+## Sepete gitmeden önce askıda bir hamle beklemesi gereken parça (lekeli ya da donmuş).
+func _rests(id: int) -> bool:
+	return is_stained(id) or is_frozen(id)
+
+
+func is_leafy(id: int) -> bool:
+	return _leafy.has(id)
+
+
+func leafy_ids() -> Array[int]:
+	var result: Array[int] = []
+	for id: Variant in _leafy.keys():
+		result.append(int(id))
+	result.sort()
+	return result
+
+
+## Sıradaki yaprağa kalan hamle (yaprak yoksa/bittiyse -1) ve hedefi.
+func leaf_left() -> int:
+	return _leaf_left if _leaf_done < _leaf_targets.size() else -1
+
+
+func leaf_next() -> int:
+	return _leaf_targets[_leaf_done] if _leaf_done < _leaf_targets.size() else EMPTY
+
+
+func leaf_targets() -> Array[int]:
+	return _leaf_targets.duplicate()
+
+
+## Sıradaki polen bulutuna kalan hamle (yoksa/bittiyse -1) ve ipi.
+func pollen_left() -> int:
+	return _pollen_left if _pollen_done < _pollen_lines.size() else -1
+
+
+func pollen_next_line() -> int:
+	return _pollen_lines[_pollen_done] if _pollen_done < _pollen_lines.size() else EMPTY
+
+
+## Şu an tozla örtülü ip (yoksa EMPTY) ve açılmasına kalan hamle.
+func dust_line() -> int:
+	return _dust_line if _dust_left > 0 else EMPTY
+
+
+func dust_left() -> int:
+	return _dust_left if _dust_line != EMPTY else 0
+
+
+## Parçanın rengi şu an tozla gizli mi (ipteyse ve ipi örtülüyse).
+func is_dusty(id: int) -> bool:
+	return _dust_left > 0 and _on_line.has(id) and int(_field(id, "line", EMPTY)) == _dust_line
+
+
+# --- Çift renk kuralı --------------------------------------------------------------------------------
+
+## Parçanın şu an gideceği sepet (yoksa EMPTY): çift renklide A/B seçimi, diğerlerinde renk + tür.
+func _route(id: int) -> int:
+	if _has_duals and is_dual(id):
+		return _dual_route(id)
+	return _basket_for(color_of(id), kind_of(id))
+
+
+## A'nın sepeti, yoksa B'ninki; ikisi de varsa kalan yeri az olan (eşitlikte A). Neden "tamamlanmaya
+## yakın": oyuncu için sezgiseldir (neredeyse dolu sepet onu "çeker") ve deterministiktir.
+func _dual_route(id: int) -> int:
+	var colors: Array[int] = split_colors(id)
+	var kind: int = kind_of(id)
+	var first: int = _basket_for(colors[0], kind)
+	var second: int = _basket_for(colors[1], kind)
+	if first == EMPTY or second == EMPTY or first == second:
+		return first if first != EMPTY else second
+	var room_first: int = _cap(_baskets[first]) - int(_baskets[first]["count"])
+	var room_second: int = _cap(_baskets[second]) - int(_baskets[second]["count"])
+	return second if room_second < room_first else first
+
+
+## Çiftin ilk parçası sepete giriyor: gittiği renge göre evler takas edilir ve çift yerleşir.
+func _commit_dual(id: int, basket: Dictionary, events: Array[Dictionary]) -> void:
+	var home: int = color_of(id)
+	var other: int = int(_field(id, "dual", EMPTY))
+	var chosen: int = int(basket["color"])
+	if chosen == EMPTY:
+		# Rengini almamış joker: ev rengi kabul ediliyorsa o, değilse diğeri (yönlendirme birini buldu).
+		chosen = home if joker_accepts(basket, home) else other
+	var partner: int = dual_partner(id)
+	if chosen != home and _items.has(partner):
+		# Takas: bu parça diğer renge gitti, eşi bu parçanın evini devralır (iki ev sayısı da korunur).
+		_set_item(id, "color", chosen)
+		_set_item(partner, "color", home)
+	_set_item(id, "dual", EMPTY)
+	if _items.has(partner):
+		_set_item(partner, "dual", EMPTY)
+	events.append({"type": EVENT_DUAL_SETTLE, "id": id, "color": chosen, "partner": partner,
+		"partner_color": color_of(partner) if _items.has(partner) else EMPTY})
+
+
+# --- Mevsim olayları ---------------------------------------------------------------------------------
+
+## Bu hamleden önce açık olan güneşli parçalar (boya sayacıyla aynı mantık).
+func _open_suns() -> Array[int]:
+	var result: Array[int] = []
+	if _sun_ids.is_empty():
+		return result
+	for id: int in _sun_ids:
+		if sun_left(id) > 0 and is_open(id) and not is_locked(id):
+			result.append(id)
+	return result
+
+
+## Hamle sonu mevsim sayaçları. Döndürür: yerleşmeyi etkileyen bir değişiklik oldu mu (şu an yok:
+## solma, yaprak ve polen sepete gidişi değiştirmez; don çözülmesi `_dry_stains` içindedir).
+func _tick_season(sunning: Array[int], events: Array[Dictionary]) -> bool:
+	if not _season:
+		return false
+	for id: int in sunning:
+		if not _on_line.has(id):
+			continue
+		var left: int = sun_left(id) - 1
+		_set_item(id, "sun", left)
+		events.append({"type": EVENT_SUN_TICK, "id": id, "left": left})
+		if left <= 0:
+			_set_item(id, "faded", true)
+			events.append({"type": EVENT_SUN_FADE, "id": id})
+	_tick_leaves(events)
+	_tick_pollen(events)
+	return false
+
+
+func _tick_leaves(events: Array[Dictionary]) -> void:
+	if _leaf_done >= _leaf_targets.size():
+		return
+	_leaf_left -= 1
+	if _leaf_left > 0:
+		events.append({"type": EVENT_LEAF_TICK, "left": _leaf_left, "id": _leaf_targets[_leaf_done]})
+		return
+	var target: int = _leaf_targets[_leaf_done]
+	_leaf_done += 1
+	_leaf_left = _leaf_every if _leaf_done < _leaf_targets.size() else 0
+	if _on_line.has(target) and not _leafy.has(target):
+		_leafy[target] = true
+		events.append({"type": EVENT_LEAF_LAND, "id": target, "left": leaf_left()})
+	else:
+		events.append({"type": EVENT_LEAF_PASS, "id": target, "left": leaf_left()})
+
+
+func _tick_pollen(events: Array[Dictionary]) -> void:
+	if _dust_left > 0:
+		_dust_left -= 1
+		if _dust_left <= 0:
+			events.append({"type": EVENT_POLLEN_CLEAR, "line": _dust_line})
+			_dust_line = EMPTY
+	if _pollen_done >= _pollen_lines.size():
+		return
+	_pollen_left -= 1
+	var line: int = _pollen_lines[_pollen_done]
+	if _pollen_left > 0:
+		events.append({"type": EVENT_POLLEN_TICK, "left": _pollen_left, "line": line})
+		return
+	_pollen_done += 1
+	_pollen_left = _pollen_every if _pollen_done < _pollen_lines.size() else 0
+	_dust_line = line
+	_dust_left = _pollen_hide
+	events.append({"type": EVENT_POLLEN, "line": line, "hide": _pollen_hide, "left": pollen_left()})
+
+
+## Ücretsiz eylem: yaprak süpürülür. Hamle sayılmaz, geçmişe yazılmaz (geri al son hamleyi, ardından
+## yapılan ücretsiz eylemlerle birlikte geri sarar).
+func _brush_leaf(id: int) -> Array[Dictionary]:
+	_leafy.erase(id)
+	var events: Array[Dictionary] = [{"type": EVENT_LEAF_BRUSH, "id": id}]
+	return events
+
+
+# --- Geri al ve durum anahtarı -----------------------------------------------------------------------
+
+func _snapshot_season(snap: Dictionary) -> void:
+	snap["leafy"] = _kept(_leafy)
+	snap["season"] = PackedInt32Array([_leaf_done, _leaf_left, _pollen_done, _pollen_left, _dust_line, _dust_left])
+
+
+func _restore_season(snap: Dictionary) -> void:
+	_leafy = _restored(snap["leafy"])
+	var values: PackedInt32Array = snap["season"] as PackedInt32Array
+	_leaf_done = values[0]
+	_leaf_left = values[1]
+	_pollen_done = values[2]
+	_pollen_left = values[3]
+	_dust_line = values[4]
+	_dust_left = values[5]
+
+
+## Polen bilgisi anahtara girmez (kuralı değiştirmez): aynı kurallı durumlar birleşsin.
+func _append_season_key(key: PackedInt32Array) -> void:
+	key.append(BASKET_KEY_EMPTY)
+	for id: int in _dual_ids:
+		key.append(color_of(id) * DUAL_KEY_BASE + int(_field(id, "dual", EMPTY)) + 1)
+	for id: int in _sun_ids:
+		if _on_line.has(id):
+			key.append(sun_left(id) * 2 + (1 if is_faded(id) else 0))
+	key.append(BASKET_KEY_EMPTY)
+	key.append(_leaf_done)
+	key.append(_leaf_left)
+	for id: int in leafy_ids():
+		key.append(id)
+
+
+# --- Hızlı sepet yönlendirme tablosu ------------------------------------------------------------------
+
+func _setup_accept(level: Dictionary) -> void:
+	_fast_route = not _has_typed and not _has_jokers
+	var span: int = 0
+	for id: int in _ids:
+		span = maxi(span, color_of(id) + 1)
+		for color: int in split_colors(id):
+			span = maxi(span, color + 1)
+	for color: Variant in level.get("queue", []) as Array:
+		span = maxi(span, int(color) + 1)
+	_accept.resize(span)
+	_accept_dirty = true
+
+
+## `_basket_for` döngüsünün aynısı, tüm renkler için bir kerede.
+func _rebuild_accept() -> void:
+	_accept.fill(EMPTY)
+	for index: int in range(_baskets.size()):
+		var basket: Dictionary = _baskets[index]
+		if basket.is_empty() or index == _cat_at:
+			continue
+		var color: int = int(basket["color"])
+		if color >= 0 and color < _accept.size() and _accept[color] == EMPTY \
+				and int(basket["count"]) < int(basket.get("cap", BASKET_CAPACITY)):
+			_accept[color] = index
+	_accept_dirty = false

@@ -49,10 +49,18 @@ const TYPED_FROM_LEVEL: int = 76
 const BIRDS_FROM_LEVEL: int = 82
 const RAIN_FROM_LEVEL: int = 88
 const CAT_FROM_LEVEL: int = 94
+## Derinleşme 4: çift renkli çamaşır ve mevsim olayları (her biri kendi tanıtımında TEK BAŞINA).
+## Mevsim tanıtımları kendi mevsim bandının (SeasonCycle) başka tanıtım olmayan ilk uygun seviyesidir.
+const DUAL_FROM_LEVEL: int = 18
+const SUN_FROM_LEVEL: int = 22
+const LEAVES_FROM_LEVEL: int = 31
+const FROST_FROM_LEVEL: int = 61
+const POLLEN_FROM_LEVEL: int = 91
 const INTRO_LEVELS: Array[int] = [WET_FROM_LEVEL, MYSTERY_FROM_LEVEL, LOCK_FROM_LEVEL,
 	JOKER_FROM_LEVEL, SHEET_FROM_LEVEL, BIG_FROM_LEVEL, SOCK_FROM_LEVEL, STAIN_FROM_LEVEL,
 	DYE_FROM_LEVEL, CHAIN_FROM_LEVEL, WIND_FROM_LEVEL, SLIDE_FROM_LEVEL,
-	WASHER_FROM_LEVEL, DRYER_FROM_LEVEL, TYPED_FROM_LEVEL, BIRDS_FROM_LEVEL, RAIN_FROM_LEVEL, CAT_FROM_LEVEL]
+	WASHER_FROM_LEVEL, DRYER_FROM_LEVEL, TYPED_FROM_LEVEL, BIRDS_FROM_LEVEL, RAIN_FROM_LEVEL, CAT_FROM_LEVEL,
+	DUAL_FROM_LEVEL, SUN_FROM_LEVEL, LEAVES_FROM_LEVEL, FROST_FROM_LEVEL, POLLEN_FROM_LEVEL]
 const MAX_JOKERS: int = 2
 const MAX_BIGS: int = 2
 const MAX_STAINS: int = 3
@@ -69,7 +77,7 @@ const MIX_CHANCE: float = 0.55
 ## Mekanik başına ayrı tohum tuzu: karışım kararları birbirinden ve ana düzenden bağımsız olsun.
 const FEATURE_SALT: int = 104729
 const MIX_SALTS: Dictionary = {"joker": 11, "big": 23, "stain": 37, "chain": 41, "wind": 53, "slide": 67,
-	"washer": 71, "dryer": 79, "typed": 83, "birds": 89, "rain": 97, "cat": 101}
+	"washer": 71, "dryer": 79, "typed": 83, "birds": 89, "rain": 97, "cat": 101, "dual": 103}
 const PLACE_ATTEMPTS: int = 24
 ## Yeni mekanik yerleşimlerinin doğrulama bütçesi: başarılı doğrulama çoğunlukla çözüm yolu
 ## uzunluğu kadar düğümde biter; başarısız aday bütün bütçeyi yer. Düşük bütçe yalnız "daha az
@@ -136,9 +144,14 @@ const LATE_NODE_LIMIT: int = 6000
 ## Bu seviyeden sonra (yeni mekaniklerin geldiği yer) eski engellerin yerleşim denemeleri de
 ## sınırlanır: en ağır seviyelerin üretimi mobilde birkaç saniyeyi aşıyordu. Öncesi birebir aynı.
 const LEAN_FROM_LEVEL: int = 64
-const LEAN_TRIES: int = 4
-const LEAN_ORDER_ATTEMPTS: int = 2
-const LEAN_NODE_LIMIT: int = 2500
+const LEAN_TRIES: int = 3
+const LEAN_ORDER_ATTEMPTS: int = 1
+const LEAN_NODE_LIMIT: int = 1500
+## 64+ yerleşim doğrulama bütçesi (tanık yolu geçmezse): başarılı aramalar çoğunlukla bunun altında
+## biter, başarısız aday bütçenin tamamını yer. Düşük bütçe yalnız "daha az engel" demektir (güvenli).
+const LEAN_PLACE_LIMIT: int = 2000
+## 64+ mevsim işareti için ek deneme (adet + bu kadar).
+const LEAN_EXTRA_TRIES: int = 1
 
 
 ## Zorluk parametreleri: {lines, columns, layers, colors, twist, active_baskets, hard}.
@@ -258,8 +271,15 @@ static func generate(level: int) -> Dictionary:
 		_add_wind(result, gusts, order, features)
 	if mechanic_count(number, "slide") > 0 and mode != LaundryBoard.MODE_BOSS and _timed_ok(number, "slide"):
 		_add_slide(result, number)
+	var pairs: int = mini(mechanic_count(number, "dual"), 1 + (number - DUAL_FROM_LEVEL) / DUAL_RAMP_LEVELS)
+	if pairs > 0:
+		_add_duals(result, pairs, number)
 	_add_extras(result, number)
 	_finish_mode(result, mode, number, features)
+	# Mevsim olayı EN SON eklenir (ayrı RNG): mevsimsiz kararlar ve 64 öncesi seviyelerin geri kalanı
+	# birebir aynı kalır; yalnız mevsim anahtarları eklenir (tanıtım seviyeleri hariç).
+	_add_season(result, number)
+	result.erase(WITNESS_KEY)
 	return result
 
 
@@ -328,7 +348,7 @@ static func _add_obstacles(level: Dictionary, rng: RandomNumberGenerator) -> voi
 		if number >= LEAN_FROM_LEVEL and tries > LEAN_TRIES:
 			break
 		entry["lock"] = key_color
-		if LevelSolver.is_solvable(level, _lock_limit(number) if number < LEAN_FROM_LEVEL else PLACE_NODE_LIMIT):
+		if _verify(level, _lock_limit(number) if number < LEAN_FROM_LEVEL else PLACE_NODE_LIMIT):
 			locks -= 1
 		else:
 			entry.erase("lock")
@@ -493,9 +513,11 @@ static func _twist_queue(level: Dictionary, twist: int, rng: RandomNumberGenerat
 		# Büyük/joker sepet rengiyle birlikte yer değiştirir (renk grubunun boyu sepete bağlı).
 		_swap_kind(candidate, "big", a, b)
 		_swap_kind(candidate, "jokers", a, b)
-		if LevelSolver.is_solvable(candidate, node_limit):
+		if _verify(candidate, node_limit):
 			queue = swapped
 			level["queue"] = swapped
+			if candidate.has(WITNESS_KEY):
+				level[WITNESS_KEY] = candidate[WITNESS_KEY]
 			for key: String in ["big", "jokers"]:
 				if candidate.has(key):
 					level[key] = candidate[key]
@@ -506,7 +528,7 @@ static func _twist_queue(level: Dictionary, twist: int, rng: RandomNumberGenerat
 
 ## Engelsiz, sıradan parça mı (yeni engeller birbirine ve eskilere binmesin).
 static func _plain(entry: Dictionary) -> bool:
-	for key: String in ["wet", "mystery", "lock", "sheet", "sock", "dye", "stain", "chain", "dirty"]:
+	for key: String in PLAIN_BLOCKING_KEYS:
 		if entry.has(key):
 			return false
 	return true
@@ -631,7 +653,7 @@ static func _add_socks(level: Dictionary, order: Array[int], count: int, rng: Ra
 		second["sock"] = order[k]
 		first["kind"] = SOCK_KIND
 		second["kind"] = SOCK_KIND
-		if LevelSolver.is_solvable(level, LATE_NODE_LIMIT if not lean else PLACE_NODE_LIMIT):
+		if _verify(level, LATE_NODE_LIMIT if not lean else PLACE_NODE_LIMIT):
 			left -= 1
 		else:
 			first.erase("sock")
@@ -678,8 +700,8 @@ static func _add_dyes(level: Dictionary, count: int, rng: RandomNumberGenerator)
 		entry["dye"] = LaundryBoard.DEFAULT_DYE_MOVES
 		entry["dye_target"] = target
 		var budget: int = LATE_NODE_LIMIT if not lean else PLACE_NODE_LIMIT
-		if LevelSolver.is_solvable(level, budget) \
-				and LevelSolver.is_solvable(_bled_variant(level, id, target), budget):
+		if _verify(level, budget) \
+				and _verify(_bled_variant(level, id, target), budget):
 			left -= 1
 		else:
 			entry.erase("dye")
@@ -751,6 +773,8 @@ static func _mechanic_from(mechanic: String) -> int:
 			return RAIN_FROM_LEVEL
 		"cat":
 			return CAT_FROM_LEVEL
+		"dual":
+			return DUAL_FROM_LEVEL
 	return 1 << 30
 
 
@@ -780,6 +804,8 @@ static func _mechanic_max(mechanic: String) -> int:
 			return MAX_RAIN_STEPS
 		"cat":
 			return MAX_CAT_NAPS
+		"dual":
+			return MAX_DUAL_PAIRS
 	return 0
 
 
@@ -908,7 +934,7 @@ static func _add_jokers(level: Dictionary, count: int, features: RandomNumberGen
 			continue
 		chosen.append(index)
 		level["jokers"] = chosen.duplicate()
-		if not LevelSolver.is_solvable(level, PLACE_NODE_LIMIT):
+		if not _verify(level, PLACE_NODE_LIMIT):
 			chosen.pop_back()
 	chosen.sort()
 	if chosen.is_empty():
@@ -930,7 +956,7 @@ static func _apply_mode_setup(level: Dictionary, mode: String, number: int) -> v
 static func _finish_mode(level: Dictionary, mode: String, number: int, features: RandomNumberGenerator) -> void:
 	match mode:
 		LaundryBoard.MODE_MOVES:
-			var path: Array[int] = LevelSolver.solve(level, _path_limit(number))
+			var path: Array[int] = _path(level, _path_limit(number))
 			var slack: int = clampi(MOVES_SLACK_START - (number - MOVES_FROM_LEVEL) / MOVES_SLACK_STEP,
 				MOVES_SLACK_MIN, MOVES_SLACK_START)
 			# Yol bulunamazsa (bütçe) cömert sınır: her parça + her ıslak sıkma, pay iki katı.
@@ -977,7 +1003,7 @@ static func _add_orders(level: Dictionary, features: RandomNumberGenerator) -> v
 		var strict: Dictionary = level.duplicate()
 		strict["orders"] = candidates[attempt]
 		strict["orders_strict"] = true
-		if LevelSolver.is_solvable(strict, PLACE_NODE_LIMIT if not lean else LEAN_NODE_LIMIT):
+		if _verify(strict, PLACE_NODE_LIMIT if not lean else LEAN_NODE_LIMIT):
 			level["orders"] = candidates[attempt]
 			return
 	level["orders"] = natural
@@ -985,7 +1011,7 @@ static func _add_orders(level: Dictionary, features: RandomNumberGenerator) -> v
 
 static func _natural_orders(level: Dictionary) -> Array[int]:
 	var result: Array[int] = []
-	var path: Array[int] = LevelSolver.solve(level, _path_limit(int(level["level"])))
+	var path: Array[int] = _path(level, _path_limit(int(level["level"])))
 	var board: LaundryBoard = LaundryBoard.new(level)
 	var queue: Array = level["queue"] as Array
 	var used: Dictionary = {}
@@ -1021,7 +1047,7 @@ static func _add_stains(level: Dictionary, count: int, features: RandomNumberGen
 			break
 		tries += 1
 		items[index]["stain"] = true
-		if LevelSolver.is_solvable(level, PLACE_NODE_LIMIT):
+		if _verify(level, PLACE_NODE_LIMIT):
 			left -= 1
 		else:
 			items[index].erase("stain")
@@ -1066,7 +1092,7 @@ static func _add_chains(level: Dictionary, count: int, features: RandomNumberGen
 		tries += 1
 		first["chain"] = int(second["id"])
 		second["chain"] = int(first["id"])
-		if LevelSolver.is_solvable(level, PLACE_NODE_LIMIT):
+		if _verify(level, PLACE_NODE_LIMIT):
 			left -= 1
 		else:
 			first.erase("chain")
@@ -1109,6 +1135,9 @@ static func _add_slide(level: Dictionary, number: int) -> void:
 			if int(entry["line"]) != int(line) or int(entry.get("screen", 0)) != 0:
 				continue
 			if entry.has("sheet") or entry.has("chain") or entry.has("sock"):
+				usable = false
+			elif number >= LEAN_FROM_LEVEL and int(entry["layer"]) == top and not _plain(entry):
+				# 64+: kayan parçada başka rozet olmasın (sürgü rozeti üst üste binmesin; yoğun tahta).
 				usable = false
 			elif int(entry["layer"]) == top - 1:
 				base[int(round(float(entry["slot"]) * 2.0))] = int(entry["id"])
@@ -1154,7 +1183,7 @@ static func _add_slide(level: Dictionary, number: int) -> void:
 			slider["slide"] = shift
 		level["slide"] = {"every": every, "line": int(line), "shift": shift, "sliders": slider_ids,
 			"phases": phases}
-		if LevelSolver.is_solvable(level, PLACE_NODE_LIMIT):
+		if _verify(level, PLACE_NODE_LIMIT):
 			return
 		for pair: Variant in removed:
 			(((pair as Array)[0] as Dictionary)["blockers"] as Array).append(int((pair as Array)[1]))
@@ -1210,7 +1239,7 @@ static func _add_wind(level: Dictionary, steps: int, order: Array[int], features
 						continue
 					tries += 1
 					chosen.append([mover_id, target_id])
-					if LevelSolver.is_solvable(level, PLACE_NODE_LIMIT):
+					if _verify(level, PLACE_NODE_LIMIT):
 						used[mover_id] = true
 						used[target_id] = true
 						placed = true
@@ -1277,7 +1306,8 @@ const TYPED_KINDS: Array[int] = [0, 1, 2, 4, 5]
 ## sayaç hapları ve oyuncunun dikkati sınırlı. Yeni gelen önceliklidir.
 const MAX_TIMED_MECHANICS: int = 2
 const TIMED_CAP_FROM_LEVEL: int = BIRDS_FROM_LEVEL
-const TIMED_PRIORITY: Array[String] = ["cat", "rain", "birds", "slide", "wind"]
+## Mevsim sayaçları (polen, yaprak) önceliklidir: mevsimin imzası o bantta görünsün.
+const TIMED_PRIORITY: Array[String] = ["pollen", "leaves", "cat", "rain", "birds", "slide", "wind"]
 ## Bir seviyede en fazla bu kadar yeni mekanik (makine/misafir) karışır; en yenisi önce.
 const MAX_NEW_MECHANICS: int = 2
 const NEW_PRIORITY: Array[String] = ["cat", "rain", "birds", "typed", "dryer", "washer"]
@@ -1292,7 +1322,7 @@ static func _timed_ok(number: int, mechanic: String) -> bool:
 		return true
 	var allowed: Array[String] = []
 	for name: String in TIMED_PRIORITY:
-		if mechanic_count(number, name) <= 0:
+		if _any_count(number, name) <= 0:
 			continue
 		if name == "slide" and mode_for(number) == LaundryBoard.MODE_BOSS:
 			continue
@@ -1307,6 +1337,8 @@ static func extras_for(number: int) -> Array[String]:
 	var chosen: Array[String] = []
 	if number < WASHER_FROM_LEVEL:
 		return chosen
+	# Mevsim olayı da "yeni mekanik" sayılır (abartma kuralının genişletilmesi): varsa bir yer ayrılır.
+	var limit: int = MAX_NEW_MECHANICS - (1 if season_count(number, season_mechanic(number)) > 0 else 0)
 	# Tanıtımdan hemen sonraki "pekiştirme" seviyesindeki mekanik önce gelir; kalanlar seviyeye
 	# bağlı tohumla karışır (hep en yenisi seçilse eski makineler geç seviyelerde hiç görünmezdi).
 	var fresh: Array[String] = []
@@ -1328,7 +1360,7 @@ static func extras_for(number: int) -> Array[String]:
 		others[index] = others[other]
 		others[other] = held
 	for name: String in fresh + others:
-		if chosen.size() < MAX_NEW_MECHANICS:
+		if chosen.size() < limit:
 			chosen.append(name)
 	return chosen
 
@@ -1382,7 +1414,7 @@ static func _add_dryer(level: Dictionary, intro: bool, rainy: bool, rng: RandomN
 	for entry: Dictionary in items:
 		if bool(entry.get("wet", false)):
 			wet += 1
-	if (wet == 0 and not rainy) or not LevelSolver.is_solvable(level, PLACE_NODE_LIMIT):
+	if (wet == 0 and not rainy) or not _verify(level, PLACE_NODE_LIMIT):
 		level.erase("dryer")
 
 
@@ -1405,7 +1437,7 @@ static func _mark_some(level: Dictionary, key: String, count: int, open_first: b
 			break
 		tries += 1
 		items[index][key] = true
-		if LevelSolver.is_solvable(level, PLACE_NODE_LIMIT):
+		if _verify(level, PLACE_NODE_LIMIT):
 			placed += 1
 		else:
 			items[index].erase(key)
@@ -1428,6 +1460,12 @@ static func _add_typed(level: Dictionary, count: int, rng: RandomNumberGenerator
 	# Boya akarsa renk takası ayrılmış üçlüyü bozar: boyaya karışan renkler türlü sepet olmaz.
 	var dyed: Dictionary = {}
 	for entry: Dictionary in items:
+		# Çift renkli parçanın iki rengi de türlü sepet olmaz (ev takası ayrılmış üçlüyü bozabilir).
+		if entry.has("twin"):
+			dyed[int(entry["color"])] = true
+			for other: Dictionary in items:
+				if int(other["id"]) == int(entry["twin"]):
+					dyed[int(other["color"])] = true
 		if entry.has("dye"):
 			dyed[int(entry["color"])] = true
 			for other: Dictionary in items:
@@ -1461,7 +1499,7 @@ static func _add_typed(level: Dictionary, count: int, rng: RandomNumberGenerator
 				entry["kind"] = TYPED_KINDS[(TYPED_KINDS.find(kind) + 1) % TYPED_KINDS.size()]
 		typed.append([index, kind])
 		level["typed"] = typed
-		if LevelSolver.is_solvable(level, PLACE_NODE_LIMIT):
+		if _verify(level, PLACE_NODE_LIMIT):
 			continue
 		typed.pop_back()
 		for at: Variant in saved.keys():
@@ -1512,7 +1550,7 @@ static func _guest_target(entry: Dictionary) -> bool:
 ## Yağmur: her adım, o anda (çözüm yolunda) en çok açık parçanın beklediği ipe yağar. Adım o ipin
 ## TÜM parçalarını listeler; tahta yağış anında yalnız açık olanları ıslatır.
 static func _add_rain(level: Dictionary, steps: int, rng: RandomNumberGenerator) -> void:
-	var path: Array[int] = LevelSolver.solve(level, LATE_NODE_LIMIT)
+	var path: Array[int] = _path(level, LATE_NODE_LIMIT)
 	if path.is_empty():
 		return
 	var marks: Array[int] = []
@@ -1550,7 +1588,7 @@ static func _add_rain(level: Dictionary, steps: int, rng: RandomNumberGenerator)
 				if int(entry["line"]) == line:
 					ids.append(int(entry["id"]))
 			chosen.append(ids)
-			if LevelSolver.is_solvable(level, PLACE_NODE_LIMIT):
+			if _verify(level, PLACE_NODE_LIMIT):
 				placed = true
 				break
 			chosen.pop_back()
@@ -1563,7 +1601,7 @@ static func _add_rain(level: Dictionary, steps: int, rng: RandomNumberGenerator)
 ## Kuş: her konuşta, o an açık ve en az BIRD_STAIN_MOVES hamle daha ipte kalacak sıradan bir parça.
 ## Yardımsız (hiç kovalanmayan) varyant doğrulanır; yardımlı oyun kuşsuz tahtayla aynıdır.
 static func _add_birds(level: Dictionary, count: int, number: int, rng: RandomNumberGenerator) -> void:
-	var path: Array[int] = LevelSolver.solve(level, LATE_NODE_LIMIT)
+	var path: Array[int] = _path(level, LATE_NODE_LIMIT)
 	if path.is_empty():
 		return
 	var every: int = BIRD_EVERY_MOVES_LATE if number >= BIRD_FAST_FROM_LEVEL else BIRD_EVERY_MOVES
@@ -1580,14 +1618,15 @@ static func _add_birds(level: Dictionary, count: int, number: int, rng: RandomNu
 			break
 		var candidates: Array[int] = []
 		for id: int in (sim["open"] as Dictionary)[fire] as Array[int]:
-			if _guest_target(by_id[id] as Dictionary) and not targets.has(id) \
+			# Kuş rozetli (kilit, boya...) parçaya konmaz: aynı parçada iki işaret üst üste binmesin.
+			if _guest_target(by_id[id] as Dictionary) and _plain(by_id[id] as Dictionary) and not targets.has(id) \
 					and int(left_at.get(id, 0)) > fire + LaundryBoard.BIRD_STAIN_MOVES:
 				candidates.append(id)
 		_shuffle(candidates, rng)
 		var placed: bool = false
 		for id: int in candidates.slice(0, EXTRA_TRIES):
 			targets.append(id)
-			if LevelSolver.is_solvable(level, PLACE_NODE_LIMIT, false):
+			if _verify(level, PLACE_NODE_LIMIT, false):
 				placed = true
 				break
 			targets.pop_back()
@@ -1599,7 +1638,7 @@ static func _add_birds(level: Dictionary, count: int, number: int, rng: RandomNu
 
 ## Kedi: her uykuda o an dolu bir sepet yuvası. Yardımsız (hiç sevilmeyen) varyant doğrulanır.
 static func _add_cats(level: Dictionary, count: int, rng: RandomNumberGenerator) -> void:
-	var path: Array[int] = LevelSolver.solve(level, LATE_NODE_LIMIT)
+	var path: Array[int] = _path(level, LATE_NODE_LIMIT)
 	if path.is_empty():
 		return
 	var marks: Array[int] = []
@@ -1616,7 +1655,7 @@ static func _add_cats(level: Dictionary, count: int, rng: RandomNumberGenerator)
 		var placed: bool = false
 		for slot: int in candidates.slice(0, EXTRA_TRIES):
 			slots.append(slot)
-			if LevelSolver.is_solvable(level, PLACE_NODE_LIMIT, false):
+			if _verify(level, PLACE_NODE_LIMIT, false):
 				placed = true
 				break
 			slots.pop_back()
@@ -1633,3 +1672,342 @@ static func _real_moves(path: Array[int]) -> int:
 		if id >= 0:
 			total += 1
 	return total
+
+
+# --- Derinleşme 4: çift renk, mevsim olayları, doğrulama yardımcıları ------------------------------
+# Kurallar `LaundryBoard` son bölümündedir. Çift renk 18'den, tamamlayıcı ÇİFTLER hâlinde (A|B evi A,
+# B|A evi B) gelir; iki yön de doğrulanır (ilk parça ev rengine / diğer renge gitmiş gibi). Mevsim
+# olayı en son, ayrı RNG ile eklenir: o mevsimin bandında (SeasonCycle) yalnız o mevsimin imzası.
+
+const MAX_DUAL_PAIRS: int = 2
+## Çift sayısı yumuşak artar: bu kadar seviyede bir +1 çift (ilk 15 seviye tek çift).
+const DUAL_RAMP_LEVELS: int = 15
+## Çift aday denemesi (her deneme iki doğrulama).
+const DUAL_TRIES: int = 4
+const DUAL_SALT: int = 7951
+## Engelsiz sayılmayan parça anahtarları (yeni engeller birbirine ve eskilere binmesin; rozet yığılmasın).
+const PLAIN_BLOCKING_KEYS: Array[String] = ["wet", "mystery", "lock", "sheet", "sock", "dye", "stain", "chain",
+	"dirty", "twin", "sun", "frost"]
+## Üretim içi tanık yolu (son bulunan çözüm): 64+ doğrulamalarında önce bu yol oynanır. Sonuçtan silinir.
+const WITNESS_KEY: String = "_witness"
+## Mevsim -> imza mekaniği.
+const SEASON_MECHANICS: Dictionary = {
+	SeasonCycle.SUMMER: "sun", SeasonCycle.AUTUMN: "leaves", SeasonCycle.WINTER: "frost", SeasonCycle.SPRING: "pollen",
+}
+## Tanıtımda adet (güneş/don: parça; yaprak/polen: olay sayısı), en çok adet, rampa adımı (seviye).
+const SEASON_INTRO_COUNT: Dictionary = {"sun": 1, "leaves": 2, "frost": 1, "pollen": 2}
+const SEASON_MAX: Dictionary = {"sun": 3, "leaves": 4, "frost": 3, "pollen": 3}
+const SEASON_RAMP_LEVELS: int = 8
+## Tanıtım sonrası pekiştirmeden sonra mevsim olayının seviyede bulunma olasılığı (deterministik zar).
+const SEASON_MIX_CHANCE: float = 0.6
+const SEASON_SALTS: Dictionary = {"sun": 107, "leaves": 109, "frost": 113, "pollen": 127}
+const SEASON_SALT: int = 7963
+## İlk mevsim döngüsü (4 bant x 30): sonrasında tanıtım gerekmez, bant başından itibaren karışır.
+const FIRST_CYCLE_LAST_LEVEL: int = SeasonCycle.LEVELS_PER_SEASON * 4
+const SUN_MOVES: int = 4
+const SUN_MOVES_LATE: int = 3
+const LEAF_EVERY_MOVES: int = 4
+const LEAF_EVERY_INTRO: int = 3
+const POLLEN_EVERY_MOVES: int = 5
+const POLLEN_HIDE_MOVES: int = 3
+## Sayaçlı (sağ sütunda hap gösteren) mekanikler: bir seviyede en fazla MAX_TIMED_MECHANICS.
+const TIMED_LEVEL_KEYS: Array[String] = ["wind", "slide", "birds", "rain", "cat", "leaves", "pollen"]
+
+
+## Doğrulama: 64 öncesi `LevelSolver.is_solvable` ile BİREBİR aynı (seviyeler değişmesin). 64+:
+## önce üretim içi tanık yolu oynanır (geçerliyse kanıttır, arama gerekmez); geçmezse arama, bulunan
+## yol yeni tanık olur. Sağlam: kabul edilen her yerleşim için kazandıran bir yol vardır.
+static func _verify(level: Dictionary, node_limit: int = LevelSolver.DEFAULT_NODE_LIMIT,
+		help_critters: bool = true) -> bool:
+	if int(level.get("level", 1)) < LEAN_FROM_LEVEL:
+		return LevelSolver.is_solvable(level, node_limit, help_critters)
+	var witness: Variant = level.get(WITNESS_KEY)
+	if witness is Array and LevelSolver.replays(level, witness as Array[int], help_critters):
+		return true
+	# Yerleşim doğrulaması (karıştırma değil) daha düşük bütçeyle: üretim süresi sınırı.
+	var budget: int = mini(node_limit, LEAN_PLACE_LIMIT) if node_limit <= PLACE_NODE_LIMIT else node_limit
+	var path: Array[int] = LevelSolver.solve(level, budget, help_critters)
+	if path.is_empty():
+		return (level.get("items", []) as Array).is_empty()
+	level[WITNESS_KEY] = path
+	return true
+
+
+## Çözüm yolu: 64 öncesi eskisi gibi arama; 64+ geçerli tanık yolu varsa o.
+static func _path(level: Dictionary, node_limit: int) -> Array[int]:
+	if int(level.get("level", 1)) >= LEAN_FROM_LEVEL:
+		var witness: Variant = level.get(WITNESS_KEY)
+		if witness is Array and LevelSolver.replays(level, witness as Array[int]):
+			return (witness as Array[int]).duplicate()
+	var path: Array[int] = LevelSolver.solve(level, node_limit)
+	if not path.is_empty() and int(level.get("level", 1)) >= LEAN_FROM_LEVEL:
+		level[WITNESS_KEY] = path
+	return path
+
+
+## Mekanik ya da mevsim olayı adedi (sayaç sınırı her ikisini de aynı sırayla sayar).
+static func _any_count(number: int, name: String) -> int:
+	if SEASON_SALTS.has(name):
+		return season_count(number, name)
+	return mechanic_count(number, name)
+
+
+static func season_mechanic(level: int) -> String:
+	return String(SEASON_MECHANICS[SeasonCycle.season_for(level)])
+
+
+static func _season_from(name: String) -> int:
+	match name:
+		"sun":
+			return SUN_FROM_LEVEL
+		"leaves":
+			return LEAVES_FROM_LEVEL
+		"frost":
+			return FROST_FROM_LEVEL
+		"pollen":
+			return POLLEN_FROM_LEVEL
+	return 1 << 30
+
+
+## Mevsim olayının bu seviyedeki adedi. Yalnız seviyenin kendi mevsiminde. İlk döngüde: tanıtım
+## seviyesinde tanıtım adedi (tek başına), başka tanıtım/kip tanıtımında 0, sonraki iki seviyede kesin,
+## sonra deterministik zar. 121+: tanıtım gerekmez, bant başından zarla karışır. Adet yumuşak rampayla artar.
+static func season_count(level: int, name: String) -> int:
+	if not SEASON_SALTS.has(name) or season_mechanic(level) != name:
+		return 0
+	var base: int = 0
+	var sure: bool = false
+	if level <= FIRST_CYCLE_LAST_LEVEL:
+		base = _season_from(name)
+		if level < base:
+			return 0
+		if level == base:
+			return int(SEASON_INTRO_COUNT[name])
+		if level in INTRO_LEVELS or level in MODE_INTRO_LEVELS:
+			return 0
+		sure = level - base <= MIX_SURE_LEVELS
+	else:
+		base = level - SeasonCycle.step_in_season(level)
+	if not sure:
+		var roll: RandomNumberGenerator = RandomNumberGenerator.new()
+		roll.seed = level * FEATURE_SALT + int(SEASON_SALTS[name])
+		if roll.randf() >= SEASON_MIX_CHANCE:
+			return 0
+	return clampi(int(SEASON_INTRO_COUNT[name]) + (level - base) / SEASON_RAMP_LEVELS, 1, int(SEASON_MAX[name]))
+
+
+# --- Çift renkli çamaşır --------------------------------------------------------------------------
+
+## Tamamlayıcı çift: farklı renkte iki engelsiz parça (boya hedefi değil), karşılıklı `twin`. İkinci
+## renk tahtada eşin renginden türetilir (veride renk yok: günlük bulmacanın renk eşlemesi bozamaz).
+## İki doğrulama: (1) seviye çift renk kurallarıyla çözülür; (2) ilk
+## parça diğer renge gitmiş (evler takas edilmiş) sıradan seviye de çözülür -> oyuncu hangi yönü
+## seçerse seçsin renk sayıları tutar ve makul bir çözüm yolu kalır.
+static func _add_duals(level: Dictionary, pairs: int, number: int) -> void:
+	var items: Array[Dictionary] = level["items"] as Array[Dictionary]
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = number * FEATURE_SALT + DUAL_SALT
+	var dye_targets: Dictionary = {}
+	for entry: Dictionary in items:
+		if entry.has("dye_target"):
+			dye_targets[int(entry["dye_target"])] = true
+	var pool: Array[int] = []
+	for index: int in _extra_pool(items, rng, number == DUAL_FROM_LEVEL):
+		if not dye_targets.has(int(items[index]["id"])) and int(items[index].get("screen", 0)) == 0:
+			pool.append(index)
+	var placed: int = 0
+	var tries: int = 0
+	for first_at: int in range(pool.size()):
+		if placed >= pairs or tries >= DUAL_TRIES:
+			break
+		var first: Dictionary = items[pool[first_at]]
+		if not _plain(first):
+			continue
+		for second_at: int in range(first_at + 1, pool.size()):
+			var second: Dictionary = items[pool[second_at]]
+			if not _plain(second) or int(second["color"]) == int(first["color"]):
+				continue
+			tries += 1
+			_mark_dual(first, second)
+			if _verify(level, PLACE_NODE_LIMIT) and _verify(_dual_swapped(level, first, second), PLACE_NODE_LIMIT):
+				placed += 1
+			else:
+				_unmark_dual(first)
+				_unmark_dual(second)
+			break
+
+
+static func _mark_dual(first: Dictionary, second: Dictionary) -> void:
+	first["twin"] = int(second["id"])
+	second["twin"] = int(first["id"])
+
+
+static func _unmark_dual(entry: Dictionary) -> void:
+	entry.erase("twin")
+
+
+## İlk parça diğer renge gitmiş hâl: evler takas edilmiş, artık çift renk olmayan sıradan seviye.
+static func _dual_swapped(level: Dictionary, first: Dictionary, second: Dictionary) -> Dictionary:
+	var copy: Dictionary = level.duplicate(true)
+	for entry: Variant in copy["items"] as Array:
+		var item: Dictionary = entry as Dictionary
+		if int(item["id"]) == int(first["id"]):
+			item["color"] = int(second["color"])
+			_unmark_dual(item)
+		elif int(item["id"]) == int(second["id"]):
+			item["color"] = int(first["color"])
+			_unmark_dual(item)
+	return copy
+
+
+# --- Mevsim olayları ------------------------------------------------------------------------------
+
+static func _add_season(level: Dictionary, number: int) -> void:
+	var name: String = season_mechanic(number)
+	var count: int = season_count(number, name)
+	if count <= 0:
+		return
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = number * FEATURE_SALT + SEASON_SALT + int(SEASON_SALTS[name])
+	match name:
+		"sun":
+			_add_sun(level, count, number, rng)
+		"frost":
+			_add_frost(level, count, number, rng)
+		"leaves":
+			if _timed_room(level):
+				_add_leaves(level, count, number, rng)
+		"pollen":
+			if _timed_room(level):
+				_add_pollen(level, count, rng)
+
+
+## Sağ sütunda yer var mı (en fazla MAX_TIMED_MECHANICS sayaç hapı).
+static func _timed_room(level: Dictionary) -> bool:
+	var used: int = 0
+	for key: String in TIMED_LEVEL_KEYS:
+		if level.has(key):
+			used += 1
+	return used < MAX_TIMED_MECHANICS
+
+
+## Rozet/misafir taşıyan parçalar (rüzgâr, sürgü, kuş hedefi): mevsim işareti bunlara konmaz ki aynı
+## parçada iki rozet üst üste binmesin.
+static func _badged_ids(level: Dictionary) -> Dictionary:
+	var result: Dictionary = {}
+	for step: Variant in (level.get("wind", {}) as Dictionary).get("steps", []) as Array:
+		for id: Variant in step as Array:
+			result[int(id)] = true
+	for id: Variant in (level.get("slide", {}) as Dictionary).get("sliders", []) as Array:
+		result[int(id)] = true
+	for id: Variant in (level.get("birds", {}) as Dictionary).get("targets", []) as Array:
+		result[int(id)] = true
+	return result
+
+
+## Güneşte solma: başta açık, engelsiz parçalar (tanıtımda kesin açık). Her biri doğrulanır (hamle
+## sınırlı seviyede ceza hamlesi sınırı aşmamalı).
+static func _add_sun(level: Dictionary, count: int, number: int, rng: RandomNumberGenerator) -> void:
+	var items: Array[Dictionary] = level["items"] as Array[Dictionary]
+	var badged: Dictionary = _badged_ids(level)
+	var moves: int = SUN_MOVES if number <= FIRST_CYCLE_LAST_LEVEL else SUN_MOVES_LATE
+	var placed: int = 0
+	var tries: int = 0
+	var extra: int = EXTRA_TRIES if number < LEAN_FROM_LEVEL else LEAN_EXTRA_TRIES
+	for index: int in _extra_pool(items, rng, true):
+		if placed >= count or tries >= count + extra:
+			break
+		var entry: Dictionary = items[index]
+		if badged.has(int(entry["id"])) or int(entry.get("screen", 0)) != 0:
+			continue
+		tries += 1
+		entry["sun"] = moves
+		if _verify(level, PLACE_NODE_LIMIT):
+			placed += 1
+		else:
+			entry.erase("sun")
+
+
+## Don: engelsiz parçalar (tanıtımda önce açık olanlar). Her biri doğrulanır.
+static func _add_frost(level: Dictionary, count: int, number: int, rng: RandomNumberGenerator) -> void:
+	var items: Array[Dictionary] = level["items"] as Array[Dictionary]
+	var badged: Dictionary = _badged_ids(level)
+	var placed: int = 0
+	var tries: int = 0
+	var extra: int = EXTRA_TRIES if number < LEAN_FROM_LEVEL else LEAN_EXTRA_TRIES
+	for index: int in _extra_pool(items, rng, number == FROST_FROM_LEVEL):
+		if placed >= count or tries >= count + extra:
+			break
+		var entry: Dictionary = items[index]
+		if badged.has(int(entry["id"])):
+			continue
+		tries += 1
+		entry["frost"] = true
+		if _verify(level, PLACE_NODE_LIMIT):
+			placed += 1
+		else:
+			entry.erase("frost")
+
+
+## Yaprak: her düşüşte (çözüm yolunda) o an açık, engelsiz ve en az bir hamle daha ipte kalacak parça.
+## Doğrulama gerekmez: yaprağı süpürmek ücretsizdir ve yalnız alınabilir (açık) parçada olur, yani
+## yapraksız tahtanın her çözümü süpürmeler eklenerek aynen geçerlidir (çözülebilirlik değişmez).
+static func _add_leaves(level: Dictionary, count: int, number: int, rng: RandomNumberGenerator) -> void:
+	var path: Array[int] = _path(level, LATE_NODE_LIMIT)
+	if path.is_empty():
+		return
+	var every: int = LEAF_EVERY_INTRO if number == LEAVES_FROM_LEVEL else LEAF_EVERY_MOVES
+	var marks: Array[int] = []
+	for step: int in range(count):
+		marks.append((step + 1) * every)
+	var sim: Dictionary = _simulate(level, path, marks)
+	var by_id: Dictionary = _by_id(level["items"] as Array[Dictionary])
+	var left_at: Dictionary = sim["left_at"] as Dictionary
+	var badged: Dictionary = _badged_ids(level)
+	var targets: Array[int] = []
+	for fire: int in marks:
+		if not (sim["open"] as Dictionary).has(fire):
+			break
+		var candidates: Array[int] = []
+		for id: int in (sim["open"] as Dictionary)[fire] as Array[int]:
+			if _plain(by_id[id] as Dictionary) and not badged.has(id) and not targets.has(id) \
+					and int(left_at.get(id, 0)) > fire + 1:
+				candidates.append(id)
+		if candidates.is_empty():
+			break
+		_shuffle(candidates, rng)
+		targets.append(candidates[0])
+	if not targets.is_empty():
+		level["leaves"] = {"every": every, "targets": targets}
+
+
+## Polen: her bulut (çözüm yolunda) o an en çok açık parçanın beklediği ipe; aynı ipe üst üste gelmez.
+## Doğrulama gerekmez: yalnız bilgiyi gizler, kuralı değiştirmez.
+static func _add_pollen(level: Dictionary, count: int, rng: RandomNumberGenerator) -> void:
+	var path: Array[int] = _path(level, LATE_NODE_LIMIT)
+	if path.is_empty():
+		return
+	var marks: Array[int] = []
+	for step: int in range(count):
+		marks.append((step + 1) * POLLEN_EVERY_MOVES)
+	var sim: Dictionary = _simulate(level, path, marks)
+	var by_id: Dictionary = _by_id(level["items"] as Array[Dictionary])
+	var lines: Array[int] = []
+	for fire: int in marks:
+		if not (sim["open"] as Dictionary).has(fire):
+			break
+		var score: Dictionary = {}
+		for id: int in (sim["open"] as Dictionary)[fire] as Array[int]:
+			var line: int = int((by_id[id] as Dictionary)["line"])
+			score[line] = int(score.get(line, 0)) + 1
+		var options: Array[int] = []
+		for line: Variant in score.keys():
+			if lines.is_empty() or int(line) != lines[lines.size() - 1]:
+				options.append(int(line))
+		if options.is_empty():
+			break
+		_shuffle(options, rng)
+		options.sort_custom(func(a: int, b: int) -> bool: return int(score[a]) > int(score[b]))
+		lines.append(options[0])
+	if not lines.is_empty():
+		level["pollen"] = {"every": POLLEN_EVERY_MOVES, "lines": lines, "hide": POLLEN_HIDE_MOVES}

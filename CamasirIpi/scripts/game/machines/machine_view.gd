@@ -3,8 +3,9 @@ extends Node2D
 
 ## Çamaşır/kurutma makinesinin görünümü (çimde, sepetlerin yanında). Konum = makinenin tabanı
 ## (ayakların ortası). Katmanlar: gölge -> gövde (koyu tambur) -> dönen katlı çamaşırlar -> cam +
-## halka. Üst paneldeki yuva ışıkları: boş yuva soluk, dolu yuva çamaşır renginde halka + kalan
-## hamle; biten parça onay işareti. Kurallar `LaundryBoard`'dadır; bu sınıf yalnız gösterir.
+## halka. Makinenin ÜSTÜNDE beyaz bir sayaç hapı durur: her yuva için çamaşır renginde halka + büyük
+## kalan hamle sayısı; boş yuva soluk nokta, biten parça yeşil onay. Neden üstte ve büyük: eski küçük
+## panel ışıkları telefonda okunmuyordu (oyuncu geri bildirimi). Kurallar `LaundryBoard`'dadır.
 ## Düğümler kurulumda bir kez üretilir; kare başına yalnız tamburun açısı yazılır.
 
 const BODY_PATHS: Array[String] = [
@@ -14,12 +15,11 @@ const BODY_PATHS: Array[String] = [
 const GLASS_PATH: String = "res://assets/sprites/machines/machine_glass.png"
 const FOLDED_PATH: String = "res://assets/sprites/folded.png"
 ## Kadraj oranları (tools/blender/make_machines.py ile birlikte değişir): kapak merkezi tuvalin
-## üstünden yüksekliğin bu oranında; cam yarıçapı yüksekliğin bu oranı; panel ortası.
+## üstünden yüksekliğin bu oranında; cam yarıçapı yüksekliğin bu oranı.
 const DOOR_Y_RATIO: float = 0.5735
 const DOOR_RADIUS_RATIO: float = 0.2206
-const PANEL_Y_RATIO: float = 0.2132
-const PANEL_X_RATIO: float = -0.07
-const PANEL_SPAN_RATIO: float = 0.5
+## Sprite tuvalinde gövdenin görünen üst kenarı (yüksekliğin oranı; 51/512).
+const VISIBLE_TOP_RATIO: float = 0.1
 const MAX_SLOTS: int = LaundryBoard.MACHINE_MAX_CAPACITY
 ## Tambur: çamaşırlar kapak yarıçapının bu oranında bir çemberde döner.
 const ORBIT_RATIO: float = 0.42
@@ -30,13 +30,20 @@ const CLOTH_SWAY: float = 0.35
 const CLOTH_SWAY_SPEED: float = 3.1
 const SHADOW_COLOR: Color = Color(0.1, 0.15, 0.25, 0.2)
 const SHADOW_SIZE: Vector2 = Vector2(1.05, 0.16)
-const CHIP_RADIUS_MAX: float = 19.0
+const CHIP_RADIUS_MAX: float = 27.0
+## Sayaç hapı: makinenin üstünde, aradaki boşluk ve iç dolgu (piksel).
+const PILL_GAP: float = 10.0
+const PILL_PAD: float = 12.0
+const PILL_FILL: Color = Color(1.0, 1.0, 1.0, 0.93)
+const PILL_SHADOW: Color = Color(0.1, 0.15, 0.25, 0.16)
+const PILL_SHADOW_OFFSET: Vector2 = Vector2(0.0, 4.0)
+
 const CHIP_GAP_RATIO: float = 0.45
 const CHIP_FILL: Color = Color(1.0, 1.0, 1.0, 0.98)
 const CHIP_EMPTY: Color = Color(0.0, 0.0, 0.0, 0.1)
 const CHIP_INK: Color = Color("2a2f3d")
 const CHIP_RING_RATIO: float = 0.22
-const CHIP_FONT_RATIO: float = 1.25
+const CHIP_FONT_RATIO: float = 1.4
 const READY_INK: Color = Color("38a276")
 const BOUNCE: Vector2 = Vector2(1.06, 0.92)
 const BOUNCE_IN_SECONDS: float = 0.1
@@ -95,10 +102,11 @@ func setup(kind: int, display_height: float, slots: int) -> void:
 	if ResourceLoader.exists(GLASS_PATH):
 		_visual.add_child(_layer(load(GLASS_PATH) as Texture2D, factor))
 	_panel = ChipPanel.new()
-	_panel.position = Vector2(width * PANEL_X_RATIO, -height + height * PANEL_Y_RATIO)
-	_panel.span = width * PANEL_SPAN_RATIO
-	_visual.add_child(_panel)
+	_panel.span = width
+	# Hap makinenin üstünde, tepki düğümünün DIŞINDA: makine sallanınca sayılar titremesin.
+	add_child(_panel)
 	_panel.configure(capacity)
+	_panel.position = Vector2(0.0, -height + height * VISIBLE_TOP_RATIO - PILL_GAP - _panel.pill_height() * 0.5)
 	set_process(false)
 
 
@@ -213,7 +221,9 @@ func _process(delta: float) -> void:
 ## Üst paneldeki yuva ışıkları. Sayılar ve renkler yalnız değişince yeniden çizilir.
 class ChipPanel extends Node2D:
 	var span: float = 120.0
+	var icon: Texture2D = null
 	var _count: int = 2
+	var _box: StyleBoxFlat = StyleBoxFlat.new()
 	var _tints: Array[Color] = []
 	var _lefts: Array[int] = []
 	var _font: Font = null
@@ -227,7 +237,21 @@ class ChipPanel extends Node2D:
 		# Proje temasının yazı tipi (HUD ile aynı); yoksa motorun yedeği.
 		var theme: Theme = ThemeDB.get_project_theme()
 		_font = theme.default_font if theme != null and theme.default_font != null else ThemeDB.fallback_font
+		_box.set_corner_radius_all(int(pill_height() * 0.5))
+		_box.anti_aliasing = true
 		queue_redraw()
+
+	func pill_height() -> float:
+		return _radius() * 2.0 + MachineView.PILL_PAD * 1.4
+
+	func _icon_size() -> float:
+		return _radius() * 1.5 if icon != null else 0.0
+
+	func _pill_width() -> float:
+		var radius: float = _radius()
+		var step: float = radius * (2.0 + MachineView.CHIP_GAP_RATIO)
+		var icon_room: float = _icon_size() + MachineView.PILL_PAD * 0.7 if icon != null else 0.0
+		return step * float(_count - 1) + radius * 2.0 + MachineView.PILL_PAD * 2.0 + icon_room
 
 	func set_slot(slot: int, tint: Color, left: int) -> void:
 		_tints[slot] = tint
@@ -249,13 +273,27 @@ class ChipPanel extends Node2D:
 		tween.tween_property(self, "scale", Vector2.ONE * 1.06, MachineView.POP_SECONDS * 0.5)
 		tween.tween_property(self, "scale", Vector2.ONE, MachineView.POP_SECONDS)
 
+	## Yarıçap: hap makine genişliğinin ~1.3 katını aşmasın (4 yuvaya yükseltilince küçülür).
 	func _radius() -> float:
-		return minf(MachineView.CHIP_RADIUS_MAX, span / (float(_count) * (2.0 + MachineView.CHIP_GAP_RATIO)))
+		var room: float = span * 1.3 - MachineView.PILL_PAD * 2.0
+		return minf(MachineView.CHIP_RADIUS_MAX, room / (float(_count) * (2.0 + MachineView.CHIP_GAP_RATIO) + 1.2))
 
 	func _draw() -> void:
 		var radius: float = _radius()
 		var step: float = radius * (2.0 + MachineView.CHIP_GAP_RATIO)
-		var start: float = -step * float(_count - 1) * 0.5
+		var pill_w: float = _pill_width()
+		var pill_h: float = pill_height()
+		var rect: Rect2 = Rect2(Vector2(-pill_w * 0.5, -pill_h * 0.5), Vector2(pill_w, pill_h))
+		_box.bg_color = MachineView.PILL_SHADOW
+		draw_style_box(_box, Rect2(rect.position + MachineView.PILL_SHADOW_OFFSET, rect.size))
+		_box.bg_color = MachineView.PILL_FILL
+		draw_style_box(_box, rect)
+		var start: float = rect.position.x + MachineView.PILL_PAD + radius
+		if icon != null:
+			var size: float = _icon_size()
+			draw_texture_rect(icon, Rect2(Vector2(rect.position.x + MachineView.PILL_PAD, -size * 0.5), Vector2.ONE * size),
+				false, MachineView.CHIP_INK)
+			start += size + MachineView.PILL_PAD * 0.7
 		for slot: int in range(_count):
 			var at: Vector2 = Vector2(start + step * float(slot), 0.0)
 			if _lefts[slot] < 0:

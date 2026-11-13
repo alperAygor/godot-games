@@ -1,7 +1,8 @@
 extends TestCase
 
 ## Zorluk eğrisi, engellerin/mekaniklerin üretimi ve seviye hedefi kipleri; 1..120 seviyenin
-## üretilip çözücüyle çözülmesi (süreler yazdırılır). 1..150: makineler ve misafirler de (64+).
+## üretilip çözücüyle çözülmesi (süreler yazdırılır). 1..150: makineler ve misafirler de (64+); çift
+## renk (18+) ve mevsim olayları (22 güneş, 31 yaprak, 61 don, 91 polen; 121+ ikinci döngü) dahil.
 
 const NEW_KEYS: Array[String] = ["sheet", "sock", "dye"]
 const OLD_KEYS: Array[String] = ["wet", "mystery", "lock"]
@@ -14,6 +15,8 @@ const MIX_FROM: int = 61
 ## 1..15 öğretici seviyeleri: içerik değişmesin (öğretici akışı bunlara bağlı).
 const EARLY_LEVELS: int = 15
 const EARLY_HASH: String = "298f419f2f3dec287e9e8b04011abfa4"
+## Tek seviye üretim süresi üst sınırı (µs; hedef 1.5 sn, yüklü makine payıyla 2 katı).
+const SLOWEST_GENERATION_USEC: int = 3000000
 
 
 func _count(level: Dictionary, key: String) -> int:
@@ -247,6 +250,9 @@ func test_levels_1_to_150_are_solvable_within_budget() -> void:
 		var data: Dictionary = LevelCache.level(number)
 		var path: Array[int] = LevelCache.path(number)
 		assert_false(path.is_empty(), "seviye %d çözülebilir" % number)
+		# Çift renk ve mevsim olayları dahil: renk sayıları kuyrukla tutar, üretim içi tanık sızmaz.
+		assert_true(LevelSolver.counts_fit(data), "seviye %d renk sayıları" % number)
+		assert_false(data.has(LevelGenerator.WITNESS_KEY), "seviye %d: tanık yolu sonuçta yok" % number)
 		var board: LaundryBoard = LaundryBoard.new(data)
 		for id: int in path:
 			board.tap(id)
@@ -259,3 +265,6 @@ func test_levels_1_to_150_are_solvable_within_budget() -> void:
 			slowest_level = number
 	print("        süre 1..%d: üretim %d ms, çözüm %d ms, en yavaş üretim seviye %d (%d ms)" % [
 		CURVE_LEVELS, total_gen / 1000, total_solve / 1000, slowest_level, slowest / 1000])
+	# Mobilde donma olmasın: üretim arka planda da olsa tek seviye makul sürede bitmeli. Eşik ölçüm
+	# hedefinin (1.5 sn) iki katı: paylaşılan/yüklü makinede testi kırılgan yapmasın.
+	assert_true(slowest < SLOWEST_GENERATION_USEC, "en yavaş üretim %d ms" % (slowest / 1000))

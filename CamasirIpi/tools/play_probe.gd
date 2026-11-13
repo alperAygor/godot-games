@@ -7,11 +7,13 @@ extends SceneTree
 ## 29 büyük sepet, 36 lekeli, 44 zincir, 52 rüzgâr; kipler: 16 hamle, 21 kısa askı, 30 patron,
 ## 33 sipariş. Makineler ve misafirler: 64 çamaşır makinesi, 70 kurutucu, 76 türlü sepet, 82 kuş,
 ## 88 yağmur, 94 kedi, 100 karışık (yol kuşu kovalar/kediyi sever: ücretsiz dokunuşlar negatif kimlik).
+## Çift renk ve mevsimler: 18 çift renk, 22 güneşte solma, 31 yaprak (yol süpürmeleri içerir), 61 don,
+## 91 polen, 124 ikinci yaz (karışık).
 ## Son aşamada güçlendiriciler (geri al, +1 askı, mandal sökücü) gerçek sahnede denenir.
 ##   godot --headless --path . -s res://tools/play_probe.gd      çıkış 0 = geçti
 
-const LEVELS: Array[int] = [1, 2, 3, 7, 16, 21, 23, 25, 26, 29, 30, 32, 33, 36, 40, 44, 47, 52, 58,
-	64, 70, 76, 82, 88, 94, 100]
+const LEVELS: Array[int] = [1, 2, 3, 7, 16, 18, 21, 22, 23, 25, 26, 29, 30, 31, 32, 33, 36, 40, 44, 47, 52, 58,
+	61, 64, 70, 76, 82, 88, 91, 94, 100, 124]
 const BOOST_LEVEL: int = 40
 const BOOST_TAPS: int = 3
 const FRAMES_PER_TAP: int = 4
