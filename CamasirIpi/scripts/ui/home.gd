@@ -19,7 +19,10 @@ const GARMENT_COLORS: Array[Color] = [
 ]
 const TITLE_Y: float = 250.0
 const TITLE_SIZE: int = 112
-const PLAY_WIDTH: float = 700.0
+## Oyna düğmesi + yanındaki harita düğmesi birlikte ortalanır (Oyna hâlâ baskın, birincil eylem).
+const PLAY_WIDTH: float = 590.0
+const MAP_GAP: float = 24.0
+const MAP_DISC: float = 104.0
 const PLAY_HEIGHT: float = 150.0
 const PLAY_CENTER_Y: float = 1560.0
 const PLAY_BREATH_SCALE: float = 0.022
@@ -37,6 +40,7 @@ const TAB_COLLECTION: int = 2
 var _coin_chip: UiChip = null
 var _star_chip: UiChip = null
 var _play_button: Button = null
+var _map_button: MapDiscButton = null
 var _flames: Array[TextureRect] = []
 var _sheet: Sheet = null
 ## Seçili mandal/ip kaplaması; mağazadan dönünce süs ipine ve mandallara yeniden uygulanır.
@@ -77,6 +81,9 @@ func _ready() -> void:
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE_IN_SECONDS)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	# [MAP] Tekrar oynanan seviyeden dönüşte harita kaldığı yerde açılır.
+	if MapFlow.take_reopen_map():
+		_open_map()
 
 
 func _build_backdrop(view: Vector2) -> void:
@@ -212,10 +219,17 @@ func _build_play(view: Vector2) -> void:
 	_play_button = UiKit.button(UiStrings.level(1), &"", "lucide/play", PLAY_HEIGHT)
 	_play_button.size = Vector2(PLAY_WIDTH, PLAY_HEIGHT)
 	_play_button.custom_minimum_size = Vector2(PLAY_WIDTH, PLAY_HEIGHT)
-	_play_button.position = Vector2((view.x - PLAY_WIDTH) * 0.5, PLAY_CENTER_Y - PLAY_HEIGHT * 0.5)
+	var row_width: float = PLAY_WIDTH + MAP_GAP + UiKit.MIN_TOUCH
+	_play_button.position = Vector2((view.x - row_width) * 0.5, PLAY_CENTER_Y - PLAY_HEIGHT * 0.5)
 	_play_button.pivot_offset = _play_button.size * 0.5
 	_play_button.pressed.connect(_on_play)
 	add_child(_play_button)
+	# [MAP] Seviye haritası: Oyna'nın yanında tek, sakin bir yuvarlak düğme (ana ekrana yeni yazı/kutu eklemez).
+	_map_button = MapDiscButton.new()
+	_map_button.setup("map", MAP_DISC)
+	_map_button.position = Vector2(_play_button.position.x + PLAY_WIDTH + MAP_GAP, PLAY_CENTER_Y - UiKit.MIN_TOUCH * 0.5)
+	_map_button.pressed.connect(_open_map)
+	add_child(_map_button)
 	# Çok hafif "nefes": dikkat çeker ama sakin kalır.
 	var breath: Tween = _play_button.create_tween().set_loops()
 	breath.tween_property(_play_button, "scale", Vector2.ONE * (1.0 + PLAY_BREATH_SCALE), PLAY_BREATH_SECONDS * 0.5)\
@@ -263,6 +277,11 @@ func _refresh() -> void:
 
 func _on_play() -> void:
 	GameManager.start_game()
+
+
+## [MAP] Harita ekranını meta katmanı olarak açar (arkadaki bahçe gizlenir, geri tuşu haritaya gider).
+func _open_map() -> void:
+	_open_meta(LevelMap.open(self))
 
 
 func _on_tab(index: int) -> void:

@@ -81,7 +81,13 @@ func finish_run(result: Dictionary) -> void:
 	goto_scene(&"result")
 
 
+## [NET] Oyun başlamadan önce çevrimiçi kapısı: bağlantı yoksa sakin bir sayfa açılır ve
+## bağlantı gelene dek seviye başlamaz (kapı headless/editör/araçlarda kendiliğinden kapalıdır).
 func start_game() -> void:
+	OnlineGate.guard(self, _enter_game)
+
+
+func _enter_game() -> void:
 	last_result = {}
 	set_phase(Phase.GAME)
 	goto_scene(&"game")

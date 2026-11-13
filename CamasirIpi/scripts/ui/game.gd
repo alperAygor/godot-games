@@ -119,6 +119,11 @@ var _eco: EcoFlow = null
 var _skins: SkinLook = SkinLook.new()
 ## [DAILY] Günlük bulmaca kipi: doluysa seviye dışarıdan gelir; ilerleme/seri/seviye no değişmez.
 var _daily_level: Dictionary = {}
+## [MAP] Haritadan tekrar oynanan seviye (0 = normal akış): ilerleme/seri ilerlemez, yalnız yıldız farkı ödenir.
+var _replay_level: int = 0
+## [ZEN] Zen oturumu (null = normal): kayıp yok, ödül/reklam yok, tahtalar sakin ve sürekli.
+var _zen: ZenSession = null
+var _zen_view: ZenView = null
 ## Öğretici (el imleci, tanıtım kartları, boşta ipucu): mantığı tutorial_director.gd'de.
 var _tutorial: TutorialDirector = null
 
@@ -135,9 +140,16 @@ func _ready() -> void:
 			_level_number = maxi(int(arg.split("=")[1]), 1)
 			_persist = false
 	_daily_level = DailyPuzzle.take_pending()  # [DAILY] tek seferlik devir
+	_replay_level = MapFlow.take_pending_replay()  # [MAP] tek seferlik devir
+	if _replay_level > 0:  # [MAP]
+		_level_number = _replay_level
+	_zen = ZenMode.take_pending()  # [ZEN] tek seferlik devir
 	_center_x = get_viewport_rect().size.x * 0.5
 	_build_sky()
 	_build_ui()
+	if _zen != null:  # [ZEN]
+		_zen_view = ZenView.attach(_ui, _hud)
+		_zen_view.exit_pressed.connect(_zen_exit)
 	_tutorial = TutorialDirector.new()
 	add_child(_tutorial)
 	_start_level()
@@ -250,6 +262,8 @@ func _tap(id: int) -> void:
 			and first != LaundryBoard.EVENT_RACK_FULL and first != LaundryBoard.EVENT_MACHINE_FULL:
 		UiData.vibrate(12)
 		AudioService.play_variant("pin_click", SOUND_VARIANTS, randf_range(0.94, 1.08), 0.0)
+	if _zen != null:  # [ZEN] dokunuş listesi geri-al geçmişiyle eş tutulur (kurtarma için)
+		_zen.note_tap(id, _board)
 	_events.append_array(events)
 	_refresh_open()
 	_run_events()
@@ -337,7 +351,8 @@ func _play_event(event: Dictionary) -> void:
 			flying.landed.connect(_on_basket_landed.bind(index, stack_index, flying), CONNECT_ONE_SHOT)
 			await _wait(Motion.stagger(_events.size()))
 		LaundryBoard.EVENT_BASKET_DONE:
-			RetentionHooks.basket_done(event, _basket_items[int(event["basket"])].size())  # [RETENTION]
+			if _zen == null:  # [ZEN] zen görev/etkinlik sayacına işlemez
+				RetentionHooks.basket_done(event, _basket_items[int(event["basket"])].size())  # [RETENTION]
 			await _complete_basket(int(event["basket"]), int(event.get(RunStats.EVENT_CHAIN_KEY, 1)))
 		RunStats.EVENT_CHAIN_BREAK:
 			_hud.fade_chain()
@@ -349,6 +364,9 @@ func _play_event(event: Dictionary) -> void:
 				await _wait(Motion.WIN_DELAY_SECONDS)
 				_show_win()
 		LaundryBoard.EVENT_LOSE:
+			if _zen != null:  # [ZEN] kayıp yok: sakin kurtarma (bir adım geri + ipucu / askı)
+				await _zen_rescue()
+				return
 			_announce_lose(event)
 			UiData.vibrate(300)
 			AudioService.play_pitched("wind", 1.0, -3.0)
@@ -515,6 +533,9 @@ func _build_particles() -> void:
 
 
 func _start_level() -> void:
+	if not OnlineGate.passes_now():  # [NET] çevrimdışıysa seviye başlamaz; bağlantı gelince yeniden denenir
+		OnlineGate.guard(self, _start_level)
+		return
 	if _world != null:
 		_world.queue_free()
 	_hide_overlay()
@@ -537,16 +558,21 @@ func _start_level() -> void:
 	# Prob, belirli bir durumu (ör. kesin kayıp) sınamak için elle kurulmuş seviye verebilir.
 	# Seviye arka plan önbelleğinden gelir (önceden üretildiyse anında; değilse eşzamanlı üretilir,
 	# sonuç her durumda LevelGenerator.generate ile aynıdır).
+	if _zen != null:  # [ZEN] sıradaki sakin tahta (dış seviye yuvası olarak `_daily_level` kullanılır)
+		_daily_level = _zen.next_level()
 	_level = _daily_level if not _daily_level.is_empty() \
 		else (debug_level if not debug_level.is_empty() else LevelPrefetch.take_level(_level_number))  # [DAILY]
 	_level = _with_upgrades(_level)
 	_board = LaundryBoard.new(_level)
-	_eco.on_level_start(_level_number, _board)
-	RetentionHooks.level_started(_level_number, not _daily_level.is_empty())  # [RETENTION]
+	if _zen == null:  # [ZEN] zen'de seri bonusu/analitik/reklam sayacı yok
+		_eco.on_level_start(_level_number, _board)
+		RetentionHooks.level_started(_level_number, not _daily_level.is_empty())  # [RETENTION]
 	_skins.reload()
 	_hud.set_level(_level_number)
 	if not _daily_level.is_empty():
 		_hud.set_title(UiStrings.daily_title())
+	if _zen != null:  # [ZEN]
+		_hud.set_title(Loc.t("ZEN_TITLE"))
 	_hud.set_coins(Progress.coins())
 	_backdrop.set_level(_level_number)
 	# Ortam sesi mekâna ve günün saatine göre değişir (gece her yerde cırcır böceği).
@@ -561,13 +587,15 @@ func _start_level() -> void:
 	_build_baskets()
 	_build_extras()
 	_setup_boosters()
+	if _zen != null:  # [ZEN] zen'de güçlendirici çubuğu yok
+		_booster_bar.visible = false
 	_setup_rules_hud()
 	_refresh_open()
 	queue_redraw()
 	_tutorial.on_level_started(_level, _board, _views, _baskets, _rack_points)
 	# Oyuncu bu seviyeyi oynarken bir sonraki arka planda üretilir: kazanma sayfasındaki
 	# "Devam" ağır seviyelerde (~1 sn üretim) bile donmadan açılır.
-	if _daily_level.is_empty() and debug_level.is_empty():
+	if _daily_level.is_empty() and debug_level.is_empty() and _replay_level == 0:  # [MAP]
 		LevelPrefetch.request_level(_level_number + 1)
 
 
@@ -770,6 +798,12 @@ func _hide_overlay() -> void:
 
 
 func _show_win() -> void:
+	if _zen != null:  # [ZEN] sonuç sayfası yok: "✓" anı, sayaç, yumuşak geçiş
+		_zen_cleared()
+		return
+	if _replay_level > 0:  # [MAP] tekrar kazancı: yalnız yıldız farkı
+		_show_replay_win()
+		return
 	RetentionHooks.level_won(_level_number, _run_stats, _board, not _daily_level.is_empty())  # [RETENTION]
 	if not _daily_level.is_empty():  # [DAILY] normal ilerleme/ekonomi atlanır
 		_show_daily_end(true)
@@ -791,6 +825,9 @@ func _show_win() -> void:
 
 
 func _show_lose(remaining: int) -> void:
+	if _replay_level > 0:  # [MAP] tekrarda kayıp seriyi sıfırlamaz
+		_show_replay_lose(remaining)
+		return
 	if not _daily_level.is_empty():  # [DAILY]
 		_show_daily_end(false)
 		return
@@ -811,6 +848,67 @@ func _show_lose(remaining: int) -> void:
 func _show_daily_end(won: bool) -> void:
 	_hide_overlay()
 	_track_overlay(DailyFlow.show_end(_ui, _level, won, _win_tints(), _start_level))
+
+
+# --- [MAP] / [ZEN] Harita tekrarı ve zen kipi: kurallar MapFlow / ZenMode / ZenSession'da, burada yalnız sahne bağlantısı ---
+
+## [MAP] Tekrar kazanıldı: yalnız yıldız FARKI (ve fark varsa ek jeton) ödenir; seviye, seri ve
+## geçiş reklamı sayacı ilerlemez. "Devam" oyuncuyu haritaya geri götürür.
+func _show_replay_win() -> void:
+	var result: Dictionary = MapFlow.replay_win(_level_number, _board, bool(_level.get("hard", false)), _run_stats)
+	AudioService.play_pitched("win", 1.0, -3.0)
+	_hud.set_coins(Progress.coins())
+	_hide_overlay()
+	var sheet: ResultSheet = ResultSheet.win(_ui, int(result["coins"]), _win_tints(), false, result)
+	sheet.continue_pressed.connect(MapFlow.finish_replay)
+	_track_overlay(sheet)
+
+
+## [MAP] Tekrarda kayıp: seri bozulmaz (`Progress.fail_level` çağrılmaz); devam/tekrar dene normal.
+func _show_replay_lose(remaining: int) -> void:
+	AudioService.play_pitched("lose", 1.0, -3.0)
+	_hide_overlay()
+	var can_revive: bool = not _revived and _eco.can_watch(AdManager.Placement.REVIVE_EXTRA_SLOT)
+	var sheet: ResultSheet = ResultSheet.lose(_ui, remaining, can_revive,
+		_board.lose_reason() == LaundryBoard.LOSE_MOVES)
+	sheet.revive_pressed.connect(func() -> void:
+		_eco.watch(AdManager.Placement.REVIVE_EXTRA_SLOT, _revive, func() -> void: pass))
+	sheet.retry_pressed.connect(_start_level)
+	_track_overlay(sheet)
+
+
+## [ZEN] Tahta temizlendi: sayaç + yumuşak "✓", sonra örtü kapanır, sıradaki tahta kurulur, örtü açılır.
+func _zen_cleared() -> void:
+	var count: int = _zen.on_cleared()
+	_zen_view.set_count(count)
+	AudioService.play_pitched("sparkle", 1.0, -9.0)
+	var config: Dictionary = ZenMode.config()
+	var fade_seconds: float = float(config.get("fade_seconds", 0.55))
+	await _zen_view.show_check(float(config.get("check_seconds", 0.9)))
+	await _zen_view.fade_cover(1.0, fade_seconds)
+	if not is_inside_tree():
+		return
+	_start_level()
+	await _zen_view.fade_cover(0.0, fade_seconds)
+
+
+## [ZEN] Askı doldu / hamle kalmadı: kayıp sayfası yerine sakin kurtarma (bir adım geri + ipucu ya da +1 askı).
+func _zen_rescue() -> void:
+	var info: Dictionary = _zen.rescue(_level, _board)
+	_rebuild_from_board()
+	_refresh_booster_bar()
+	queue_redraw()
+	_zen_view.toast(Loc.t("ZEN_EXTRA_PEG") if bool(info["slot"]) else Loc.t("ZEN_STEP_BACK"))
+	var hint: int = int(info["hint"])
+	if hint >= 0 and _views.has(hint):
+		var config: Dictionary = ZenMode.config()
+		_zen_view.pulse_hint(_views[hint], int(config.get("hint_flashes", 3)), float(config.get("hint_interval", 0.8)))
+
+
+## [ZEN] Çıkış: ilerlemeye dokunulmaz, ana ekrana dönülür.
+func _zen_exit() -> void:
+	AnalyticsLog.record(ZenMode.EVENT_EXIT, {"count": _zen.cleared})
+	GameManager.goto_scene(&"home")
 
 
 ## Seviyenin sepet renkleri (kazanma yığını bunlarla boyanır).
@@ -844,6 +942,9 @@ func _on_sheet_closed(sheet: Sheet) -> void:
 
 
 func _on_pause_requested() -> void:
+	if _zen != null:  # [ZEN] duraklatma sayfası yok: geri/çıkış doğrudan ana ekrana
+		_zen_exit()
+		return
 	if _overlay != null:
 		return
 	var sheet: PauseSheet = PauseSheet.open(_ui)

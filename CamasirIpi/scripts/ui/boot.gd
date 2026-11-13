@@ -22,4 +22,9 @@ func _ready() -> void:
 	await get_tree().create_timer(HOLD_SECONDS).timeout
 	# Kayıtlı ses/müzik ayarı ilk sahneden önce uygulanır; ilk açılış menüsüz doğrudan oyuna girer.
 	UiData.apply_audio_settings()
+	# [NET] Açılışta bağlantı denetimi: çevrimdışıysa "Bağlantı gerekli" sayfası, gelince devam.
+	OnlineGate.guard(self, _route)
+
+
+func _route() -> void:
 	GameManager.goto_scene(&"game" if UiData.consume_first_launch() else &"home")

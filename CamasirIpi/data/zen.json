@@ -1,0 +1,18 @@
+{
+  "_not": "Zen kipi (ZenMode). Kaybetme yok: tahtalar az renkli, sığ katmanlı, süresiz/hamle sınırsız (LevelGenerator'ın düz seviyeleri 4-7 + tohumlu renk/ip/ayna çeşitlemesi). 'ramp': oturumda kaçıncı tahta olduğuna göre hangi taban seviyelerden seçileceği (from = en az kaçıncı tahta). 'rescue': askı dolup hamle kalmazsa sakin kurtarma: en çok 'max_undo' hamle geri al, çözücüden iyi bir hamle öner; tahta başına 'max_per_board' kurtarmadan sonra askı ekle (sonsuz döngü olmaz).",
+  "unlock_level": 10,
+  "rack_slots": 5,
+  "palette": 7,
+  "seed_salt": 104717,
+  "session_seed_mod": 100000,
+  "ramp": [
+    {"from": 0, "bases": [4, 5]},
+    {"from": 3, "bases": [4, 5, 6]},
+    {"from": 8, "bases": [4, 5, 6, 7]}
+  ],
+  "rescue": {"max_undo": 8, "node_limit": 6000, "max_per_board": 3},
+  "check_seconds": 0.9,
+  "fade_seconds": 0.55,
+  "hint_flashes": 3,
+  "hint_interval": 0.8
+}

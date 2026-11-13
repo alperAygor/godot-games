@@ -206,3 +206,21 @@ MACHINE_MOVES_ONE,%d hamle,%d move,%d movimiento
 MACHINE_MOVES_OTHER,%d hamle,%d moves,%d movimientos
 MACHINE_MAX,En üst seviye,Maxed,Al máximo
 MACHINE_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d
+MAP_REPLAY,Tekrar oyna,Play again,Jugar de nuevo
+MAP_REPLAY_NOTE,Yalnızca yeni yıldızlar ödül getirir,Only new stars bring rewards,Solo las estrellas nuevas dan recompensa
+MAP_SEASON_SUMMER,Yaz,Summer,Verano
+MAP_SEASON_AUTUMN,Sonbahar,Autumn,Otoño
+MAP_SEASON_WINTER,Kış,Winter,Invierno
+MAP_SEASON_SPRING,İlkbahar,Spring,Primavera
+MAP_DIVIDER_JOIN,%s · %s,%s · %s,%s · %s
+ZEN_TITLE,Zen,Zen,Zen
+ZEN_SUB,Sakin ve bitmeyen çamaşırlar,Calm and endless laundry,Ropa tendida tranquila y sin fin
+ZEN_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d
+ZEN_START,Başla,Begin,Empezar
+ZEN_TOTAL,Toplam %d temiz tahta,%d boards cleared in total,%d tableros completados en total
+ZEN_STEP_BACK,Bir adım geri aldık,We stepped one move back,Volvimos un paso atrás
+ZEN_EXTRA_PEG,Bir askı daha ekledik,We added one more peg,Añadimos un colgador más
+NET_TITLE,Bağlantı gerekli,Connection required,Se requiere conexión
+NET_BODY,Oynamak için internete bağlan.,Connect to the internet to play.,Conéctate a internet para jugar.
+NET_RETRY,Tekrar dene,Try again,Reintentar
+NET_CHECKING,Bağlantı denetleniyor...,Checking connection...,Comprobando la conexión...
