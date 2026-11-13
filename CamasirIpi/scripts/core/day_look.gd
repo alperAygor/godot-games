@@ -30,26 +30,32 @@ var storm_dim: float = 1.0
 ## JSON'daki bir aşama sözlüğünden görünüm üretir. Eksik alanlar varsayılan kalır.
 static func from_dict(data: Dictionary) -> DayLook:
 	var look: DayLook = DayLook.new()
-	look.phase_name = String(data.get("name", look.phase_name))
-	look.ambience = String(data.get("ambience", look.ambience))
-	look.sky_top = _color(data, "sky_top", look.sky_top)
-	look.sky_bottom = _color(data, "sky_bottom", look.sky_bottom)
-	look.scenery_tint = _color(data, "scenery_tint", look.scenery_tint)
-	look.cloud_tint = _color(data, "cloud_tint", look.cloud_tint)
-	look.garment_tint = _color(data, "garment_tint", look.garment_tint)
-	look.sun_color = _color(data, "sun_color", look.sun_color)
-	look.moon_color = _color(data, "moon_color", look.moon_color)
-	look.sun_pos = _vector(data, "sun_pos", look.sun_pos)
-	look.moon_pos = _vector(data, "moon_pos", look.moon_pos)
-	look.sun_alpha = float(data.get("sun_alpha", look.sun_alpha))
-	look.sun_size = float(data.get("sun_size", look.sun_size))
-	look.sun_haze = float(data.get("sun_haze", look.sun_haze))
-	look.moon_alpha = float(data.get("moon_alpha", look.moon_alpha))
-	look.star_amount = float(data.get("stars", look.star_amount))
-	look.firefly_amount = float(data.get("fireflies", look.firefly_amount))
-	look.window_glow = float(data.get("windows", look.window_glow))
-	look.storm_dim = float(data.get("storm_dim", look.storm_dim))
+	look.apply_dict(data)
 	return look
+
+
+## Sözlükteki alanları bu görünümün üstüne yazar; olmayan alanlar olduğu gibi kalır. Neden ayrı:
+## mekânlar (LocationCycle) gün paletini aşama aşama yalnız birkaç alanla ezebilsin.
+func apply_dict(data: Dictionary) -> void:
+	phase_name = String(data.get("name", phase_name))
+	ambience = String(data.get("ambience", ambience))
+	sky_top = _color(data, "sky_top", sky_top)
+	sky_bottom = _color(data, "sky_bottom", sky_bottom)
+	scenery_tint = _color(data, "scenery_tint", scenery_tint)
+	cloud_tint = _color(data, "cloud_tint", cloud_tint)
+	garment_tint = _color(data, "garment_tint", garment_tint)
+	sun_color = _color(data, "sun_color", sun_color)
+	moon_color = _color(data, "moon_color", moon_color)
+	sun_pos = _vector(data, "sun_pos", sun_pos)
+	moon_pos = _vector(data, "moon_pos", moon_pos)
+	sun_alpha = float(data.get("sun_alpha", sun_alpha))
+	sun_size = float(data.get("sun_size", sun_size))
+	sun_haze = float(data.get("sun_haze", sun_haze))
+	moon_alpha = float(data.get("moon_alpha", moon_alpha))
+	star_amount = float(data.get("stars", star_amount))
+	firefly_amount = float(data.get("fireflies", firefly_amount))
+	window_glow = float(data.get("windows", window_glow))
+	storm_dim = float(data.get("storm_dim", storm_dim))
 
 
 static func _color(data: Dictionary, key: String, fallback: Color) -> Color:

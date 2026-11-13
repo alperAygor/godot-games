@@ -116,3 +116,7 @@ TUT_PIN_REMOVER_TITLE,Mandal çıkarıcı,Peg remover,Quitapinzas
 TUT_PIN_REMOVER_LINE,Seçtiğin çamaşırı hemen serbest bırakır.,Instantly frees the item you pick.,Libera al instante la prenda que elijas.
 TUT_EXTRA_SLOT_TITLE,+1 askı,+1 slot,+1 espacio
 TUT_EXTRA_SLOT_LINE,Bekleme askısına bir yer daha ekler.,Adds one more spot to the waiting rack.,Agrega un lugar más a la percha de espera.
+PLACE_ARRIVE,Yeni durak: %s,Next stop: %s,Próxima parada: %s
+PLACE_GARDEN,Bahçe,Garden,Jardín
+PLACE_BEACH,Sahil,Seaside,Playa
+PLACE_ROOFTOP,Çatı Katı,Rooftop,Azotea

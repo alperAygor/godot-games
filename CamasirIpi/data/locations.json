@@ -1,0 +1,118 @@
+{
+  "_not": "Mekân döngüsü (LocationCycle). Sırayla oynanır, sonra başa sarar: her mekân 'levels' kadar seviye sürer. Katman konumları 1080x1920 tasarım koordinatı (sol-üst); *_px alanları doku pikseli. 'layer' indeksi back+front birleşik listesine göredir (0 = uzak). Çapa pikselleri tools/blender/make_locations.py çıktısındaki ANCHOR satırlarından gelir. 'palette': gün döngüsü (data/day_cycle.json) üstüne mekân ayarı: *_mix = [renk, oran] karışımı, scenery_mul = manzara tonu çarpanı, phases = aşama adına göre DayLook alanlarını ezer. fireflies = ateş böceği çarpanı.",
+  "locations": [
+    {
+      "id": "garden",
+      "name_key": "PLACE_GARDEN",
+      "levels": 40,
+      "ambience": "garden",
+      "dir": "res://assets/sprites/bg/",
+      "back": [
+        {"file": "bg_far", "pos": [0, 620], "parallax": 3.0},
+        {"file": "bg_mid", "pos": [0, 760], "parallax": 5.0}
+      ],
+      "front": [
+        {"file": "bg_fence", "pos": [0, 990], "parallax": 8.0},
+        {"file": "bg_grass", "pos": [0, 1100], "parallax": 11.0}
+      ],
+      "hero": {"trunk": "tree_trunk", "crown": "tree_crown", "base": [150, 1230], "trunk_base_px": [180, 900],
+               "crown_pivot": [150, 670], "crown_pivot_px": [320, 500], "sway": 1.4},
+      "pole": "pole",
+      "decor": [
+        {"file": "flower_1", "pos": [95, 1640], "scale": 0.9, "sway": 4.0, "mode": "rotate"},
+        {"file": "flower_2", "pos": [1005, 1770], "scale": 1.0, "sway": 4.0, "mode": "rotate"},
+        {"file": "flower_1", "pos": [905, 1250], "scale": 0.55, "sway": 4.0, "mode": "rotate"},
+        {"file": "flower_2", "pos": [60, 1300], "scale": 0.5, "sway": 4.0, "mode": "rotate"}
+      ],
+      "lights": [
+        {"layer": 0, "points": [[259, 304], [573, 294], [873, 234]], "pane": 7.0, "halo": 34.0}
+      ],
+      "fireflies": 1.0,
+      "palette": {}
+    },
+    {
+      "id": "beach",
+      "name_key": "PLACE_BEACH",
+      "levels": 40,
+      "ambience": "waves",
+      "dir": "res://assets/sprites/bg_beach/",
+      "back": [
+        {"file": "bg_far", "pos": [0, 620], "parallax": 3.0},
+        {"file": "bg_mid", "pos": [0, 760], "parallax": 5.0}
+      ],
+      "front": [
+        {"file": "bg_fence", "pos": [0, 990], "parallax": 8.0},
+        {"file": "bg_ground", "pos": [0, 1100], "parallax": 11.0}
+      ],
+      "hero": {"trunk": "hero_trunk", "crown": "hero_crown", "base": [150, 1230], "trunk_base_px": [180, 900],
+               "crown_pivot": [255, 396], "crown_pivot_px": [320, 258], "sway": 2.0},
+      "pole": "pole",
+      "decor": [
+        {"file": "decor_1", "pos": [95, 1640], "scale": 0.95, "sway": 3.0, "mode": "rotate"},
+        {"file": "decor_2", "pos": [1005, 1770], "scale": 1.0, "sway": 3.0, "mode": "rotate"},
+        {"file": "decor_2", "pos": [905, 1250], "scale": 0.55, "sway": 3.0, "mode": "rotate"},
+        {"file": "decor_1", "pos": [60, 1300], "scale": 0.5, "sway": 3.0, "mode": "rotate"}
+      ],
+      "lights": [
+        {"layer": 0, "points": [[950, 81]], "pane": 6.0, "halo": 46.0, "flicker": 0.75, "speed": 1.1},
+        {"layer": 1, "points": [[356, 204], [451, 210], [731, 216]], "pane": 8.0, "halo": 30.0}
+      ],
+      "glints": {"layer": 0, "rect": [30, 186, 1020, 112], "count": 16, "seed": 77},
+      "fireflies": 0.0,
+      "palette": {
+        "sky_bottom_mix": ["#e6fbf6", 0.3],
+        "scenery_mul": "#fffdf8",
+        "phases": {
+          "noon": {"scenery_tint": "#fffffb"},
+          "golden": {"scenery_tint": "#ffe4bd"},
+          "sunset": {"scenery_tint": "#ffcbbb"},
+          "night": {"scenery_tint": "#6478b4", "sky_bottom": "#3d6aa6"}
+        }
+      }
+    },
+    {
+      "id": "rooftop",
+      "name_key": "PLACE_ROOFTOP",
+      "levels": 40,
+      "ambience": "city",
+      "dir": "res://assets/sprites/bg_rooftop/",
+      "back": [
+        {"file": "bg_far", "pos": [0, 620], "parallax": 3.0},
+        {"file": "bg_mid", "pos": [0, 760], "parallax": 5.0}
+      ],
+      "front": [
+        {"file": "bg_fence", "pos": [0, 990], "parallax": 8.0},
+        {"file": "bg_ground", "pos": [0, 1100], "parallax": 11.0}
+      ],
+      "hero": {"trunk": "hero_trunk", "crown": "hero_crown", "base": [150, 1230], "trunk_base_px": [180, 900],
+               "crown_pivot": [150, 670], "crown_pivot_px": [320, 500], "sway": 1.2},
+      "pole": "pole",
+      "decor": [
+        {"file": "decor_1", "pos": [95, 1640], "scale": 0.9, "sway": 2.2, "mode": "skew"},
+        {"file": "decor_2", "pos": [1005, 1770], "scale": 1.0, "sway": 2.2, "mode": "skew"},
+        {"file": "decor_2", "pos": [905, 1250], "scale": 0.55, "sway": 2.2, "mode": "skew"},
+        {"file": "decor_1", "pos": [60, 1300], "scale": 0.5, "sway": 2.2, "mode": "skew"}
+      ],
+      "lights": [
+        {"layer": 1, "points": [[297, 175], [339, 193], [381, 208], [424, 220], [466, 229], [508, 235], [550, 237],
+                                [592, 237], [634, 234], [676, 228], [719, 218], [761, 206], [803, 191], [980, 202]],
+         "pane": 6.0, "halo": 26.0, "color": "#ffe7a8", "halo_color": "#ffc46a", "flicker": 0.05, "speed": 0.9},
+        {"layer": 0, "points": [[227, 270], [556, 283], [921, 268], [170, 302], [202, 385], [267, 302], [305, 358],
+                                [367, 399], [443, 353], [475, 271], [615, 379], [655, 352], [693, 310], [740, 382],
+                                [835, 382], [869, 407], [900, 324], [931, 365], [972, 285]],
+         "pane": 4.5, "halo": 18.0, "flicker": 0.1, "speed": 0.7}
+      ],
+      "fireflies": 0.0,
+      "palette": {
+        "sky_bottom_mix": ["#f7e8f1", 0.25],
+        "scenery_mul": "#fffbfb",
+        "phases": {
+          "golden": {"scenery_tint": "#ffe8c8"},
+          "sunset": {"scenery_tint": "#ffd3c8"},
+          "dusk": {"scenery_tint": "#bcaad4"},
+          "night": {"scenery_tint": "#6a72b2"}
+        }
+      }
+    }
+  ]
+}
