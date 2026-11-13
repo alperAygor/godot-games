@@ -535,6 +535,7 @@ func _start_level() -> void:
 	_line_views.clear()
 	_events.clear()
 	_views.clear()
+	_slide_home.clear()
 	_baskets.clear()
 	_basket_items.clear()
 	_rack_points.clear()
@@ -551,6 +552,8 @@ func _start_level() -> void:
 	_board = LaundryBoard.new(_level)
 	_eco.on_level_start(_level_number, _board)
 	_hud.set_level(_level_number)
+	if not _daily_level.is_empty():
+		_hud.set_title(UiStrings.DAILY_TITLE)
 	_hud.set_coins(Progress.coins())
 	_backdrop.set_level(_level_number)
 	_hud.set_title_color(_backdrop.hud_text_color(TEXT_COLOR))
@@ -583,6 +586,7 @@ func _build_lines() -> void:
 			columns = maxi(columns, int(float(item["slot"])) + 1)
 	var spacing_y: float = minf(MAX_LINE_SPACING, LINES_AREA / float(lines))
 	var spacing_x: float = minf(MAX_COLUMN_SPACING, BOARD_WIDTH / float(columns))
+	_slide_spacing_x = spacing_x
 	var garment_size: float = minf(MAX_GARMENT_SIZE, minf(spacing_x * 0.94, spacing_y * 1.02))
 	for line: int in range(lines):
 		_line_ys.append(LINES_TOP + spacing_y * float(line))
@@ -800,7 +804,10 @@ func _show_lose(remaining: int) -> void:
 	AudioService.play_pitched("lose", 1.0, -3.0)
 	_hide_overlay()
 	var can_revive: bool = not _revived and _eco.can_watch(AdManager.Placement.REVIVE_EXTRA_SLOT)
-	var sheet: ResultSheet = ResultSheet.lose(_ui, remaining, can_revive)
+	var cost: int = 0 if _revived else int(Progress.balance_table().get("continue_cost", 0))
+	var sheet: ResultSheet = ResultSheet.lose(_ui, remaining, can_revive,
+		_board.lose_reason() == LaundryBoard.LOSE_MOVES, cost, Progress.coins() >= cost)
+	sheet.coins_pressed.connect(_on_revive_coins.bind(cost))
 	# "+1 askı" ödüllü reklamla verilir; reklam başarısızsa sayfa açık kalır.
 	sheet.revive_pressed.connect(func() -> void:
 		_eco.watch(AdManager.Placement.REVIVE_EXTRA_SLOT, _revive, func() -> void: pass))
@@ -1080,6 +1087,7 @@ func _rebuild_from_board() -> void:
 	_line_views.clear()
 	_events.clear()
 	_views.clear()
+	_slide_home.clear()
 	_baskets.clear()
 	_basket_items.clear()
 	_rack_points.clear()
@@ -1231,6 +1239,7 @@ func _draw_rules() -> void:
 ## `_decorate_view` kancası: leke rozeti ve patronun ikinci ekranı (sağda, ekran dışında bekler).
 func _decorate_rules_view(view: GarmentView, item: Dictionary) -> void:
 	var id: int = int(item["id"])
+	_decorate_slide_view(view, item)
 	if _board.is_stained(id) and _board.is_on_line(id):
 		view.set_stain(true)
 	if _board.is_hidden(id):
@@ -1276,6 +1285,8 @@ func _place_rules_state() -> void:
 
 ## `_play_obstacle_event` kancası: yeni olay türleri. Döndürür: olay burada işlendi mi.
 func _play_rules_event(event: Dictionary) -> bool:
+	if _play_slide_event(event):
+		return true
 	var id: int = int(event.get("id", LaundryBoard.EMPTY))
 	match String(event["type"]):
 		LaundryBoard.EVENT_JOKER_FIX:
@@ -1370,3 +1381,68 @@ func _announce_lose(event: Dictionary) -> void:
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	show.chain().tween_interval(Motion.ANNOUNCE_SECONDS)
 	show.chain().tween_property(_announce, "modulate:a", 0.0, Motion.OVERLAY_FADE_SECONDS)
+
+
+# --- Sürgülü ip: üst sıra birkaç hamlede bir yana kayar ve geri gelir -------------------------
+## Kural `LaundryBoard` içindedir (faz tabloları); burada yalnız kayan parçaların yeri ve rozeti.
+
+const SLIDE_SECONDS: float = 0.42
+const SLIDE_BADGE_RATIO: float = 0.3
+const SLIDE_BADGE_ICON: String = "lucide/rotate-ccw"
+const SLIDE_BADGE_INK: Color = Color("2a2f3d")
+var _slide_spacing_x: float = 0.0
+## Kayan parça -> [faz 0'daki x, yön]; geri al/yeniden kurulumda doğru faza yerleştirmek için.
+var _slide_home: Dictionary = {}
+
+
+func _decorate_slide_view(view: GarmentView, item: Dictionary) -> void:
+	if not item.has("slide"):
+		return
+	var id: int = int(item["id"])
+	var shift: float = float(item["slide"])
+	_slide_home[id] = Vector2(view.position.x, shift)
+	# Geri al sonrası görünümler baştan kurulur: o anki faza göre yerleşir.
+	view.position.x += shift * _slide_spacing_x * float(_board.slide_phase())
+	var badge: Node2D = Node2D.new()
+	badge.position = Vector2(0.0, -view.size * 0.02)
+	badge.z_index = 2
+	view.add_child(badge)
+	var disc: Sprite2D = Sprite2D.new()
+	disc.texture = GarmentView.circle_texture()
+	disc.scale = Vector2.ONE * (view.size * SLIDE_BADGE_RATIO / float(GarmentView.CIRCLE_TEXTURE_SIZE))
+	disc.modulate = Color(1.0, 1.0, 1.0, 0.94)
+	badge.add_child(disc)
+	var icon: Sprite2D = Sprite2D.new()
+	icon.texture = Icons.texture(SLIDE_BADGE_ICON)
+	if icon.texture != null:
+		icon.scale = Vector2.ONE * (view.size * SLIDE_BADGE_RATIO * 0.62 / icon.texture.get_size().x)
+	icon.modulate = SLIDE_BADGE_INK
+	badge.add_child(icon)
+
+
+func _play_slide_event(event: Dictionary) -> bool:
+	match String(event["type"]):
+		LaundryBoard.EVENT_SLIDE_TICK:
+			return true
+		LaundryBoard.EVENT_SLIDE:
+			var phase: float = float(event["phase"])
+			var moved: bool = false
+			for id: Variant in _slide_home.keys():
+				# Sepete girip silinmiş parça sözlükte serbest bırakılmış nesne olarak kalabilir:
+				# dönüştürmeden ÖNCE geçerliliği sınanır. Uçmaya başlamış parça da kaydırılmaz.
+				var raw: Variant = _views.get(int(id))
+				if not is_instance_valid(raw) or not _board.is_on_line(int(id)):
+					continue
+				var view: GarmentView = raw as GarmentView
+				var home: Vector2 = _slide_home[id] as Vector2
+				var tween: Tween = view.create_tween()
+				tween.tween_property(view, "position:x", home.x + home.y * _slide_spacing_x * phase, SLIDE_SECONDS)\
+					.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+				view.nudge(Motion.NEIGHBOUR_KICK)
+				moved = true
+			if moved:
+				AudioService.play_pitched("cloth", 0.8, -5.0)
+			_refresh_open()
+			return true
+	return false
+

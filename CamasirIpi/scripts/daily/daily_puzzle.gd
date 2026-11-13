@@ -129,6 +129,12 @@ static func _relabel_colors(level: Dictionary, rng: RandomNumberGenerator) -> vo
 		entry["color"] = mapping[int(entry["color"])]
 		if entry.has("lock"):
 			entry["lock"] = mapping[int(entry["lock"])]
+	# Sipariş kipi sepet RENKLERİNİ sıralar: onlar da aynı eşlemeden geçer.
+	if level.has("orders"):
+		var orders: Array[int] = []
+		for color: Variant in level["orders"] as Array:
+			orders.append(mapping[int(color)])
+		level["orders"] = orders
 
 
 ## Sağ-sol ayna ve ip sırası karışımı: kapatma ilişkileri (blockers) değişmez -> çözülebilirlik aynı.
@@ -136,6 +142,11 @@ static func _mirror_and_reorder(level: Dictionary, rng: RandomNumberGenerator) -
 	var items: Array[Dictionary] = level["items"] as Array[Dictionary]
 	var widest: float = 0.0
 	var lines: int = 0
+	# Çarşaf iki komşu ipe yayılır, patron tahtası iki ekranlıdır: ipleri karıştırmak ya da
+	# aynalamak bu yerleşimi bozar. Böyle seviyelerde düzen olduğu gibi bırakılır.
+	for entry: Dictionary in items:
+		if entry.has("sheet") or int(entry.get("screen", 0)) > 0:
+			return
 	for entry: Dictionary in items:
 		widest = maxf(widest, float(entry["slot"]))
 		lines = maxi(lines, int(entry["line"]) + 1)
@@ -152,6 +163,14 @@ static func _mirror_and_reorder(level: Dictionary, rng: RandomNumberGenerator) -
 		entry["line"] = order[int(entry["line"])]
 		if mirror:
 			entry["slot"] = widest - float(entry["slot"])
+			# Sürgülü ip aynalanınca kayma yönü de ters döner.
+			if entry.has("slide"):
+				entry["slide"] = -int(entry["slide"])
+	if level.has("slide"):
+		var slide: Dictionary = level["slide"] as Dictionary
+		slide["line"] = order[int(slide.get("line", 0))]
+		if mirror:
+			slide["shift"] = -int(slide.get("shift", 0))
 
 
 ## Sepet kuyruğunda komşu yer değişimleri; her biri çözücüyle doğrulanır, bozarsa geri alınır.
@@ -172,10 +191,28 @@ static func _extra_twists(level: Dictionary, twists: int, rng: RandomNumberGener
 		swapped[b] = queue[a]
 		var candidate: Dictionary = level.duplicate()
 		candidate["queue"] = swapped
+		# Büyük ve joker sepetler kuyruk SIRASIYLA işaretlidir: renk yer değiştirince işaret de
+		# rengiyle birlikte taşınır (yoksa renk sayıları tutmaz ve her aday reddedilir).
+		for flag: String in ["big", "jokers"]:
+			if level.has(flag):
+				candidate[flag] = _swap_marks(level[flag] as Array, a, b)
 		if LevelSolver.is_solvable(candidate, budget):
 			queue = swapped
 			level["queue"] = swapped
+			for flag: String in ["big", "jokers"]:
+				if level.has(flag):
+					level[flag] = candidate[flag]
 			applied += 1
+
+
+## Sıra numaralarından oluşan işaret listesinde `a` ile `b`yi yer değiştirir (sıralı döner).
+static func _swap_marks(marks: Array, a: int, b: int) -> Array[int]:
+	var result: Array[int] = []
+	for mark: Variant in marks:
+		var index: int = int(mark)
+		result.append(b if index == a else (a if index == b else index))
+	result.sort()
+	return result
 
 
 # --- Seri mantığı (durum sözlüğü: last_won, streak, best) ---------------------

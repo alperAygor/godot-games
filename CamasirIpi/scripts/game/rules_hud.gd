@@ -31,12 +31,16 @@ const ICON_RACK: String = "lucide/shirt"
 const ICON_ORDERS: String = "lucide/check"
 const ICON_BOSS: String = "lucide/trophy"
 const ICON_WIND: String = "lucide/wind"
+const ICON_SLIDE: String = "lucide/rotate-ccw"
+const SLIDE_PILL_OFFSET_Y: float = 84.0
 
 var _mode_pill: Pill = null
 var _wind_pill: Pill = null
 var _palette: Array[Color] = []
 var _shown_moves: int = -2
 var _shown_wind: int = -2
+var _slide_pill: Pill = null
+var _shown_slide: int = -2
 var _shown_orders: Vector2i = Vector2i(-1, -1)
 var _shown_screen: int = -1
 
@@ -51,12 +55,20 @@ func setup(screen_width: float, palette: Array[Color]) -> void:
 	_wind_pill.position = Vector2(screen_width - PILL_MARGIN_X, PILL_Y)
 	add_child(_wind_pill)
 	_wind_pill.set_icon(Icons.texture(ICON_WIND))
+	# Sürgülü ip sayacı: rüzgâr sayacının hemen altında, aynı dilde küçük bir hap.
+	_slide_pill = Pill.new()
+	_slide_pill.align_right = true
+	_slide_pill.position = Vector2(screen_width - PILL_MARGIN_X, PILL_Y + SLIDE_PILL_OFFSET_Y)
+	add_child(_slide_pill)
+	_slide_pill.set_icon(Icons.texture(ICON_SLIDE))
+	_slide_pill.visible = false
 
 
 ## Yeni seviye: kipe göre sol hap kurulur, sayaçlar sıfırlanır.
 func start(board: LaundryBoard) -> void:
 	_shown_moves = -2
 	_shown_wind = -2
+	_shown_slide = -2
 	_shown_orders = Vector2i(-1, -1)
 	_shown_screen = -1
 	_mode_pill.visible = board.mode() != LaundryBoard.MODE_NONE
@@ -113,6 +125,14 @@ func refresh(board: LaundryBoard) -> void:
 		if _shown_wind != -2 and wind > 0:
 			_wind_pill.pulse()
 		_shown_wind = wind
+	var slide: int = board.slide_left()
+	if slide != _shown_slide:
+		_slide_pill.visible = slide > 0
+		_slide_pill.set_text(str(slide))
+		_slide_pill.set_urgent(slide == 1)
+		if _shown_slide != -2 and slide > 0:
+			_slide_pill.pulse()
+		_shown_slide = slide
 
 
 func mode_pill() -> Node2D:

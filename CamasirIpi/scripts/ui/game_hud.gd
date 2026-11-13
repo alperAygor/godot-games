@@ -67,6 +67,11 @@ func set_title_color(color: Color) -> void:
 	_title.add_theme_color_override("font_color", color)
 
 
+## Günlük bulmaca gibi seviye numarası olmayan oyunlarda başlık doğrudan yazılır.
+func set_title(text: String) -> void:
+	_title.text = text
+
+
 func set_coins(value: int) -> void:
 	if not _has_progress_coins:
 		_coin_chip.set_value(value)
