@@ -1279,6 +1279,9 @@ func _setup_rules_hud() -> void:
 		_rules_hud = RulesHud.new()
 		_ui.add_child(_rules_hud)
 		_rules_hud.setup(get_viewport_rect().size.x, COLORS)
+		# Kural hapları üst göstergenin (duraklat, jeton) hemen altında durur: çentikli telefonda
+		# güvenli alan kadar aşağı iner, yoksa jeton göstergesiyle üst üste biner.
+		_rules_hud.position.y = UiKit.safe_insets(get_viewport_rect().size).y - UiKit.MIN_TOP_MARGIN + RULES_HUD_CLEARANCE
 	if _announce != null:
 		_announce.queue_free()
 		_announce = null
@@ -2083,3 +2086,7 @@ func _q_pollen_puff(line: int) -> void:
 	for view_id: int in _views.keys():
 		if _board.is_dusty(view_id) and _live(view_id):
 			_views[view_id].set_dusty(true)
+
+
+## Üst gösterge satırı ile kural hapları arasındaki ek boşluk.
+const RULES_HUD_CLEARANCE: float = 12.0
