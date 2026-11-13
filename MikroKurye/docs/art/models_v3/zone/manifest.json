@@ -1,0 +1,165 @@
+{
+  "images": [
+    {
+      "name": "zone_kitchen_teapot",
+      "tris": 1776,
+      "dims": [
+        2.088,
+        2.555,
+        2.19
+      ],
+      "preview": "zone_kitchen_teapot.png"
+    },
+    {
+      "name": "zone_kitchen_jar",
+      "tris": 936,
+      "dims": [
+        1.64,
+        1.78,
+        2.38
+      ],
+      "preview": "zone_kitchen_jar.png"
+    },
+    {
+      "name": "zone_kitchen_plate_stack",
+      "tris": 1604,
+      "dims": [
+        2.6,
+        2.6,
+        0.397
+      ],
+      "preview": "zone_kitchen_plate_stack.png"
+    },
+    {
+      "name": "zone_kitchen_cutting_board",
+      "tris": 212,
+      "dims": [
+        4.0,
+        2.6,
+        0.256
+      ],
+      "preview": "zone_kitchen_cutting_board.png"
+    },
+    {
+      "name": "zone_library_globe",
+      "tris": 1720,
+      "dims": [
+        1.936,
+        2.151,
+        2.504
+      ],
+      "preview": "zone_library_globe.png"
+    },
+    {
+      "name": "zone_library_candle",
+      "tris": 1180,
+      "dims": [
+        1.0,
+        1.0,
+        1.885
+      ],
+      "preview": "zone_library_candle.png"
+    },
+    {
+      "name": "zone_library_book_tower",
+      "tris": 912,
+      "dims": [
+        1.532,
+        3.981,
+        3.0
+      ],
+      "preview": "zone_library_book_tower.png"
+    },
+    {
+      "name": "zone_library_hourglass",
+      "tris": 1486,
+      "dims": [
+        1.04,
+        1.04,
+        2.434
+      ],
+      "preview": "zone_library_hourglass.png"
+    },
+    {
+      "name": "zone_night_alarm_clock",
+      "tris": 1760,
+      "dims": [
+        1.432,
+        0.97,
+        1.76
+      ],
+      "preview": "zone_night_alarm_clock.png"
+    },
+    {
+      "name": "zone_night_moon_lamp",
+      "tris": 1528,
+      "dims": [
+        1.24,
+        1.266,
+        2.07
+      ],
+      "preview": "zone_night_moon_lamp.png"
+    },
+    {
+      "name": "zone_night_plush",
+      "tris": 2276,
+      "dims": [
+        1.669,
+        1.385,
+        2.665
+      ],
+      "preview": "zone_night_plush.png"
+    },
+    {
+      "name": "zone_night_stars_mobile",
+      "tris": 604,
+      "dims": [
+        1.83,
+        2.0,
+        2.74
+      ],
+      "preview": "zone_night_stars_mobile.png"
+    },
+    {
+      "name": "zone_pastel_blocks",
+      "tris": 808,
+      "dims": [
+        2.0,
+        1.126,
+        1.9
+      ],
+      "preview": "zone_pastel_blocks.png"
+    },
+    {
+      "name": "zone_pastel_duck",
+      "tris": 1652,
+      "dims": [
+        1.39,
+        1.613,
+        1.81
+      ],
+      "preview": "zone_pastel_duck.png"
+    },
+    {
+      "name": "zone_pastel_balloon",
+      "tris": 858,
+      "dims": [
+        1.64,
+        1.64,
+        3.193
+      ],
+      "preview": "zone_pastel_balloon.png"
+    },
+    {
+      "name": "zone_pastel_toy_train",
+      "tris": 1000,
+      "dims": [
+        1.3,
+        3.14,
+        1.45
+      ],
+      "preview": "zone_pastel_toy_train.png"
+    }
+  ],
+  "diorama": "diorama.png"
+}
