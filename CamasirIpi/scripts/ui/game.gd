@@ -87,7 +87,7 @@ var _sky_gradient: Gradient = Gradient.new()
 var _sky_weight: float = 0.0
 var _world: Node2D = null
 var _ui: CanvasLayer = null
-var _level_label: Label = null
+var _hud: GameHud = null
 var _overlay: Control = null
 var _danger: float = 0.0
 var debug_level: Dictionary = {}
@@ -218,7 +218,7 @@ func _tap(id: int) -> void:
 	var first: String = String(events[0]["type"])
 	if first != LaundryBoard.EVENT_BLOCKED and first != LaundryBoard.EVENT_LOCKED \
 			and first != LaundryBoard.EVENT_RACK_FULL:
-		Input.vibrate_handheld(12)
+		UiData.vibrate(12)
 		AudioService.play_variant("pin_click", SOUND_VARIANTS, randf_range(0.94, 1.08), 0.0)
 	_events.append_array(events)
 	_refresh_open()
@@ -314,7 +314,7 @@ func _play_event(event: Dictionary) -> void:
 				await _wait(Motion.WIN_DELAY_SECONDS)
 				_show_win()
 		LaundryBoard.EVENT_LOSE:
-			Input.vibrate_handheld(300)
+			UiData.vibrate(300)
 			AudioService.play_pitched("wind", 1.0, -3.0)
 			if await _wait_flights():
 				await _wait(Motion.LOSE_DELAY_SECONDS)
@@ -384,7 +384,7 @@ func _complete_basket(index: int) -> void:
 	if not await _wait(Motion.COMPLETE_PRESS_SECONDS + Motion.COMPLETE_HOLD_SECONDS):
 		return
 	# 2) Parıltı + bant nabzı + sesler.
-	Input.vibrate_handheld(40)
+	UiData.vibrate(40)
 	var now: int = Time.get_ticks_msec()
 	_combo = _combo + 1 if now - _last_fold_msec < int(COMBO_RESET_SECONDS * MS_PER_SECOND) else 0
 	_last_fold_msec = now
@@ -512,9 +512,9 @@ func _start_level() -> void:
 	_level = debug_level if not debug_level.is_empty() else LevelGenerator.generate(_level_number)
 	_board = LaundryBoard.new(_level)
 	_eco.on_level_start(_level_number, _board)
-	_level_label.text = "Seviye %d" % _level_number
+	_hud.set_level(_level_number)
+	_hud.set_coins(Progress.coins())
 	_backdrop.set_level(_level_number)
-	_level_label.add_theme_color_override("font_color", _backdrop.hud_text_color(TEXT_COLOR))
 	AudioService.play_pitched("level_start", 1.0, -6.0)
 	_world = Node2D.new()
 	add_child(_world)
@@ -636,19 +636,10 @@ func _build_sky() -> void:
 func _build_ui() -> void:
 	_ui = CanvasLayer.new()
 	add_child(_ui)
-	_level_label = Label.new()
-	_level_label.position = Vector2(_center_x - 200.0, 90.0)
-	_level_label.custom_minimum_size = Vector2(400.0, 0.0)
-	_level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_level_label.add_theme_font_size_override("font_size", 40)
-	_level_label.add_theme_color_override("font_color", TEXT_COLOR)
-	_level_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_ui.add_child(_level_label)
-	var restart: Button = _flat_button("↻", false)
-	restart.position = Vector2(get_viewport_rect().size.x - 130.0, 80.0)
-	restart.custom_minimum_size = Vector2(84.0, 84.0)
-	restart.pressed.connect(_start_level)
-	_ui.add_child(restart)
+	_hud = GameHud.new()
+	_ui.add_child(_hud)
+	_hud.pause_requested.connect(_on_pause_requested)
+	_hud.set_coins(Progress.coins())
 
 
 ## Düz, çizgisiz düğme (kullanıcı tercihi: minimal modern arayüz).
@@ -740,42 +731,66 @@ func _show_win() -> void:
 	AudioService.play_pitched("win", 1.0, -3.0)
 	get_tree().create_timer(COIN_SOUND_DELAY).timeout.connect(
 		AudioService.play_pitched.bind("coin", 1.0, -4.0))
-	var next: Button = _flat_button("Devam", true)
-	next.pressed.connect(func() -> void:
-		next.disabled = true
-		_eco.maybe_interstitial(_level_number, _start_level))
-	var buttons: Array[Button] = []
-	if _eco.can_watch(AdManager.Placement.DOUBLE_COINS):
-		var double: Button = _flat_button("Reklam izle, jeton 2x", false)
-		double.pressed.connect(_on_double_coins.bind(double, reward))
-		buttons.append(double)
-	buttons.append(next)
-	var subtitle: String = "+%d jeton" % reward
-	if int(result["streak"]) > 1:
-		subtitle += "  |  %d seri" % int(result["streak"])
-	_show_overlay("Harika!", subtitle, buttons)
+	_hud.set_coins(Progress.coins())
+	_hide_overlay()
+	var sheet: ResultSheet = ResultSheet.win(_ui, reward, _win_tints(),
+		_eco.can_watch(AdManager.Placement.DOUBLE_COINS))
+	# "Devam": geçiş reklamı zamanlaması uygunsa önce o gösterilir, sonra seviye başlar.
+	sheet.continue_pressed.connect(func() -> void: _eco.maybe_interstitial(_level_number, _start_level))
+	sheet.double_pressed.connect(_on_double_pressed.bind(sheet, reward))
+	_track_overlay(sheet)
 
 
 func _show_lose(remaining: int) -> void:
 	_eco.on_lose(_level_number, _board, remaining)
 	AudioService.play_pitched("lose", 1.0, -3.0)
-	var buttons: Array[Button] = []
-	if not _revived:
-		if _eco.can_watch(AdManager.Placement.REVIVE_EXTRA_SLOT):
-			var revive: Button = _flat_button("Reklam izle, +1 askı", true)
-			revive.pressed.connect(_on_revive_ad.bind(revive))
-			buttons.append(revive)
-		var cost: int = int(Progress.balance_table().get("continue_cost", 0))
-		var pay: Button = _flat_button("%d jeton ile devam" % cost, false)
-		pay.disabled = Progress.coins() < cost
-		pay.pressed.connect(_on_revive_coins.bind(cost))
-		buttons.append(pay)
-	var retry: Button = _flat_button("Tekrar dene", _revived)
-	retry.pressed.connect(_start_level)
-	buttons.append(retry)
-	var subtitle: String = "Sadece %d çamaşır kaldı" % remaining if remaining <= 6 \
-		else "%d çamaşır kaldı" % remaining
-	_show_overlay("Fırtına çıktı", subtitle, buttons)
+	_hide_overlay()
+	var can_revive: bool = not _revived and _eco.can_watch(AdManager.Placement.REVIVE_EXTRA_SLOT)
+	var sheet: ResultSheet = ResultSheet.lose(_ui, remaining, can_revive)
+	# "+1 askı" ödüllü reklamla verilir; reklam başarısızsa sayfa açık kalır.
+	sheet.revive_pressed.connect(func() -> void:
+		_eco.watch(AdManager.Placement.REVIVE_EXTRA_SLOT, _revive, func() -> void: pass))
+	sheet.retry_pressed.connect(_start_level)
+	_track_overlay(sheet)
+
+
+## Seviyenin sepet renkleri (kazanma yığını bunlarla boyanır).
+func _win_tints() -> Array[Color]:
+	var tints: Array[Color] = []
+	for color_id: Variant in _level.get("queue", []) as Array:
+		var tint: Color = COLORS[int(color_id) % COLORS.size()]
+		if not tints.has(tint):
+			tints.append(tint)
+	return tints
+
+
+## "2×": ödüllü reklam izlenirse ödül bir kez daha eklenir.
+func _on_double_pressed(sheet: ResultSheet, reward: int) -> void:
+	var granted: Callable = func() -> void:
+		Progress.add_coins(reward)
+		_hud.set_coins(Progress.coins())
+		if is_instance_valid(sheet):
+			sheet.show_doubled(reward * 2)
+	_eco.watch(AdManager.Placement.DOUBLE_COINS, granted, func() -> void: pass)
+
+
+func _track_overlay(sheet: Sheet) -> void:
+	_overlay = sheet
+	sheet.closed.connect(_on_sheet_closed.bind(sheet))
+
+
+func _on_sheet_closed(sheet: Sheet) -> void:
+	if _overlay == sheet:
+		_overlay = null
+
+
+func _on_pause_requested() -> void:
+	if _overlay != null:
+		return
+	var sheet: PauseSheet = PauseSheet.open(_ui)
+	sheet.restart_pressed.connect(_start_level)
+	sheet.home_pressed.connect(GameManager.goto_scene.bind(&"home"))
+	_track_overlay(sheet)
 
 
 func _on_double_coins(button: Button, reward: int) -> void:
@@ -814,4 +829,7 @@ func _revive() -> void:
 
 
 func _on_back() -> void:
-	GameManager.goto_scene(&"menu")
+	if _overlay is PauseSheet:
+		(_overlay as PauseSheet).close()
+	else:
+		_on_pause_requested()
