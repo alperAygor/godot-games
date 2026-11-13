@@ -56,7 +56,9 @@ Dalga 3 — sırayla (tek yazıcı)
 - [ ] **Z1** Paket boyutu küçültme
 - [ ] **F1** Son performans turu + Android derlemesi
 
-## Aşama 4 — kuyruk (kullanıcı kararı 2026-11-13; aşama 3 bitmeden başlanmaz)
+## Aşama 4 — kuyruk (kullanıcı kararı 2026-11-13)
+SIRA: dalga 1-2 bitince ÖNCE bu aşama, SONRA dalga 3 (L2 çeviri denetimi, Z1 boyut, F1 performans + Android).
+Mevsimler seviye bantlarıyla: ör. 1-30 yaz, 31-60 sonbahar, 61-90 kış, 91-120 ilkbahar; her mevsime özel, oynanışı etkileyen olaylar.
 - [ ] **Q1** Renk körlüğü desenleri (her renge desen; varsayılan açık)
 - [ ] **Q2** Seviye haritası (kaydırılabilir yol, yıldızlar, geri dönüp 3 yıldız alma)
 - [ ] **Q3** Çift renkli çamaşır (iki renkten birinin sepetine gider)
