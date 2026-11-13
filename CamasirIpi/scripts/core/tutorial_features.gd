@@ -35,6 +35,17 @@ static func detect(level: Dictionary, data: Dictionary = {}) -> Array[String]:
 static func _level_has(level: Dictionary, spec: Dictionary) -> bool:
 	if spec.has("unlock_level"):
 		return int(level.get("level", 1)) >= int(spec["unlock_level"])
+	# Seviye düzeyinde alan (joker/büyük sepet sırası, rüzgâr, kip): `level_value` verilmişse eşit
+	# olmalı, verilmemişse alanın "var" olması (boş dizi/sözlük sayılmaz) yeter.
+	if spec.has("level_key"):
+		var value: Variant = level.get(String(spec["level_key"]), null)
+		if spec.has("level_value"):
+			return value != null and str(value) == str(spec["level_value"])
+		if value is Array:
+			return not (value as Array).is_empty()
+		if value is Dictionary:
+			return not (value as Dictionary).is_empty()
+		return _present(value)
 	var key: String = String(spec.get("item_key", ""))
 	if key.is_empty():
 		return false

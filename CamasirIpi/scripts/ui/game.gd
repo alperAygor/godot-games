@@ -314,12 +314,13 @@ func _play_event(event: Dictionary) -> void:
 		LaundryBoard.EVENT_BASKET_DONE:
 			await _complete_basket(int(event["basket"]))
 		LaundryBoard.EVENT_BASKET_NEW:
-			_baskets[int(event["basket"])].enter(COLORS[int(event["color"]) % COLORS.size()])
+			_baskets[int(event["basket"])].enter(_basket_tint(event), int(event.get("cap", LaundryBoard.BASKET_CAPACITY)), bool(event.get("joker", false)))
 		LaundryBoard.EVENT_WIN:
 			if await _wait_flights():
 				await _wait(Motion.WIN_DELAY_SECONDS)
 				_show_win()
 		LaundryBoard.EVENT_LOSE:
+			_announce_lose(event)
 			UiData.vibrate(300)
 			AudioService.play_pitched("wind", 1.0, -3.0)
 			if await _wait_flights():
@@ -532,6 +533,7 @@ func _start_level() -> void:
 	_build_rack()
 	_build_baskets()
 	_setup_boosters()
+	_setup_rules_hud()
 	_refresh_open()
 	queue_redraw()
 	_tutorial.on_level_started(_level, _board, _views, _baskets, _rack_points)
@@ -597,6 +599,7 @@ func _build_baskets() -> void:
 			basket.visible = false
 		else:
 			basket.set_color(COLORS[int(states[index]["color"]) % COLORS.size()])
+			_decorate_basket(basket, states[index])
 
 
 func _draw() -> void:
@@ -617,7 +620,8 @@ func _draw() -> void:
 		var center: Vector2 = Vector2(
 			_center_x + (float(index) - float(shown - 1) * 0.5) * QUEUE_DOT * 3.0, QUEUE_Y)
 		var radius: float = QUEUE_DOT * (1.0 if index == 0 else 0.72)
-		draw_circle(center, radius, COLORS[queue[index] % COLORS.size()], true, -1.0, true)
+		_draw_queue_dot(index, center, radius, COLORS[queue[index] % COLORS.size()])
+	_draw_rules()
 
 
 func _build_sky() -> void:
@@ -842,6 +846,7 @@ func _revive() -> void:
 		return
 	_revived = true
 	_board.add_rack_slot()
+	_refresh_rules_views()
 	_rack_points.clear()
 	_build_rack()
 	var rack: Array[int] = _board.rack()
@@ -885,6 +890,7 @@ func _decorate_view(view: GarmentView, item: Dictionary, spacing_x: float, spaci
 		view.set_sock()
 	if item.has("dye"):
 		view.set_dye(int(item["dye"]), COLORS[int(item["color"]) % COLORS.size()])
+	_decorate_rules_view(view, item)
 
 
 ## `_refresh_open` kancası: tahtadan okunan sayaçlar ve güçlendirici çubuğu.
@@ -893,10 +899,13 @@ func _refresh_obstacle_views() -> void:
 		if _board.is_dye(id) and _board.is_on_line(id):
 			_views[id].set_dye_left(_board.dye_left(id))
 	_refresh_booster_bar()
+	_refresh_rules_views()
 
 
 ## `_play_event` kancası: yeni olay türleri.
 func _play_obstacle_event(event: Dictionary) -> void:
+	if await _play_rules_event(event):
+		return
 	var id: int = int(event.get("id", LaundryBoard.EMPTY))
 	if not _views.has(id):
 		return
@@ -1083,3 +1092,234 @@ func _rebuild_from_board() -> void:
 		_baskets[index].set_filled(contents.size())
 	_refresh_open()
 	AudioService.play_pitched("cloth", 0.9, -6.0)
+
+
+# --- Derinleşme 2: kural çeşitlemeleri ve seviye kipleri --------------------------------------
+# Neden ayrı blok: kurallar `LaundryBoard` içinde; burada yalnız görünüm bağlantısı var. Mevcut
+# akışa kısa kancalar eklendi (_play_event: BASKET_NEW/LOSE, _build_baskets, _draw, _start_level,
+# _revive, _decorate_view, _refresh_obstacle_views, _play_obstacle_event); geri kalanı buradadır.
+
+## Kısa askıda kullanılamayan kancaların üstüne konan soluk disk.
+const RACK_CLOSED_COLOR: Color = Color(1.0, 1.0, 1.0, 0.85)
+const RACK_CLOSED_RADIUS: float = 34.0
+## Diskin ortasındaki koyu kısa çizgi: "bu kanca kapalı".
+const RACK_CLOSED_MARK: Color = Color("9aa3af")
+const RACK_CLOSED_MARK_RATIO: float = 0.55
+const RACK_VISIBLE_HOOKS: int = 5
+## Kuyruk: büyük sepet hap biçiminde (yatay uzun), joker gökkuşağı çiçeği.
+const QUEUE_BIG_STRETCH: float = 0.6
+const QUEUE_JOKER_PETALS: int = 6
+const QUEUE_JOKER_PETAL_RATIO: float = 0.5
+const QUEUE_JOKER_CORE_RATIO: float = 0.8
+## Joker çiçeği normal noktadan biraz iri: kuyrukta ilk bakışta seçilsin.
+const QUEUE_JOKER_SCALE: float = 1.3
+const ANNOUNCE_FONT: int = 56
+const ANNOUNCE_Y_RATIO: float = 0.42
+const ANNOUNCE_PAD: float = 36.0
+const ANNOUNCE_FILL: Color = Color(1.0, 1.0, 1.0, 0.94)
+const LOSE_MOVES_TEXT: String = "Hamle bitti"
+
+var _rules_hud: RulesHud = null
+## Yeniden kurulumdan sonraki ilk tazelemede zincir/rüzgâr/askı durumları yerleştirilir (o an
+## tüm görünümler hazırdır).
+var _rules_dirty: bool = false
+var _announce: Label = null
+
+
+func _setup_rules_hud() -> void:
+	if _rules_hud == null:
+		_rules_hud = RulesHud.new()
+		_ui.add_child(_rules_hud)
+		_rules_hud.setup(get_viewport_rect().size.x, COLORS)
+	if _announce != null:
+		_announce.queue_free()
+		_announce = null
+	_rules_hud.start(_board)
+
+
+## `_build_baskets` kancası: büyük/joker sepet görünümü (yeniden kurulumda da).
+func _decorate_basket(basket: BasketView, state: Dictionary) -> void:
+	basket.set_capacity(int(state.get("cap", LaundryBoard.BASKET_CAPACITY)))
+	var is_joker: bool = bool(state.get("joker", false))
+	basket.set_joker(is_joker)
+	if is_joker:
+		if int(state["color"]) == LaundryBoard.EMPTY:
+			basket.set_color(BasketView.JOKER_BAND)
+		else:
+			basket.fix_joker(COLORS[int(state["color"]) % COLORS.size()])
+
+
+## BASKET_NEW olayının bant rengi: rengini almamış joker beyaz banttır.
+func _basket_tint(event: Dictionary) -> Color:
+	if bool(event.get("joker", false)) and int(event["color"]) == LaundryBoard.EMPTY:
+		return BasketView.JOKER_BAND
+	return COLORS[int(event["color"]) % COLORS.size()]
+
+
+## `_draw` kancası: kuyruk noktası. Joker = altı renkli küçük çiçek (asıl rengi gizli kalır),
+## büyük sepet = yatay hap (iki daire + dolgu).
+func _draw_queue_dot(index: int, center: Vector2, radius: float, tint: Color) -> void:
+	match _board.queue_kind(index):
+		LaundryBoard.KIND_JOKER:
+			var petal: float = radius * QUEUE_JOKER_SCALE * QUEUE_JOKER_PETAL_RATIO
+			for step: int in range(QUEUE_JOKER_PETALS):
+				var angle: float = TAU * float(step) / float(QUEUE_JOKER_PETALS)
+				draw_circle(center + Vector2.from_angle(angle) * (radius * QUEUE_JOKER_SCALE - petal), petal,
+					BasketView.JOKER_TINTS[step % BasketView.JOKER_TINTS.size()], true, -1.0, true)
+			draw_circle(center, petal * QUEUE_JOKER_CORE_RATIO, Color.WHITE, true, -1.0, true)
+		LaundryBoard.KIND_BIG:
+			var reach: Vector2 = Vector2(radius * QUEUE_BIG_STRETCH, 0.0)
+			draw_line(center - reach, center + reach, tint, radius * 2.0, true)
+			draw_circle(center - reach, radius, tint, true, -1.0, true)
+			draw_circle(center + reach, radius, tint, true, -1.0, true)
+		_:
+			draw_circle(center, radius, tint, true, -1.0, true)
+
+
+## `_draw` kancası: kısa askıda kullanılamayan kancalar soluk bir diskle kapatılır.
+func _draw_rules() -> void:
+	if _board.mode() != LaundryBoard.MODE_SHORT_RACK:
+		return
+	var slots: int = _board.rack_slots()
+	for slot: int in range(slots, RACK_VISIBLE_HOOKS):
+		var at: Vector2 = Vector2(_center_x + (float(slot) - RACK_CENTER_HOOK) * RACK_SPACING, RACK_Y)
+		draw_circle(at, RACK_CLOSED_RADIUS, RACK_CLOSED_COLOR, true, -1.0, true)
+		var reach: Vector2 = Vector2(RACK_CLOSED_RADIUS * RACK_CLOSED_MARK_RATIO, 0.0)
+		draw_line(at - reach, at + reach, RACK_CLOSED_MARK, RACK_CLOSED_RADIUS * 0.28, true)
+
+
+## `_decorate_view` kancası: leke rozeti ve patronun ikinci ekranı (sağda, ekran dışında bekler).
+func _decorate_rules_view(view: GarmentView, item: Dictionary) -> void:
+	var id: int = int(item["id"])
+	if _board.is_stained(id) and _board.is_on_line(id):
+		view.set_stain(true)
+	if _board.is_hidden(id):
+		view.position.x += get_viewport_rect().size.x
+	_rules_dirty = true
+
+
+## `_refresh_obstacle_views` kancası: gösterge ve rüzgâr rozetleri tahtadan okunur.
+func _refresh_rules_views() -> void:
+	if _board == null:
+		return
+	if _rules_dirty:
+		_rules_dirty = false
+		_place_rules_state()
+	if _rules_hud != null:
+		_rules_hud.refresh(_board)
+	var steps: Array[Vector2i] = _board.wind_steps()
+	for step: int in range(_board.wind_done(), steps.size()):
+		var mover: int = steps[step].x
+		if _views.has(mover) and _views.has(steps[step].y) and _board.is_on_line(mover):
+			_views[mover].set_wind(_views[steps[step].y].position.x - _views[mover].position.x,
+				step == _board.wind_done())
+
+
+## Kurulum sonrası tek seferlik: zincir hapları, esmiş rüzgârlar (geri al sonrası), askıdaki
+## kuruyan lekeliler.
+func _place_rules_state() -> void:
+	for id: int in _views.keys():
+		var partner: int = _board.chain_partner(id)
+		if partner != LaundryBoard.EMPTY and _views.has(partner) and _board.is_on_line(id) \
+				and _board.is_on_line(partner) and _views[id].position.x < _views[partner].position.x:
+			_views[id].set_chain(_views[partner].position - _views[id].position)
+	var steps: Array[Vector2i] = _board.wind_steps()
+	for step: int in range(steps.size()):
+		if _board.wind_applied(step) and _views.has(steps[step].x) and _views.has(steps[step].y) \
+				and _board.is_on_line(steps[step].x):
+			_views[steps[step].x].blow_over(_views[steps[step].y].position, _views[steps[step].y].z_index, false)
+	for id: int in _board.drying_ids():
+		if _views.has(id):
+			_views[id].set_stain(true)
+			_views[id].set_drying(true)
+
+
+## `_play_obstacle_event` kancası: yeni olay türleri. Döndürür: olay burada işlendi mi.
+func _play_rules_event(event: Dictionary) -> bool:
+	var id: int = int(event.get("id", LaundryBoard.EMPTY))
+	match String(event["type"]):
+		LaundryBoard.EVENT_JOKER_FIX:
+			var index: int = int(event["basket"])
+			if index < _baskets.size():
+				_baskets[index].fix_joker(COLORS[int(event["color"]) % COLORS.size()])
+				AudioService.play_pitched("unlock", 1.15, -5.0)
+		LaundryBoard.EVENT_STAIN_WAIT:
+			if _views.has(id):
+				_views[id].set_drying(true)
+		LaundryBoard.EVENT_STAIN_DRY:
+			if _views.has(id):
+				_views[id].dry_stain()
+				AudioService.play_pitched("fold_puff", 1.2, -8.0)
+		LaundryBoard.EVENT_CHAIN_DROP:
+			for chained: int in [id, int(event["by"])]:
+				if _views.has(chained):
+					_views[chained].release_chain()
+			AudioService.play_pitched("lock_rattle", 1.1, -6.0)
+		LaundryBoard.EVENT_WIND_TICK:
+			if _views.has(id):
+				_views[id].wind_pulse()
+		LaundryBoard.EVENT_WIND:
+			if _views.has(id):
+				_views[id].clear_wind()
+				if bool(event["effective"]) and _views.has(int(event["target"])):
+					_views[id].blow_over(_views[int(event["target"])].position, _views[int(event["target"])].z_index)
+					AudioService.play_pitched("wind", 1.3, -8.0)
+					await _wait(Motion.WIND_FLIP_SECONDS)
+		LaundryBoard.EVENT_ORDER_DONE, LaundryBoard.EVENT_ORDER_BROKEN:
+			if _rules_hud != null:
+				(_rules_hud.mode_pill() as RulesHud.Pill).pulse()
+		LaundryBoard.EVENT_SCREEN:
+			await _slide_in_screen(int(event["screen"]))
+		_:
+			return false
+	return true
+
+
+## Patron: ilk ekran boşaldı; ikinci ekranın çamaşırları sağdan kayarak yerine gelir.
+func _slide_in_screen(screen: int) -> void:
+	if not await _wait_flights():
+		return
+	if not await _wait(Motion.SCREEN_SLIDE_DELAY):
+		return
+	var width: float = get_viewport_rect().size.x
+	AudioService.play_pitched("wind", 0.9, -6.0)
+	for id: int in _views.keys():
+		if _board.screen_of(id) != screen or not _board.is_on_line(id):
+			continue
+		var view: GarmentView = _views[id]
+		var slide: Tween = view.create_tween()
+		slide.tween_property(view, "position:x", view.position.x - width, Motion.SCREEN_SLIDE_SECONDS)\
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	await _wait(Motion.SCREEN_SLIDE_SECONDS)
+
+
+## Kayıp nedeni hamle bittiyse sonuç sayfasından önce kısa, açık bir duyuru.
+func _announce_lose(event: Dictionary) -> void:
+	if String(event.get("reason", "")) != LaundryBoard.LOSE_MOVES:
+		return
+	if _announce != null:
+		_announce.queue_free()
+	_announce = Label.new()
+	_announce.text = LOSE_MOVES_TEXT
+	_announce.add_theme_font_size_override("font_size", ANNOUNCE_FONT)
+	_announce.add_theme_color_override("font_color", DANGER_COLOR)
+	var box: StyleBoxFlat = StyleBoxFlat.new()
+	box.bg_color = ANNOUNCE_FILL
+	box.set_corner_radius_all(int(ANNOUNCE_FONT))
+	box.set_content_margin_all(ANNOUNCE_PAD)
+	box.anti_aliasing = true
+	_announce.add_theme_stylebox_override("normal", box)
+	_announce.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_ui.add_child(_announce)
+	var view: Vector2 = get_viewport_rect().size
+	_announce.reset_size()
+	_announce.position = Vector2((view.x - _announce.size.x) * 0.5, view.y * ANNOUNCE_Y_RATIO)
+	_announce.pivot_offset = _announce.size * 0.5
+	_announce.scale = Vector2.ONE * 0.8
+	_announce.modulate.a = 0.0
+	var show: Tween = _announce.create_tween().set_parallel(true)
+	show.tween_property(_announce, "modulate:a", 1.0, Motion.OVERLAY_FADE_SECONDS)
+	show.tween_property(_announce, "scale", Vector2.ONE, Motion.OVERLAY_FADE_SECONDS)\
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	show.chain().tween_interval(Motion.ANNOUNCE_SECONDS)
+	show.chain().tween_property(_announce, "modulate:a", 0.0, Motion.OVERLAY_FADE_SECONDS)

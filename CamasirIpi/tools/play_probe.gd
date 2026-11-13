@@ -3,11 +3,12 @@ extends SceneTree
 ## Oynanış probu (headless): seviyeleri çözücünün yoluyla GERÇEK oyun sahnesinde oynar;
 ## her seviyede kazanma katmanının çıktığını ve olay kuyruğunun boşaldığını doğrular.
 ## Ayrıca bir seviyede bilerek kaybedip "+1 askı" ve "tekrar dene" yollarını dener.
-## Yeni engeller: 26 çarşaf, 32 çorap, 40 boya, 47 karışık. Son aşamada güçlendiriciler
-## (geri al, +1 askı, mandal sökücü) gerçek sahnede denenir.
+## Yeni engeller: 26 çarşaf, 32 çorap, 40 boya, 47 karışık. Kural çeşitlemeleri: 23 joker,
+## 29 büyük sepet, 36 lekeli, 44 zincir, 52 rüzgâr; kipler: 16 hamle, 21 kısa askı, 30 patron,
+## 33 sipariş. Son aşamada güçlendiriciler (geri al, +1 askı, mandal sökücü) gerçek sahnede denenir.
 ##   godot --headless --path . -s res://tools/play_probe.gd      çıkış 0 = geçti
 
-const LEVELS: Array[int] = [1, 2, 3, 7, 16, 25, 26, 32, 40, 47]
+const LEVELS: Array[int] = [1, 2, 3, 7, 16, 21, 23, 25, 26, 29, 30, 32, 33, 36, 40, 44, 47, 52]
 const BOOST_LEVEL: int = 40
 const BOOST_TAPS: int = 3
 const FRAMES_PER_TAP: int = 4
@@ -180,9 +181,16 @@ func _check_basket_colors() -> void:
 		if states[index].is_empty():
 			continue
 		var expected: Color = palette[int(states[index]["color"]) % palette.size()] as Color
+		# Rengini henüz almamış joker beyaz bant (gökkuşağı) gösterir; aldıktan sonra o renk.
+		if bool(states[index].get("joker", false)) and int(states[index]["color"]) == LaundryBoard.EMPTY:
+			expected = BasketView.JOKER_BAND
 		var shown: Color = (views[index] as BasketView).shown_color()
 		if not shown.is_equal_approx(expected):
 			_fail("sepet %d rengi yanlış: görünen %s, kural %s" % [index, shown.to_html(), expected.to_html()])
+		# Büyük sepet 5 doluluk noktasıyla görünmeli (kural kapasitesiyle aynı).
+		var capacity: int = (views[index] as BasketView).capacity
+		if capacity != board.basket_capacity(index):
+			_fail("sepet %d kapasitesi yanlış: görünen %d, kural %d" % [index, capacity, board.basket_capacity(index)])
 
 
 func _fail(message: String) -> void:

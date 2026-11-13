@@ -105,6 +105,25 @@ const OVERLAY_RISE_DISTANCE: float = 80.0
 const WIN_DELAY_SECONDS: float = 0.45
 const LOSE_DELAY_SECONDS: float = 0.6
 
+# --- Kural çeşitlemeleri (joker, leke, zincir, rüzgâr, kipler) ---
+## Gösterge/rozet nabzı (sayaç azaldı, sipariş tamam).
+const RULES_PULSE_SCALE: float = 1.18
+const RULES_PULSE_IN_SECONDS: float = 0.1
+const RULES_PULSE_OUT_SECONDS: float = 0.26
+## Rüzgârla savrulan çamaşır komşusunun üstüne yumuşakça kayar (yolun bu oranı kadar).
+const WIND_FLIP_SECONDS: float = 0.5
+const WIND_FLIP_SHARE: float = 0.55
+const WIND_FLIP_DROP: float = 26.0
+## Patron: ikinci tahta sağdan kayarak gelir.
+const SCREEN_SLIDE_DELAY: float = 0.35
+const SCREEN_SLIDE_SECONDS: float = 0.8
+## Joker sepet rengini alırken gökkuşağı söner.
+const JOKER_FADE_SECONDS: float = 0.3
+## Leke kuruyunca rozet yavaşça solar.
+const STAIN_DRY_SECONDS: float = 0.45
+## "Hamle bitti" duyurusu kayıp sayfasından önce kısa süre görünür.
+const ANNOUNCE_SECONDS: float = 1.1
+
 
 ## Yumuşak başla-yumuşak bitir (kübik).
 static func ease_in_out(t: float) -> float:

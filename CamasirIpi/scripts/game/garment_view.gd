@@ -789,3 +789,191 @@ class DyeBadge extends Node2D:
 			draw_circle(Vector2.ZERO, radius * 1.18, Color(1.0, 1.0, 1.0, 0.9), true, -1.0, true)
 		draw_colored_polygon(tip, body)
 		draw_circle(Vector2.ZERO, radius, body, true, -1.0, true)
+
+
+# --- Kural çeşitlemeleri: lekeli, zincirli mandal, rüzgâr ------------------------------------
+
+const STAIN_COLOR: Color = Color("5e4127")
+const STAIN_ALPHA: float = 0.85
+const STAIN_DRYING_ALPHA: float = 0.5
+const STAIN_RATIO: float = 0.17
+## Kururken lekenin yanında küçük güneş: "bir hamle bekle, kuruyor".
+const STAIN_SUN_COLOR: Color = Color("f5c02e")
+const STAIN_SUN_HALO: Color = Color(1.0, 1.0, 1.0, 0.95)
+const CHAIN_PILL_COLOR: Color = Color(1.0, 1.0, 1.0, 0.95)
+const CHAIN_LINK_COLOR: Color = Color("8a6a4a")
+const CHAIN_HEIGHT_RATIO: float = 0.17
+const CHAIN_PIN_OFFSET: float = 0.2
+const WIND_BADGE_COLOR: Color = Color("6cb6e8")
+const WIND_STROKE_COLOR: Color = Color(1.0, 1.0, 1.0, 0.95)
+const WIND_BADGE_RATIO: float = 0.15
+const WIND_IDLE_ALPHA: float = 0.7
+
+var _stain_badge: StainBadge = null
+var _chain_badge: ChainBadge = null
+var _wind_badge: WindBadge = null
+
+
+## Lekeli: gövdede kahverengi, yumuşak bir leke (üç örtüşen daire).
+func set_stain(stained: bool) -> void:
+	if stained and _stain_badge == null:
+		_stain_badge = StainBadge.new()
+		_stain_badge.radius = size * STAIN_RATIO
+		_stain_badge.position = Vector2(-size * 0.1, size * 0.42)
+		add_child(_stain_badge)
+	if _stain_badge != null:
+		_stain_badge.visible = stained
+		_stain_badge.modulate.a = 1.0
+
+
+## Askıda kuruyor: leke solgunlaşır ve nabız atar (bir hamle sonra kurur).
+func set_drying(drying: bool) -> void:
+	if _stain_badge == null:
+		return
+	_stain_badge.drying = drying
+	_stain_badge.queue_redraw()
+	if drying:
+		_pop(_stain_badge)
+
+
+## Kurudu: leke solarak kaybolur.
+func dry_stain() -> void:
+	if _stain_badge == null:
+		return
+	var badge: StainBadge = _stain_badge
+	_stain_badge = null
+	var gone: Tween = badge.create_tween()
+	gone.tween_property(badge, "modulate:a", 0.0, Motion.STAIN_DRY_SECONDS)
+	gone.tween_callback(badge.queue_free)
+
+
+## Zincirli mandal: sağdaki komşuya uzanan tek bir beyaz hap (ortak mandal) + iki mandal noktası.
+func set_chain(to_partner: Vector2) -> void:
+	if _chain_badge == null:
+		_chain_badge = ChainBadge.new()
+		_chain_badge.height = size * CHAIN_HEIGHT_RATIO
+		add_child(_chain_badge)
+	# Hap bu çamaşırın sağ mandalından komşunun sol mandalına uzanır (mandallar ±0.2 boyda).
+	_chain_badge.position = Vector2(size * CHAIN_PIN_OFFSET, size * 0.02)
+	_chain_badge.span = to_partner - Vector2(size * CHAIN_PIN_OFFSET * 2.0, 0.0)
+	_chain_badge.z_index = PIN_Z - z_index
+	_chain_badge.queue_redraw()
+
+
+## Zincir çözüldü (eşlerden biri alındı): hap yukarı süzülüp söner.
+func release_chain() -> void:
+	if _chain_badge == null:
+		return
+	var badge: ChainBadge = _chain_badge
+	_chain_badge = null
+	var gone: Tween = badge.create_tween().set_parallel(true)
+	gone.tween_property(badge, "position:y", badge.position.y - Motion.PIN_POP_HEIGHT, BADGE_GONE_SECONDS)
+	gone.tween_property(badge, "modulate:a", 0.0, BADGE_GONE_SECONDS)
+	gone.chain().tween_callback(badge.queue_free)
+
+
+## Rüzgâr rozeti: mavi disk + üç beyaz rüzgâr çizgisi; ok, örtülecek komşu yönünü gösterir.
+## `next`: sıradaki savrulan (tam opak, nabız atar); sonrakiler soluk.
+func set_wind(direction: float, next: bool) -> void:
+	if _wind_badge == null:
+		_wind_badge = WindBadge.new()
+		_wind_badge.radius = size * WIND_BADGE_RATIO
+		_wind_badge.position = Vector2(0.0, size * 0.3)
+		add_child(_wind_badge)
+	_wind_badge.direction = direction
+	_wind_badge.modulate.a = 1.0 if next else WIND_IDLE_ALPHA
+	_wind_badge.queue_redraw()
+
+
+func clear_wind() -> void:
+	if _wind_badge == null:
+		return
+	var badge: WindBadge = _wind_badge
+	_wind_badge = null
+	var gone: Tween = badge.create_tween()
+	gone.tween_property(badge, "modulate:a", 0.0, BADGE_GONE_SECONDS)
+	gone.tween_callback(badge.queue_free)
+
+
+func wind_pulse() -> void:
+	if _wind_badge != null:
+		_pop(_wind_badge)
+
+
+## Rüzgâr esti: çamaşır komşusunun üstüne kayar (yolun bir kısmı), üst katmana geçer.
+func blow_over(target: Vector2, target_z: int, animate: bool = true) -> void:
+	var landing: Vector2 = position.lerp(target, Motion.WIND_FLIP_SHARE) + Vector2(0.0, Motion.WIND_FLIP_DROP)
+	# Örttüğü komşunun üstünde çizilsin (dokunma önceliği de katmanla gelir).
+	z_index = maxi(z_index, target_z + 1)
+	layer = maxi(layer, target_z + 1)
+	if not animate:
+		position = landing
+		return
+	var blow: Tween = create_tween().set_parallel(true)
+	blow.tween_property(self, "position", landing, Motion.WIND_FLIP_SECONDS)\
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	blow.tween_property(self, "rotation_degrees", WOBBLE_DEGREES * signf(target.x - position.x), Motion.WIND_FLIP_SECONDS * 0.4)
+	blow.chain().tween_property(self, "rotation_degrees", 0.0, Motion.WIND_FLIP_SECONDS * 0.6)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	nudge(1.0 if target.x > position.x else -1.0)
+
+
+## Leke: üç örtüşen yumuşak daire (kurumaktayken soluk).
+class StainBadge extends Node2D:
+	var radius: float = 20.0
+	var drying: bool = false
+
+	func _draw() -> void:
+		var ink: Color = GarmentView.STAIN_COLOR
+		ink.a = GarmentView.STAIN_DRYING_ALPHA if drying else GarmentView.STAIN_ALPHA
+		draw_circle(Vector2.ZERO, radius, ink, true, -1.0, true)
+		draw_circle(Vector2(radius * 0.9, radius * 0.35), radius * 0.62, ink, true, -1.0, true)
+		draw_circle(Vector2(radius * 0.25, -radius * 0.85), radius * 0.45, ink, true, -1.0, true)
+		if drying:
+			var sun: Vector2 = Vector2(radius * 2.1, -radius * 1.2)
+			draw_circle(sun, radius * 0.95, GarmentView.STAIN_SUN_HALO, true, -1.0, true)
+			draw_circle(sun, radius * 0.62, GarmentView.STAIN_SUN_COLOR, true, -1.0, true)
+
+
+## Ortak mandal: iki çamaşır arasında beyaz hap, uçlarda mandal renginde iki nokta, ortada bağ.
+class ChainBadge extends Node2D:
+	var span: Vector2 = Vector2(200.0, 0.0)
+	var height: float = 24.0
+
+	func _draw() -> void:
+		var half: float = height * 0.5
+		var from: Vector2 = Vector2(0.0, 0.0)
+		var to: Vector2 = span
+		draw_line(from, to, GarmentView.CHAIN_PILL_COLOR, height, true)
+		draw_circle(from, half, GarmentView.CHAIN_PILL_COLOR, true, -1.0, true)
+		draw_circle(to, half, GarmentView.CHAIN_PILL_COLOR, true, -1.0, true)
+		draw_circle(from, half * 0.62, GarmentView.CHAIN_LINK_COLOR, true, -1.0, true)
+		draw_circle(to, half * 0.62, GarmentView.CHAIN_LINK_COLOR, true, -1.0, true)
+		var middle: Vector2 = (from + to) * 0.5
+		draw_line(middle - Vector2(half * 0.9, 0.0), middle + Vector2(half * 0.9, 0.0),
+			GarmentView.CHAIN_LINK_COLOR, half * 0.55, true)
+
+
+## Rüzgâr rozeti: disk + üç kısa yuvarlak uçlu beyaz çizgi + yön oku.
+class WindBadge extends Node2D:
+	var radius: float = 22.0
+	var direction: float = 1.0
+
+	func _draw() -> void:
+		draw_circle(Vector2.ZERO, radius, GarmentView.WIND_BADGE_COLOR, true, -1.0, true)
+		var width: float = maxf(2.0, radius * 0.18)
+		var ink: Color = GarmentView.WIND_STROKE_COLOR
+		for row: int in range(3):
+			var y: float = (float(row) - 1.0) * radius * 0.42
+			var length: float = radius * (0.9 if row == 1 else 0.6)
+			var start: Vector2 = Vector2(-length * 0.6, y)
+			var finish: Vector2 = Vector2(length * 0.6, y)
+			draw_line(start, finish, ink, width, true)
+			draw_circle(start, width * 0.5, ink, true, -1.0, true)
+			draw_circle(finish, width * 0.5, ink, true, -1.0, true)
+		# Yön oku: diskin kenarında küçük üçgen (örtülecek komşuya bakar).
+		var side: float = signf(direction) if direction != 0.0 else 1.0
+		var tip: Vector2 = Vector2(side * radius * 1.45, 0.0)
+		var base: Vector2 = Vector2(side * radius * 0.95, 0.0)
+		draw_colored_polygon(PackedVector2Array([tip, base + Vector2(0.0, -radius * 0.38),
+			base + Vector2(0.0, radius * 0.38)]), GarmentView.WIND_BADGE_COLOR)

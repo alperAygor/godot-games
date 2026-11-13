@@ -70,13 +70,14 @@ func undo(board: LaundryBoard) -> bool:
 static func pin_targets(board: LaundryBoard) -> Array[int]:
 	var result: Array[int] = []
 	for id: int in board.item_ids():
-		if board.is_on_line(id) and (not board.is_open(id) or board.is_locked(id)):
+		if is_pin_target(board, id):
 			result.append(id)
 	return result
 
 
+## Patron seviyesinin henüz gelmemiş ekranındaki parça hedef olamaz (görünmüyor).
 static func is_pin_target(board: LaundryBoard, id: int) -> bool:
-	return board.is_on_line(id) and (not board.is_open(id) or board.is_locked(id))
+	return board.is_on_line(id) and not board.is_hidden(id) and (not board.is_open(id) or board.is_locked(id))
 
 
 ## Hedef parçayı engellere bakmadan alır. Boş liste = kullanılamadı (hedef değil ya da

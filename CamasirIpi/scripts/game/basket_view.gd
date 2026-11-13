@@ -66,8 +66,11 @@ func set_color(tint: Color) -> void:
 	queue_redraw()
 
 
-## Ekranda görünen sepet rengi (prob bununla kural rengini karşılaştırır).
+## Ekranda görünen sepet rengi (prob bununla kural rengini karşılaştırır). Rengini henüz almamış
+## joker beyaz bant + gökkuşağı gösterir: JOKER_BAND döner.
 func shown_color() -> Color:
+	if joker and not _joker_fixed:
+		return JOKER_BAND
 	return _band.modulate if _band != null else color
 
 
@@ -79,7 +82,9 @@ func set_filled(count: int) -> void:
 ## Sepetteki `index`. parçanın duracağı yer (global).
 ## Katlanmış parçalar üst üste yığılır: her kat ayrı seçilir (aralarında boşluk/gölge kalır).
 func slot_position(index: int) -> Vector2:
-	return rest_position + Vector2(0.0, -size * 0.17 - float(index) * size * 0.19)
+	# Büyük sepette 5 kat aynı yüksekliğe sığsın diye aralık daralır.
+	var step: float = size * 0.19 * float(LaundryBoard.BASKET_CAPACITY) / float(maxi(capacity, LaundryBoard.BASKET_CAPACITY))
+	return rest_position + Vector2(0.0, -size * 0.17 - float(index) * step)
 
 
 func folded_width() -> float:
@@ -149,9 +154,12 @@ func leave() -> void:
 	_move_tween.tween_callback(_after_leave)
 
 
-## Yeni sepet: kayma bitince alttan gelir ve hafif aşarak yerine oturur.
-func enter(tint: Color) -> void:
+## Yeni sepet: kayma bitince alttan gelir ve hafif aşarak yerine oturur. Büyük/joker sepet de
+## (kapasite ve gökkuşağı) yeni sepetle birlikte gelir.
+func enter(tint: Color, cap: int = LaundryBoard.BASKET_CAPACITY, is_joker: bool = false) -> void:
 	_pending_color = tint
+	_pending_cap = cap
+	_pending_joker = is_joker
 	_pending_enter = true
 	if not _leaving:
 		_do_enter()
@@ -168,6 +176,8 @@ func _after_leave() -> void:
 func _do_enter() -> void:
 	_pending_enter = false
 	_kill_move()
+	set_capacity(_pending_cap)
+	set_joker(_pending_joker)
 	set_color(_pending_color)
 	position.y = rest_position.y + Motion.BASKET_SLIDE
 	_breath.modulate.a = 0.0
@@ -202,9 +212,14 @@ func _make_sprite(path: String) -> Sprite2D:
 func _draw() -> void:
 	# Doluluk noktaları: sepetin altında 3 küçük nokta (yazısız sayaç).
 	var radius: float = size * DOT_RADIUS_RATIO
-	for index: int in range(LaundryBoard.BASKET_CAPACITY):
-		var center: Vector2 = Vector2((float(index) - 1.0) * radius * 3.2, size * 0.52)
+	var middle: float = float(capacity - 1) * 0.5
+	for index: int in range(capacity):
+		var center: Vector2 = Vector2((float(index) - middle) * radius * 3.2, size * 0.52)
 		var dot: Color = color if index < filled else Color(0.0, 0.0, 0.0, 0.12)
+		if joker and not _joker_fixed and index >= filled:
+			# Rengini almamış joker: noktalar gökkuşağı tonlarında (hangi renk gelirse).
+			dot = JOKER_TINTS[index % JOKER_TINTS.size()]
+			dot.a = JOKER_DOT_ALPHA
 		draw_circle(center, radius, dot, true, -1.0, true)
 	if _body != null:
 		return
@@ -217,3 +232,84 @@ func _draw() -> void:
 	_box.set_corner_radius_all(int(size * 0.07))
 	_box.bg_color = color
 	draw_style_box(_box, Rect2(Vector2(-size * 0.46, -size * 0.26), Vector2(size * 0.92, size * 0.16)))
+
+
+# --- Büyük ve joker sepet ------------------------------------------------------------------
+
+const BIG_SCALE: float = 1.1
+## Joker bandı: beyaz (renksiz) + bandın üstünde gökkuşağı benekleri; renk gelince söner.
+const JOKER_BAND: Color = Color(1.0, 1.0, 1.0)
+const JOKER_TINTS: Array[Color] = [Color("e5484d"), Color("f58a3c"), Color("f5c02e"), Color("3dbb6e"),
+	Color("3e8ef7"), Color("9b59d0")]
+const JOKER_DOT_ALPHA: float = 0.55
+const JOKER_SPOT_RATIO: float = 0.055
+const JOKER_SPOT_SPREAD: float = 0.36
+const JOKER_SPOT_Y: float = -0.53
+
+var capacity: int = LaundryBoard.BASKET_CAPACITY
+var joker: bool = false
+var _joker_fixed: bool = false
+var _pending_cap: int = LaundryBoard.BASKET_CAPACITY
+var _pending_joker: bool = false
+var _rainbow: JokerRainbow = null
+
+
+## Büyük sepet: 5 doluluk noktası ve biraz daha iri gövde (yazısız "bu daha çok alır").
+func set_capacity(cap: int) -> void:
+	capacity = maxi(cap, 1)
+	if _visual != null:
+		_visual.scale = Vector2.ONE
+		_breath.scale = Vector2.ONE
+		scale = Vector2.ONE * (BIG_SCALE if capacity > LaundryBoard.BASKET_CAPACITY else 1.0)
+	queue_redraw()
+
+
+## Joker (rengini almamış): bant beyaz, üstünde gökkuşağı benekleri.
+func set_joker(is_joker: bool) -> void:
+	joker = is_joker
+	_joker_fixed = false
+	if is_joker and _rainbow == null and _visual != null:
+		_rainbow = JokerRainbow.new()
+		_rainbow.radius = size * JOKER_SPOT_RATIO
+		_rainbow.spread = size * JOKER_SPOT_SPREAD
+		_rainbow.position = Vector2(0.0, size * JOKER_SPOT_Y)
+		_visual.add_child(_rainbow)
+	if _rainbow != null:
+		_rainbow.visible = is_joker
+		_rainbow.modulate.a = 1.0
+	queue_redraw()
+
+
+## Rengi joker için `JOKER_BAND`, normal sepette verilen renk (set_color ile birlikte çağrılır).
+func show_joker_color(tint: Color) -> void:
+	set_color(JOKER_BAND if joker and not _joker_fixed else tint)
+	color = tint
+
+
+## Joker rengini aldı: gökkuşağı söner, bant o renge döner, küçük bir sıçrama.
+func fix_joker(tint: Color) -> void:
+	if _pending_enter:
+		# Sepet daha kayıp gelmedi: rengini almış olarak gelsin (gelişte gökkuşağı yeniden açılmasın).
+		_pending_color = tint
+		_pending_joker = false
+		return
+	_joker_fixed = true
+	set_color(tint)
+	if _rainbow != null:
+		var fade: Tween = _rainbow.create_tween()
+		fade.tween_property(_rainbow, "modulate:a", 0.0, Motion.JOKER_FADE_SECONDS)
+		fade.tween_callback(_rainbow.set.bind("visible", false))
+	hop()
+
+
+## Gökkuşağı benekleri: bant üzerinde yay boyunca altı yumuşak daire.
+class JokerRainbow extends Node2D:
+	var radius: float = 12.0
+	var spread: float = 90.0
+
+	func _draw() -> void:
+		var count: int = BasketView.JOKER_TINTS.size()
+		for index: int in range(count):
+			var t: float = float(index) / float(count - 1)
+			var at: Vector2 = Vector2(lerpf(-spread, spread, t), -sin(PI * t) * radius * 0.8)
+			draw_circle(at, radius, BasketView.JOKER_TINTS[index], true, -1.0, true)
