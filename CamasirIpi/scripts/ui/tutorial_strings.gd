@@ -18,6 +18,7 @@ const CARDS: Dictionary = {
 	"stain": {"title": "Lekeli", "line": "Lekeli çamaşır önce askıda bir hamle kurur, sonra sepete geçer."},
 	"chain": {"title": "Zincirli mandal", "line": "Birini alınca zincirli eşi de askıya düşer."},
 	"wind": {"title": "Rüzgâr", "line": "Sayaç bitince işaretli çamaşır yanındakinin üstüne savrulur."},
+	"slide": {"title": "Sürgülü İp", "line": "İşaretli sıra birkaç hamlede bir yana kayar, sonra geri gelir."},
 	"mode_moves": {"title": "Sınırlı hamle", "line": "Hepsini sayaç bitmeden topla."},
 	"mode_short_rack": {"title": "Kısa askı", "line": "Bu bölümde askıda daha az yer var."},
 	"mode_orders": {"title": "Sipariş", "line": "Sepetleri gösterilen renk sırasıyla doldur, bonus kazan."},

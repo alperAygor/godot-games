@@ -9,6 +9,7 @@ extends Sheet
 signal continue_pressed
 signal double_pressed
 signal revive_pressed
+signal coins_pressed
 signal retry_pressed
 
 const TITLE_SIZE: int = 56
@@ -115,10 +116,13 @@ static func win(parent: Node, reward: int, tints: Array[Color], can_double: bool
 
 
 ## Kaybetme sayfası. `can_revive` false ise (seviyede zaten kullanıldı) "Tekrar dene" birincil olur.
-static func lose(parent: Node, remaining: int, can_revive: bool) -> ResultSheet:
+## `moves_out`: kayıp nedeni hamle sınırı (başlık ve devam düğmesi buna göre yazılır).
+## `coin_cost` > 0 ise "jetonla devam" seçeneği de gösterilir (`can_afford` değilse sönük).
+static func lose(parent: Node, remaining: int, can_revive: bool, moves_out: bool = false,
+		coin_cost: int = 0, can_afford: bool = false) -> ResultSheet:
 	var sheet: ResultSheet = ResultSheet.new()
 	sheet.build(parent, false)
-	sheet._fill_lose(remaining, can_revive)
+	sheet._fill_lose(remaining, can_revive, moves_out, coin_cost, can_afford)
 	sheet.play_intro()
 	return sheet
 
@@ -294,7 +298,8 @@ func _start_confetti() -> void:
 	_confetti.emitting = true
 
 
-func _fill_lose(remaining: int, can_revive: bool) -> void:
+func _fill_lose(remaining: int, can_revive: bool, moves_out: bool = false, coin_cost: int = 0,
+		can_afford: bool = false) -> void:
 	var column: VBoxContainer = content()
 	var storm: CenterContainer = CenterContainer.new()
 	storm.custom_minimum_size = Vector2(0.0, STORM_DISC)
@@ -313,14 +318,23 @@ func _fill_lose(remaining: int, can_revive: bool) -> void:
 	disc.add_child(wind)
 	column.add_child(storm)
 	column.add_child(UiKit.spacer(BLOCK_GAP))
-	column.add_child(UiKit.label(UiStrings.LOSE_TITLE, TITLE_SIZE))
+	column.add_child(UiKit.label(UiStrings.LOSE_TITLE_MOVES if moves_out else UiStrings.LOSE_TITLE, TITLE_SIZE))
 	column.add_child(UiKit.spacer(BLOCK_GAP * 0.5))
 	column.add_child(_remaining_label(remaining))
 	column.add_child(UiKit.spacer(BLOCK_GAP * 2.0))
 	if can_revive:
-		var revive: Button = UiKit.button(UiStrings.LOSE_REVIVE, &"", "lucide/video", MAIN_HEIGHT)
+		var revive: Button = UiKit.button(UiStrings.LOSE_REVIVE_MOVES if moves_out else UiStrings.LOSE_REVIVE,
+			&"", "lucide/video", MAIN_HEIGHT)
 		revive.pressed.connect(revive_pressed.emit)
 		column.add_child(revive)
+		column.add_child(UiKit.spacer(UiKit.AD_BUTTON_GAP))
+	if coin_cost > 0:
+		# Reklam izlemek istemeyen oyuncu jetonla devam edebilir; yetmiyorsa düğme sönük kalır.
+		var pay: Button = UiKit.button(UiStrings.LOSE_COINS % coin_cost, &"SecondaryButton", "lucide/coins",
+			UiKit.MIN_TOUCH)
+		pay.disabled = not can_afford
+		pay.pressed.connect(coins_pressed.emit)
+		column.add_child(pay)
 		column.add_child(UiKit.spacer(UiKit.AD_BUTTON_GAP))
 	var retry: Button = UiKit.button(UiStrings.LOSE_RETRY, &"SecondaryButton" if can_revive else &"",
 		"lucide/rotate-ccw", MAIN_HEIGHT if not can_revive else UiKit.MIN_TOUCH)

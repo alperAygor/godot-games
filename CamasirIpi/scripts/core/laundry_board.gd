@@ -58,6 +58,9 @@ const EVENT_CHAIN_DROP: String = "chain_drop"
 ## Rüzgâr sayacı bir azaldı ({left, id: sıradaki savrulan}) / esti ({id, target, effective, left}).
 const EVENT_WIND_TICK: String = "wind_tick"
 const EVENT_WIND: String = "wind"
+## Sürgülü ip: sayaç tık atar; sıfırlanınca üst sıra bir yana kayar (örtme ilişkileri değişir).
+const EVENT_SLIDE_TICK: String = "slide_tick"
+const EVENT_SLIDE: String = "slide"
 ## Sipariş: sıradaki sipariş tamamlandı ({index, color}) / sıra bozuldu ({index}).
 const EVENT_ORDER_DONE: String = "order_done"
 const EVENT_ORDER_BROKEN: String = "order_broken"
@@ -136,6 +139,14 @@ var _wind_left: int = 0
 var _wind_by_target: Dictionary = {}
 ## Döngü yaratacağı için boşa esen adımlar (adım -> true); geri alda geri yüklenir.
 var _wind_void: Dictionary = {}
+## Sürgülü ip: bir ipin üst sırası her `_slide_every` hamlede iki konum arasında gidip gelir.
+## Her konum (faz) için "alt parça -> onu örten kayan parçalar" tablosu üretici tarafından verilir;
+## kayanların örtmesi sabit `blockers` içinde DEĞİL, yalnız o anki fazda geçerlidir.
+var _slide_every: int = 0
+var _slide_phases: Array[Dictionary] = []
+var _slide_ids: Array[int] = []
+var _slide_phase: int = 0
+var _slide_left: int = 0
 var _has_chains: bool = false
 ## Kip alanları.
 var _mode: String = MODE_NONE
@@ -197,6 +208,7 @@ func _init(level: Dictionary) -> void:
 		_queue_kinds.append(int(kinds.get(position, KIND_NORMAL)))
 		position += 1
 	_setup_wind(level.get("wind", {}) as Dictionary)
+	_setup_slide(level.get("slide", {}) as Dictionary)
 	_setup_mode(level)
 	var slots: int = maxi(int(level.get("rack_slots", DEFAULT_RACK_SLOTS)), 1)
 	for _i: int in range(slots):
@@ -262,6 +274,12 @@ func blockers_of(id: int) -> Array[int]:
 			if gust.x < _wind_done and not _wind_void.has(gust.x) and _on_line.has(gust.y) \
 					and not result.has(gust.y):
 				result.append(gust.y)
+	if not _slide_phases.is_empty():
+		var sliding: Variant = _slide_phases[_slide_phase].get(id)
+		if sliding != null:
+			for slider: int in sliding as Array[int]:
+				if _on_line.has(slider) and not result.has(slider):
+					result.append(slider)
 	return result
 
 
@@ -278,6 +296,12 @@ func is_open(id: int) -> bool:
 		for gust: Vector2i in _wind_by_target[id] as Array[Vector2i]:
 			if gust.x < _wind_done and not _wind_void.has(gust.x) and _on_line.has(gust.y):
 				return false
+	if not _slide_phases.is_empty():
+		var sliding: Variant = _slide_phases[_slide_phase].get(id)
+		if sliding != null:
+			for slider: int in sliding as Array[int]:
+				if _on_line.has(slider):
+					return false
 	return true
 
 
@@ -418,6 +442,7 @@ func tap(id: int) -> Array[Dictionary]:
 		var changed: bool = _tick_dyes(ticking, events)
 		changed = _dry_stains(drying_before, events) or changed
 		changed = _wind_tick(events) or changed
+		changed = _slide_tick(events) or changed
 		if changed:
 			_settle(events)
 		else:
@@ -464,6 +489,7 @@ func _take(id: int, events: Array[Dictionary], prefix: Dictionary = {}) -> bool:
 	_tick_dyes(ticking, events)
 	_dry_stains(drying_before, events)
 	_wind_tick(events)
+	_slide_tick(events)
 	_settle(events)
 	return true
 
@@ -659,6 +685,8 @@ func undo() -> bool:
 	_wind_done = int(snap["wind_done"])
 	_wind_left = int(snap["wind_left"])
 	_wind_void = snap["wind_void"] as Dictionary
+	_slide_phase = int(snap["slide_phase"])
+	_slide_left = int(snap["slide_left"])
 	_order_progress = int(snap["order_progress"])
 	_order_broken = bool(snap["order_broken"])
 	_screen = int(snap["screen"])
@@ -691,6 +719,7 @@ func _record_history() -> void:
 		"completed": _completed.duplicate(),
 		"sock_waiting": _sock_waiting, "stuck": _stuck.duplicate(), "drying": _drying.duplicate(),
 		"wind_done": _wind_done, "wind_left": _wind_left, "wind_void": _wind_void.duplicate(),
+		"slide_phase": _slide_phase, "slide_left": _slide_left,
 		"order_progress": _order_progress, "order_broken": _order_broken, "screen": _screen,
 	})
 
@@ -898,6 +927,8 @@ func state_key() -> PackedInt32Array:
 	key.append(BASKET_KEY_EMPTY)
 	key.append(_wind_done)
 	key.append(_wind_left)
+	key.append(_slide_phase)
+	key.append(_slide_left)
 	key.append(_wind_void.size())
 	for step: Variant in _wind_void.keys():
 		key.append(int(step))
@@ -1074,6 +1105,61 @@ func wind_every() -> int:
 ## Adım esti ve etkili oldu mu (boşa esmediyse): görünüm yeniden kurulurken savrulmuş çizilir.
 func wind_applied(step: int) -> bool:
 	return step < _wind_done and not _wind_void.has(step)
+
+
+func _setup_slide(slide: Dictionary) -> void:
+	var phases: Array = slide.get("phases", []) as Array
+	if phases.size() < 2:
+		return
+	_slide_every = maxi(int(slide.get("every", 0)), 1)
+	for raw: Variant in phases:
+		var phase: Dictionary = {}
+		for key: Variant in (raw as Dictionary).keys():
+			var covering: Array[int] = []
+			for slider: Variant in (raw as Dictionary)[key] as Array:
+				covering.append(int(slider))
+			# JSON'dan gelen anahtar metin olabilir; kimlikler tamsayıya çevrilir.
+			phase[int(key)] = covering
+		_slide_phases.append(phase)
+	for slider: Variant in slide.get("sliders", []) as Array:
+		_slide_ids.append(int(slider))
+	_slide_left = _slide_every
+
+
+## Kaymaya kalan hamle; sürgülü ip yoksa ya da kayan parça kalmadıysa -1.
+func slide_left() -> int:
+	return _slide_left if _slide_active() else -1
+
+
+func slide_phase() -> int:
+	return _slide_phase
+
+
+func slide_ids() -> Array[int]:
+	return _slide_ids.duplicate()
+
+
+func _slide_active() -> bool:
+	if _slide_phases.is_empty():
+		return false
+	for slider: int in _slide_ids:
+		if _on_line.has(slider):
+			return true
+	return false
+
+
+## Döndürür: üst sıra bu hamlede kaydı mı. İki faz arasında gidip gelir (0,1,0,1...).
+func _slide_tick(events: Array[Dictionary]) -> bool:
+	if not _slide_active():
+		return false
+	_slide_left -= 1
+	if _slide_left > 0:
+		events.append({"type": EVENT_SLIDE_TICK, "left": _slide_left})
+		return false
+	_slide_phase = (_slide_phase + 1) % _slide_phases.size()
+	_slide_left = _slide_every
+	events.append({"type": EVENT_SLIDE, "phase": _slide_phase, "left": slide_left()})
+	return true
 
 
 ## Döndürür: rüzgâr bu hamlede esti mi.

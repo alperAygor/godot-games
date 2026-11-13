@@ -36,9 +36,15 @@ const BIG_FROM_LEVEL: int = 29
 const STAIN_FROM_LEVEL: int = 36
 const CHAIN_FROM_LEVEL: int = 44
 const WIND_FROM_LEVEL: int = 52
+## Sürgülü ip: bir ipin üst sırası birkaç hamlede bir yana kayıp geri gelir.
+const SLIDE_FROM_LEVEL: int = 58
+const MAX_SLIDES: int = 1
+const SLIDE_EVERY_MOVES: int = 4
+const SLIDE_EVERY_MOVES_LATE: int = 3
+const SLIDE_FAST_FROM_LEVEL: int = 90
 const INTRO_LEVELS: Array[int] = [WET_FROM_LEVEL, MYSTERY_FROM_LEVEL, LOCK_FROM_LEVEL,
 	JOKER_FROM_LEVEL, SHEET_FROM_LEVEL, BIG_FROM_LEVEL, SOCK_FROM_LEVEL, STAIN_FROM_LEVEL,
-	DYE_FROM_LEVEL, CHAIN_FROM_LEVEL, WIND_FROM_LEVEL]
+	DYE_FROM_LEVEL, CHAIN_FROM_LEVEL, WIND_FROM_LEVEL, SLIDE_FROM_LEVEL]
 const MAX_JOKERS: int = 2
 const MAX_BIGS: int = 2
 const MAX_STAINS: int = 3
@@ -54,7 +60,7 @@ const MIX_SURE_LEVELS: int = 2
 const MIX_CHANCE: float = 0.55
 ## Mekanik başına ayrı tohum tuzu: karışım kararları birbirinden ve ana düzenden bağımsız olsun.
 const FEATURE_SALT: int = 104729
-const MIX_SALTS: Dictionary = {"joker": 11, "big": 23, "stain": 37, "chain": 41, "wind": 53}
+const MIX_SALTS: Dictionary = {"joker": 11, "big": 23, "stain": 37, "chain": 41, "wind": 53, "slide": 67}
 const PLACE_ATTEMPTS: int = 24
 ## Yeni mekanik yerleşimlerinin doğrulama bütçesi: başarılı doğrulama çoğunlukla çözüm yolu
 ## uzunluğu kadar düğümde biter; başarısız aday bütün bütçeyi yer. Düşük bütçe yalnız "daha az
@@ -235,6 +241,8 @@ static func generate(level: int) -> Dictionary:
 	var gusts: int = mechanic_count(number, "wind")
 	if gusts > 0:
 		_add_wind(result, gusts, order, features)
+	if mechanic_count(number, "slide") > 0 and mode != LaundryBoard.MODE_BOSS:
+		_add_slide(result, number)
 	_finish_mode(result, mode, number, features)
 	return result
 
@@ -695,6 +703,8 @@ static func _mechanic_from(mechanic: String) -> int:
 			return CHAIN_FROM_LEVEL
 		"wind":
 			return WIND_FROM_LEVEL
+		"slide":
+			return SLIDE_FROM_LEVEL
 	return 1 << 30
 
 
@@ -710,6 +720,8 @@ static func _mechanic_max(mechanic: String) -> int:
 			return MAX_CHAINS
 		"wind":
 			return MAX_WIND_STEPS
+		"slide":
+			return MAX_SLIDES
 	return 0
 
 
@@ -1005,6 +1017,92 @@ static func _add_chains(level: Dictionary, count: int, features: RandomNumberGen
 ## örtülen aynı ip ve ekranda komşudur (slot farkı <= 1), örtülenin katmanı savrulanınkinden
 ## yüksek değildir ve örtülen savrulanı (dolaylı) örtmez -> döngü yok. Anlamlı olsun diye ikisi
 ## de çözüm sırasında rüzgâr anından sonra alınan parçalardan seçilir. Her adım doğrulanır.
+## Sürgülü ip: en üst sırası katman 1 olan bir ipte, o sıranın TÜM parçaları birlikte bir sütun
+## kayar ve geri gelir. Kayanların örtmesi sabit `blockers`tan çıkarılıp faz tablolarına taşınır:
+##   faz 0 = başlangıç (yarım kaymış parça c ve c+1 sütunlarını örter),
+##   faz 1 = bir sütun kaymış hali (c+yön ve c+1+yön).
+## Çözülebilirlik çözücüyle doğrulanır (çözücü kaymayı kural olarak oynar); doğrulanamazsa geri alınır.
+static func _add_slide(level: Dictionary, number: int) -> void:
+	var items: Array[Dictionary] = level["items"] as Array[Dictionary]
+	var every: int = SLIDE_EVERY_MOVES_LATE if number >= SLIDE_FAST_FROM_LEVEL else SLIDE_EVERY_MOVES
+	var top_layer: Dictionary = {}
+	var columns: int = 0
+	for entry: Dictionary in items:
+		if int(entry.get("screen", 0)) != 0 or entry.has("sheet"):
+			continue
+		var line: int = int(entry["line"])
+		top_layer[line] = maxi(int(top_layer.get(line, 0)), int(entry["layer"]))
+		if int(entry["layer"]) == 0:
+			columns = maxi(columns, int(float(entry["slot"])) + 1)
+	var lines: Array = top_layer.keys()
+	lines.sort()
+	for line: Variant in lines:
+		var top: int = int(top_layer[line])
+		if top < 1:
+			continue
+		# Kayan sıra = ipin en üst katmanı; örttüğü sıra = bir alt katman (yarım sütun kaymış dizilir).
+		# Konumlar yarım sütun adımlı olduğundan anahtar olarak 2 x slot (tamsayı) kullanılır.
+		var base: Dictionary = {}
+		var sliders: Array[Dictionary] = []
+		var usable: bool = true
+		for entry: Dictionary in items:
+			if int(entry["line"]) != int(line) or int(entry.get("screen", 0)) != 0:
+				continue
+			if entry.has("sheet") or entry.has("chain") or entry.has("sock"):
+				usable = false
+			elif int(entry["layer"]) == top - 1:
+				base[int(round(float(entry["slot"]) * 2.0))] = int(entry["id"])
+			elif int(entry["layer"]) == top:
+				sliders.append(entry)
+		if not usable or sliders.is_empty():
+			continue
+		var low: float = float(columns)
+		var high: float = -1.0
+		for slider: Dictionary in sliders:
+			low = minf(low, float(slider["slot"]))
+			high = maxf(high, float(slider["slot"]))
+		# Katman k'nin geçerli konum aralığı [k/2, sütun-1-k/2]; kayınca bunun dışına taşmamalı.
+		var edge: float = float(top) * 0.5
+		var shift: int = 0
+		if high + 1.0 <= float(columns - 1) - edge + 0.001:
+			shift = 1
+		elif low - 1.0 >= edge - 0.001:
+			shift = -1
+		if shift == 0:
+			continue
+		var phases: Array = [{}, {}]
+		var slider_ids: Array[int] = []
+		for slider: Dictionary in sliders:
+			var id: int = int(slider["id"])
+			slider_ids.append(id)
+			var doubled: int = int(round(float(slider["slot"]) * 2.0))
+			for phase: int in range(2):
+				for covered: int in [doubled - 1 + 2 * shift * phase, doubled + 1 + 2 * shift * phase]:
+					if base.has(covered):
+						var table: Dictionary = phases[phase] as Dictionary
+						if not table.has(base[covered]):
+							table[base[covered]] = [] as Array[int]
+						(table[base[covered]] as Array[int]).append(id)
+		var removed: Array = []
+		for entry: Dictionary in items:
+			var blockers: Array = entry["blockers"] as Array
+			for id: int in slider_ids:
+				if blockers.has(id):
+					blockers.erase(id)
+					removed.append([entry, id])
+		for slider: Dictionary in sliders:
+			slider["slide"] = shift
+		level["slide"] = {"every": every, "line": int(line), "shift": shift, "sliders": slider_ids,
+			"phases": phases}
+		if LevelSolver.is_solvable(level, PLACE_NODE_LIMIT):
+			return
+		for pair: Variant in removed:
+			(((pair as Array)[0] as Dictionary)["blockers"] as Array).append(int((pair as Array)[1]))
+		for slider: Dictionary in sliders:
+			slider.erase("slide")
+		level.erase("slide")
+
+
 static func _add_wind(level: Dictionary, steps: int, order: Array[int], features: RandomNumberGenerator) -> void:
 	var items: Array[Dictionary] = level["items"] as Array[Dictionary]
 	var every: int = WIND_EVERY_MOVES_LATE if int(level["level"]) >= WIND_FAST_FROM_LEVEL else WIND_EVERY_MOVES

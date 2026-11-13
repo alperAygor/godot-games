@@ -8,7 +8,7 @@ extends SceneTree
 ## 33 sipariş. Son aşamada güçlendiriciler (geri al, +1 askı, mandal sökücü) gerçek sahnede denenir.
 ##   godot --headless --path . -s res://tools/play_probe.gd      çıkış 0 = geçti
 
-const LEVELS: Array[int] = [1, 2, 3, 7, 16, 21, 23, 25, 26, 29, 30, 32, 33, 36, 40, 44, 47, 52]
+const LEVELS: Array[int] = [1, 2, 3, 7, 16, 21, 23, 25, 26, 29, 30, 32, 33, 36, 40, 44, 47, 52, 58]
 const BOOST_LEVEL: int = 40
 const BOOST_TAPS: int = 3
 const FRAMES_PER_TAP: int = 4
