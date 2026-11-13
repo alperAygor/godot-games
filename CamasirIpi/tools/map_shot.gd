@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Harita / tekrar kartı / ana ekran / zen / çevrimdışı sayfası ekran görüntüsü (gerçek pencere; headless ÇALIŞMAZ).
 ##   godot --path . --resolution 1080x1920 -s res://tools/map_shot.gd -- --shot=map_early --lang=tr --out=docs/art/q_map_early_tr.png
-## --shot: map_early | map_35 | map_85 | map_600 | card | home | zen | zen_card | offline
+## --shot: map_early | map_35 | map_85 | map_600 | map_f<seviye> (41/61/81/91: yer/mevsim ayracı) | card | home | zen | zen_card | offline
 ## Oyuncunun gerçek kaydı ASLA yazılmaz (persist=false); çevrimiçi kapısı araçta kapalıdır.
 ## NOT: autoload kimlikleri `-s` kipinde derleme anında yoktur; autoload'a değen sınıflara `load` + `call/get` ile erişilir.
 
@@ -89,6 +89,8 @@ func _prepare() -> void:
 			_claim_milestones(70)
 		"map_600":
 			_history(600)
+		"map_f41", "map_f61", "map_f81", "map_f91":
+			_history(int(_shot.substr(5)) + 3)
 		"zen", "zen_card", "home":
 			_history(22)
 			_claim_milestones(20)
@@ -103,6 +105,10 @@ func _trigger() -> void:
 	match _shot:
 		"map_early", "map_85", "map_600":
 			_map = _open_map()
+		"map_f41", "map_f61", "map_f81", "map_f91":
+			_map = _open_map()
+			# Yer/mevsim ayracı (yerelleştirme QA): ayraç seviyesi ekranın ortasına odaklanır.
+			(_map.get("_canvas") as Node).call("focus_level", int(_shot.substr(5)), false, 0.5)
 		"map_35":
 			_map = _open_map()
 			# Mevsim ayracı (31) ve mevcut seviye birlikte görünsün.

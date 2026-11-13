@@ -189,11 +189,14 @@ func _track_row(machine: String, track: String) -> HBoxContainer:
 	var caption: Label = UiKit.label(Loc.t(String(TRACK_KEYS[track])), CAPTION_SIZE, UiKit.TEXT_MUTED)
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	text.add_child(caption)
-	var shown: String = _value_text(track, MachineRules.value(machine, track, level))
+	var now_value: int = MachineRules.value(machine, track, level)
+	var shown: String = _value_text(track, now_value)
 	if price != MachineRules.MAXED:
-		shown += ARROW + _value_text(track, MachineRules.value(machine, track, level + 1))
+		# Birim yalnız sonda bir kez: "3 → 2 hamle" (İspanyolca "3 movimientos → 2 movimientos" sayfaya sığmazdı).
+		shown = str(now_value) + ARROW + _value_text(track, MachineRules.value(machine, track, level + 1))
 	var value: Label = UiKit.label(shown, ROW_SIZE)
 	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	value.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.add_child(value)
 	if price == MachineRules.MAXED:
 		var done: Label = UiKit.label(Loc.t("MACHINE_MAX"), CAPTION_SIZE, UiKit.ACCENT)

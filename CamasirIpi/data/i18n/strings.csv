@@ -3,15 +3,15 @@ GAME_TITLE,Çamaşır İpi,Çamaşır İpi,Çamaşır İpi
 BOOT_LOADING,yükleniyor...,loading...,cargando...
 MENU_SKELETON,İskelet sürümü — oyun içeriği buraya gelir,Skeleton build — game content goes here,Versión base — aquí irá el contenido del juego
 MENU_PLAY,Oyna,Play,Jugar
-RESULT_DONE,Teslimat Tamamlandı,Delivery complete,Entrega completada
-RESULT_FAILED,Teslimat Hasarlı,Delivery damaged,Entrega dañada
+RESULT_DONE,Teslimat tamamlandı,Delivery complete,Entrega completada
+RESULT_FAILED,Teslimat hasarlı,Delivery damaged,Entrega dañada
 RESULT_STARS,Yıldız: %d / 3,Stars: %d / 3,Estrellas: %d / 3
 RESULT_DETAIL,Hasar: %%%d    Ücret: %d,Damage: %%%d    Fee: %d,Daño: %%%d    Tarifa: %d
-RESULT_RETRY,Tekrar Oyna,Play again,Jugar de nuevo
-RESULT_MENU,Ana Menü,Main menu,Menú principal
+RESULT_RETRY,Tekrar oyna,Play again,Jugar de nuevo
+RESULT_MENU,Ana menü,Main menu,Menú principal
 LEVEL,Seviye %d,Level %d,Nivel %d
 SOON_TITLE,Yakında,Coming soon,Próximamente
-SOON_BODY,Bu bölüm çok yakında burada olacak.,This part will be here soon.,Esta sección llegará muy pronto.
+SOON_BODY,Çok yakında burada olacak.,This will be here soon.,Llegará muy pronto.
 OK,Tamam,OK,Listo
 SETTINGS_TITLE,Ayarlar,Settings,Ajustes
 SETTINGS_SOUND,Ses,Sound,Sonido
@@ -19,10 +19,10 @@ SETTINGS_MUSIC,Müzik,Music,Música
 SETTINGS_VIBRATION,Titreşim,Vibration,Vibración
 SETTINGS_LANGUAGE,Dil,Language,Idioma
 PAUSED,Duraklatıldı,Paused,En pausa
-RESUME,Devam,Resume,Seguir
+RESUME,Devam,Resume,Reanudar
 WIN_TITLE,Harika!,Great!,¡Genial!
 WIN_CONTINUE,Devam,Continue,Continuar
-WIN_PERFECT,Kusursuz,Flawless,¡Impecable!
+WIN_PERFECT,Kusursuz,Flawless,Impecable
 WIN_COINS_ADDED_ONE,+%d jeton eklendi,+%d coin added,+%d moneda añadida
 WIN_COINS_ADDED_OTHER,+%d jeton eklendi,+%d coins added,+%d monedas añadidas
 LOSE_TITLE,Fırtına çıktı,Storm's here,Llegó la tormenta
@@ -31,26 +31,26 @@ LOSE_LEFT_ONE,%s çamaşır kaldı,%s item left,Queda %s prenda
 LOSE_LEFT_OTHER,%s çamaşır kaldı,%s items left,Quedan %s prendas
 LOSE_LEFT_FEW_ONE,Sadece %s çamaşır kaldı,Only %s item left,Solo queda %s prenda
 LOSE_LEFT_FEW_OTHER,Sadece %s çamaşır kaldı,Only %s items left,Solo quedan %s prendas
-LOSE_REVIVE,+1 askı,+1 slot,+1 espacio
+LOSE_REVIVE,+1 askı,+1 rack spot,+1 percha
 LOSE_REVIVE_MOVES,+5 hamle,+5 moves,+5 movimientos
 LOSE_RETRY,Tekrar dene,Try again,Reintentar
 DAILY_TITLE,Günlük,Daily,Diario
-DAILY_PUZZLE_TITLE,Günün bulmacası,Daily puzzle,Puzzle del día
+DAILY_PUZZLE_TITLE,Günün bulmacası,Daily puzzle,Rompecabezas del día
 DAILY_PUZZLE_READY,Bugün seni bekliyor,Waiting for you today,Hoy te espera
-DAILY_PUZZLE_LOCKED,Seviye %d'de açılır,Unlocks at level %d,Se desbloquea en el nivel %d
+DAILY_PUZZLE_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d
 DAILY_PUZZLE_TOMORROW,Yarın yenisi gelecek,A new one tomorrow,Mañana habrá uno nuevo
 DAILY_PLAY,Oyna,Play,Jugar
-DAILY_WIN_TITLE,Bulmaca çözüldü,Puzzle solved,¡Puzzle resuelto!
-DAILY_WIN_AGAIN,Bugünün ödülünü zaten aldın,You already got today's reward,Ya recogiste el premio de hoy
+DAILY_WIN_TITLE,Bulmaca çözüldü!,Puzzle solved!,¡Rompecabezas resuelto!
+DAILY_WIN_AGAIN,Bugünün ödülünü zaten aldın,You already got today's reward,Ya reclamaste el premio de hoy
 DAILY_CALENDAR_TITLE,Günlük hediye,Daily gift,Regalo diario
-DAILY_CLAIM,Al,Claim,Recoger
+DAILY_CLAIM,Al,Claim,Reclamar
 DAILY_CLAIMED_TODAY,Yarın yine gel,Come back tomorrow,Vuelve mañana
 DAILY_CLOSE,Kapat,Close,Cerrar
-META_LOC_CORNER,Köşe Çamaşırhanesi,Corner Laundromat,Lavandería de la Esquina
-META_LOC_SEASIDE,Sahil Çamaşırhanesi,Seaside Laundromat,Lavandería de la Playa
-META_LOC_ATTIC,Çatı Katı,The Attic,El Desván
+META_LOC_CORNER,Köşe Çamaşırhanesi,Corner Laundromat,Lavandería de la esquina
+META_LOC_SEASIDE,Sahil Çamaşırhanesi,Seaside Laundromat,Lavandería de la playa
+META_LOC_ATTIC,Çatı Katı,The Attic,El desván
 META_LOC_HOTEL,Otel,Hotel,Hotel
-META_TASK_FLOOR,Zemin,Floor,Piso
+META_TASK_FLOOR,Zemin,Floor,Suelo
 META_TASK_WALL,Duvar boyası,Wall paint,Pintura de pared
 META_TASK_MACHINE1,Çamaşır makinesi,Washing machine,Lavadora
 META_TASK_SHELF,Raf,Shelf,Estante
@@ -62,7 +62,7 @@ META_TASK_COUNTER,Tezgâh,Counter,Mostrador
 META_TASK_MACHINE2,İkinci makine,Second machine,Segunda máquina
 META_TASK_RUG,Halı,Rug,Alfombra
 META_TASK_DOOR,Kapı,Door,Puerta
-META_NEED_STARS,"Seviye geç, yıldız kazan",Beat levels to earn stars,Gana estrellas superando niveles
+META_NEED_STARS,"Seviye geç, yıldız kazan",Beat levels to earn stars,Supera niveles para ganar estrellas
 META_PICK_LOOK,Görünümü seç,Pick a look,Elige un estilo
 META_LOCATION_DONE,Tamamlandı,Completed,Completado
 META_SOON,Yakında,Soon,Pronto
@@ -77,7 +77,7 @@ META_NEXT_PIECE_ONE,%d seviye sonra yeni parça,New piece in %d level,Nueva piez
 META_NEXT_PIECE_OTHER,%d seviye sonra yeni parça,New piece in %d levels,Nueva pieza en %d niveles
 META_ALL_PIECES,Tüm parçalar toplandı,All pieces collected,Todas las piezas reunidas
 TUT_WET_TITLE,Islak,Wet,Mojada
-TUT_WET_LINE,"Islak çamaşır: önce sık, sonra al.","Wet laundry: wring it first, then take it.","Ropa mojada: primero escúrrela, luego tómala."
+TUT_WET_LINE,"Islak çamaşır: önce sık, sonra al.","Wet laundry: wring it out first, then take it.",Ropa mojada: escúrrela primero y luego tómala.
 TUT_MYSTERY_TITLE,Gizemli,Mystery,Misteriosa
 TUT_MYSTERY_LINE,Üstü açılınca gerçek rengi belli olur.,Its true color shows once it's uncovered.,Su color real se ve al destaparla.
 TUT_LOCK_TITLE,Kilitli,Locked,Con candado
@@ -87,40 +87,40 @@ TUT_SHEET_LINE,"Çarşaf büyüktür, altındakileri kapatır.",A bedsheet is bi
 TUT_SOCK_PAIR_TITLE,Çorap çifti,Sock pair,Par de calcetines
 TUT_SOCK_PAIR_LINE,İki çorabı birlikte sepete gönder.,Send both socks to the basket together.,Manda los dos calcetines juntos a la cesta.
 TUT_DYE_TITLE,Boya,Dye,Tinte
-TUT_DYE_LINE,Boyalı çamaşır yanındakilerin rengini değiştirir.,Dyed laundry changes the color of its neighbors.,La ropa teñida cambia el color de las de al lado.
+TUT_DYE_LINE,Boyalı çamaşır yanındakilerin rengini değiştirir.,Dyed laundry changes the color of its neighbors.,La ropa teñida cambia el color de las prendas de al lado.
 TUT_JOKER_TITLE,Joker sepet,Joker basket,Cesta comodín
 TUT_JOKER_LINE,"Gökkuşağı sepet ilk konan rengi alır, o renkle dolar.",The rainbow basket takes the first color put in and fills with it.,La cesta arcoíris toma el primer color que entra y se llena con él.
 TUT_BIG_BASKET_TITLE,Büyük sepet,Big basket,Cesta grande
 TUT_BIG_BASKET_LINE,Bu sepet 3 değil 5 çamaşırla dolar.,"This basket takes 5 items, not 3.","Esta cesta se llena con 5 prendas, no 3."
 TUT_STAIN_TITLE,Lekeli,Stained,Manchada
-TUT_STAIN_LINE,"Lekeli çamaşır önce askıda bir hamle kurur, sonra sepete geçer.","A stained item dries on the rack for one move, then goes to the basket.",La prenda manchada se seca un movimiento en la percha y luego pasa a la cesta.
+TUT_STAIN_LINE,"Lekeli çamaşır önce askıda bir hamle kurur, sonra sepete geçer.","A stained item dries on the rack for one move, then goes to the basket.",La mancha se seca un movimiento en la percha; luego la prenda va a la cesta.
 TUT_CHAIN_TITLE,Zincirli mandal,Chained peg,Pinza encadenada
-TUT_CHAIN_LINE,Birini alınca zincirli eşi de askıya düşer.,Take one and its chained partner drops onto the rack.,"Al tomar una, su pareja encadenada cae a la percha."
+TUT_CHAIN_LINE,Birini alınca zincirli eşi de askıya düşer.,Take one and its chained partner drops onto the rack.,"Si recoges una, su pareja encadenada cae a la percha."
 TUT_WIND_TITLE,Rüzgâr,Wind,Viento
 TUT_WIND_LINE,Sayaç bitince işaretli çamaşır yanındakinin üstüne savrulur.,"When the counter runs out, the marked item blows onto its neighbor.","Cuando el contador llega a cero, la prenda marcada vuela sobre la de al lado."
-TUT_SLIDE_TITLE,Sürgülü İp,Sliding line,Cuerda deslizante
+TUT_SLIDE_TITLE,Sürgülü ip,Sliding line,Cuerda deslizante
 TUT_SLIDE_LINE,"İşaretli sıra birkaç hamlede bir yana kayar, sonra geri gelir.","The marked row slides sideways every few moves, then slides back.",La fila marcada se desliza a un lado cada pocos movimientos y luego vuelve.
 TUT_MODE_MOVES_TITLE,Sınırlı hamle,Limited moves,Movimientos limitados
 TUT_MODE_MOVES_LINE,Hepsini sayaç bitmeden topla.,Collect everything before the counter runs out.,Recoge todo antes de que el contador llegue a cero.
 TUT_MODE_SHORT_RACK_TITLE,Kısa askı,Short rack,Percha corta
-TUT_MODE_SHORT_RACK_LINE,Bu bölümde askıda daha az yer var.,There are fewer spots on the rack this level.,En este nivel hay menos lugares en la percha.
+TUT_MODE_SHORT_RACK_LINE,Bu seviyede askıda daha az yer var.,The rack has fewer spots this level.,En este nivel hay menos lugares en la percha.
 TUT_MODE_ORDERS_TITLE,Sipariş,Orders,Pedidos
 TUT_MODE_ORDERS_LINE,"Sepetleri gösterilen renk sırasıyla doldur, bonus kazan.",Fill the baskets in the color order shown to earn a bonus.,Llena las cestas en el orden de colores indicado y gana un bono.
-TUT_MODE_BOSS_TITLE,Büyük çamaşır günü,Big laundry day,Gran día de colada
-TUT_MODE_BOSS_LINE,İlk ip boşalınca ikinci tahta gelir; askı ve sepetler sürer.,"When the first line is empty, a second board arrives; rack and baskets carry over.",Al vaciarse la primera cuerda llega un segundo tablero; la percha y las cestas siguen.
+TUT_MODE_BOSS_TITLE,Büyük çamaşır günü,Big laundry day,Gran día de lavado
+TUT_MODE_BOSS_LINE,İlk ip boşalınca ikinci tahta gelir; askı ve sepetler sürer.,"When the first line is empty, a second board arrives; the rack and baskets carry over.",Al vaciarse la primera cuerda llega un segundo tablero; la percha y las cestas siguen.
 TUT_UNDO_TITLE,Geri al,Undo,Deshacer
 TUT_UNDO_LINE,Son hamleni geri alır.,Takes back your last move.,Deshace tu último movimiento.
 TUT_PIN_REMOVER_TITLE,Mandal çıkarıcı,Peg remover,Quitapinzas
 TUT_PIN_REMOVER_LINE,Seçtiğin çamaşırı hemen serbest bırakır.,Instantly frees the item you pick.,Libera al instante la prenda que elijas.
-TUT_EXTRA_SLOT_TITLE,+1 askı,+1 slot,+1 espacio
+TUT_EXTRA_SLOT_TITLE,+1 askı,+1 rack spot,+1 percha
 TUT_EXTRA_SLOT_LINE,Bekleme askısına bir yer daha ekler.,Adds one more spot to the waiting rack.,Agrega un lugar más a la percha de espera.
 RET_MISSIONS_TITLE,Günlük görevler,Daily missions,Misiones diarias
 RET_CHEST_BONUS,Bonus sandık,Bonus chest,Cofre extra
 RET_MILESTONES_TITLE,Ödül yolu,Reward path,Camino de premios
 RET_TO_GO,%d seviye kaldı,%d levels to go,Faltan %d niveles
 RET_TO_GO_ONE,1 seviye kaldı,1 level to go,Falta 1 nivel
-RET_CLAIM,Al,Claim,Recoger
-RET_LOCKED,Seviye %d'de açılır,Unlocks at level %d,Se abre en el nivel %d
+RET_CLAIM,Al,Claim,Reclamar
+RET_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d
 RET_DAYS_LEFT,%d gün kaldı,%d days left,Quedan %d días
 RET_LAST_DAY,Son gün,Last day,Último día
 RET_WEEK_NOTE,Geçen haftanın ödülleri verildi: +%d,Last week's rewards were granted: +%d,Se entregaron los premios de la semana pasada: +%d
@@ -142,90 +142,91 @@ RET_W_STARS,Yıldız haftası,Star week,Semana de estrellas
 RET_G_STARS,Seviyelerden yıldız topla,Earn stars in levels,Gana estrellas en los niveles
 RET_M_LEVELS,%d seviye bitir,Finish %d levels,Termina %d niveles
 RET_M_STARS3,%d seviyeyi 3 yıldızla bitir,Finish %d levels with 3 stars,Termina %d niveles con 3 estrellas
-RET_M_LOW_RACK,%d seviyeyi en çok %d askıyla bitir,Finish %d levels using at most %d rack spots,Termina %d niveles usando como máximo %d perchas
+RET_M_LOW_RACK,%d seviyeyi en çok %d askıyla bitir,Finish %d levels with %d rack spots or fewer,Termina %d niveles con %d perchas o menos
 RET_M_BASKETS,%d sepet doldur,Fill %d baskets,Llena %d cestas
-RET_M_CHAIN,%d'lü zincir yap,Make a x%d chain,Haz una cadena de x%d
-RET_M_DAILY,Günlük bulmacayı çöz,Solve the daily puzzle,Resuelve el puzzle diario
+RET_M_CHAIN,×%d zincir yap,Make a ×%d chain,Haz una cadena ×%d
+RET_M_DAILY,Günlük bulmacayı çöz,Solve the daily puzzle,Resuelve el rompecabezas diario
 RET_M_BOOSTER,%d güçlendirici kullan,Use %d boosters,Usa %d potenciadores
 RET_M_BIRD,%d kuşu kov,Shoo %d birds,Espanta %d pájaros
 RET_M_CAT,Kediyi %d kez sev,Pet the cat %d times,Acaricia al gato %d veces
-RET_WELCOME_TITLE,Tekrar hoş geldin!,Welcome back!,¡Bienvenido de nuevo!
+RET_WELCOME_TITLE,Tekrar hoş geldin!,Welcome back!,¡Qué bueno verte de nuevo!
 RET_WELCOME_BODY,%d gündür yoktun. Küçük bir hediye hazırladık.,You were away for %d days. Here is a little gift.,Estuviste fuera %d días. Aquí tienes un pequeño regalo.
 RET_STREAK_TITLE,%d gün üst üste!,%d days in a row!,¡%d días seguidos!
 RET_STREAK_BODY,Her gün uğramanın küçük bir ödülü var.,Dropping by every day has a small reward.,Pasar cada día tiene un pequeño premio.
 RET_N_GIFT_T,Günlük hediyen hazır,Your daily gift is ready,Tu regalo diario está listo
-RET_N_GIFT_B,Çamaşırlar seni bekliyor.,The laundry is waiting for you.,La colada te espera.
+RET_N_GIFT_B,Çamaşırlar seni bekliyor.,The laundry is waiting for you.,La ropa te espera.
 RET_N_MISS_T,Görevlerin seni bekliyor,Your missions are waiting,Tus misiones te esperan
 RET_N_MISS_B,Bugünün görevleri hazır.,Today's missions are ready.,Las misiones de hoy están listas.
 RET_N_WEEK_T,Haftalık etkinlik yarın bitiyor,The weekly event ends tomorrow,El evento semanal termina mañana
-RET_N_WEEK_B,Kalan ödüllerini almayı unutma.,Do not forget your remaining rewards.,No olvides tus premios restantes.
+RET_N_WEEK_B,Kalan ödüllerini almayı unutma.,Don't forget your remaining rewards.,No olvides tus premios restantes.
 RET_WEEKLY_TITLE,Haftalık etkinlik,Weekly event,Evento semanal
 RET_M_STARS3_ONE,Bir seviyeyi 3 yıldızla bitir,Finish a level with 3 stars,Termina un nivel con 3 estrellas
-RET_M_LOW_RACK_ONE,Bir seviyeyi en çok %d askıyla bitir,Finish a level using at most %d rack spots,Termina un nivel usando como máximo %d perchas
+RET_M_LOW_RACK_ONE,Bir seviyeyi en çok %d askıyla bitir,Finish a level with %d rack spots or fewer,Termina un nivel con %d perchas o menos
 RET_M_BOOSTER_ONE,Bir güçlendirici kullan,Use a booster,Usa un potenciador
-PLACE_ARRIVE,Yeni durak: %s,Next stop: %s,Próxima parada: %s
+PLACE_ARRIVE,Yeni durak: %s,New stop: %s,Nueva parada: %s
 PLACE_GARDEN,Bahçe,Garden,Jardín
 PLACE_BEACH,Sahil,Seaside,Playa
-PLACE_ROOFTOP,Çatı Katı,Rooftop,Azotea
+PLACE_ROOFTOP,Çatı Terası,Rooftop,Azotea
 SHOP_TITLE,Mağaza,Shop,Tienda
 SHOP_BOOSTERS,Güçlendiriciler,Boosters,Potenciadores
 SHOP_SKINS,Görünümler,Looks,Estilos
 SHOP_PINS,Mandallar,Pegs,Pinzas
 SHOP_ROPES,İpler,Ropes,Cuerdas
 SHOP_REMOVE_ADS,Reklamları kaldır,Remove ads,Quitar anuncios
-SHOP_REMOVE_ADS_NOTE,Geçiş reklamları kapanır. İstersen ödüllü videolar kalır.,No more pop-up ads. Optional reward videos stay.,Sin anuncios entre niveles. Los vídeos con premio siguen.
-SHOP_OWNED,Satın alındı,Owned,Adquirido
+SHOP_REMOVE_ADS_NOTE,Geçiş reklamları kapanır. İstersen ödüllü videolar kalır.,No more pop-up ads. Optional reward videos stay.,Sin anuncios entre niveles. Los videos con premio siguen.
+SHOP_OWNED,Satın alındı,Owned,Comprado
 SHOP_RESTORE,Satın alımları geri yükle,Restore purchases,Restaurar compras
 SHOP_RESTORED,Geri yüklendi,Restored,Restaurado
-SHOP_NOTHING_TO_RESTORE,Geri yüklenecek bir şey yok,Nothing to restore,Nada que restaurar
-SHOP_STORE_UNAVAILABLE,Mağaza şu an kullanılamıyor,Store unavailable right now,Tienda no disponible ahora
+SHOP_NOTHING_TO_RESTORE,Geri yüklenecek bir şey yok,Nothing to restore,No hay nada que restaurar
+SHOP_STORE_UNAVAILABLE,Mağaza şu an kullanılamıyor,Store unavailable right now,La tienda no está disponible ahora
 SHOP_PURCHASE_FAILED,Satın alma tamamlanmadı,Purchase did not go through,La compra no se completó
-SHOP_FREE_ONE,Bedava +1,Free +1,+1 gratis
+SHOP_FREE_ONE,+1 bedava,+1 free,+1 gratis
 SHOP_NO_PRICE,Mağazaya bağlanıyor,Connecting to the store,Conectando con la tienda
-SHOP_AD_UNAVAILABLE,Reklam şu an hazır değil,No ad available right now,Anuncio no disponible ahora
+SHOP_AD_UNAVAILABLE,Reklam şu an hazır değil,Ad not available right now,Anuncio no disponible por ahora
 TUT_WASHER_TITLE,Çamaşır makinesi,Washing machine,Lavadora
-TUT_WASHER_LINE,"Çamurlu çamaşıra dokun: makinede birkaç hamlede yıkanır, temiz çıkar.","Tap a muddy item: the machine washes it in a few moves, then it comes out clean.","Toca una prenda embarrada: la lavadora la lava en unos movimientos y sale limpia."
+TUT_WASHER_LINE,"Çamurlu çamaşıra dokun: makinede birkaç hamlede yıkanır, temiz çıkar.",Tap a muddy item: the washer cleans it in a few moves.,Toca una prenda embarrada: la lavadora la limpia en unos movimientos.
 TUT_DRYER_TITLE,Kurutma makinesi,Dryer,Secadora
-TUT_DRYER_LINE,"Islak çamaşıra dokun: kurutucuya girer, birkaç hamlede kuru çıkar.","Tap a wet item: it goes into the dryer and comes out dry a few moves later.","Toca una prenda mojada: entra en la secadora y sale seca unos movimientos después."
+TUT_DRYER_LINE,"Islak çamaşıra dokun: kurutucuya girer, birkaç hamlede kuru çıkar.",Tap a wet item: the dryer dries it in a few moves.,Toca una prenda mojada: la secadora la seca en unos movimientos.
 TUT_TYPED_TITLE,Seçici sepet,Picky basket,Cesta exigente
 TUT_TYPED_LINE,Bu sepet yalnız rozetindeki türü alır.,This basket only takes the item type on its badge.,Esta cesta solo acepta el tipo de prenda de su insignia.
 TUT_BIRDS_TITLE,Kuş,Bird,Pájaro
-TUT_BIRDS_LINE,"Kuş konunca ona dokun, uçup gider. Bırakırsan çamaşırı kirletir.","When a bird lands, tap it to shoo it. Leave it and it soils the item.","Cuando un pájaro se pose, tócalo para espantarlo. Si lo dejas, ensucia la prenda."
+TUT_BIRDS_LINE,"Kuş konunca ona dokun, uçup gider. Bırakırsan çamaşırı kirletir.","When a bird lands, tap it to shoo it away. Leave it and it soils the item.","Cuando se posa un pájaro, tócalo para espantarlo. Si lo dejas, ensucia la prenda."
 TUT_RAIN_TITLE,Yağmur bulutu,Rain cloud,Nube de lluvia
-TUT_RAIN_LINE,Sayaç bitince bulutun altındaki açık çamaşırlar ıslanır.,"When the count ends, open items under the cloud get wet.","Cuando acabe la cuenta, las prendas descubiertas bajo la nube se mojan."
+TUT_RAIN_LINE,Sayaç bitince bulutun altındaki açık çamaşırlar ıslanır.,"When the counter runs out, uncovered items under the cloud get wet.","Cuando el contador llega a cero, las prendas descubiertas bajo la nube se mojan."
 TUT_CAT_TITLE,Çamaşırhane kedisi,Laundromat cat,Gato de la lavandería
-TUT_CAT_LINE,"Kedi bir sepette uyur; sevmek için dokun, sepet yeniden açılır.","The cat naps in a basket; tap to pet it and the basket opens again.","El gato duerme en una cesta; tócalo para acariciarlo y la cesta se libera."
+TUT_CAT_LINE,"Kedi bir sepette uyur; sevmek için dokun, sepet yeniden açılır.",The cat naps in a basket; tap to pet it and the basket opens again.,El gato duerme en una cesta; tócalo para acariciarlo y la cesta se libera.
 MACHINES_TITLE,Makineler,Machines,Máquinas
 MACHINES_SUB,Yükseltmeler her seviyede geçerlidir.,Upgrades apply to every level.,Las mejoras sirven en todos los niveles.
 MACHINE_WASHER,Çamaşır makinesi,Washing machine,Lavadora
 MACHINE_DRYER,Kurutma makinesi,Dryer,Secadora
 MACHINE_CAPACITY,Kapasite,Capacity,Capacidad
-MACHINE_SPEED,Süre,Cycle,Ciclo
+MACHINE_SPEED,Süre,Cycle time,Duración
 MACHINE_CAPACITY_VALUE,%d parça,%d items,%d prendas
 MACHINE_MOVES_ONE,%d hamle,%d move,%d movimiento
 MACHINE_MOVES_OTHER,%d hamle,%d moves,%d movimientos
-MACHINE_MAX,En üst seviye,Maxed,Al máximo
+MACHINE_MAX,En üst seviye,Max level,Nivel máximo
 MACHINE_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d
 MAP_REPLAY,Tekrar oyna,Play again,Jugar de nuevo
-MAP_REPLAY_NOTE,Yalnızca yeni yıldızlar ödül getirir,Only new stars bring rewards,Solo las estrellas nuevas dan recompensa
+MAP_REPLAY_NOTE,Yalnızca yeni yıldızlar ödül getirir,Only new stars bring rewards,Solo las estrellas nuevas dan premio
 MAP_SEASON_SUMMER,Yaz,Summer,Verano
 MAP_SEASON_AUTUMN,Sonbahar,Autumn,Otoño
 MAP_SEASON_WINTER,Kış,Winter,Invierno
 MAP_SEASON_SPRING,İlkbahar,Spring,Primavera
 MAP_DIVIDER_JOIN,%s · %s,%s · %s,%s · %s
 ZEN_TITLE,Zen,Zen,Zen
-ZEN_SUB,Sakin ve bitmeyen çamaşırlar,Calm and endless laundry,Ropa tendida tranquila y sin fin
+ZEN_SUB,Sakin ve bitmeyen çamaşırlar,"Calm, endless laundry","Ropa tendida, tranquila y sin fin"
 ZEN_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d
-ZEN_START,Başla,Begin,Empezar
-ZEN_TOTAL,Toplam %d temiz tahta,%d boards cleared in total,%d tableros completados en total
-ZEN_STEP_BACK,Bir adım geri aldık,We stepped one move back,Volvimos un paso atrás
-ZEN_EXTRA_PEG,Bir askı daha ekledik,We added one more peg,Añadimos un colgador más
-NET_TITLE,Bağlantı gerekli,Connection required,Se requiere conexión
+ZEN_START,Başla,Start,Empezar
+ZEN_TOTAL_ONE,Toplam %d tahta temizlendi,%d board cleared in total,%d tablero completado en total
+ZEN_TOTAL_OTHER,Toplam %d tahta temizlendi,%d boards cleared in total,%d tableros completados en total
+ZEN_STEP_BACK,Bir adım geri aldık,We took back one move,Retrocedimos un movimiento
+ZEN_EXTRA_PEG,Bir askı daha ekledik,We added one more rack spot,Añadimos una percha más
+NET_TITLE,Bağlantı gerekli,Connection required,Necesitas conexión
 NET_BODY,Oynamak için internete bağlan.,Connect to the internet to play.,Conéctate a internet para jugar.
 NET_RETRY,Tekrar dene,Try again,Reintentar
 NET_CHECKING,Bağlantı denetleniyor...,Checking connection...,Comprobando la conexión...
-PATTERN_SETTING,Renk desenleri,Colour patterns,Patrones de color
-PATTERN_SETTING_HINT,Her rengin kendi deseni olur (renk körlüğü için),Each colour gets its own pattern (colour-blind friendly),Cada color tiene su propio patrón (para daltonismo)
+PATTERN_SETTING,Renk desenleri,Color patterns,Patrones de color
+PATTERN_SETTING_HINT,Her rengin kendi deseni olur (renk körlüğü için),Each color gets its own pattern (colorblind-friendly),Cada color tiene su propio patrón (útil para el daltonismo)
 UI_SETTING_NOTIFICATIONS,Bildirimler,Notifications,Notificaciones
 UI_SETTING_PATTERNS,Desenler,Patterns,Patrones
 UI_PRIVACY_OPTIONS,Gizlilik seçenekleri,Privacy options,Opciones de privacidad
@@ -233,13 +234,13 @@ SEASON_ARRIVE_SUMMER,Yaz geldi,Summer is here,Llegó el verano
 SEASON_ARRIVE_AUTUMN,Sonbahar geldi,Autumn is here,Llegó el otoño
 SEASON_ARRIVE_WINTER,Kış geldi,Winter is here,Llegó el invierno
 SEASON_ARRIVE_SPRING,İlkbahar geldi,Spring is here,Llegó la primavera
-TUT_DUAL_TITLE,Çift renkli çamaşır,Two-colour garment,Prenda bicolor
-TUT_DUAL_LINE,"İki rengin sepetine de gider; ikizi ise kalan rengi alır.","It fits either colour's basket; its twin then takes the other colour.","Va a la cesta de cualquiera de sus colores; su gemela toma el otro color."
+TUT_DUAL_TITLE,Çift renkli çamaşır,Two-color item,Prenda bicolor
+TUT_DUAL_LINE,İki rengin sepetine de gider; ikizi ise kalan rengi alır.,It fits either color's basket; its twin takes the other color.,Va a la cesta de cualquiera de sus colores; su gemela toma el otro color.
 TUT_SUN_FADE_TITLE,Güneşte solma,Sun fade,Decolorado al sol
-TUT_SUN_FADE_LINE,"Sayaç bitmeden al; solarsa almadan önce bir kez silkelemen gerekir.","Take it before the count ends; if it fades, shake it out once first.","Recógela antes de que acabe la cuenta; si se decolora, sacúdela una vez antes."
+TUT_SUN_FADE_LINE,Sayaç bitmeden al; solarsa almadan önce bir kez silkelemen gerekir.,"Take it before the counter ends; if it fades, shake it out once first.","Recógela antes de que el contador llegue a cero; si se decolora, sacúdela una vez antes."
 TUT_LEAVES_TITLE,Düşen yapraklar,Falling leaves,Hojas que caen
-TUT_LEAVES_LINE,"Yapraklı çamaşıra bir dokun, yaprak süpürülür; hamle sayılmaz.","Tap a leafy item once to brush the leaf off; it costs no move.","Toca una vez la prenda con hoja para quitarla; no cuesta movimiento."
+TUT_LEAVES_LINE,"Yapraklı çamaşıra bir dokun, yaprak süpürülür; hamle sayılmaz.",Tap a leafy item once to brush the leaf off; it costs no move.,Toca una vez la prenda con hoja para quitarla; no cuesta movimiento.
 TUT_FROST_TITLE,Don,Frost,Escarcha
-TUT_FROST_LINE,"Donmuş çamaşır önce askıda bir hamle ısınır, sonra sepete geçer.","A frozen item warms on the rack for one move, then goes to its basket.","Una prenda helada se templa un movimiento en el tendedero y luego va a su cesta."
+TUT_FROST_LINE,"Donmuş çamaşır önce askıda bir hamle ısınır, sonra sepete geçer.","A frozen item warms up on the rack for one move, then goes to its basket.",Una prenda helada se calienta un movimiento en la percha y luego va a su cesta.
 TUT_POLLEN_TITLE,Polen,Pollen,Polen
-TUT_POLLEN_LINE,"Polen bir ipin renklerini birkaç hamle örter; çamaşırlar yine de alınır.","Pollen hides one line's colours for a few moves; you can still take them.","El polen oculta los colores de una cuerda unos movimientos; aún puedes recogerlas."
+TUT_POLLEN_LINE,Polen bir ipin renklerini birkaç hamle örter; çamaşırlar yine de alınır.,Pollen hides one line's colors for a few moves; you can still take them.,El polen oculta los colores de una cuerda unos movimientos; aún puedes recogerlas.

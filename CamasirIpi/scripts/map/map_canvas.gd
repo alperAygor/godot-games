@@ -52,6 +52,8 @@ const CHEST_INK: Color = Color("d99a1f")
 const CHEST_DONE_FILL: Color = Color("e9e6dc")
 const CHEST_DONE_INK: Color = Color("a8aca6")
 const PILL_HEIGHT: float = 64.0
+## Ayraç hapı, altındaki (önceki) seviyenin yıldız satırına binmesin diye biraz aşağı kayar.
+const PILL_DROP: float = 64.0
 const PILL_PAD: float = 30.0
 const PILL_DOT: float = 13.0
 const PILL_FILL: Color = Color(1.0, 1.0, 1.0, 0.82)
@@ -376,7 +378,7 @@ func _draw_dividers(span: Vector2i) -> void:
 	var first: int = _region_index(span.x)
 	var last: int = mini(_region_index(span.y) + 1, _dividers.size() - 1)
 	for index: int in range(first, last + 1):
-		var y: float = _boundary_y(_dividers[index]) - scroll_top
+		var y: float = _boundary_y(_dividers[index]) - scroll_top + PILL_DROP
 		if y < -PILL_HEIGHT or y > size.y + PILL_HEIGHT:
 			continue
 		var width: float = _divider_widths[index]
