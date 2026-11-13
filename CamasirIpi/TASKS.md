@@ -55,3 +55,11 @@ Dalga 3 — sırayla (tek yazıcı)
 - [ ] **L2** Yeni metinlerin TR/EN/ES denetimi ve taşma kontrolü
 - [ ] **Z1** Paket boyutu küçültme
 - [ ] **F1** Son performans turu + Android derlemesi
+
+## Aşama 4 — kuyruk (kullanıcı kararı 2026-11-13; aşama 3 bitmeden başlanmaz)
+- [ ] **Q1** Renk körlüğü desenleri (her renge desen; varsayılan açık)
+- [ ] **Q2** Seviye haritası (kaydırılabilir yol, yıldızlar, geri dönüp 3 yıldız alma)
+- [ ] **Q3** Çift renkli çamaşır (iki renkten birinin sepetine gider)
+- [ ] **Q4** Zen modu (kaybetme yok, sakin sonsuz oyun)
+- [ ] **Q5** Çevrimdışı oynamak yasak: bağlantı yoksa "bağlantı gerekli" ekranı
+- [ ] **Q6** Mevsim ve kültür temaları: mekânla birlikte değişen görsel/ses seti + temaya özel, oynanışı etkileyen olaylar
