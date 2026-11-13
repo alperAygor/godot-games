@@ -1,5 +1,9 @@
 {
   "EXTRA_POCKET": { "per_run": 1, "per_session": 3 },
   "TAPE_RESCUE": { "per_run": 1, "per_session": 5 },
-  "DOUBLE_REWARD": { "per_run": 1, "per_session": 3 }
+  "DOUBLE_REWARD": { "per_run": 1, "per_session": 3 },
+  "REVIVE_EXTRA_SLOT": { "per_run": 1, "per_session": 30 },
+  "DOUBLE_COINS": { "per_run": 1, "per_session": 30 },
+  "REFILL_BOOSTER": { "per_run": 3, "per_session": 30 },
+  "INTERSTITIAL": { "per_run": 99, "per_session": 999 }
 }

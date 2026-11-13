@@ -5,7 +5,6 @@ extends Node2D
 ## Dokunuşlar mantığa ANINDA işlenir, animasyonlar olay kuyruğundan sırayla oynar;
 ## böylece hızlı oynayan oyuncu engellenmez (PROJECT_SPEC §2).
 
-const SAVE_PATH: String = "user://progress.cfg"
 const COLORS: Array[Color] = [
 	Color("e5484d"), Color("3e8ef7"), Color("f5c02e"), Color("3dbb6e"),
 	Color("9b59d0"), Color("f58a3c"), Color("22b8b0"),
@@ -61,8 +60,6 @@ const PARTICLE_Z: int = 90
 ## Parçacık boyunca küçülme eğrisinin bitiş değeri (yumuşakça yok olsun, aniden kaybolmasın).
 const PARTICLE_END_SCALE: float = 0.25
 const LAND_SOUND_DB: float = -10.0
-const WIN_COINS: int = 20
-const HARD_WIN_COINS: int = 40
 const MIN_TOUCH: float = 126.0
 ## Mandal ve kumaş seslerinin çeşit sayısı (aynı ses art arda tekrarlamasın).
 const SOUND_VARIANTS: int = 3
@@ -75,7 +72,6 @@ const COMBO_MAX_STEPS: int = 12
 const SPARKLE_COLOR: Color = Color(1.0, 0.96, 0.7)
 
 var _level_number: int = 1
-var _coins: int = 0
 var _level: Dictionary = {}
 var _board: LaundryBoard = null
 var _views: Dictionary[int, GarmentView] = {}
@@ -114,13 +110,20 @@ var _sparkle_next: int = 0
 var _fade_ramp: Gradient = null
 var _shrink_curve: Curve = null
 ## Prob/geliştirme çalıştırmaları oyuncunun kaydını ezmesin diye kapatılabilir.
-var _persist: bool = true
+## Kayıt Progress autoload'unda; bu bayrak ona iletilir (eski prob uyumu).
+var _persist: bool = true:
+	set(value):
+		_persist = value
+		Progress.persist = value
+var _eco: EcoFlow = null
 
 
 func _ready() -> void:
 	GameManager.set_phase(GameManager.Phase.GAME)
 	GameManager.back_requested.connect(_on_back)
-	_load_progress()
+	_level_number = Progress.level()
+	_eco = EcoFlow.new()
+	add_child(_eco)
 	# Geliştirme/prob: `-- --level=N` ile doğrudan o seviye açılır.
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--level="):
@@ -499,6 +502,7 @@ func _start_level() -> void:
 	# Prob, belirli bir durumu (ör. kesin kayıp) sınamak için elle kurulmuş seviye verebilir.
 	_level = debug_level if not debug_level.is_empty() else LevelGenerator.generate(_level_number)
 	_board = LaundryBoard.new(_level)
+	_eco.on_level_start(_level_number, _board)
 	_level_label.text = "Seviye %d" % _level_number
 	AudioService.play_pitched("level_start", 1.0, -6.0)
 	_world = Node2D.new()
@@ -548,9 +552,11 @@ func _build_lines() -> void:
 
 func _build_rack() -> void:
 	var slots: int = _board.rack_slots()
+	# 6+ slotta (seri bonusu + devam) askı ekran dışına taşmasın diye ortalanır.
+	var center_hook: float = maxf(RACK_CENTER_HOOK, float(slots - 1) * 0.5)
 	for slot: int in range(slots):
 		_rack_points.append(Vector2(
-			_center_x + (float(slot) - RACK_CENTER_HOOK) * RACK_SPACING, RACK_Y))
+			_center_x + (float(slot) - center_hook) * RACK_SPACING, RACK_Y))
 
 
 func _build_baskets() -> void:
@@ -716,25 +722,42 @@ func _hide_overlay() -> void:
 
 
 func _show_win() -> void:
-	var reward: int = HARD_WIN_COINS if bool(_level.get("hard", false)) else WIN_COINS
-	_coins += reward
+	var result: Dictionary = _eco.on_win(_level_number, _board, bool(_level.get("hard", false)))
+	var reward: int = int(result["coins"])
 	_level_number += 1
-	_save_progress()
 	AudioService.play_pitched("win", 1.0, -3.0)
 	get_tree().create_timer(COIN_SOUND_DELAY).timeout.connect(
 		AudioService.play_pitched.bind("coin", 1.0, -4.0))
 	var next: Button = _flat_button("Devam", true)
-	next.pressed.connect(_start_level)
-	_show_overlay("Harika!", "+%d jeton" % reward, [next])
+	next.pressed.connect(func() -> void:
+		next.disabled = true
+		_eco.maybe_interstitial(_level_number, _start_level))
+	var buttons: Array[Button] = []
+	if _eco.can_watch(AdManager.Placement.DOUBLE_COINS):
+		var double: Button = _flat_button("Reklam izle, jeton 2x", false)
+		double.pressed.connect(_on_double_coins.bind(double, reward))
+		buttons.append(double)
+	buttons.append(next)
+	var subtitle: String = "+%d jeton" % reward
+	if int(result["streak"]) > 1:
+		subtitle += "  |  %d seri" % int(result["streak"])
+	_show_overlay("Harika!", subtitle, buttons)
 
 
 func _show_lose(remaining: int) -> void:
+	_eco.on_lose(_level_number, _board, remaining)
 	AudioService.play_pitched("lose", 1.0, -3.0)
 	var buttons: Array[Button] = []
 	if not _revived:
-		var revive: Button = _flat_button("Reklam izle, +1 askı", true)
-		revive.pressed.connect(_revive)
-		buttons.append(revive)
+		if _eco.can_watch(AdManager.Placement.REVIVE_EXTRA_SLOT):
+			var revive: Button = _flat_button("Reklam izle, +1 askı", true)
+			revive.pressed.connect(_on_revive_ad.bind(revive))
+			buttons.append(revive)
+		var cost: int = int(Progress.balance_table().get("continue_cost", 0))
+		var pay: Button = _flat_button("%d jeton ile devam" % cost, false)
+		pay.disabled = Progress.coins() < cost
+		pay.pressed.connect(_on_revive_coins.bind(cost))
+		buttons.append(pay)
 	var retry: Button = _flat_button("Tekrar dene", _revived)
 	retry.pressed.connect(_start_level)
 	buttons.append(retry)
@@ -743,8 +766,30 @@ func _show_lose(remaining: int) -> void:
 	_show_overlay("Fırtına çıktı", subtitle, buttons)
 
 
-## Prototip: reklam henüz bağlı değil; ödül doğrudan verilir (seviye başına 1 kez).
+func _on_double_coins(button: Button, reward: int) -> void:
+	button.disabled = true
+	var granted: Callable = func() -> void:
+		Progress.add_coins(reward)
+		button.text = "+%d jeton eklendi" % reward
+	var failed: Callable = func() -> void: button.disabled = false
+	_eco.watch(AdManager.Placement.DOUBLE_COINS, granted, failed)
+
+
+func _on_revive_ad(button: Button) -> void:
+	button.disabled = true
+	var failed: Callable = func() -> void: button.disabled = false
+	_eco.watch(AdManager.Placement.REVIVE_EXTRA_SLOT, _revive, failed)
+
+
+func _on_revive_coins(cost: int) -> void:
+	if not _revived and Progress.spend_coins(cost):
+		_revive()
+
+
+## Devam (reklamla ya da jetonla): +1 askı, seviye başına 1 kez.
 func _revive() -> void:
+	if _revived:
+		return
 	_revived = true
 	_board.add_rack_slot()
 	_rack_points.clear()
@@ -758,20 +803,3 @@ func _revive() -> void:
 
 func _on_back() -> void:
 	GameManager.goto_scene(&"menu")
-
-
-func _load_progress() -> void:
-	var config: ConfigFile = ConfigFile.new()
-	if config.load(SAVE_PATH) != OK:
-		return
-	_level_number = maxi(int(config.get_value("progress", "level", 1)), 1)
-	_coins = maxi(int(config.get_value("progress", "coins", 0)), 0)
-
-
-func _save_progress() -> void:
-	if not _persist:
-		return
-	var config: ConfigFile = ConfigFile.new()
-	config.set_value("progress", "level", _level_number)
-	config.set_value("progress", "coins", _coins)
-	config.save(SAVE_PATH)
