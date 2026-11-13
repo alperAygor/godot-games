@@ -1,8 +1,10 @@
 # Çamaşır İpi — Para kazanma (AdMob + Google Play Faturalandırma)
 
-Bu belge, kodun hazır olduğu ama **elle yapılması gereken** adımları anlatır. Kod, eklentiler
-yokken de olduğu gibi çalışır (masaüstünde sahte reklam/mağaza); eklenti dosyaları eklenince
-kendiliğinden gerçek sağlayıcıya geçer. Hiçbir SDK bu depoya indirilmedi.
+Bu belge, kodun hazır olduğu ama **elle yapılması gereken** adımları anlatır. Poing Studios AdMob
+eklentisi **v5.1.0** projeye kuruludur (`addons/admob/`, yalnız temel `ads` modülü; aracılık/mediation
+bağdaştırıcıları YOK). Masaüstünde oyun kendi sahte sağlayıcısını (`MockAdsProvider`) kullanır;
+Android cihazda eklentinin native tekil nesneleri bulunursa kendiliğinden `AdmobAdsProvider` devreye girer.
+Google Play Faturalandırma eklentisi henüz indirilmedi.
 
 ## 1. Oyundaki kurallar (kullanıcı kararları)
 
@@ -34,28 +36,49 @@ Karar fonksiyonu: `scripts/core/ad_pacing.gd` (saf, birim testli).
 
 ## 3. AdMob — elle yapılacaklar
 
-### 3.1 Eklentiyi indirme
-Poing Studios `godot-admob-plugin` (Godot 4, Android) — GitHub sürümlerinden, projenizin Godot sürümüyle
-uyumlu en son sürümü indirin (kaynak: `https://github.com/poingstudios/godot-admob-plugin`).
-Sürüm notlarındaki kurulum talimatı esastır; genel olarak:
+### 3.1 Eklenti kurulumu (YAPILDI) ve kalan Android adımları
 
-1. Sürümden `addons/admob` klasörünü projeye `res://addons/admob/` olarak koyun.
-2. Android için sürümde gelen AAR/`gdextension`/export eklentisi dosyalarını (README'de "Android" bölümü) belirtilen yere koyun.
-3. Android derleme şablonunu kurun: Godot → *Project > Install Android Build Template* (`res://android/build/` oluşur).
-4. *Project > Project Settings > Plugins* içinde AdMob eklentisini **etkinleştirin**.
-5. *Project > Export > Android* ön ayarında: **Use Gradle Build** açık, eklentinin listelediği "Plugins" kutusunu işaretleyin.
-   Önerilen: Min SDK 23+, Target SDK güncel (Play gereği).
+**Projede hazır olanlar** (v5.1.0, MIT lisanslı, `addons/admob/LICENSE`):
+- `addons/admob/{plugin.cfg,admob.gd,gdscript/src,internal/*}` — GDScript API + editör/export eklentisi + masaüstü mock'u.
+- `addons/admob/android/bin/package.gd` + `addons/admob/android/bin/ads/` — Godot 4.7.2 Android şablonu (yalnız `ads`:
+  `poing-godot-admob-{ads,core}-{debug,release}.aar` ve `poing_godot_admob_ads.gd`; ~280 KB). Eklenti bunları
+  yoksa internetten indirmeye çalışır; dosyalar depoda olduğu için indirme gerekmez.
+- `addons/admob/ios/bin/package.gd` — iOS ikilileri için **yer tutucu**: eklenti headless editörde (`godot --import`, CI)
+  iOS ikililerini yoksa `curl` ile indirmeye kalkar; bu dosya bunu engeller. Proje iOS hedeflemiyor (`admob/general/ios/enabled=false`).
+- `project.godot`: `[editor_plugins] enabled=…admob/plugin.cfg`, `[admob] general/ios/enabled=false`.
+  (Android `enabled=true` ve `app_id` = Google TEST kimliği eklentinin varsayılanıdır; bu yüzden dosyada görünmez.
+  Godot editörü/`--import` project.godot'u yeniden yazar; dosya başı yorumları bu yüzden kalmayabilir.)
+- Sürümler: eklenti v5.1.0 + AAR v5.1.0 + Godot 4.7.2; Google Mobile Ads **Next-Gen SDK 1.4.0** (Gradle bağımlılığı olarak çekilir).
 
-### 3.2 Uygulama kimliği (AndroidManifest)
-AdMob uygulama kimliği olmadan uygulama açılışta çöker. Eklentinin README'sine göre uygulama kimliği
-eklentinin ayarında (*Project Settings > AdMob*) ya da `android/build/AndroidManifest.xml` içinde şu şekilde verilir:
-
-```xml
-<meta-data
-    android:name="com.google.android.gms.ads.APPLICATION_ID"
-    android:value="ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY"/>
+**Boyut/dışlama:** `csharp/`, `docs/`, `skills/`, örnek sahneler, bağış görselleri, çeviriler eklentiden çıkarıldı
+(`addons/admob/csharp/.gdignore` var). Eklenti toplamı ≈ 1,4 MB (kaynak ağacı); pakete giren kısım aşağıdaki süzgeçle ≈ 0,57 MB (GDScript API kaynağı; paketlemede sıkışır).
+Export ön ayarı oluşturulurken **Resources > Filters to exclude** alanına şunu yazın:
 ```
-Geliştirme sırasında Google'ın **test uygulama kimliği** kullanılır: `ca-app-pub-3940256099942544~3347511713`.
+addons/admob/android/*, addons/admob/ios/*, addons/admob/admob.gd, addons/admob/internal/editor/*, addons/admob/internal/exporters/*, addons/admob/internal/services/*, addons/admob/internal/mock/*, addons/admob/assets/*
+```
+Çalışma anında yalnız `addons/admob/gdscript/src/**`, `internal/version/plugin_version.gd` ve (export eklentisinin eklediği) `plugin.cfg` gerekir.
+Eklenti kodu tipsizdir; Godot'un varsayılan `debug/gdscript/warnings/exclude_addons=true` ayarı sayesinde projedeki
+"tipsiz bildirim = hata" kuralı eklentiye uygulanmaz (ek ayar gerekmedi).
+
+**Elle yapılacaklar (Android Studio/Gradle gerektirir):**
+1. Godot editöründe projeyi açın; *Project Settings > Plugins*'te **AdMob** işaretli olmalı (project.godot'ta zaten etkin).
+2. *Project > Install Android Build Template* → `res://android/build/` oluşur (`.gitignore` `build/` ile hariç tutar; her makinede yeniden kurulur).
+3. *Project > Export > Add… > Android*: **Use Gradle Build** AÇIK olmalı (kapalıyken eklenti export'ta hata verir: "Prebuilt APK export is not supported").
+   Bu eklentide ayrı bir "Plugins" onay kutusu yoktur: Android tarafı `EditorExportPlugin` olarak otomatik eklenir
+   (AAR'lar, Gradle bağımlılıkları, `APPLICATION_ID` meta-data'sı). Aç/kapa anahtarı *Project Settings > General > Admob > General > Android > Enabled*'dır.
+   Bu depoda henüz `export_presets.cfg` yoktur; önayarı editörde oluşturun (imza bilgisi girmeyin, bkz. 6.).
+4. Gereksinimler: JDK 17, Android SDK (*Editor Settings > Export > Android*), Min SDK: eklenti belgesi bir değer vermiyor; Godot 4.7 varsayılanı (24) kullanın, Google Mobile Ads Next-Gen SDK 1.4.0'ın güncel alt sınırını Google belgesinden doğrulayın (Gradle derlemesi uyumsuzlukta hata verir), Target SDK güncel, arm64-v8a işaretli.
+5. Release için *Project Settings > Admob > General > Android > Enable R8 Optimization* önerilir (Play "obfuscation < %25" uyarısı; eklenti `minifyEnabled` ve ProGuard kurallarını export sırasında yazar).
+6. Keystore yolu/şifresi bu depoya YAZILMAZ; imzalamayı editörde yerel olarak yapın (`export_credentials.cfg` `.gitignore`'dadır).
+
+### 3.2 Uygulama kimliği (v5.1.0: Proje Ayarı, elle AndroidManifest GEREKMEZ)
+AdMob uygulama kimliği olmadan uygulama açılışta çöker. v5.1.0'da kimlik **Project Settings > General > Admob > General > Android > App Id**
+(`admob/general/android/app_id`) alanına yazılır; export eklentisi bunu `AndroidManifest.xml` içine
+`com.google.android.gms.ads.APPLICATION_ID` meta-data'sı olarak kendisi ekler. `android/build/AndroidManifest.xml` elle DÜZENLENMEZ.
+- Şu an değer eklentinin varsayılanı, Google'ın **test uygulama kimliğidir**: `ca-app-pub-3940256099942544~3347511713`.
+- Yayın öncesi bu alanı AdMob konsolundaki **gerçek** `ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY` ile değiştirin
+  (project.godot'ta `[admob] general/android/app_id="…"` satırı oluşur) **ve** `data/ads.json` → `admob.production.app_id` alanına da yazın.
+  İki yer aynı kimliği taşımalıdır; ads.json yalnız birim kimliklerini seçer, manifest'i Proje Ayarı belirler.
 
 ### 3.3 AdMob konsolunda reklam birimleri
 1. https://admob.google.com → *Uygulamalar > Uygulama ekle* → Android → Play'deki paket adınız.
@@ -73,15 +96,19 @@ Geliştirme sırasında Google'ın **test uygulama kimliği** kullanılır: `ca-
 ```
 - Varsayılan `mode: "test"` Google'ın resmi **test kimliklerini** kullanır (ödüllü `ca-app-pub-3940256099942544/5224354917`, geçiş `ca-app-pub-3940256099942544/1033173712`).
 - `production` yalnız **yayın sürümünde**, `mode` = `production` ve hiçbir alan `REPLACE_` ile başlamıyorsa kullanılır; aksi halde sağlayıcı kendiliğinden test kimliğine düşer (yanlışlıkla gerçek reklama tıklayıp hesabı riske atmayı önler). Hata ayıklama sürümü her zaman test kimliği kullanır.
-- Aynı `app_id` değerini AndroidManifest'e de yazmayı unutmayın (3.2).
+- Aynı `app_id` değerini Proje Ayarı'na (`admob/general/android/app_id`) de yazmayı unutmayın (3.2); manifest'i o belirler.
 - Kendi cihazınızda test: `data/ads.json` → `admob.test_device_ids` listesine cihaz kimliğini ekleyin (logcat'te "Use RequestConfiguration.Builder().setTestDeviceIds" satırında yazar).
 
 ### 3.5 GDPR / UMP onayı
-`admob.request_consent` (varsayılan `true`) iken açılışta `PoingAdmobBridge.request_consent` çalışır: eklentinin
-`UserMessagingPlatform` sınıfı varsa bilgi güncellenir ve gerekiyorsa form gösterilir; sınıf yoksa ya da form
-8 sn (`consent_timeout_seconds`) içinde bitmezse reklamlar yine de başlatılır (oyun takılmaz).
-Form sonucu "reklam istenemez" ise AdMob zaten reklam dönmez; oyun bunu fark etmeden devam eder.
-> Eklenti sürümünüzde UMP sınıf/yöntem adları farklıysa yalnız `poing_admob_bridge.gd` içindeki `request_consent` güncellenir.
+`admob.request_consent` (varsayılan `true`) iken açılışta `PoingAdmobBridge.request_consent` çalışır. Akış eklentinin v5.1.0 örneğiyle aynıdır:
+`UserMessagingPlatform.consent_information.update()` → form uygunsa `UserMessagingPlatform.load_consent_form()` →
+durum `REQUIRED` ise `form.show()` → kapanınca SDK başlatılır. Her hata/“form yok”/“gerekmiyor” yolu da reklamları başlatır;
+UMP native tekil nesnesi yoksa ya da form `consent_timeout_seconds` (8 sn) içinde bitmezse oyun beklemeden devam eder.
+- **Konsol:** AdMob > *Gizlilik ve mesajlaşma* > GDPR iletisi oluşturup uygulamaya bağlayıp yayınlayın; form yayınlanmadıkça cihazda görünmez.
+- **Formu AB dışında denemek (yalnız hata ayıklama sürümü):** `data/ads.json` → `admob.consent_debug_geography` = `"eea"` ve
+  `test_device_ids`'e cihazın karma kimliğini (logcat: `addTestDeviceHashedId("…")`) yazın; deneme bitince alanı `""` yapın.
+- **Eksik (sonraki iş):** AB'de Google, oyuncuya onayı değiştirme yolu sunmanızı ister (`UserMessagingPlatform.show_privacy_options_form()`,
+  `consent_information.get_privacy_options_requirement_status() == REQUIRED` iken). Ayarlar ekranına bir “Gizlilik seçenekleri” düğmesi eklenmeli; köprüde henüz yok.
 
 ## 4. Google Play Faturalandırma — elle yapılacaklar
 
@@ -110,6 +137,8 @@ Kod: satın alma sonrası `acknowledgePurchase` otomatik çağrılır (3 gün i�
 - [ ] Kaplama satın al/seç → ana ekrandaki süs ipi ve oyundaki ip/mandallar değişiyor.
 
 **Android cihaz (eklentilerle) — doğrulanmamış, ilk kez burada test edilecek**
+- [ ] Önce Gradle export'un hatasız bittiği ve APK'nın açıldığı: logcat'te `[AdMob] Native plugin ... not found` OLMAMALI (varsa Use Gradle Build / Enabled ayarını kontrol edin; oyun bu durumda reklamsız devam eder).
+- [ ] Logcat'te AdMob başlatma tamamlanıyor; `AdmobAdsProvider` seçilmiş (ödüllü düğmeler yalnız reklam yüklüyken görünür).
 - [ ] Test modunda (varsayılan) ödüllü reklam: "+1 askı" ve "2×" Google test reklamı gösteriyor, ödül reklam kapanınca (kullanıcı ödülü kazandıysa) veriliyor; erken kapatınca ödül yok.
 - [ ] Geçiş reklamı 4. seviyeden itibaren "Devam"da geliyor; uçak modunda hiç takılmıyor (≤3 sn sonra devam).
 - [ ] İlk açılışta UMP formu (AB VPN/test cihazı ile) çıkıyor ve oyun beklemeden açılıyor.
@@ -119,5 +148,9 @@ Kod: satın alma sonrası `acknowledgePurchase` otomatik çağrılır (3 gün i�
 - [ ] Mağazada hiç yanıt yokken ("Mağazaya bağlanıyor") düğmeler donmuyor.
 
 ## 6. Bilinen sınırlar
-- `PoingAdmobBridge` ve `PlayBillingProvider` gerçek eklentiler bu depoda olmadığı için cihazda **doğrulanmadı**; adlar ilgili eklentilerin belgelerine göre yazıldı. Entegrasyonda ilk iş test listesindeki Android maddeleridir.
+- `PoingAdmobBridge` sınıf/yöntem/sinyal adları eklenti v5.1.0 **kaynağına karşı** doğrulandı ve eklentinin masaüstü mock'una karşı uçtan uca (başlat, yükle, göster, ödül, kapanış) çalıştırıldı;
+  ama gerçek native katman (AAR, UMP, Google SDK) cihazda **doğrulanmadı**. Eklentinin `skills/*.md` örnekleri (ör. `ConsentInformation.request_consent_info_update`, `OnConsentInfoUpdateListener`)
+  v5.1.0 kaynağıyla UYUŞMUYOR; doğru API kaynak kodudur, köprü ona göre yazıldı.
+- Masaüstünde eklentinin kendi mock'u KULLANILMAZ (gerçek zamanlı 8 sn'lik sahte reklam penceresi açar; probe/testleri belirsizleştirir). Masaüstü = `MockAdsProvider`.
+- `PlayBillingProvider` gerçek eklenti olmadan doğrulanmadı.
 - Banner reklam yoktur (ileride eklenirse `AdPacing` ile aynı "reklamları kaldır" kuralına bağlanmalıdır).

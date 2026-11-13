@@ -32,3 +32,6 @@ Thumbs.db
 tests/results/
 # Local secrets written by `elevenlabs onboard`
 /.env.local
+
+# AdMob eklentisi indirme önbelleği (ikililer addons/admob/android/bin altında depoda tutulur)
+addons/admob/downloads/

@@ -11,10 +11,11 @@
     "show_start_timeout_seconds": 3.0
   },
   "admob": {
-    "_note": "mode=test iken Google'in RESMI TEST kimlikleri kullanilir. Yayin oncesi production blogundaki REPLACE_* alanlarini AdMob konsolundaki gercek kimliklerle doldurun ve mode'u production yapin. Hata ayiklama surumu mode ne olursa olsun test kimliklerini kullanir.",
+    "_note": "mode=test iken Google'in RESMI TEST kimlikleri kullanilir. Yayin oncesi production blogundaki REPLACE_* alanlarini AdMob konsolundaki gercek kimliklerle doldurun ve mode'u production yapin. Hata ayiklama surumu mode ne olursa olsun test kimliklerini kullanir. consent_debug_geography (eea | not_eea) yalniz hata ayiklama surumunde UMP formunu AB disindan denemek icindir; test_device_ids hem reklam hem UMP test cihazi kimligidir.",
     "mode": "test",
     "request_consent": true,
     "test_device_ids": [],
+    "consent_debug_geography": "",
     "load_retry_seconds": 20.0,
     "consent_timeout_seconds": 8.0,
     "test": {

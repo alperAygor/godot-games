@@ -1,7 +1,16 @@
-; Çamaşır İpi — studio-kit iskeleti.
-; Yeni oyun: new_game.sh bu dosyadaki adı/sürümü değiştirir.
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
+
+[admob]
+
+general/ios/enabled=false
 
 [application]
 
@@ -20,9 +29,7 @@ Progress="*res://scripts/autoload/Progress.gd"
 
 [debug]
 
-; Tipsiz değişken = hata (GOTCHAS.md yok; CLAUDE.md §2)
 gdscript/warnings/untyped_declaration=2
-gdscript/warnings/unused_parameter=1
 
 [display]
 
@@ -34,6 +41,10 @@ window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=1
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/admob/plugin.cfg")
+
 [gui]
 
 theme/custom="res://assets/theme/ui_theme.tres"
@@ -44,19 +55,15 @@ pointing/emulate_touch_from_mouse=true
 
 [internationalization]
 
-locale/fallback="tr"
 locale/translations=PackedStringArray("res://data/i18n/strings.en.translation", "res://data/i18n/strings.es.translation", "res://data/i18n/strings.tr.translation")
+locale/fallback="tr"
 
 [physics]
 
-; Oyun saf 2B ve fizik gövdesi/_physics_process kullanmıyor (Tween/parçacık boşta işlenir):
-; fizik adımı her karede boşa döner. 30 Hz, mobilde kare başına sabit bir yükü yarıya indirir.
 common/physics_ticks_per_second=30
 
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
-; Mobil doku sıkıştırma (ASTC). Büyük bahçe/çamaşırhane katmanları "high_quality" VRAM
-; sıkıştırmalıdır: mobilde ASTC 4x4, masaüstünde BPTC (8 bit/piksel, RGBA8'in 1/4'ü).
 textures/vram_compression/import_etc2_astc=true
