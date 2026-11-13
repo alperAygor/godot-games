@@ -56,8 +56,19 @@ func set_color(tint: Color) -> void:
 	active = true
 	visible = true
 	if _band != null:
+		# Önceki sepetin tamamlanma parıltısı hâlâ sürüyorsa durdurulur: yoksa o animasyon bandı
+		# ESKİ renge geri boyar ve yeni sepet yanlış renkte görünür (kırmızı sepete mavi gider).
+		if _band_tween != null:
+			_band_tween.kill()
+			_band_tween = null
+		_band.scale = _band_rest_scale()
 		_band.modulate = tint
 	queue_redraw()
+
+
+## Ekranda görünen sepet rengi (prob bununla kural rengini karşılaştırır).
+func shown_color() -> Color:
+	return _band.modulate if _band != null else color
 
 
 func set_filled(count: int) -> void:

@@ -106,6 +106,35 @@ func mark_seen(flag: String) -> void:
 	_commit()
 
 
+## Modül verisi (bkz. ProgressData.modules): `section` modülün adıdır ("daily", "meta"...).
+## Değerler JSON'a yazılabilir türde olmalıdır (sayı, metin, bool, dizi, sözlük).
+func module_value(section: String, key: String, fallback: Variant = null) -> Variant:
+	var entry: Variant = data.modules.get(section)
+	if entry is Dictionary:
+		return (entry as Dictionary).get(key, fallback)
+	return fallback
+
+
+func set_module_value(section: String, key: String, value: Variant) -> void:
+	if not data.modules.has(section):
+		data.modules[section] = {}
+	(data.modules[section] as Dictionary)[key] = value
+	_commit()
+
+
+func add_stars(amount: int) -> void:
+	data.stars = clampi(data.stars + amount, 0, ProgressData.MAX_VALUE)
+	_commit()
+
+
+func spend_stars(amount: int) -> bool:
+	if amount < 0 or data.stars < amount:
+		return false
+	data.stars -= amount
+	_commit()
+	return true
+
+
 func streak_extra_slot() -> bool:
 	return data.streak_extra_slot(_balance())
 

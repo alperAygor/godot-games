@@ -50,6 +50,10 @@ var seen_flags: Dictionary = {}
 var levels_since_interstitial: int = 0
 var last_interstitial_time: float = 0.0
 var last_rewarded_time: float = 0.0
+## Özellik modüllerinin (günlük bulmaca, koleksiyon, onarım, yıldız dereceleri...) kendi
+## verisi: bölüm -> sözlük. Her modül yalnız KENDİ bölümünü yazar; böylece modüller bu
+## dosyayı değiştirmeden kayıt tutar ve birbirinin alanına dokunmaz.
+var modules: Dictionary = {}
 
 
 func _init() -> void:
@@ -114,6 +118,12 @@ static func from_dict(source: Variant) -> ProgressData:
 	data.levels_since_interstitial = to_count(raw.get("levels_since_interstitial"))
 	data.last_interstitial_time = _to_time(raw.get("last_interstitial_time"))
 	data.last_rewarded_time = _to_time(raw.get("last_rewarded_time"))
+	var raw_modules: Variant = raw.get("modules")
+	if raw_modules is Dictionary:
+		for section: Variant in (raw_modules as Dictionary).keys():
+			var entry: Variant = (raw_modules as Dictionary)[section]
+			if section is String and entry is Dictionary:
+				data.modules[section] = (entry as Dictionary).duplicate(true)
 	return data
 
 
@@ -131,6 +141,7 @@ func to_dict() -> Dictionary:
 		"levels_since_interstitial": levels_since_interstitial,
 		"last_interstitial_time": last_interstitial_time,
 		"last_rewarded_time": last_rewarded_time,
+		"modules": modules.duplicate(true),
 	}
 
 

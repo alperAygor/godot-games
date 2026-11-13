@@ -8,6 +8,9 @@ extends SceneTree
 const LEVELS: Array[int] = [1, 2, 3, 7, 16, 25]
 const FRAMES_PER_TAP: int = 4
 const SETTLE_FRAMES: int = 2
+const MID_CHECK_EVERY: int = 6
+## Sepet bandı parıltısı ve yeni sepetin gelişi bitsin diye beklenen süre.
+const MID_SETTLE_MSEC: int = 1800
 const MAX_DRAIN_FRAMES: int = 2000000
 
 var _game: Node = null
@@ -18,6 +21,7 @@ var _phase: String = "load"
 var _failed: bool = false
 var _drain_frames: int = 0
 var _lose_taps: Array[int] = []
+var _mid_deadline: int = 0
 
 
 func _initialize() -> void:
@@ -49,6 +53,19 @@ func _process(_delta: float) -> bool:
 				return false
 			_game.call("_tap", _path.pop_front())
 			_wait = FRAMES_PER_TAP
+			# Seviye ortalarında birkaç kez dur: animasyonlar bitince görünen sepet renkleri sınanır.
+			if _path.size() > 0 and _path.size() % MID_CHECK_EVERY == 0:
+				_mid_deadline = 0
+				_phase = "mid_check"
+		"mid_check":
+			if bool(_game.get("_playing")):
+				return false
+			if _mid_deadline == 0:
+				_mid_deadline = Time.get_ticks_msec() + MID_SETTLE_MSEC
+			if Time.get_ticks_msec() < _mid_deadline:
+				return false
+			_check_basket_colors()
+			_phase = "play"
 		"check":
 			# Animasyonlar gerçek zamanlıdır; kuyruk boşalana ve katman çıkana dek beklenir.
 			_drain_frames += 1
@@ -60,6 +77,7 @@ func _process(_delta: float) -> bool:
 			var overlay: Variant = _game.get("_overlay")
 			print("PROBE seviye_sonu sonraki=%d kazandı=%s katman=%s kuyruk=%d" % [
 				number, str(board.is_won()), str(overlay != null), (_game.get("_events") as Array).size()])
+			_check_basket_colors()
 			if not board.is_won() or overlay == null or not (_game.get("_events") as Array).is_empty():
 				_fail("seviye kazanılmadı ya da katman yok")
 			_phase = "load"
@@ -126,6 +144,21 @@ func _losing_level() -> Dictionary:
 		items.append({"id": index, "color": colors[index], "blockers": blockers.get(index, []),
 			"line": index / 6, "layer": 0 if index < 6 else 1, "slot": float(index % 6) * 0.6, "kind": index % 6})
 	return {"level": 1, "items": items, "queue": [0, 1, 2, 3], "active_baskets": 2, "rack_slots": 4, "hard": false}
+
+
+## Görünen sepet rengi kuraldaki renkle aynı olmalı (animasyon yarışı rengi bozmasın).
+func _check_basket_colors() -> void:
+	var board: LaundryBoard = _game.get("_board") as LaundryBoard
+	var views: Array = _game.get("_baskets") as Array
+	var palette: Array = _game.get("COLORS") as Array
+	var states: Array[Dictionary] = board.baskets()
+	for index: int in range(states.size()):
+		if states[index].is_empty():
+			continue
+		var expected: Color = palette[int(states[index]["color"]) % palette.size()] as Color
+		var shown: Color = (views[index] as BasketView).shown_color()
+		if not shown.is_equal_approx(expected):
+			_fail("sepet %d rengi yanlış: görünen %s, kural %s" % [index, shown.to_html(), expected.to_html()])
 
 
 func _fail(message: String) -> void:
