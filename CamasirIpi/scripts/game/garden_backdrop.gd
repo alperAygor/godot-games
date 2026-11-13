@@ -122,6 +122,11 @@ var _tints_dirty: bool = true
 static var _textures: Dictionary[String, Texture2D] = {}
 ## İş parçacığında yüklenmesi istenip henüz alınmamış yollar (çıkışta toplanır).
 static var _requested: Array[String] = []
+## Sahnede canlı olan arka planlar: önbellek budaması yalnız bunların (ve oyuncunun kayıtlı
+## seviyesinin) mekânlarını tutar. Neden: önbellek sahneler arası paylaşıldığı için önceki sahnenin
+## (ör. haritadan tekrar oynanan eski seviye, başka mevsim) dokuları hiç atılmıyordu; her yeni
+## mekân x mevsim ~4-9 MiB doku belleğini kalıcı büyütüyordu.
+static var _live: Array[GardenBackdrop] = []
 ## Bu oturumda "yeni yer" afişi gösterilmiş seviyeler (aynı seviye tekrarında yeniden çıkmasın).
 static var _banner_shown: Dictionary[int, bool] = {}
 ## Aynı amaçla "mevsim geldi" afişi gösterilmiş seviyeler.
@@ -327,6 +332,8 @@ func setup(view_size: Vector2, rack_hook_y: float) -> void:
 	var season: String = SeasonLook.season_for_level(start_level)
 	_active = _build_place(place_id, season)
 	_refresh_sets()
+	_live.append(self)
+	_prune_cache()
 	_season_fx.set_season(season, true)
 	# İlk set_level() çağrısı gelene kadar geçerli bir görünüm olsun: ana ekranda kayıtlı seviyenin
 	# mekânı ve mevsimi, şafak (ya da zorlanan aşama) paletiyle.
@@ -455,6 +462,7 @@ func _replace_place_now(place_id: String, season: String) -> void:
 	old.free_nodes()
 	_forget_textures(old, _active)
 	_refresh_sets()
+	_prune_cache()
 
 
 func _begin_place_fade(place_id: String, season: String) -> void:
@@ -696,6 +704,38 @@ func _sprite_at(parent: Node, path: String, top_left: Vector2, place: PlaceSet =
 static func _forget_textures(old: PlaceSet, keep: PlaceSet) -> void:
 	for path: String in old.paths:
 		if not keep.paths.has(path) and not path.begins_with(BG_DIR + "cloud") and path != BG_DIR + RACK_FILE + ".png":
+			_textures.erase(path)
+
+
+func _enter_tree() -> void:
+	# Yeniden ağaca girerse (taşıma) tekrar canlı sayılır; ilk kayıt `setup` içindedir.
+	if _active != null and not _live.has(self):
+		_live.append(self)
+
+
+func _exit_tree() -> void:
+	# Budama burada YAPILMAZ: ana ekran -> oyun geçişinde yeni sahne aynı dokuları hemen ister;
+	# önbellekten düşerse diskten eşzamanlı yeniden yüklenirdi. Budama yeni arka plan kurulunca olur.
+	_live.erase(self)
+
+
+## Önbellekte yalnız canlı arka planların setleri (etkin + sönen), oyuncunun kayıtlı seviyesinin
+## mekânı (ana ekran <-> oyun geçişi diskten yeniden yüklemesin) ve ortak dokular kalır.
+## Sonraki seviye için iş parçacığında istenmiş (`_requested`) dokulara dokunulmaz.
+static func _prune_cache() -> void:
+	var keep: Dictionary[String, bool] = {}
+	for path: String in _all_paths(LocationCycle.location_for(_saved_level()), SeasonLook.season_for_level(_saved_level())):
+		keep[path] = true
+	for backdrop: GardenBackdrop in _live:
+		if not is_instance_valid(backdrop):
+			continue
+		for place: PlaceSet in [backdrop._active, backdrop._leaving]:
+			if place == null:
+				continue
+			for path: String in place.paths:
+				keep[path] = true
+	for path: String in _textures.keys():
+		if not keep.has(path) and not path.begins_with(BG_DIR + "cloud") and path != BG_DIR + RACK_FILE + ".png":
 			_textures.erase(path)
 
 

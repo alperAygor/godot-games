@@ -19,6 +19,10 @@ signal back_requested()
 var phase: Phase = Phase.BOOT
 ## Son turun sonucu; Result sahnesi buradan okur.
 var last_result: Dictionary = {}
+## Arka planda (ResourceLoader iş parçacığı) yüklenmesi istenmiş sahne yolları. Neden: ilk ana
+## ekran ve ilk oyun sahnesinin yüklenmesi betik derlemesiyle birlikte masaüstünde bile ~300 ms +
+## ~125 ms sürüyordu ve Boot beklemesinin SONUNDA / ilk "Oyna"da ana iş parçacığını donduruyordu.
+var _preloading: Dictionary[String, bool] = {}
 
 
 func _ready() -> void:
@@ -38,6 +42,9 @@ func _exit_tree() -> void:
 	# Her çıkış yolunda (prob/araç `quit()` dahil) bekleyen arka plan işleri bitirilir ve
 	# paylaşılan statik önbellekler boşaltılır: çıkışta "sızıntı" uyarısı kalmasın.
 	LevelPrefetch.drain()
+	for path: String in _preloading.keys():
+		ResourceLoader.load_threaded_get(path)
+	_preloading.clear()
 	GardenBackdrop.release_textures()
 
 
@@ -54,9 +61,38 @@ func goto_scene(scene_key: StringName) -> void:
 		push_error("GameManager: bilinmeyen sahne '%s'" % scene_key)
 		return
 	get_tree().paused = false
-	var error: Error = get_tree().change_scene_to_file(path as String)
+	var packed: PackedScene = _take_preloaded(path as String)
+	var error: Error = get_tree().change_scene_to_packed(packed) if packed != null \
+		else get_tree().change_scene_to_file(path as String)
 	if error != OK:
 		push_error("GameManager: sahne yüklenemedi (%s), hata %d" % [path, error])
+
+
+## Sahneyi (ve betiklerini) arka planda yüklemeye başlar; `goto_scene` hazır olanı alır, bitmemişse
+## bekler. Zaten bellekteyse ya da istenmişse bir şey yapmaz. Yalnız kaynak yüklenir: düğüm kurulumu
+## (`_ready`) her zaman ana iş parçacığında, `goto_scene` anında olur.
+func preload_scene(scene_key: StringName) -> void:
+	var path: Variant = SCENES.get(scene_key)
+	if not (path is String) or _preloading.has(path) or ResourceLoader.has_cached(path as String):
+		return
+	if ResourceLoader.load_threaded_request(path as String, "PackedScene") == OK:
+		_preloading[path as String] = true
+
+
+## Sahne kaynağı: arka planda istendiyse oradan (gerekirse bitmesini bekler), değilse eşzamanlı yükler.
+func scene_resource(scene_key: StringName) -> PackedScene:
+	var path: Variant = SCENES.get(scene_key)
+	if not (path is String):
+		return null
+	var packed: PackedScene = _take_preloaded(path as String)
+	return packed if packed != null else load(path as String) as PackedScene
+
+
+func _take_preloaded(path: String) -> PackedScene:
+	if not _preloading.has(path):
+		return null
+	_preloading.erase(path)
+	return ResourceLoader.load_threaded_get(path) as PackedScene
 
 
 ## Geçerli sahneyi baştan kurar (dil değişince ekran yarım çevrilmiş kalmasın).

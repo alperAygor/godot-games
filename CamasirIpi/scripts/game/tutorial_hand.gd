@@ -59,6 +59,13 @@ func _init() -> void:
 	set_process(false)
 
 
+func _ready() -> void:
+	# Godot `_process` tanımlı düğümde işlemeyi hazır olunca kendiliğinden açar; `_init`teki
+	# set_process(false) böylece eziliyordu ve gizli el her kare işleniyordu. Görünmüyorsa kapalı kalır.
+	if not visible:
+		set_process(false)
+
+
 func _process(delta: float) -> void:
 	_time += delta
 	if _mode == Mode.RING and _time >= RING_CYCLE_SECONDS * float(_ring_pulses):

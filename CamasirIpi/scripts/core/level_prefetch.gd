@@ -105,16 +105,31 @@ static func _has_result(key: String) -> bool:
 	return found
 
 
-## Kullanılan anahtarı sona alır; sınır aşılırsa en eski (ve bitmiş) sonuç atılır.
+## Kullanılan anahtarı sona alır; sınır aşılırsa en eski bitmiş sonuçlar atılır.
+## Neden önce biten görevler toplanır: hiç `take` edilmeyen bir istek (ör. tekrar oynanan seviyenin
+## "sonraki"si, yarıda bırakılan zen tahtası) `_tasks`ta kalıp en eski sırada evden çıkarmayı
+## sonsuza dek kilitliyordu; önbellek ve görev tablosu oturum boyunca sınırsız büyüyordu.
 static func _touch(key: String) -> void:
+	_reap_completed()
 	_order.erase(key)
 	_order.append(key)
-	while _order.size() > MAX_CACHED:
-		var oldest: String = _order[0]
+	var index: int = 0
+	while _order.size() > MAX_CACHED and index < _order.size():
+		var oldest: String = _order[index]
 		if _tasks.has(oldest):
-			# Hâlâ üretiliyor: atılmaz (bitince alınacak); sınır geçici olarak aşılabilir.
-			break
-		_order.pop_front()
+			# Hâlâ üretiliyor: atılmaz (bitince alınacak); sıradakine bakılır.
+			index += 1
+			continue
+		_order.remove_at(index)
 		_mutex.lock()
 		_results.erase(oldest)
 		_mutex.unlock()
+
+
+## Bitmiş görevleri havuzdan bırakır (sonuçları `_results`ta kalır). Yalnız ana iş parçacığı.
+## `wait_for_task_completion` bitmiş görevde beklemez; Godot görev kaydını ancak bununla siler.
+static func _reap_completed() -> void:
+	for key: String in _tasks.keys():
+		if WorkerThreadPool.is_task_completed(_tasks[key]):
+			WorkerThreadPool.wait_for_task_completion(_tasks[key])
+			_tasks.erase(key)

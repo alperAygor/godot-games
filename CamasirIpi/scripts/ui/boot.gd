@@ -19,6 +19,10 @@ func _ready() -> void:
 	LevelPrefetch.request_level(Progress.level())
 	# Bahçe dokuları da beklemede paralel yüklenir: ilk ekran (ana ekran/oyun) daha çabuk açılır.
 	GardenBackdrop.warm_up()
+	# İlk ekran ve oyun sahnesi (betik derlemesiyle birlikte) beklemede iş parçacığında yüklenir:
+	# bekleme bitince ve ilk "Oyna"da ana iş parçacığı derleme için donmasın.
+	GameManager.preload_scene(&"home")
+	GameManager.preload_scene(&"game")
 	await get_tree().create_timer(HOLD_SECONDS).timeout
 	# Kayıtlı ses/müzik ayarı ilk sahneden önce uygulanır; ilk açılış menüsüz doğrudan oyuna girer.
 	UiData.apply_audio_settings()
