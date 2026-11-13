@@ -330,6 +330,7 @@ func _play_event(event: Dictionary) -> void:
 			flying.landed.connect(_on_basket_landed.bind(index, stack_index, flying), CONNECT_ONE_SHOT)
 			await _wait(Motion.stagger(_events.size()))
 		LaundryBoard.EVENT_BASKET_DONE:
+			RetentionHooks.basket_done(event, _basket_items[int(event["basket"])].size())  # [RETENTION]
 			await _complete_basket(int(event["basket"]), int(event.get(RunStats.EVENT_CHAIN_KEY, 1)))
 		RunStats.EVENT_CHAIN_BREAK:
 			_hud.fade_chain()
@@ -532,6 +533,7 @@ func _start_level() -> void:
 		else (debug_level if not debug_level.is_empty() else LevelPrefetch.take_level(_level_number))  # [DAILY]
 	_board = LaundryBoard.new(_level)
 	_eco.on_level_start(_level_number, _board)
+	RetentionHooks.level_started(_level_number, not _daily_level.is_empty())  # [RETENTION]
 	_hud.set_level(_level_number)
 	if not _daily_level.is_empty():
 		_hud.set_title(UiStrings.daily_title())
@@ -758,6 +760,7 @@ func _hide_overlay() -> void:
 
 
 func _show_win() -> void:
+	RetentionHooks.level_won(_level_number, _run_stats, _board, not _daily_level.is_empty())  # [RETENTION]
 	if not _daily_level.is_empty():  # [DAILY] normal ilerleme/ekonomi atlanır
 		_show_daily_end(true)
 		return

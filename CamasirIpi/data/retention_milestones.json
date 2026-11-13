@@ -1,0 +1,19 @@
+{
+  "visible": 5,
+  "list": [
+    { "level": 5,  "reward": { "coins": 30 } },
+    { "level": 10, "reward": { "coins": 50, "stars": 5, "booster": "any", "count": 1 } },
+    { "level": 15, "reward": { "coins": 50 } },
+    { "level": 20, "reward": { "coins": 70, "stars": 8, "booster": "any", "count": 1 } },
+    { "level": 30, "reward": { "coins": 90, "stars": 10, "booster": "any", "count": 1 } },
+    { "level": 40, "reward": { "coins": 110, "stars": 12, "booster": "any", "count": 2 } },
+    { "level": 50, "reward": { "coins": 180, "stars": 20, "booster": "any", "count": 3 } }
+  ],
+  "repeat": {
+    "from": 60,
+    "every": 10,
+    "reward": { "coins": 120, "stars": 8, "booster": "any", "count": 1 },
+    "big_every": 50,
+    "big_reward": { "coins": 250, "stars": 20, "booster": "any", "count": 3 }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "unlock_level": 10,
+  "tier_rewards": [
+    { "coins": 25 },
+    { "coins": 40 },
+    { "coins": 30, "booster": "any", "count": 1 },
+    { "coins": 60, "stars": 3 },
+    { "coins": 100, "stars": 5, "booster": "any", "count": 2 }
+  ],
+  "themes": [
+    { "id": "blue", "event": "basket_completed", "amount_key": "count", "where": { "equals": { "color": 1 } },
+      "icon": "lucide/shirt", "tint": "3e8ef7", "targets": [12, 30, 55, 85, 120] },
+    { "id": "chain", "event": "basket_completed", "amount": 1, "where": { "min": { "chain": 2 } },
+      "icon": "lucide/flame", "tint": "f5894a", "targets": [4, 10, 18, 28, 40] },
+    { "id": "red", "event": "basket_completed", "amount_key": "count", "where": { "equals": { "color": 0 } },
+      "icon": "lucide/shirt", "tint": "e5484d", "targets": [12, 30, 55, 85, 120] },
+    { "id": "baskets", "event": "basket_completed", "amount": 1,
+      "icon": "lucide/shopping-bag", "tint": "38a276", "targets": [10, 25, 45, 70, 100] },
+    { "id": "green", "event": "basket_completed", "amount_key": "count", "where": { "equals": { "color": 3 } },
+      "icon": "lucide/shirt", "tint": "3dbb6e", "targets": [12, 30, 55, 85, 120] },
+    { "id": "stars", "event": "level_won", "amount_key": "stars",
+      "icon": "lucide/star", "tint": "f2b63d", "targets": [8, 20, 36, 55, 80] },
+    { "id": "yellow", "event": "basket_completed", "amount_key": "count", "where": { "equals": { "color": 2 } },
+      "icon": "lucide/shirt", "tint": "f5c02e", "targets": [12, 30, 55, 85, 120] },
+    { "id": "purple", "event": "basket_completed", "amount_key": "count", "where": { "equals": { "color": 4 } },
+      "icon": "lucide/shirt", "tint": "9b59d0", "targets": [12, 30, 55, 85, 120] }
+  ]
+}

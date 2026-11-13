@@ -1,0 +1,11 @@
+{
+  "booster_fallback_coins": 40,
+  "notify": {
+    "morning_hour": 9,
+    "idle_hours": 24,
+    "quiet_from": 22,
+    "quiet_to": 8,
+    "weekly_hour": 18,
+    "weekly_weekday": 5
+  }
+}
