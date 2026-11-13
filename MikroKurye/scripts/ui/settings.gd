@@ -6,8 +6,8 @@ extends Control
 ## F7.6b: iOS tarzı toggle (toggle_on/off izleri) + ses ikonu; renk/ölçü
 ## `UiTheme` (data/theme.json) token'larından okunur.
 
-const BACK_ICON_SIZE: int = 28
-const SOUND_ICON_SIZE: float = 32.0
+const BACK_ICON_SIZE: int = 20
+const SOUND_ICON_SIZE: float = 24.0
 const TOGGLE_ON: String = "res://assets/ui_icons/toggle_on.svg"
 const TOGGLE_OFF: String = "res://assets/ui_icons/toggle_off.svg"
 

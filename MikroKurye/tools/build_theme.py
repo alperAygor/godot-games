@@ -93,11 +93,11 @@ def build(theme):
     # Birincil: turkuaz pill. Basılı durumda içerik hafif aşağı kayar.
     blocks.append(stylebox("SB_primary", palette["primary"], palette["primary_dark"],
                            radius_pill, px, py, border,
-                           shadow_hex=palette["primary_dark"], shadow_opacity=0.28,
+                           shadow_hex=palette["primary_dark"], shadow_opacity=0.12,
                            shadow_size=shadow_size, shadow_offset_y=shadow_offset_y))
     blocks.append(stylebox("SB_primary_hover", palette["primary"], palette["primary_dark"],
                            radius_pill, px, py, border,
-                           shadow_hex=palette["primary_dark"], shadow_opacity=0.34,
+                           shadow_hex=palette["primary_dark"], shadow_opacity=0.16,
                            shadow_size=shadow_size, shadow_offset_y=shadow_offset_y))
     blocks.append(stylebox("SB_primary_pressed", palette["primary_dark"], palette["primary_dark"],
                            radius_pill, px, py + 4, border,
@@ -107,30 +107,25 @@ def build(theme):
                            radius_pill, px, py, border, bg_alpha=0.45, border_alpha=0.4))
 
     # İkincil: beyaz kart, ince iç çizgi; ikincil eylemler.
-    blocks.append(stylebox("SB_secondary", palette["surface"], palette["text"],
-                           radius_pill, px, py, border, bg_alpha=0.92, border_alpha=0.10,
-                           shadow_hex=palette["text"], shadow_opacity=shadow_opacity,
-                           shadow_size=shadow_size, shadow_offset_y=shadow_offset_y))
-    blocks.append(stylebox("SB_secondary_hover", palette["surface"], palette["text"],
-                           radius_pill, px, py, border, bg_alpha=1.0, border_alpha=0.16,
-                           shadow_hex=palette["text"], shadow_opacity=shadow_opacity + 0.03,
-                           shadow_size=shadow_size, shadow_offset_y=shadow_offset_y))
-    blocks.append(stylebox("SB_secondary_pressed", palette["surface_soft"], palette["text"],
-                           radius_pill, px, py + 4, border, bg_alpha=1.0, border_alpha=0.16,
-                           shadow_hex=palette["text"], shadow_opacity=0.05,
-                           shadow_size=int(shadow_size * 0.6), shadow_offset_y=int(shadow_offset_y * 0.4)))
-    blocks.append(stylebox("SB_secondary_disabled", palette["surface"], palette["text"],
-                           radius_pill, px, py, border, bg_alpha=0.5, border_alpha=0.05))
+    # Modern düz görünüm: çizgi/gölge yok, yalnız soluk dolgu.
+    blocks.append(stylebox("SB_secondary", palette["text"], palette["text"],
+                           radius_pill, px, py, border, bg_alpha=0.07, border_alpha=0.0))
+    blocks.append(stylebox("SB_secondary_hover", palette["text"], palette["text"],
+                           radius_pill, px, py, border, bg_alpha=0.11, border_alpha=0.0))
+    blocks.append(stylebox("SB_secondary_pressed", palette["text"], palette["text"],
+                           radius_pill, px, py + 3, border, bg_alpha=0.15, border_alpha=0.0))
+    blocks.append(stylebox("SB_secondary_disabled", palette["text"], palette["text"],
+                           radius_pill, px, py, border, bg_alpha=0.04, border_alpha=0.0))
 
     # Kart: beyaz %90, buyuk radius, cok ince golge + ic cizgi.
     blocks.append(stylebox("SB_card", palette["surface"], palette["text"],
-                           radius, px_card, px_card, border, bg_alpha=0.90, border_alpha=0.08,
+                           radius, px_card, px_card, border, bg_alpha=0.96, border_alpha=0.0,
                            shadow_hex=palette["text"], shadow_opacity=shadow_opacity,
                            shadow_size=shadow_size, shadow_offset_y=shadow_offset_y))
 
     # Cip (hap): kucuk bilgi kapsulu (cuzdan, odul).
-    blocks.append(stylebox("SB_chip", palette["surface"], palette["text"],
-                           radius_chip, px_card, int(py * 0.7), border, bg_alpha=0.92, border_alpha=0.08))
+    blocks.append(stylebox("SB_chip", palette["text"], palette["text"],
+                           radius_chip, px_card, int(py * 0.7), border, bg_alpha=0.06, border_alpha=0.0))
 
     # Ilerleme cubugu yolu ve dolgusu (dolgu rengi HUD'da canli degisir).
     blocks.append(stylebox("SB_bar_track", palette["text"], palette["text"],

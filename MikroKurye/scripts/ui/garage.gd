@@ -10,12 +10,12 @@ extends Control
 const UPGRADES_TABLE: String = "upgrades"
 const BUTTON_PREFIX: String = "UpgradeButton_"
 const TRY_PREFIX: String = "TryButton_"
-const BACK_ICON_SIZE: int = 28
-const WALLET_ICON_SIZE: float = 26.0
-const CATEGORY_ICON_SIZE: float = 32.0
-const LOCK_ICON_SIZE: float = 28.0
-const PIP_SIZE: float = 14.0
-const CHIP_ICON_SIZE: float = 22.0
+const BACK_ICON_SIZE: int = 20
+const WALLET_ICON_SIZE: float = 20.0
+const CATEGORY_ICON_SIZE: float = 28.0
+const LOCK_ICON_SIZE: float = 20.0
+const PIP_SIZE: float = 11.0
+const CHIP_ICON_SIZE: float = 20.0
 const NAME_FONT_SIZE: int = 30
 const EFFECT_FONT_SIZE: int = 24
 const PRICE_FONT_SIZE: int = 26
@@ -132,6 +132,7 @@ func _make_card(category: String) -> PanelContainer:
 	icon.texture = Icons.texture(_category_icon(category))
 	icon.modulate = UiTheme.color("primary_dark")
 	icon.custom_minimum_size = Vector2(CATEGORY_ICON_SIZE, CATEGORY_ICON_SIZE)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	header.add_child(icon)
@@ -147,6 +148,7 @@ func _make_card(category: String) -> PanelContainer:
 	lock.texture = Icons.texture("lucide/lock")
 	lock.modulate = UiTheme.color("text_muted")
 	lock.custom_minimum_size = Vector2(LOCK_ICON_SIZE, LOCK_ICON_SIZE)
+	lock.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	lock.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	lock.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	lock.visible = false
@@ -301,6 +303,7 @@ func _make_price_chip(icon_name: String, tint: Color, amount: int) -> PanelConta
 	icon.texture = Icons.texture(icon_name)
 	icon.modulate = tint
 	icon.custom_minimum_size = Vector2(CHIP_ICON_SIZE, CHIP_ICON_SIZE)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	inner.add_child(icon)

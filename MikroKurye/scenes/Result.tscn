@@ -36,7 +36,7 @@ theme_override_constants/margin_bottom = 56
 layout_mode = 2
 
 [node name="Column" type="VBoxContainer" parent="Safe/Center"]
-custom_minimum_size = Vector2(684, 0)
+custom_minimum_size = Vector2(616, 0)
 layout_mode = 2
 theme_override_constants/separation = 20
 
@@ -51,13 +51,13 @@ theme_override_constants/separation = 18
 [node name="Title" type="Label" parent="Safe/Center/Column/Card/CardColumn"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 44
 text = "Teslimat Tamamlandı"
 horizontal_alignment = 1
 
 [node name="Stars" type="HBoxContainer" parent="Safe/Center/Column/Card/CardColumn"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 102)
+custom_minimum_size = Vector2(0, 87)
 layout_mode = 2
 theme_override_constants/separation = 16
 alignment = 1
@@ -85,7 +85,8 @@ theme_override_constants/separation = 12
 
 [node name="GoldRewardIcon" type="TextureRect" parent="Safe/Center/Column/Card/CardColumn/RewardRow/GoldRewardChip/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(31, 35)
+custom_minimum_size = Vector2(22, 25)
+expand_mode = 1
 layout_mode = 2
 size_flags_vertical = 4
 stretch_mode = 5
@@ -93,7 +94,7 @@ stretch_mode = 5
 [node name="GoldRewardLabel" type="Label" parent="Safe/Center/Column/Card/CardColumn/RewardRow/GoldRewardChip/Row"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 28
 text = "0"
 
 [node name="ScrapRewardChip" type="PanelContainer" parent="Safe/Center/Column/Card/CardColumn/RewardRow"]
@@ -106,7 +107,8 @@ theme_override_constants/separation = 12
 
 [node name="ScrapRewardIcon" type="TextureRect" parent="Safe/Center/Column/Card/CardColumn/RewardRow/ScrapRewardChip/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(31, 35)
+custom_minimum_size = Vector2(22, 25)
+expand_mode = 1
 layout_mode = 2
 size_flags_vertical = 4
 stretch_mode = 5
@@ -114,40 +116,40 @@ stretch_mode = 5
 [node name="ScrapRewardLabel" type="Label" parent="Safe/Center/Column/Card/CardColumn/RewardRow/ScrapRewardChip/Row"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 28
 text = "0"
 
 [node name="WalletLabel" type="Label" parent="Safe/Center/Column"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 29
+theme_override_font_sizes/font_size = 27
 text = "Cüzdan: 0 Altın · 0 Hurda"
 horizontal_alignment = 1
 
 [node name="DoubleRewardButton" type="Button" parent="Safe/Center/Column"]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(684, 102)
+custom_minimum_size = Vector2(616, 87)
 layout_mode = 2
 text = "Ödülü 2× Yap"
 
 [node name="GoldenBoxButton" type="Button" parent="Safe/Center/Column"]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(684, 96)
+custom_minimum_size = Vector2(616, 82)
 layout_mode = 2
 theme_type_variation = &"SecondaryButton"
 text = "Altın Kutu Bonusu"
 
 [node name="RetryButton" type="Button" parent="Safe/Center/Column"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(684, 102)
+custom_minimum_size = Vector2(616, 87)
 layout_mode = 2
 text = "Tekrar Oyna"
 
 [node name="MenuButton" type="Button" parent="Safe/Center/Column"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(684, 90)
+custom_minimum_size = Vector2(616, 76)
 layout_mode = 2
 theme_type_variation = &"SecondaryButton"
 text = "Ana Menü"

@@ -42,7 +42,7 @@ theme_override_constants/separation = 24
 
 [node name="BackButton" type="Button" parent="Safe/Column/Header"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(176, 96)
+custom_minimum_size = Vector2(158, 82)
 layout_mode = 2
 theme_type_variation = &"SecondaryButton"
 text = "Geri"
@@ -51,7 +51,7 @@ text = "Geri"
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 44
 text = "Garaj"
 vertical_alignment = 1
 
@@ -70,7 +70,8 @@ theme_override_constants/separation = 14
 
 [node name="GoldIcon" type="TextureRect" parent="Safe/Column/WalletBar/GoldChip/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(31, 35)
+custom_minimum_size = Vector2(22, 25)
+expand_mode = 1
 layout_mode = 2
 size_flags_vertical = 4
 stretch_mode = 5
@@ -78,7 +79,7 @@ stretch_mode = 5
 [node name="GoldLabel" type="Label" parent="Safe/Column/WalletBar/GoldChip/Row"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 29
+theme_override_font_sizes/font_size = 27
 text = "0"
 
 [node name="ScrapChip" type="PanelContainer" parent="Safe/Column/WalletBar"]
@@ -91,7 +92,8 @@ theme_override_constants/separation = 14
 
 [node name="ScrapIcon" type="TextureRect" parent="Safe/Column/WalletBar/ScrapChip/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(31, 35)
+custom_minimum_size = Vector2(22, 25)
+expand_mode = 1
 layout_mode = 2
 size_flags_vertical = 4
 stretch_mode = 5
@@ -99,7 +101,7 @@ stretch_mode = 5
 [node name="ScrapLabel" type="Label" parent="Safe/Column/WalletBar/ScrapChip/Row"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 29
+theme_override_font_sizes/font_size = 27
 text = "0"
 
 [node name="Hint" type="Label" parent="Safe/Column"]

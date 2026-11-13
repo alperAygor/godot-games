@@ -66,6 +66,9 @@ var _last_cargo: float = MAX_PERCENT
 const MINIMAL_FONT_SIZE: int = 26
 const MINIMAL_OUTLINE_SIZE: int = 7
 const MINIMAL_OUTLINE_ALPHA: float = 0.85
+const BAR_TRACK_ALPHA: float = 0.55
+const BANNER_ALPHA: float = 0.72
+const BANNER_PADDING: float = 24.0
 
 
 func _make_minimal() -> void:
@@ -77,6 +80,23 @@ func _make_minimal() -> void:
 	var icons: Array[TextureRect] = [_cargo_icon, _battery_icon, _run_icon, _bank_icon]
 	for icon: TextureRect in icons:
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	# Koyu yarı saydam yol: açık/koyu her zeminde çubuk görünür kalır.
+	var track: StyleBoxFlat = StyleBoxFlat.new()
+	track.bg_color = UiTheme.color("text", BAR_TRACK_ALPHA)
+	var track_radius: int = int(UiTheme.metric("radius_pill", 120.0))
+	track.set_corner_radius_all(track_radius)
+	_cargo_bar.add_theme_stylebox_override("background", track)
+	_battery_bar.add_theme_stylebox_override("background", track)
+	# Duyuru bandı: koyu yarı saydam zemin + beyaz yazı (açık zeminde de okunur).
+	var banner_box: StyleBoxFlat = StyleBoxFlat.new()
+	banner_box.bg_color = UiTheme.color("text", BANNER_ALPHA)
+	banner_box.set_corner_radius_all(int(UiTheme.metric("radius_chip", 32.0)))
+	banner_box.content_margin_left = BANNER_PADDING
+	banner_box.content_margin_right = BANNER_PADDING
+	banner_box.content_margin_top = BANNER_PADDING * 0.5
+	banner_box.content_margin_bottom = BANNER_PADDING * 0.5
+	_banner.add_theme_stylebox_override("panel", banner_box)
+	_banner_text.add_theme_color_override("font_color", Color.WHITE)
 	var labels: Array[Label] = [_cargo_percent, _battery_percent, _run_label, _bank_label]
 	for label: Label in labels:
 		label.add_theme_font_size_override("font_size", MINIMAL_FONT_SIZE)
@@ -115,9 +135,9 @@ func _ready() -> void:
 	_decline_button.text = UiStrings.REVIVE_DECLINE
 	_recharge_button.text = UiStrings.RECHARGE
 	_recharge_button.tooltip_text = UiStrings.RECHARGE_HINT
-	Icons.apply(_revive_button, "lucide/circle-play", UiTheme.color("on_primary"), 28)
-	Icons.apply(_decline_button, "lucide/x", UiTheme.color("on_surface"), 26)
-	Icons.apply(_recharge_button, "lucide/zap", UiTheme.color("on_primary"), 26)
+	Icons.apply(_revive_button, "lucide/circle-play", UiTheme.color("on_primary"), 20)
+	Icons.apply(_decline_button, "lucide/x", UiTheme.color("on_surface"), 20)
+	Icons.apply(_recharge_button, "lucide/zap", UiTheme.color("on_primary"), 20)
 	_revive_button.add_theme_constant_override("h_separation", 14)
 	_decline_button.add_theme_constant_override("h_separation", 12)
 	_recharge_button.add_theme_constant_override("h_separation", 12)

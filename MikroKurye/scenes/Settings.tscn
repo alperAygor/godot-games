@@ -42,7 +42,7 @@ theme_override_constants/separation = 24
 
 [node name="BackButton" type="Button" parent="Safe/Column/Header"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(176, 96)
+custom_minimum_size = Vector2(158, 82)
 layout_mode = 2
 theme_type_variation = &"SecondaryButton"
 text = "Geri"
@@ -51,7 +51,7 @@ text = "Geri"
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 44
 text = "Ayarlar"
 vertical_alignment = 1
 
@@ -66,13 +66,14 @@ theme_type_variation = &"CardPanel"
 layout_mode = 2
 
 [node name="SoundRow" type="HBoxContainer" parent="Safe/Column/SoundCard"]
-custom_minimum_size = Vector2(0, 128)
+custom_minimum_size = Vector2(0, 109)
 layout_mode = 2
 theme_override_constants/separation = 28
 
 [node name="SoundIcon" type="TextureRect" parent="Safe/Column/SoundCard/SoundRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(34, 38)
+custom_minimum_size = Vector2(24, 27)
+expand_mode = 1
 layout_mode = 2
 size_flags_vertical = 4
 stretch_mode = 5
@@ -81,13 +82,13 @@ stretch_mode = 5
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 29
 text = "Ses"
 vertical_alignment = 1
 
 [node name="SoundToggle" type="CheckButton" parent="Safe/Column/SoundCard/SoundRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(272, 96)
+custom_minimum_size = Vector2(245, 82)
 layout_mode = 2
 size_flags_vertical = 4
 button_pressed = true

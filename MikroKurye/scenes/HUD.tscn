@@ -35,14 +35,14 @@ theme_override_constants/separation = 8
 
 [node name="CargoIcon" type="TextureRect" parent="Root/TopHaps/CargoHap/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(30, 30)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
 size_flags_vertical = 4
 stretch_mode = 5
 
 [node name="CargoHealthBar" type="ProgressBar" parent="Root/TopHaps/CargoHap/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(230, 12)
+custom_minimum_size = Vector2(230, 14)
 layout_mode = 2
 size_flags_vertical = 4
 max_value = 100.0
@@ -69,14 +69,14 @@ theme_override_constants/separation = 8
 
 [node name="BatteryIcon" type="TextureRect" parent="Root/TopHaps/BatteryHap/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(30, 30)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
 size_flags_vertical = 4
 stretch_mode = 5
 
 [node name="BatteryBar" type="ProgressBar" parent="Root/TopHaps/BatteryHap/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(230, 12)
+custom_minimum_size = Vector2(230, 14)
 layout_mode = 2
 size_flags_vertical = 4
 max_value = 100.0
@@ -104,7 +104,7 @@ theme_override_constants/separation = 8
 
 [node name="RunIcon" type="TextureRect" parent="Root/TopHaps/RunHap/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(30, 30)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
 size_flags_vertical = 4
 stretch_mode = 5
@@ -128,7 +128,7 @@ theme_override_constants/separation = 8
 
 [node name="BankIcon" type="TextureRect" parent="Root/TopHaps/BankHap/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(30, 30)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
 size_flags_vertical = 4
 stretch_mode = 5
@@ -217,13 +217,13 @@ autowrap_mode = 2
 
 [node name="ReviveButton" type="Button" parent="Root/RevivePanel/Column"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(600, 104)
+custom_minimum_size = Vector2(500, 80)
 layout_mode = 2
 text = "Reklam İzle ve Devam Et"
 
 [node name="DeclineButton" type="Button" parent="Root/RevivePanel/Column"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(600, 88)
+custom_minimum_size = Vector2(500, 68)
 layout_mode = 2
 theme_type_variation = &"SecondaryButton"
 text = "Bu Turu Bitir"

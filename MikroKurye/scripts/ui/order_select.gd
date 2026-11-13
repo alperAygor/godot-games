@@ -10,13 +10,13 @@ const CARGO_TABLE: String = "cargo"
 const CARD_PREFIX: String = "CargoCard_"
 const CARGO_IMAGE_DIR: String = "res://assets/ui/cargo_"
 const CARGO_IMAGE_SUFFIX: String = ".png"
-const BACK_ICON_SIZE: int = 28
-const CARD_MIN_HEIGHT: float = 230.0
-const CARD_IMAGE_SIZE: float = 140.0
+const BACK_ICON_SIZE: int = 20
+const CARD_MIN_HEIGHT: float = 190.0
+const CARD_IMAGE_SIZE: float = 120.0
 const NAME_FONT_SIZE: int = 32
 const DOTS_TOTAL: int = 3
-const DOT_SIZE: float = 14.0
-const CHIP_ICON_SIZE: float = 22.0
+const DOT_SIZE: float = 11.0
+const CHIP_ICON_SIZE: float = 20.0
 const REWARD_FONT_SIZE: int = 26
 const CARD_PADDING: int = 24
 const CARD_SEPARATION: int = 28
@@ -91,6 +91,7 @@ func _make_card(cargo_id: String, profile: Dictionary) -> Button:
 
 	var image := TextureRect.new()
 	image.custom_minimum_size = Vector2(CARD_IMAGE_SIZE, CARD_IMAGE_SIZE)
+	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	image.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -156,6 +157,7 @@ func _make_reward_chip(icon_name: String, tint: Color, amount: int) -> PanelCont
 	icon.texture = Icons.texture(icon_name)
 	icon.modulate = tint
 	icon.custom_minimum_size = Vector2(CHIP_ICON_SIZE, CHIP_ICON_SIZE)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -182,13 +184,13 @@ func _cargo_texture(cargo_id: String) -> Texture2D:
 func _apply_card_style(card: Button) -> void:
 	var radius: int = int(UiTheme.metric("radius", 28.0))
 	card.add_theme_stylebox_override("normal",
-		UiTheme.stylebox("surface", "text", radius, 0.90, 0.08, true))
+		UiTheme.stylebox("surface", "text", radius, 0.96, 0.0, false))
 	card.add_theme_stylebox_override("hover",
-		UiTheme.stylebox("surface", "primary", radius, 1.0, 0.55, true))
+		UiTheme.stylebox("primary", "primary", radius, 0.12, 0.0, false))
 	card.add_theme_stylebox_override("pressed",
-		UiTheme.stylebox("surface_soft", "primary", radius, 1.0, 0.65, true))
+		UiTheme.stylebox("primary", "primary", radius, 0.2, 0.0, false))
 	card.add_theme_stylebox_override("focus",
-		UiTheme.stylebox("surface", "text", radius, 0.90, 0.08, false))
+		UiTheme.stylebox("surface", "text", radius, 0.96, 0.0, false))
 	card.add_theme_color_override("font_color", UiTheme.color("text"))
 	card.add_theme_color_override("font_hover_color", UiTheme.color("text"))
 	card.add_theme_color_override("font_pressed_color", UiTheme.color("text"))
