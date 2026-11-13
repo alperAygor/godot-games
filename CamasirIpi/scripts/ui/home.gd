@@ -44,6 +44,13 @@ var _flames: Array[TextureRect] = []
 var _sheet: Sheet = null
 
 
+const SIDE_BUTTON_STEP: float = 132.0
+const BADGE_SIZE: float = 22.0
+const BADGE_COLOR: Color = Color("f2705f")
+var _daily_button: UiIconButton = null
+var _calendar_button: UiIconButton = null
+
+
 func _ready() -> void:
 	GameManager.set_phase(GameManager.Phase.MENU)
 	GameManager.back_requested.connect(_on_back)
@@ -136,6 +143,32 @@ func _build_counters(view: Vector2, insets: Vector4) -> void:
 		+ (UiKit.MIN_TOUCH - UiIconButton.DISC_DIAMETER) * 0.5, row_top)
 	settings.pressed.connect(_open_settings)
 	add_child(settings)
+	# Günlük bulmaca ve günlük ödül takvimi: ayarların altında iki küçük düğme; bugün için
+	# alınacak bir şey varsa köşesinde küçük bir nokta yanar.
+	_daily_button = _side_button("lucide/trophy", settings.position + Vector2(0.0, SIDE_BUTTON_STEP),
+		func() -> void: DailyPuzzle.open_card(self))
+	_calendar_button = _side_button("lucide/clock", settings.position + Vector2(0.0, SIDE_BUTTON_STEP * 2.0),
+		func() -> void: DailyCalendar.open(self))
+
+
+func _side_button(icon: String, at: Vector2, action: Callable) -> UiIconButton:
+	var button: UiIconButton = UiIconButton.new()
+	button.setup(icon)
+	button.position = at
+	button.pressed.connect(action)
+	add_child(button)
+	var dot: Panel = Panel.new()
+	var box: StyleBoxFlat = StyleBoxFlat.new()
+	box.bg_color = BADGE_COLOR
+	box.set_corner_radius_all(int(BADGE_SIZE))
+	box.anti_aliasing = true
+	dot.add_theme_stylebox_override("panel", box)
+	dot.size = Vector2(BADGE_SIZE, BADGE_SIZE)
+	dot.position = Vector2(UiIconButton.DISC_DIAMETER - BADGE_SIZE, 0.0)
+	dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dot.name = "Badge"
+	button.add_child(dot)
+	return button
 
 
 func _build_play(view: Vector2) -> void:
@@ -194,6 +227,9 @@ func _build_tabs(view: Vector2, insets: Vector4) -> void:
 
 
 func _refresh() -> void:
+	if _daily_button != null:
+		(_daily_button.get_node("Badge") as Control).visible = DailyPuzzle.available_today()
+		(_calendar_button.get_node("Badge") as Control).visible = DailyStore.calendar_available()
 	_coin_chip.set_value(UiData.coins())
 	_star_chip.set_value(UiData.stars())
 	UiKit.set_button_text(_play_button, UiStrings.LEVEL % UiData.level())

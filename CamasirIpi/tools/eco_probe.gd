@@ -31,6 +31,9 @@ var _failed: bool = false
 var _started: bool = false
 var _game: Node = null
 var _provider: InstantProvider = InstantProvider.new()
+## Her kazançta ustalık kurallarından (3 yıldız bonusu + zincir bonusu) beklenen ödül/yıldız toplamı.
+var _expected_coins: int = 0
+var _expected_stars: int = 0
 
 
 func _process(_delta: float) -> bool:
@@ -55,7 +58,13 @@ func _run() -> void:
 		await _load_game(progress.call("level"))
 		_check(int(_board().rack_slots()) == 4, "seri 3'ten önce askı 4 olmalı (kazanç %d)" % index)
 		await _win_current_level()
-	_check(int(progress.call("coins")) == 60, "3 galibiyet = 60 jeton, gelen %d" % int(progress.call("coins")))
+	# Ödül artık temel (20) + kusursuz bonusu + zincir bonusudur; beklenen, oyunun RunStats'ından hesaplanır.
+	_check(int(progress.call("coins")) == _expected_coins,
+		"3 galibiyet = %d jeton (temel+ustalık), gelen %d" % [_expected_coins, int(progress.call("coins"))])
+	_check(int(progress.call("stars")) == _expected_stars,
+		"yıldızlar derecelerin toplamı olmalı: %d, gelen %d" % [_expected_stars, int(progress.call("stars"))])
+	_check(_expected_coins >= 60, "ustalık ödülü temelin altına inemez")
+	_check(int(progress.call("best_stars", 1)) >= 1 and int(progress.call("best_stars", 3)) >= 1, "en iyi yıldız kaydı")
 	_check(int(progress.call("streak")) == 3, "seri 3 olmalı")
 	_check(int(progress.call("level")) == 4, "seviye 4 olmalı")
 	_check(bool(progress.call("streak_extra_slot")), "seri bonusu açık olmalı")
@@ -66,8 +75,11 @@ func _run() -> void:
 
 	# --- 2x jeton: ödüllü reklam sonrası ödül ikiye katlanır ---
 	var coins_before: int = int(progress.call("coins"))
+	var reward_before: int = _expected_coins
 	await _win_current_level(true)
-	_check(int(progress.call("coins")) == coins_before + 20 + 20, "2x jeton ödülü: %d" % int(progress.call("coins")))
+	var total_reward: int = _expected_coins - reward_before
+	_check(int(progress.call("coins")) == coins_before + total_reward * 2,
+		"2x jeton ödülü TOPLAMI ikiler: %d" % int(progress.call("coins")))
 	_check(AnalyticsLog.count("rewarded_watched") == 1, "izlenen reklam kaydı")
 
 	# --- Kayıp: seri sıfırlanır, devam seviye başına 1 kez ---
@@ -177,8 +189,15 @@ func _win_current_level(double: bool = false) -> void:
 		await _frames(4)
 	await _wait_overlay()
 	_check(_board().is_won(), "seviye kazanılmalı")
+	var stats: RunStats = _game.get("_run_stats") as RunStats
+	var balance: Dictionary = ProgressData.load_balance()
+	var rating: int = StarRating.rate_stats(stats, _board().item_ids().size(), balance)
+	var breakdown: Dictionary = StarRating.breakdown(int(balance["win_coins"]), rating, stats.best_chain, balance)
+	var reward: int = int(breakdown["total"])
+	_expected_coins += reward
+	_expected_stars += rating
 	if double:
-		_game.call("_on_double_coins", Button.new(), 20)
+		_game.call("_on_double_coins", Button.new(), reward)
 		await _frames(SETTLE_FRAMES)
 	# Devam: geçiş reklamı kararı burada işler (sağlayıcı anında biter).
 	var flow: Node = _game.get("_eco") as Node

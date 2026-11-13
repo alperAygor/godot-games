@@ -33,11 +33,32 @@ func on_level_start(level_number: int, board: LaundryBoard) -> bool:
 	return bonus
 
 
-## Kazanç: ilerlemeyi işler. Dönen sözlük `Progress.complete_level` çıktısıdır.
-func on_win(level_number: int, board: LaundryBoard, hard: bool) -> Dictionary:
-	AnalyticsLog.level_win(level_number, _elapsed_seconds(), board.moves(),
-		board.rack_count(), board.remaining_on_line())
-	return Progress.complete_level(hard)
+## Kazanç: ilerlemeyi işler. Dönen sözlük `Progress.complete_level` çıktısıdır; `stats` verilirse
+## ustalık hesabı da yapılır ve sözlüğe {"rating","base_coins","perfect_bonus","chain_bonus",
+## "best_chain","rack_max","total_coins"} eklenir. `coins` her durumda ÖDENEN toplamdır.
+func on_win(level_number: int, board: LaundryBoard, hard: bool, stats: RunStats = null) -> Dictionary:
+	if stats == null:
+		AnalyticsLog.level_win(level_number, _elapsed_seconds(), board.moves(),
+			board.rack_count(), board.remaining_on_line())
+		return Progress.complete_level(hard)
+	var balance: Dictionary = Progress.balance_table()
+	var items: int = board.item_ids().size()
+	var rating: int = StarRating.rate_stats(stats, items, balance)
+	var base_coins: int = ProgressData.to_count(balance.get("hard_win_coins" if hard else "win_coins"))
+	var extra: Dictionary = StarRating.breakdown(base_coins, rating, stats.best_chain, balance)
+	var bonus: int = int(extra["perfect"]) + int(extra["chain"])
+	# level_win olayına ustalık alanları eklenir (olay adı aynı kalır: mevcut panolar bozulmaz).
+	AnalyticsLog.record("level_win", {"level": level_number, "seconds": _elapsed_seconds(),
+		"moves": board.moves(), "rack": board.rack_count(), "remaining": board.remaining_on_line(),
+		"stars": rating, "rack_max": stats.rack_max, "rack_total": stats.rack_total,
+		"chain_best": stats.best_chain, "revived": stats.revived})
+	var result: Dictionary = Progress.complete_level_rated(hard, rating, bonus)
+	result["perfect_bonus"] = int(extra["perfect"])
+	result["chain_bonus"] = int(extra["chain"])
+	result["best_chain"] = stats.best_chain
+	result["rack_max"] = stats.rack_max
+	result["total_coins"] = int(result["coins"])
+	return result
 
 
 func on_lose(level_number: int, board: LaundryBoard, remaining: int) -> void:

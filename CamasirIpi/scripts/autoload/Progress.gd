@@ -67,6 +67,19 @@ func complete_level(hard: bool) -> Dictionary:
 	return result
 
 
+## Derecelendirmeli kazanç (bkz. ProgressData.complete_level_rated). Dönen sözlük `complete_level`
+## alanlarına ek olarak {"base_coins","bonus_coins","rating","replay"} içerir.
+func complete_level_rated(hard: bool, rating: int, bonus_coins: int, level_number: int = 0) -> Dictionary:
+	var result: Dictionary = data.complete_level_rated(hard, rating, bonus_coins, _balance(), level_number)
+	_commit()
+	return result
+
+
+## Bir seviyenin kayıtlı en iyi yıldızı (0 = hiç bitirilmedi).
+func best_stars(level_number: int) -> int:
+	return data.best_stars_of(level_number)
+
+
 func fail_level() -> void:
 	data.fail_level()
 	_commit()

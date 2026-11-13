@@ -10,9 +10,10 @@ signal booster_pressed(id: String)
 
 const PROGRESS_PATH: String = "/root/Progress"
 const SESSION_FALLBACK: int = 2
-const BUTTON_SIZE: float = 104.0
+const BUTTON_SIZE: float = 92.0
 const BUTTON_GAP: float = 36.0
-const BAR_Y: float = 168.0
+## Başparmak bölgesinde, sepet kuyruğunun altında durur (üstte başlık ve zincir göstergesi var).
+const BAR_Y: float = 1812.0
 const BADGE_SIZE: float = 40.0
 const BADGE_FONT: int = 24
 const ICON_RATIO: float = 0.3

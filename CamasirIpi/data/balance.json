@@ -16,5 +16,15 @@
     "max_levels_between": 3,
     "min_seconds_between": 90,
     "rewarded_cooldown_seconds": 120
+  },
+  "mastery": {
+    "chain_window_taps": 4,
+    "two_star_rack_ratio": 0.25,
+    "two_star_rack_min": 2,
+    "perfect_rack_base": 1,
+    "perfect_rack_per_item": 0.05,
+    "perfect_bonus_coins": 15,
+    "chain_bonus_per_step": 2,
+    "chain_bonus_cap": 12
   }
 }

@@ -37,7 +37,7 @@ const BASKET_Y: float = 1590.0
 const BASKET_SIZE: float = 250.0
 const BASKET_SPACING: float = 300.0
 const BASKET_GARMENT_SCALE: float = 0.42
-const QUEUE_Y: float = 1800.0
+const QUEUE_Y: float = 1772.0
 const QUEUE_DOT: float = 20.0
 const QUEUE_SHOWN: int = 6
 ## Yığın basarken/içine çökerken parçaların sepet içindeki hedef sapmaları.
@@ -67,7 +67,6 @@ const RACK_REFUSE_MSEC: int = 350
 const COIN_SOUND_DELAY: float = 0.7
 ## Art arda sepet tamamlandıkça nota perdesi yükselir (yarım ton adımları).
 const COMBO_SEMITONE: float = 1.0594631
-const COMBO_RESET_SECONDS: float = 4.0
 const COMBO_MAX_STEPS: int = 12
 const SPARKLE_COLOR: Color = Color(1.0, 0.96, 0.7)
 
@@ -95,7 +94,8 @@ var _revived: bool = false
 var _rack_refuse_until_msec: int = 0
 var _backdrop: GardenBackdrop = null
 var _combo: int = 0
-var _last_fold_msec: int = 0
+## Ustalık istatistikleri + zincir: zincirin TEK doğruluk kaynağı (perde, HUD hapı, bonus).
+var _run_stats: RunStats = RunStats.new()
 var _wind_played: bool = false
 ## Seviye yeniden başlayınca eski olay korutinleri kendiliğinden çıksın diye sayaç.
 var _generation: int = 0
@@ -220,6 +220,9 @@ func _tap(id: int) -> void:
 	if events.is_empty():
 		return
 	_tutorial.on_tap(id, events)
+	# Zincir koptuysa (görünür bir zincir) pil, animasyon kuyruğunda sırası gelince sönsün.
+	if _run_stats.record_tap(events) >= RunStats.MIN_VISIBLE_CHAIN:
+		events.push_front({"type": RunStats.EVENT_CHAIN_BREAK})
 	var first: String = String(events[0]["type"])
 	if first != LaundryBoard.EVENT_BLOCKED and first != LaundryBoard.EVENT_LOCKED \
 			and first != LaundryBoard.EVENT_RACK_FULL:
@@ -312,7 +315,9 @@ func _play_event(event: Dictionary) -> void:
 			flying.landed.connect(_on_basket_landed.bind(index, stack_index, flying), CONNECT_ONE_SHOT)
 			await _wait(Motion.stagger(_events.size()))
 		LaundryBoard.EVENT_BASKET_DONE:
-			await _complete_basket(int(event["basket"]))
+			await _complete_basket(int(event["basket"]), int(event.get(RunStats.EVENT_CHAIN_KEY, 1)))
+		RunStats.EVENT_CHAIN_BREAK:
+			_hud.fade_chain()
 		LaundryBoard.EVENT_BASKET_NEW:
 			_baskets[int(event["basket"])].enter(COLORS[int(event["color"]) % COLORS.size()])
 		LaundryBoard.EVENT_WIN:
@@ -373,7 +378,7 @@ func _on_basket_landed(index: int, stack_index: int, view: GarmentView) -> void:
 
 ## Sepet doldu: yığın aşağı basılır, parıltı patlar, bant nabız atar, parçalar sepete
 ## karışır; sonra sepet kayıp gider ve yenisi gelir (kayma beklenmez, kuyruk akmaya devam eder).
-func _complete_basket(index: int) -> void:
+func _complete_basket(index: int, chain_step: int = 1) -> void:
 	if not await _wait_flights():
 		return
 	var basket: BasketView = _baskets[index]
@@ -393,9 +398,10 @@ func _complete_basket(index: int) -> void:
 		return
 	# 2) Parıltı + bant nabzı + sesler.
 	UiData.vibrate(40)
-	var now: int = Time.get_ticks_msec()
-	_combo = _combo + 1 if now - _last_fold_msec < int(COMBO_RESET_SECONDS * MS_PER_SECOND) else 0
-	_last_fold_msec = now
+	# Perde artık zamana değil ZİNCİRE bağlı (RunStats tek kaynak): zincir adımı n ise n-1 yarım ton.
+	_combo = maxi(chain_step - 1, 0)
+	if chain_step >= RunStats.MIN_VISIBLE_CHAIN:
+		_hud.show_chain(chain_step)
 	AudioService.play_pitched("fold_puff", randf_range(0.96, 1.04))
 	AudioService.play_pitched("note", pow(COMBO_SEMITONE, float(mini(_combo, COMBO_MAX_STEPS)) * 2.0), -5.0)
 	_sparkle(basket.rest_position + Vector2(0.0, -BASKET_SIZE * 0.3), basket.color)
@@ -516,6 +522,8 @@ func _start_level() -> void:
 	_line_ys.clear()
 	_revived = false
 	_combo = 0
+	_run_stats = RunStats.from_balance(Progress.balance_table())
+	_hud.hide_chain()
 	# Prob, belirli bir durumu (ör. kesin kayıp) sınamak için elle kurulmuş seviye verebilir.
 	_level = _daily_level if not _daily_level.is_empty() \
 		else (debug_level if not debug_level.is_empty() else LevelGenerator.generate(_level_number))  # [DAILY]
@@ -739,7 +747,7 @@ func _show_win() -> void:
 	if not _daily_level.is_empty():  # [DAILY] normal ilerleme/ekonomi atlanır
 		_show_daily_end(true)
 		return
-	var result: Dictionary = _eco.on_win(_level_number, _board, bool(_level.get("hard", false)))
+	var result: Dictionary = _eco.on_win(_level_number, _board, bool(_level.get("hard", false)), _run_stats)
 	var reward: int = int(result["coins"])
 	_level_number += 1
 	AudioService.play_pitched("win", 1.0, -3.0)
@@ -748,7 +756,7 @@ func _show_win() -> void:
 	_hud.set_coins(Progress.coins())
 	_hide_overlay()
 	var sheet: ResultSheet = ResultSheet.win(_ui, reward, _win_tints(),
-		_eco.can_watch(AdManager.Placement.DOUBLE_COINS))
+		_eco.can_watch(AdManager.Placement.DOUBLE_COINS), result)
 	# "Devam": geçiş reklamı zamanlaması uygunsa önce o gösterilir, sonra seviye başlar.
 	sheet.continue_pressed.connect(func() -> void: _eco.maybe_interstitial(_level_number, _start_level))
 	sheet.double_pressed.connect(_on_double_pressed.bind(sheet, reward))
@@ -841,6 +849,7 @@ func _revive() -> void:
 	if _revived:
 		return
 	_revived = true
+	_run_stats.note_revive()
 	_board.add_rack_slot()
 	_rack_points.clear()
 	_build_rack()
@@ -953,6 +962,7 @@ func _on_booster_pressed(id: String) -> void:
 	match id:
 		Boosters.UNDO:
 			if _boosters.can_use(id, _board) and _booster_bar.spend(id) and _boosters.undo(_board):
+				_run_stats.note_booster()
 				_set_pin_armed(false)
 				_rebuild_from_board()
 		Boosters.PIN_REMOVER:
@@ -960,6 +970,7 @@ func _on_booster_pressed(id: String) -> void:
 			_set_pin_armed(not _pin_armed and _boosters.can_use(id, _board) and _booster_bar.count(id) > 0)
 		Boosters.EXTRA_SLOT:
 			if _boosters.can_use(id, _board) and _booster_bar.spend(id) and _boosters.extra_slot(_board):
+				_run_stats.note_booster()
 				_rebuild_rack_points()
 	_refresh_booster_bar()
 

@@ -20,6 +20,10 @@ const SETTING_KEYS: Array[String] = ["sound", "music", "vibration"]
 const SETTING_DEFAULT: bool = true
 ## Ücretsiz güçlendirici hediyesinin bir kez verildiğini işaretleyen bayrak öneki.
 const GRANT_FLAG_PREFIX: String = "booster_grant_"
+## Seviye başına en iyi yıldız (0-3). Kayıtta tek metin: i. karakter = (i+1). seviyenin yıldızı.
+## Neden metin: 1000 seviye = 1000 bayt, sözlük/JSON anahtarlarından çok daha derli toplu.
+const MAX_RATED_LEVELS: int = 100000
+const MAX_RATING: int = 3
 
 ## balance.json okunamazsa kullanılan yedek; asıl değerler dosyadadır.
 const DEFAULT_BALANCE: Dictionary = {
@@ -36,6 +40,13 @@ const DEFAULT_BALANCE: Dictionary = {
 	"interstitial": {
 		"first_level": 4, "min_levels_between": 2, "max_levels_between": 3,
 		"min_seconds_between": 90, "rewarded_cooldown_seconds": 120,
+	},
+	"mastery": {
+		"chain_window_taps": 4,
+		"two_star_rack_ratio": 0.25, "two_star_rack_min": 2,
+		"perfect_rack_base": 1, "perfect_rack_per_item": 0.05,
+		"perfect_bonus_coins": 15,
+		"chain_bonus_per_step": 2, "chain_bonus_cap": 12,
 	},
 }
 
@@ -54,6 +65,8 @@ var last_rewarded_time: float = 0.0
 ## verisi: bölüm -> sözlük. Her modül yalnız KENDİ bölümünü yazar; böylece modüller bu
 ## dosyayı değiştirmeden kayıt tutar ve birbirinin alanına dokunmaz.
 var modules: Dictionary = {}
+## index = seviye - 1, değer = en iyi yıldız (0 = hiç bitirilmedi).
+var best_stars: PackedByteArray = PackedByteArray()
 
 
 func _init() -> void:
@@ -124,6 +137,7 @@ static func from_dict(source: Variant) -> ProgressData:
 			var entry: Variant = (raw_modules as Dictionary)[section]
 			if section is String and entry is Dictionary:
 				data.modules[section] = (entry as Dictionary).duplicate(true)
+	data.best_stars = _parse_best_stars(raw.get("best_stars"))
 	return data
 
 
@@ -142,7 +156,51 @@ func to_dict() -> Dictionary:
 		"last_interstitial_time": last_interstitial_time,
 		"last_rewarded_time": last_rewarded_time,
 		"modules": modules.duplicate(true),
+		"best_stars": _best_stars_text(),
 	}
+
+
+## Bozuk kayıt toleransı: rakam olmayan karakter 0, 3'ten büyük rakam 3, aşırı uzunluk kırpılır.
+static func _parse_best_stars(value: Variant) -> PackedByteArray:
+	var result: PackedByteArray = PackedByteArray()
+	if not (value is String):
+		return result
+	var text: String = value as String
+	for index: int in range(mini(text.length(), MAX_RATED_LEVELS)):
+		var code: int = text.unicode_at(index) - "0".unicode_at(0)
+		result.append(clampi(code, 0, MAX_RATING) if code >= 0 and code <= 9 else 0)
+	return result
+
+
+func _best_stars_text() -> String:
+	var text: String = ""
+	for value: int in best_stars:
+		text += str(value)
+	return text
+
+
+## Bir seviyenin kayıtlı en iyi yıldızı (hiç bitirilmediyse 0).
+func best_stars_of(level_number: int) -> int:
+	var index: int = level_number - 1
+	if index < 0 or index >= best_stars.size():
+		return 0
+	return best_stars[index]
+
+
+## Yeni derecelendirmeyi kaydeder; yalnız ÖNCEKİ en iyiden fazlaysa günceller.
+## Dönen: bu çağrının kazandırdığı FARK (yeniden oynamada fazladan yıldız çıkmasın diye).
+func record_best_stars(level_number: int, rating: int) -> int:
+	var index: int = level_number - 1
+	var capped: int = clampi(rating, 0, MAX_RATING)
+	if index < 0 or index >= MAX_RATED_LEVELS:
+		return 0
+	var previous: int = best_stars_of(level_number)
+	if capped <= previous:
+		return 0
+	if index >= best_stars.size():
+		best_stars.resize(index + 1)
+	best_stars[index] = capped
+	return capped - previous
 
 
 static func _to_time(value: Variant) -> float:
@@ -181,6 +239,33 @@ func complete_level(hard: bool, balance: Dictionary) -> Dictionary:
 	grant_unlocked_boosters(balance)
 	return {"coins": reward, "stars": star_gain, "streak": streak,
 		"streak_bonus": streak_extra_slot(balance)}
+
+
+## Derecelendirmeli kazanç (1-3 yıldız + ek jeton). `complete_level` ile aynı seviye/seri/hediye
+## akışını izler; farklar:
+##  * yıldız = bu seviyenin kayıtlı en iyisine göre FARK (ilk bitirişte tamamı),
+##  * `bonus_coins` (kusursuz + zincir) temel ödüle eklenir,
+##  * `level_number` ilerlemenin gerisindeyse (tekrar oynama) seviye/seri ilerlemez, temel ödül verilmez,
+##    ek jeton yalnız yıldız artışı varsa verilir (aynı seviyeyi tekrarlayıp jeton çiftlenmesin).
+## `level_number` 0 ise güncel seviye kullanılır (şu anki akış).
+func complete_level_rated(hard: bool, rating: int, bonus_coins: int, balance: Dictionary,
+		level_number: int = 0) -> Dictionary:
+	var played: int = level_number if level_number > 0 else level
+	var replay: bool = played < level
+	var stars_gained: int = record_best_stars(played, rating)
+	var base_reward: int = 0 if replay else to_count(balance.get("hard_win_coins" if hard else "win_coins"))
+	var bonus: int = to_count(bonus_coins) if (not replay or stars_gained > 0) else 0
+	add_coins(base_reward + bonus)
+	stars = clampi(stars + stars_gained, 0, MAX_VALUE)
+	if not replay:
+		streak = clampi(streak + 1, 0, MAX_VALUE)
+		best_streak = maxi(best_streak, streak)
+		level = clampi(level + 1, 1, MAX_VALUE)
+		levels_since_interstitial = clampi(levels_since_interstitial + 1, 0, MAX_VALUE)
+		grant_unlocked_boosters(balance)
+	return {"coins": base_reward + bonus, "base_coins": base_reward, "bonus_coins": bonus,
+		"stars": stars_gained, "rating": clampi(rating, 0, MAX_RATING), "replay": replay,
+		"streak": streak, "streak_bonus": streak_extra_slot(balance)}
 
 
 ## Kayıp seriyi sıfırlar (ve bonus askıyı da götürür).

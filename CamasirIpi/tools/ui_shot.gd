@@ -15,6 +15,10 @@ var _trigger_at_ms: int = -1
 
 
 func _initialize() -> void:
+	# Ekran görüntüsü araçları oyuncunun gerçek kaydına ASLA yazmaz.
+	var progress_guard: Node = root.get_node_or_null("Progress")
+	if progress_guard != null:
+		progress_guard.set("persist", false)
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--shot="):
 			_shot = arg.split("=")[1]
