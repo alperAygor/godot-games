@@ -115,6 +115,8 @@ var _fade_ramp: Gradient = null
 var _shrink_curve: Curve = null
 ## Prob/geliştirme çalıştırmaları oyuncunun kaydını ezmesin diye kapatılabilir.
 var _persist: bool = true
+## Öğretici (el imleci, tanıtım kartları, boşta ipucu): mantığı tutorial_director.gd'de.
+var _tutorial: TutorialDirector = null
 
 
 func _ready() -> void:
@@ -129,6 +131,8 @@ func _ready() -> void:
 	_center_x = get_viewport_rect().size.x * 0.5
 	_build_sky()
 	_build_ui()
+	_tutorial = TutorialDirector.new()
+	add_child(_tutorial)
 	_start_level()
 
 
@@ -166,6 +170,8 @@ func _update_sway() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _tutorial != null and _tutorial.input_blocked:
+		return
 	var position: Vector2 = Vector2.ZERO
 	if event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
 		position = (event as InputEventScreenTouch).position
@@ -203,6 +209,7 @@ func _tap(id: int) -> void:
 	var events: Array[Dictionary] = _board.tap(id)
 	if events.is_empty():
 		return
+	_tutorial.on_tap(id, events)
 	var first: String = String(events[0]["type"])
 	if first != LaundryBoard.EVENT_BLOCKED and first != LaundryBoard.EVENT_LOCKED \
 			and first != LaundryBoard.EVENT_RACK_FULL:
@@ -509,6 +516,7 @@ func _start_level() -> void:
 	_build_baskets()
 	_refresh_open()
 	queue_redraw()
+	_tutorial.on_level_started(_level, _board, _views, _baskets, _rack_points)
 
 
 func _build_lines() -> void:

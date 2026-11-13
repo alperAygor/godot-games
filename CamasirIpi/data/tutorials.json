@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "_not": "Metinler scripts/ui/tutorial_strings.gd içindedir; burada yalnız veri ve davranış var.",
+  "card_order": ["wet", "mystery", "lock", "sheet", "sock_pair", "dye", "undo", "pin_remover", "extra_slot"],
+  "cards": {
+    "wet": {"item_key": "wet", "demo": "wet", "icon": "lucide/package"},
+    "mystery": {"item_key": "mystery", "demo": "mystery", "icon": "lucide/star"},
+    "lock": {"item_key": "lock", "demo": "lock", "icon": "lucide/shield"},
+    "sheet": {"item_key": "sheet", "demo": "icon", "icon": "lucide/package"},
+    "sock_pair": {"item_key": "pair", "demo": "icon", "icon": "lucide/heart"},
+    "dye": {"item_key": "dye", "demo": "icon", "icon": "lucide/droplet"},
+    "undo": {"unlock_level": 6, "demo": "icon", "icon": "lucide/arrow-left"},
+    "pin_remover": {"unlock_level": 12, "demo": "icon", "icon": "lucide/x"},
+    "extra_slot": {"unlock_level": 18, "demo": "badge", "badge": "+1", "icon": "lucide/package"}
+  },
+  "levels": {
+    "1": {"mode": "follow", "max_taps": 3, "ignore_limit": 2},
+    "2": {"mode": "layers", "follow_taps": 2},
+    "3": {"mode": "rack", "give_up_taps": 6},
+    "5": {"mode": "queue", "flag": "tut_queue"}
+  },
+  "idle": {"below_level": 10, "first_seconds": 8.0, "repeat_seconds": 15.0, "pulses": 3},
+  "timing": {"start_delay": 0.9, "card_delay": 0.45, "return_delay": 0.6, "rack_glow_pulses": 2, "queue_glow_pulses": 3}
+}
