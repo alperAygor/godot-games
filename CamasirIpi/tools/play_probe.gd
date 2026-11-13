@@ -3,9 +3,13 @@ extends SceneTree
 ## Oynanış probu (headless): seviyeleri çözücünün yoluyla GERÇEK oyun sahnesinde oynar;
 ## her seviyede kazanma katmanının çıktığını ve olay kuyruğunun boşaldığını doğrular.
 ## Ayrıca bir seviyede bilerek kaybedip "+1 askı" ve "tekrar dene" yollarını dener.
+## Yeni engeller: 26 çarşaf, 32 çorap, 40 boya, 47 karışık. Son aşamada güçlendiriciler
+## (geri al, +1 askı, mandal sökücü) gerçek sahnede denenir.
 ##   godot --headless --path . -s res://tools/play_probe.gd      çıkış 0 = geçti
 
-const LEVELS: Array[int] = [1, 2, 3, 7, 16, 25]
+const LEVELS: Array[int] = [1, 2, 3, 7, 16, 25, 26, 32, 40, 47]
+const BOOST_LEVEL: int = 40
+const BOOST_TAPS: int = 3
 const FRAMES_PER_TAP: int = 4
 const SETTLE_FRAMES: int = 2
 const MID_CHECK_EVERY: int = 6
@@ -115,6 +119,26 @@ func _process(_delta: float) -> bool:
 			if fresh.is_over() or fresh.rack_count() != 0:
 				_fail("tekrar dene temiz başlamadı")
 			print("PROBE devam_ve_tekrar tamam")
+			_phase = "boost_load"
+		"boost_load":
+			_load_level(BOOST_LEVEL)
+			_path = LevelSolver.solve(_game.get("_level") as Dictionary, 200000)
+			_path.resize(BOOST_TAPS)
+			_phase = "boost_play"
+			_wait = 2
+		"boost_play":
+			if _path.is_empty():
+				_phase = "boost_check"
+				_wait = SETTLE_FRAMES
+				return false
+			_game.call("_tap", _path.pop_front())
+			_wait = FRAMES_PER_TAP
+		"boost_check":
+			_drain_frames += 1
+			if _drain_frames < MAX_DRAIN_FRAMES and bool(_game.get("_playing")):
+				return false
+			_drain_frames = 0
+			_check_boosters()
 			_phase = "done"
 		"done":
 			print("PROBE SONUC: %s" % ("kaldi" if _failed else "gecti"))
@@ -164,3 +188,39 @@ func _check_basket_colors() -> void:
 func _fail(message: String) -> void:
 	_failed = true
 	printerr("PROBE HATA: %s" % message)
+
+
+func _check_boosters() -> void:
+	# Prob kaydı sıfırdan başlar (güçlendirici yok); sınamak için bellekte birkaç tane verilir.
+	var progress: Node = root.get_node_or_null("Progress")
+	if progress != null:
+		for id: String in [Boosters.UNDO, Boosters.EXTRA_SLOT, Boosters.PIN_REMOVER]:
+			progress.call("add_booster", id, 2)
+	var board: LaundryBoard = _game.get("_board") as LaundryBoard
+	var moves: int = board.moves()
+	var on_line: int = board.remaining_on_line()
+	_game.call("_on_booster_pressed", Boosters.UNDO)
+	var views: Dictionary = _game.get("_views") as Dictionary
+	print("PROBE geri_al hamle=%d->%d ip=%d->%d görünüm=%d" % [moves, board.moves(), on_line,
+		board.remaining_on_line(), views.size()])
+	if board.moves() != moves - 1 or board.remaining_on_line() != on_line + 1:
+		_fail("geri al tahtayı geri almadı")
+	for id: Variant in views.keys():
+		if board.is_on_line(int(id)) and not is_instance_valid(views[id] as Object):
+			_fail("geri al sonrası görünüm eksik")
+	_game.call("_on_booster_pressed", Boosters.EXTRA_SLOT)
+	print("PROBE +1_askı askı=%d" % board.rack_slots())
+	if board.rack_slots() != LaundryBoard.DEFAULT_RACK_SLOTS + 1:
+		_fail("+1 askı güçlendiricisi çalışmadı")
+	var targets: Array[int] = Boosters.pin_targets(board)
+	if targets.is_empty():
+		_fail("sökücü hedefi yok")
+		return
+	var target: GarmentView = views[targets[0]] as GarmentView
+	var rect: Rect2 = target.hit_rect()
+	var before: int = board.remaining_on_line()
+	_game.call("_on_booster_pressed", Boosters.PIN_REMOVER)
+	_game.call("_booster_intercepts", target.position + rect.get_center())
+	print("PROBE sökücü ip=%d->%d" % [before, board.remaining_on_line()])
+	if board.remaining_on_line() != before - 1:
+		_fail("mandal sökücü parça almadı")

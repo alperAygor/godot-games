@@ -332,11 +332,7 @@ func _plan_matches_history() -> bool:
 
 
 func _solve_from_history() -> Array[int]:
-	var path: Array[int] = _history.duplicate()
-	var budget: Array[int] = [SOLVER_NODE_LIMIT]
-	if LevelSolver._search(_level, path, {}, budget):
-		return path
-	return []
+	return LevelSolver.solve_from(_level, _history, SOLVER_NODE_LIMIT)
 
 
 ## Çözüm bulunamazsa (oyuncu çıkmaza girdiyse) açık olanlardan sepete gideni, yoksa herhangi birini.
@@ -377,8 +373,7 @@ func _rack_target() -> int:
 			continue
 		var probe: Array[int] = _history.duplicate()
 		probe.append(id)
-		var budget: Array[int] = [SOLVER_NODE_LIMIT]
-		if LevelSolver._search(_level, probe, {}, budget):
+		if not LevelSolver.solve_from(_level, probe, SOLVER_NODE_LIMIT).is_empty():
 			return id
 	return _next_id()
 

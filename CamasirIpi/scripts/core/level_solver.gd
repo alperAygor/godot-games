@@ -16,13 +16,30 @@ static func solve(level: Dictionary, node_limit: int = DEFAULT_NODE_LIMIT) -> Ar
 	var budget: Array[int] = [node_limit]
 	var path: Array[int] = []
 	var seen: Dictionary = {}
-	if _search(level, path, seen, budget):
+	# Tek tahta + geri al: her düğümde yolu baştan oynatmak (O(derinlik)) yerine dokunup geri
+	# alınır. Arama sırası ve bütçe sayımı eskisiyle birebir aynıdır -> aynı seviyeler üretilir.
+	var board: LaundryBoard = LaundryBoard.new(level)
+	board.enable_history()
+	if _search(board, path, seen, budget):
 		return path
 	return []
 
 
-static func _search(level: Dictionary, path: Array[int], seen: Dictionary, budget: Array[int]) -> bool:
-	var board: LaundryBoard = _replay(level, path)
+## Verilen dokunuşlar oynandıktan SONRAKİ durumdan kazandıran tam yol (baştaki dokunuşlar dahil);
+## bulunamazsa boş dizi. Öğretici/ipucu, oyuncunun geldiği yerden devam yolunu bununla bulur.
+static func solve_from(level: Dictionary, taps: Array[int], node_limit: int = DEFAULT_NODE_LIMIT) -> Array[int]:
+	var board: LaundryBoard = LaundryBoard.new(level)
+	for id: int in taps:
+		board.tap(id)
+	board.enable_history()
+	var path: Array[int] = taps.duplicate()
+	var budget: Array[int] = [node_limit]
+	if _search(board, path, {}, budget):
+		return path
+	return []
+
+
+static func _search(board: LaundryBoard, path: Array[int], seen: Dictionary, budget: Array[int]) -> bool:
 	if board.is_won():
 		return true
 	if board.is_lost():
@@ -43,10 +60,18 @@ static func _search(level: Dictionary, path: Array[int], seen: Dictionary, budge
 		else:
 			parked.append(id)
 	for id: int in direct + parked:
+		var before: int = board.history_size()
+		board.tap(id)
+		if board.history_size() == before:
+			# Durum değişmedi (askı dolu reddi): eski sürüm bu çocuğu ziyaret edip bütçeden
+			# bir düşerdi; aynı sayım korunur ki üretilen seviyeler değişmesin.
+			budget[0] -= 1
+			continue
 		path.append(id)
-		if _search(level, path, seen, budget):
+		if _search(board, path, seen, budget):
 			return true
 		path.pop_back()
+		board.undo()
 	return false
 
 
@@ -76,5 +101,8 @@ static func _state_key(board: LaundryBoard) -> String:
 		if id != LaundryBoard.EMPTY:
 			rack_colors.append(board.color_of(id))
 	rack_colors.sort()
-	return "%s|%s|%s|%d|%s|%s" % [str(line), str(rack_colors), str(board.baskets()),
-		board.queue().size(), str(board.wet_ids()), str(board.completed_colors())]
+	# Çorap (bekleyen/takılı) ve boya (sayaç + takas sonrası renkler) durumu da anahtara girer:
+	# aynı ip/askı görünümü bu kurallar yüzünden farklı gelecekler taşıyabilir.
+	return "%s|%s|%s|%d|%s|%s|%d|%s|%s" % [str(line), str(rack_colors), str(board.baskets()),
+		board.queue().size(), str(board.wet_ids()), str(board.completed_colors()),
+		board.sock_waiting(), str(board.stuck_ids()), str(board.dye_state())]

@@ -2,7 +2,7 @@ extends TestCase
 
 ## Üretilen seviyeler: deterministik, 3'ün katı, kuyrukla birebir ve ÇÖZÜLEBİLİR.
 
-const CHECKED_LEVELS: int = 60
+const CHECKED_LEVELS: int = 80
 
 
 func test_same_level_is_deterministic() -> void:

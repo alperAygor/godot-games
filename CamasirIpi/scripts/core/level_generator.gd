@@ -26,12 +26,54 @@ const OBSTACLE_RAMP_LEVELS: int = 6
 const MAX_WET: int = 5
 const MAX_MYSTERY: int = 6
 const MAX_LOCKS: int = 3
+## Yeni engeller (derinleşme): her biri tanıtım seviyesinde TEK BAŞINA ve tek adet gelir.
+const SHEET_FROM_LEVEL: int = 26
+const SOCK_FROM_LEVEL: int = 32
+const DYE_FROM_LEVEL: int = 40
+const INTRO_LEVELS: Array[int] = [WET_FROM_LEVEL, MYSTERY_FROM_LEVEL, LOCK_FROM_LEVEL,
+	SHEET_FROM_LEVEL, SOCK_FROM_LEVEL, DYE_FROM_LEVEL]
+const MAX_SHEETS: int = 2
+const MAX_SOCK_PAIRS: int = 3
+const MAX_DYES: int = 3
+## Çarşaf kaç sütun genişliğinde (iki ipe yayılır); geç seviyelerde bir sütun daha geniş.
+const SHEET_SPAN: int = 2
+const SHEET_LINES: int = 2
+const SHEET_WIDE_FROM_LEVEL: int = 50
+## Çarşafın altında en az bu kadar parça olmalı (yoksa "çok parçayı açan" hissi doğmaz).
+const SHEET_MIN_COVER: int = 4
+const SHEET_ATTEMPTS: int = 16
+## Görünüm türleri (GarmentView.KINDS ile aynı sıra): havlu = çarşaf dokusu, 6 = çorap.
+const SHEET_KIND: int = 3
+const SOCK_KIND: int = 6
+## Yeni zorluk eğrisi bu seviyeden başlar; öncesi birebir eskisi gibi kalır (oyuncu ve
+## öğretici akışı tanıdık seviyeleri görmeye devam etsin).
+const LATE_CURVE_FROM_LEVEL: int = 26
+const LATE_COLORS_BASE: int = 5
+const LATE_COLORS_STEP: int = 9
+const LATE_TWIST_FROM_LEVEL: int = 40
+const LATE_TWIST_STEP: int = 10
+const LATE_TWIST_MAX_EXTRA: int = 6
+const BASE_TWIST_MAX: int = 8
+const HARD_TWIST_BONUS: int = 3
+## Çok zor seviye: her 15'te bir (30'dan itibaren); zorun üstüne ek kuyruk karışıklığı.
+const VERY_HARD_EVERY: int = 15
+const VERY_HARD_FROM_LEVEL: int = 30
+const VERY_HARD_TWIST_BONUS: int = 3
+## Geniş tahta (5 sütun): ipteki parça sayısı büyür.
+const WIDE_BOARD_FROM_LEVEL: int = 56
+const WIDE_COLUMNS: int = 5
+const BASE_COLUMNS: int = 4
+## Geç seviyelerde çözücü doğrulama sınırı: başarısız aramalar bütçeyi tüketir; mobilde
+## üretim süresi sınırlı kalsın diye düşük tutulur (reddedilen karıştırma güvenli taraftır).
+const LATE_NODE_LIMIT: int = 6000
 
 
 ## Zorluk parametreleri: {lines, columns, layers, colors, twist, active_baskets, hard}.
 static func params_for(level: int) -> Dictionary:
 	var n: int = maxi(level, 1)
 	var hard: bool = n > HARD_EVERY and n % HARD_EVERY == 0
+	if n >= LATE_CURVE_FROM_LEVEL:
+		return _late_params(n)
 	if n == 1:
 		return {"lines": 2, "columns": 3, "layers": 1, "colors": 2, "twist": 0,
 			"active_baskets": 2, "hard": false}
@@ -52,11 +94,40 @@ static func params_for(level: int) -> Dictionary:
 		"active_baskets": 3 if n >= THREE_BASKETS_FROM_LEVEL else 2, "hard": hard}
 
 
+## 26+ eğrisi: renk 5->7, karıştırma 40'tan sonra da büyür, her 5'te zor, her 15'te çok zor,
+## 56'dan itibaren 5 sütun. Tanıtım seviyeleri zor olmaz ve karıştırma yarıya iner: yeni
+## engel oyuncuya sakin bir tahtada öğretilir.
+static func _late_params(n: int) -> Dictionary:
+	var intro: bool = n in INTRO_LEVELS
+	var very_hard: bool = not intro and n >= VERY_HARD_FROM_LEVEL and n % VERY_HARD_EVERY == 0
+	var hard: bool = not intro and n % HARD_EVERY == 0
+	var layers: int = clampi(2 + (n - 4) / 12, 2, MAX_LAYERS)
+	var colors: int = clampi(LATE_COLORS_BASE + (n - LATE_CURVE_FROM_LEVEL) / LATE_COLORS_STEP,
+		LATE_COLORS_BASE, MAX_COLORS)
+	var twist: int = clampi(1 + (n - 4) / 5, 1, BASE_TWIST_MAX) \
+		+ clampi((n - LATE_TWIST_FROM_LEVEL) / LATE_TWIST_STEP, 0, LATE_TWIST_MAX_EXTRA)
+	if intro:
+		twist = twist / 2
+		layers = mini(layers, MAX_LAYERS - 1)
+	if hard:
+		layers = mini(layers + 1, MAX_LAYERS)
+		twist += HARD_TWIST_BONUS
+	if very_hard:
+		twist += VERY_HARD_TWIST_BONUS
+	return {"lines": MAX_LINES, "columns": WIDE_COLUMNS if n >= WIDE_BOARD_FROM_LEVEL else BASE_COLUMNS,
+		"layers": layers, "colors": colors, "twist": twist, "active_baskets": 3,
+		"hard": hard, "very_hard": very_hard}
+
+
 static func generate(level: int) -> Dictionary:
 	var params: Dictionary = params_for(level)
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = maxi(level, 1) * SEED_SALT
 	var items: Array[Dictionary] = _layout(params, rng)
+	var number: int = maxi(level, 1)
+	var sheets: int = _new_obstacle_count(number, SHEET_FROM_LEVEL, MAX_SHEETS)
+	if sheets > 0:
+		_add_sheets(items, params, sheets, number, rng)
 	var order: Array[int] = _removal_order(items, rng)
 	var active: int = int(params["active_baskets"])
 	var queue: Array[int] = _assign_colors(items, order, int(params["colors"]), active, rng)
@@ -68,9 +139,32 @@ static func generate(level: int) -> Dictionary:
 		"rack_slots": LaundryBoard.DEFAULT_RACK_SLOTS,
 		"hard": bool(params["hard"]),
 	}
-	_twist_queue(result, int(params["twist"]), rng)
+	if bool(params.get("very_hard", false)):
+		result["very_hard"] = true
+	var limit: int = LevelSolver.DEFAULT_NODE_LIMIT if number < LATE_CURVE_FROM_LEVEL else LATE_NODE_LIMIT
+	_twist_queue(result, int(params["twist"]), rng, limit)
 	_add_obstacles(result, rng)
+	# Boya önce yerleşir: uygun yeri azdır (başta açık + altında başka renk sıradan parça);
+	# çoraplar her renk grubuna sığabildiği için sonra gelir.
+	var dyes: int = _new_obstacle_count(number, DYE_FROM_LEVEL, MAX_DYES)
+	if dyes > 0:
+		_add_dyes(result, dyes, rng)
+	var socks: int = _new_obstacle_count(number, SOCK_FROM_LEVEL, MAX_SOCK_PAIRS)
+	if socks > 0:
+		_add_socks(result, order, socks, rng)
 	return result
+
+
+## Yeni engel sayısı: açıldığı seviyede 1; başka bir engelin tanıtım seviyesinde 0 (o seviye
+## yalnız yeni engeli öğretir); sonra `obstacle_count` rampası.
+static func _new_obstacle_count(level: int, from_level: int, maximum: int) -> int:
+	if level < from_level:
+		return 0
+	if level == from_level:
+		return 1
+	if level in INTRO_LEVELS:
+		return 0
+	return obstacle_count(level, from_level, maximum)
 
 
 ## Seviyeye göre engel sayısı: açıldığı seviyede 1, sonra her OBSTACLE_RAMP_LEVELS'ta +1.
@@ -84,7 +178,7 @@ static func obstacle_count(level: int, from_level: int, maximum: int) -> int:
 static func _add_obstacles(level: Dictionary, rng: RandomNumberGenerator) -> void:
 	var number: int = int(level["level"])
 	var items: Array[Dictionary] = level["items"] as Array[Dictionary]
-	var intro: bool = number in [WET_FROM_LEVEL, MYSTERY_FROM_LEVEL, LOCK_FROM_LEVEL]
+	var intro: bool = number in INTRO_LEVELS
 	var wet: int = obstacle_count(number, WET_FROM_LEVEL, MAX_WET)
 	var mystery: int = obstacle_count(number, MYSTERY_FROM_LEVEL, MAX_MYSTERY)
 	var locks: int = obstacle_count(number, LOCK_FROM_LEVEL, MAX_LOCKS)
@@ -244,7 +338,8 @@ static func _recent_has(queue: Array[int], color: int, window: int) -> bool:
 
 
 ## Kuyrukta komşu sepetleri yer değiştirir; çözülebilirlik bozulursa geri alınır.
-static func _twist_queue(level: Dictionary, twist: int, rng: RandomNumberGenerator) -> void:
+static func _twist_queue(level: Dictionary, twist: int, rng: RandomNumberGenerator,
+		node_limit: int = LevelSolver.DEFAULT_NODE_LIMIT) -> void:
 	var queue: Array[int] = level["queue"] as Array[int]
 	if queue.size() < 3 or twist <= 0:
 		return
@@ -261,7 +356,181 @@ static func _twist_queue(level: Dictionary, twist: int, rng: RandomNumberGenerat
 		swapped[b] = queue[a]
 		var candidate: Dictionary = level.duplicate()
 		candidate["queue"] = swapped
-		if LevelSolver.is_solvable(candidate):
+		if LevelSolver.is_solvable(candidate, node_limit):
 			queue = swapped
 			level["queue"] = swapped
 			applied += 1
+
+
+# --- Yeni engellerin yerleşimi ----------------------------------------------------------------
+
+## Engelsiz, sıradan parça mı (yeni engeller birbirine ve eskilere binmesin).
+static func _plain(entry: Dictionary) -> bool:
+	for key: String in ["wet", "mystery", "lock", "sheet", "sock", "dye"]:
+		if entry.has(key):
+			return false
+	return true
+
+
+## Çarşaf: iki komşu ipe yayılan, en üst katmandaki tek parça. Altında kalan (iki ipteki,
+## sütun aralığındaki tüm katmanlar) parçaların `blockers` listesine eklenir. Renk ataması
+## toplama sırasından ÖNCE yapıldığı için çarşaf da normal bir parça gibi gruplara girer ve
+## çözülebilirlik kanıtı (sıra = kuyruk) aynen geçerli kalır.
+static func _add_sheets(items: Array[Dictionary], params: Dictionary, count: int, level: int,
+		rng: RandomNumberGenerator) -> void:
+	var lines: int = int(params["lines"])
+	var columns: int = int(params["columns"])
+	if lines < SHEET_LINES:
+		return
+	var span: int = mini(SHEET_SPAN + (1 if level >= SHEET_WIDE_FROM_LEVEL else 0), columns)
+	var next_id: int = 0
+	for entry: Dictionary in items:
+		next_id = maxi(next_id, int(entry["id"]) + 1)
+	var placed: Array[Vector2i] = []
+	for _sheet: int in range(count):
+		for _attempt: int in range(SHEET_ATTEMPTS):
+			var top: int = rng.randi_range(0, lines - SHEET_LINES)
+			var start: int = rng.randi_range(0, columns - span)
+			if _sheet_overlaps(placed, top, start, span):
+				continue
+			var center: float = float(start) + float(span - 1) * 0.5
+			var half: float = float(span) * 0.5
+			var covered: Array[Dictionary] = []
+			for entry: Dictionary in items:
+				var line: int = int(entry["line"])
+				if line >= top and line < top + SHEET_LINES and not entry.has("sheet") \
+						and absf(float(entry["slot"]) - center) <= half:
+					covered.append(entry)
+			if covered.size() < SHEET_MIN_COVER:
+				continue
+			for entry: Dictionary in covered:
+				(entry["blockers"] as Array).append(next_id)
+			items.append({
+				"id": next_id, "color": 0, "blockers": [] as Array[int], "line": top,
+				"layer": int(params["layers"]), "slot": center, "kind": SHEET_KIND,
+				"sheet": true, "span": span, "span_lines": SHEET_LINES,
+			})
+			placed.append(Vector2i(top, start))
+			next_id += 1
+			break
+	_trim_keeping_sheets(items)
+
+
+static func _sheet_overlaps(placed: Array[Vector2i], top: int, start: int, span: int) -> bool:
+	for other: Vector2i in placed:
+		if absi(other.x - top) < SHEET_LINES and absi(other.y - start) < span:
+			return true
+	return false
+
+
+## Çarşaf eklenince toplam yeniden 3'ün katına indirilir: kimseyi kapatmayan (en üstteki)
+## sıradan parçalar çıkarılır; çarşaf asla çıkarılmaz.
+static func _trim_keeping_sheets(items: Array[Dictionary]) -> void:
+	while items.size() % BASKET_CAPACITY != 0:
+		var covering: Dictionary = {}
+		for entry: Dictionary in items:
+			for blocker: Variant in entry["blockers"] as Array:
+				covering[int(blocker)] = true
+		var victim: int = -1
+		for index: int in range(items.size() - 1, -1, -1):
+			var entry: Dictionary = items[index]
+			if not entry.has("sheet") and not covering.has(int(entry["id"])):
+				victim = index
+				break
+		if victim < 0:
+			return
+		var victim_id: int = int(items[victim]["id"])
+		items.remove_at(victim)
+		for entry: Dictionary in items:
+			(entry["blockers"] as Array).erase(victim_id)
+
+
+## Çorap çifti: toplama sırasında ARDIŞIK ve aynı sepet grubundaki iki parça seçilir (aynı
+## renk; ilki alınınca ikincisi kesin açıktır). Her çift `LevelSolver` ile doğrulanır.
+static func _add_socks(level: Dictionary, order: Array[int], count: int, rng: RandomNumberGenerator) -> void:
+	var items: Array[Dictionary] = level["items"] as Array[Dictionary]
+	var starts: Array[int] = []
+	for k: int in range(order.size() - 1):
+		if k / BASKET_CAPACITY == (k + 1) / BASKET_CAPACITY:
+			starts.append(k)
+	_shuffle(starts, rng)
+	var left: int = count
+	for k: int in starts:
+		if left <= 0:
+			break
+		var first: Dictionary = items[_index_of(items, order[k])]
+		var second: Dictionary = items[_index_of(items, order[k + 1])]
+		if not _plain(first) or not _plain(second):
+			continue
+		var kinds: Array[int] = [int(first["kind"]), int(second["kind"])]
+		first["sock"] = order[k + 1]
+		second["sock"] = order[k]
+		first["kind"] = SOCK_KIND
+		second["kind"] = SOCK_KIND
+		if LevelSolver.is_solvable(level, LATE_NODE_LIMIT):
+			left -= 1
+		else:
+			first.erase("sock")
+			second.erase("sock")
+			first["kind"] = kinds[0]
+			second["kind"] = kinds[1]
+
+
+## Boya akıtan: başta açık (üstü boş) ve altında başka renkte sıradan bir parça kapatan
+## parçaya konur. İki doğrulama: (1) seviye en iyi oyunla çözülebilir; (2) boya baştan akmış
+## gibi renkler takas edilse de çözülebilir. İkincisi, boyayı kaçıran oyuncunun önüne
+## "kesin kayıp" bir tahta çıkmamasının makul güvencesidir (takas zaten renk sayılarını korur).
+static func _add_dyes(level: Dictionary, count: int, rng: RandomNumberGenerator) -> void:
+	var items: Array[Dictionary] = level["items"] as Array[Dictionary]
+	var below: Dictionary = {}
+	for entry: Dictionary in items:
+		for blocker: Variant in entry["blockers"] as Array:
+			if not below.has(int(blocker)):
+				below[int(blocker)] = [] as Array[int]
+			(below[int(blocker)] as Array[int]).append(int(entry["id"]))
+	var pool: Array[int] = []
+	for index: int in range(items.size()):
+		pool.append(index)
+	_shuffle(pool, rng)
+	var left: int = count
+	for index: int in pool:
+		if left <= 0:
+			break
+		var entry: Dictionary = items[index]
+		var id: int = int(entry["id"])
+		if not _plain(entry) or not (entry["blockers"] as Array).is_empty() or not below.has(id):
+			continue
+		var targets: Array[int] = []
+		for under: int in below[id] as Array[int]:
+			var candidate: Dictionary = items[_index_of(items, under)]
+			if _plain(candidate) and int(candidate["color"]) != int(entry["color"]):
+				targets.append(under)
+		if targets.is_empty():
+			continue
+		var target: int = targets[rng.randi_range(0, targets.size() - 1)]
+		entry["dye"] = LaundryBoard.DEFAULT_DYE_MOVES
+		entry["dye_target"] = target
+		if LevelSolver.is_solvable(level, LATE_NODE_LIMIT) \
+				and LevelSolver.is_solvable(_bled_variant(level, id, target), LATE_NODE_LIMIT):
+			left -= 1
+		else:
+			entry.erase("dye")
+			entry.erase("dye_target")
+
+
+static func _bled_variant(level: Dictionary, id: int, target: int) -> Dictionary:
+	var copy: Dictionary = level.duplicate(true)
+	var a: Dictionary = {}
+	var b: Dictionary = {}
+	for entry: Variant in copy["items"] as Array:
+		var item: Dictionary = entry as Dictionary
+		if int(item["id"]) == id:
+			a = item
+		elif int(item["id"]) == target:
+			b = item
+	var held: int = int(a["color"])
+	a["color"] = int(b["color"])
+	b["color"] = held
+	a.erase("dye")
+	a.erase("dye_target")
+	return copy
