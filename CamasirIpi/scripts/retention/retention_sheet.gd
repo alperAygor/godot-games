@@ -50,4 +50,5 @@ func _fill_locked(title: String, unlock_level: int) -> void:
 func _celebrate_at(control: Control, reward: Dictionary) -> void:
 	var center: Vector2 = control.global_position + control.size * 0.5 - global_position
 	RetentionUi.celebrate(self, center, RetentionUi.reward_text(reward))
-	AudioService.play_pitched("coin", 1.0, -4.0)
+	AudioService.play_pitched("chest_open", 1.0, -4.0)
+	AudioService.play_pitched("coin", 1.0, -6.0)

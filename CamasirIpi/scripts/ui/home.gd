@@ -51,6 +51,7 @@ const BADGE_COLOR: Color = Color("f2705f")
 var _daily_button: UiIconButton = null
 var _calendar_button: UiIconButton = null
 var _laundromat_button: UiIconButton = null
+var _machines_button: UiIconButton = null
 ## Açık meta ekranı (çamaşırhane/koleksiyon): geri tuşu önce onu kapatır.
 var _meta: Node = null
 
@@ -165,6 +166,10 @@ func _build_counters(view: Vector2, insets: Vector4) -> void:
 	# Çamaşırhane onarımı: yıldızlar burada harcanır; onarılabilecek bir şey varsa nokta yanar.
 	_laundromat_button = _side_button("lucide/house", settings.position + Vector2(0.0, SIDE_BUTTON_STEP * 3.0),
 		func() -> void: _open_meta(MetaLaundromat.open(self)))
+	# Makine geliştirmeleri (jeton harcama yeri): makineler oyuna girdikten sonra görünür.
+	_machines_button = _side_button("lucide/zap", settings.position + Vector2(0.0, SIDE_BUTTON_STEP * 4.0),
+		func() -> void: MachineUpgrades.open(self))
+	_machines_button.visible = Progress.level() >= LevelGenerator.WASHER_FROM_LEVEL
 
 
 func _side_button(icon: String, at: Vector2, action: Callable) -> UiIconButton:
@@ -247,6 +252,7 @@ func _refresh() -> void:
 		(_daily_button.get_node("Badge") as Control).visible = DailyPuzzle.available_today()
 		(_calendar_button.get_node("Badge") as Control).visible = DailyStore.calendar_available()
 		(_laundromat_button.get_node("Badge") as Control).visible = MetaStore.new().can_renovate()
+		(_machines_button.get_node("Badge") as Control).visible = MachineUpgrades.can_upgrade_any()
 	_coin_chip.set_value(UiData.coins())
 	_star_chip.set_value(UiData.stars())
 	UiKit.set_button_text(_play_button, UiStrings.level(UiData.level()))

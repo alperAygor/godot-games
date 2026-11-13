@@ -1645,6 +1645,8 @@ func _play_extras_event(event: Dictionary) -> bool:
 	match String(event["type"]):
 		LaundryBoard.EVENT_TO_MACHINE:
 			_send_to_machine(id, int(event["machine"]), int(event["slot"]))
+			AudioService.play_pitched("machine_door", randf_range(0.95, 1.05), -5.0)
+			AudioService.play_pitched("machine_tumble" if int(event["machine"]) == 0 else "dryer_tumble", 1.0, -12.0)
 			await _wait(Motion.stagger(_events.size()))
 		LaundryBoard.EVENT_MACHINE_FULL:
 			var full: MachineView = _machine_views[int(event["machine"])]
@@ -1663,7 +1665,7 @@ func _play_extras_event(event: Dictionary) -> bool:
 			if _machine_views[machine] != null:
 				_machine_views[machine].set_left(slot, left)
 			if String(event["type"]) == LaundryBoard.EVENT_MACHINE_READY:
-				AudioService.play_pitched("note", 1.6, -12.0)
+				AudioService.play_pitched("machine_done", 1.0, -7.0)
 		LaundryBoard.EVENT_MACHINE_OUT:
 			await _machine_out(id, int(event["machine"]), int(event["slot"]))
 		LaundryBoard.EVENT_MACHINE_RUSH:
@@ -1673,20 +1675,23 @@ func _play_extras_event(event: Dictionary) -> bool:
 		LaundryBoard.EVENT_BIRD_LAND:
 			if _bird != null and _live(id):
 				_bird.land_on(_views[id], id)
-				AudioService.play_pitched("note", 2.2, -10.0)
+				AudioService.play_pitched("bird_chirp", randf_range(0.95, 1.08), -6.0)
 		LaundryBoard.EVENT_BIRD_SIT:
 			if _bird != null:
 				_bird.hop(int(event["left"]) == 1)
 		LaundryBoard.EVENT_BIRD_SHOO, LaundryBoard.EVENT_BIRD_AWAY:
 			if _bird != null:
 				_bird.fly_off(String(event["type"]) == LaundryBoard.EVENT_BIRD_SHOO)
-				AudioService.play_pitched("cloth", 1.5, GUEST_SOUND_DB)
+				AudioService.play_pitched("bird_flutter", randf_range(0.95, 1.05), GUEST_SOUND_DB)
+				if String(event["type"]) == LaundryBoard.EVENT_BIRD_SHOO:
+					RetentionEvents.emit("bird_shooed")
 		LaundryBoard.EVENT_BIRD_STAIN:
 			if _live(id):
 				_views[id].set_dirty(true, true, true)
 			if _bird != null:
 				_bird.fly_off(false)
-			AudioService.play_pitched("fold_puff", 0.7, -6.0)
+			AudioService.play_pitched("bird_splat", 1.0, -5.0)
+			AudioService.play_pitched("bird_flutter", 1.0, GUEST_SOUND_DB)
 		LaundryBoard.EVENT_BIRD_PASS:
 			if _bird != null:
 				_bird.pass_by(_views[id].position if _live(id) else Vector2(_center_x, LINES_TOP))
@@ -1696,8 +1701,7 @@ func _play_extras_event(event: Dictionary) -> bool:
 			var line: int = int(event["line"])
 			if _cloud != null and line >= 0 and line < _line_ys.size():
 				_cloud.pour(_line_ys[line])
-			AudioService.play_pitched("wind", 0.6, -8.0)
-			AudioService.play_pitched("wring", 0.7, -10.0)
+			AudioService.play_pitched("rain_patter", 1.0, -5.0)
 			if not await _wait(RainCloudView.POUR_SECONDS * 0.5):
 				return true
 			for wet: Variant in event["ids"] as Array:
@@ -1708,12 +1712,14 @@ func _play_extras_event(event: Dictionary) -> bool:
 			var basket: int = int(event["basket"])
 			if _cat != null and basket < _baskets.size():
 				_cat.land_in(_baskets[basket], basket)
-				AudioService.play_pitched("fold_puff", 0.8, -6.0)
+				AudioService.play_pitched("cat_meow", randf_range(0.95, 1.05), -7.0)
 		LaundryBoard.EVENT_CAT_PET, LaundryBoard.EVENT_CAT_LEAVE:
 			if _cat != null:
 				var petted: bool = String(event["type"]) == LaundryBoard.EVENT_CAT_PET
 				_cat.wake_and_leave(petted)
-				AudioService.play_pitched("note", 1.3 if petted else 0.9, GUEST_SOUND_DB)
+				if petted:
+					AudioService.play_pitched("cat_purr", 1.0, -6.0)
+					RetentionEvents.emit("cat_petted")
 		LaundryBoard.EVENT_BIRD_TICK, LaundryBoard.EVENT_CAT_TICK, LaundryBoard.EVENT_CAT_STAY, \
 				LaundryBoard.EVENT_CAT_PASS:
 			pass

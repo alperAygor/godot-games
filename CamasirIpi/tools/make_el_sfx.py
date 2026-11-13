@@ -78,6 +78,7 @@ MUSIC = {
 }
 MUSIC_DIR = os.path.join(ROOT, "assets", "audio", "music")
 ALIASES = {"pin_click": "pin_click_1", "cloth": "cloth_1"}
+NO_TRIM = {"rain_patter", "chest_open", "machine_tumble", "dryer_tumble"}
 MIN_WAV_BYTES = 4000
 START_DB = -42
 END_DB = -60
@@ -104,7 +105,8 @@ def measure_peak(path, filters):
 
 def to_wav(source, target, loop, peak_db):
     filters = ["highpass=f=60"]
-    if not loop:
+    # Sessizce başlayıp biten sesler (yağmur, sandık gıcırtısı) kırpılınca yarım kalıyor: kırpılmaz.
+    if not loop and os.path.splitext(os.path.basename(target))[0] not in NO_TRIM:
         # Yalnız baştaki sessizlik ve sondaki TAM sessizlik kırpılır; sesin doğal sönümü kalır.
         filters += [
             "silenceremove=start_periods=1:start_threshold=%ddB:start_silence=0.005" % START_DB,
@@ -115,6 +117,8 @@ def to_wav(source, target, loop, peak_db):
         ]
     # Kısa seslerde loudnorm güvenilmez; tepe seviyesine göre sabit kazanç uygulanır.
     gain = peak_db - measure_peak(source, filters)
+    if not loop:
+        filters.append("afade=t=in:d=0.01")
     filters.append("volume=%.2fdB" % gain)
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", source, "-af", ",".join(filters),
                     "-ac", "1", "-ar", "44100", "-sample_fmt", "s16", target], check=True)

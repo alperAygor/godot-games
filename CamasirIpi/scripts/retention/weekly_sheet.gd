@@ -135,5 +135,6 @@ func _claim_tier(tier: int, global_center: Vector2) -> void:
 	if reward.is_empty():
 		return
 	RetentionUi.celebrate(self, global_center - global_position, RetentionUi.reward_text(reward))
-	AudioService.play_pitched("coin", 1.0, -4.0)
+	AudioService.play_pitched("chest_open", 1.0, -4.0)
+	AudioService.play_pitched("coin", 1.0, -6.0)
 	_rebuild()
