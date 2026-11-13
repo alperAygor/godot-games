@@ -49,6 +49,9 @@ const BADGE_SIZE: float = 22.0
 const BADGE_COLOR: Color = Color("f2705f")
 var _daily_button: UiIconButton = null
 var _calendar_button: UiIconButton = null
+var _laundromat_button: UiIconButton = null
+## Açık meta ekranı (çamaşırhane/koleksiyon): geri tuşu önce onu kapatır.
+var _meta: Node = null
 
 
 func _ready() -> void:
@@ -149,6 +152,9 @@ func _build_counters(view: Vector2, insets: Vector4) -> void:
 		func() -> void: DailyPuzzle.open_card(self))
 	_calendar_button = _side_button("lucide/clock", settings.position + Vector2(0.0, SIDE_BUTTON_STEP * 2.0),
 		func() -> void: DailyCalendar.open(self))
+	# Çamaşırhane onarımı: yıldızlar burada harcanır; onarılabilecek bir şey varsa nokta yanar.
+	_laundromat_button = _side_button("lucide/house", settings.position + Vector2(0.0, SIDE_BUTTON_STEP * 3.0),
+		func() -> void: _meta = MetaLaundromat.open(self))
 
 
 func _side_button(icon: String, at: Vector2, action: Callable) -> UiIconButton:
@@ -230,6 +236,7 @@ func _refresh() -> void:
 	if _daily_button != null:
 		(_daily_button.get_node("Badge") as Control).visible = DailyPuzzle.available_today()
 		(_calendar_button.get_node("Badge") as Control).visible = DailyStore.calendar_available()
+		(_laundromat_button.get_node("Badge") as Control).visible = MetaStore.new().can_renovate()
 	_coin_chip.set_value(UiData.coins())
 	_star_chip.set_value(UiData.stars())
 	UiKit.set_button_text(_play_button, UiStrings.LEVEL % UiData.level())
@@ -246,7 +253,7 @@ func _on_tab(index: int) -> void:
 	if index == TAB_SHOP:
 		_open_sheet(InfoSheet.soon(self, "lucide/shopping-bag"))
 	elif index == TAB_COLLECTION:
-		_open_sheet(InfoSheet.soon(self, "lucide/shirt"))
+		_meta = MetaCollection.open(self)
 
 
 func _open_settings() -> void:
@@ -260,6 +267,8 @@ func _open_sheet(sheet: Sheet) -> void:
 
 
 func _on_back() -> void:
+	if is_instance_valid(_meta):
+		return
 	if _sheet != null and is_instance_valid(_sheet):
 		_sheet.close()
 		return
