@@ -8,7 +8,7 @@ extends Node2D
 ## kilitli (anahtar renginde rozet). İpteyken kumaş gibi sallanır (cloth_sway shader'ı);
 ## tüm uçuş/katlama/iniş hareketi `fly_to` içinde tek bir Tween ile sürülür.
 
-const KINDS: Array[String] = ["tshirt", "pants", "dress", "towel", "shorts", "sweater"]
+const KINDS: Array[String] = ["tshirt", "pants", "dress", "towel", "shorts", "sweater", "sock"]
 const SPRITE_PATH: String = "res://assets/sprites/garment_%s.png"
 const FOLDED_PATH: String = "res://assets/sprites/folded.png"
 const PIN_PATH: String = "res://assets/sprites/pin.png"
@@ -385,6 +385,7 @@ func fly_to(target: Vector2, target_scale: float, folded_width: float, final_rot
 	if _fly_fold:
 		_prepare_fold(folded_width)
 	_fly_total = _fly_anticipate + Motion.FLIGHT_SECONDS
+	_begin_sheet_shrink()
 	_last_pos = _fly_start
 	_lag = 0.0
 	_flight_tween = create_tween()
@@ -404,6 +405,7 @@ func _fly_step(progress: float) -> void:
 		return
 	_set_param(P_STRENGTH, 0.0)
 	var weight: float = (elapsed - _fly_anticipate) / Motion.FLIGHT_SECONDS
+	_sheet_shrink_step(weight)
 	var eased: float = Motion.ease_in_out(weight)
 	var lifted: Vector2 = _fly_start + Vector2(0.0, -Motion.ANTICIPATE_LIFT)
 	var pos: Vector2 = lifted.lerp(_fly_target, eased) + Vector2(0.0, -_fly_arc * sin(PI * eased))
@@ -500,6 +502,8 @@ func _land() -> void:
 
 ## Dokunma alanı (yerel koordinat): görünenden biraz geniş.
 func hit_rect() -> Rect2:
+	if _sheet_size != Vector2.ZERO:
+		return Rect2(Vector2(-_sheet_size.x * 0.5, -size * 0.08), _sheet_size)
 	return Rect2(Vector2(-size * 0.5, -size * 0.08), Vector2(size, size * 1.05))
 
 
@@ -556,3 +560,232 @@ func _draw() -> void:
 		for side: float in [-0.24, 0.24]:
 			draw_style_box(_box, Rect2(Vector2(size * side - size * 0.035, -size * 0.07),
 				Vector2(size * 0.07, size * 0.2)))
+
+
+# --- Yeni engeller: çarşaf, çorap çifti, boya akıtan ----------------------------------------
+
+const SHEET_SHRINK_SHARE: float = 0.55
+const SHEET_PIN_SPREAD: float = 0.38
+const SOCK_BADGE_RATIO: float = 0.16
+const SOCK_BADGE_COLOR: Color = Color(1.0, 1.0, 1.0, 0.95)
+const SOCK_LINK_COLOR: Color = Color("6b7280")
+const SOCK_STUCK_COLOR: Color = Color("e5484d")
+const SOCK_STUCK_DARKEN: float = 0.25
+const DYE_BADGE_RATIO: float = 0.17
+const DYE_URGENT_LEFT: int = 2
+const DYE_TEXT_COLOR: Color = Color.WHITE
+const DYE_PULSE_SCALE: float = 1.25
+const DYE_PULSE_SECONDS: float = 0.12
+const RECOLOR_SECONDS: float = 0.45
+const BADGE_POP_SECONDS: float = 0.14
+const BADGE_GONE_SECONDS: float = 0.3
+const DRIP_FALL: float = 60.0
+
+var _sheet_size: Vector2 = Vector2.ZERO
+var _normal_scale: Vector2 = Vector2.ONE
+var _normal_pos: Vector2 = Vector2.ZERO
+var _sheet_scale: Vector2 = Vector2.ONE
+var _sheet_pos: Vector2 = Vector2.ZERO
+var _shrinking: bool = false
+var _sock_badge: SockBadge = null
+var _dye_badge: DyeBadge = null
+
+
+## Çarşaf: havlu dokusu kendi boyutuna gerilir (iki ipe yayılır). Uçarken normal çamaşır
+## boyutuna küçülür; böylece askı/sepet/katlama kodu çarşafı sıradan parça gibi işler.
+func make_sheet(width: float, height: float) -> void:
+	if _sprite == null:
+		_sheet_size = Vector2(width, height)
+		return
+	_normal_scale = _base_scale
+	_normal_pos = _base_pos
+	var texture_size: Vector2 = _sprite.texture.get_size()
+	_sheet_scale = Vector2(width / texture_size.x, height / texture_size.y)
+	_sheet_pos = Vector2(-texture_size.x * _sheet_scale.x * 0.5, -texture_size.y * _sheet_scale.y * 0.1)
+	_sheet_size = Vector2(width, height)
+	_apply_base(_sheet_scale, _sheet_pos)
+	for index: int in range(_pins.size()):
+		_pins[index].position.x = width * SHEET_PIN_SPREAD * (-1.0 if index == 0 else 1.0)
+
+
+func is_sheet() -> bool:
+	return _sheet_size != Vector2.ZERO
+
+
+func _apply_base(base_scale: Vector2, base_pos: Vector2) -> void:
+	_base_scale = base_scale
+	_base_pos = base_pos
+	_shadow_base_pos = base_pos + SHADOW_OFFSET
+	_sprite.scale = base_scale
+	_sprite.position = base_pos
+	if _shadow != null:
+		_shadow.scale = base_scale
+		_shadow.position = _shadow_base_pos
+
+
+func _begin_sheet_shrink() -> void:
+	_shrinking = is_sheet() and _sprite != null
+
+
+func _sheet_shrink_step(weight: float) -> void:
+	if not _shrinking:
+		return
+	var t: float = Motion.ease_in_out(weight / SHEET_SHRINK_SHARE)
+	_apply_base(_sheet_scale.lerp(_normal_scale, t), _sheet_pos.lerp(_normal_pos, t))
+	if t >= 1.0:
+		# Artık sıradan bir çamaşır: dokunma alanı da normale döner.
+		_shrinking = false
+		_sheet_size = Vector2.ZERO
+
+
+## Çorap: eşini gösteren küçük halka rozeti (iki halka iç içe).
+func set_sock() -> void:
+	if _sock_badge != null:
+		return
+	_sock_badge = SockBadge.new()
+	_sock_badge.radius = size * SOCK_BADGE_RATIO
+	_sock_badge.position = Vector2(size * 0.24, size * 0.18)
+	add_child(_sock_badge)
+
+
+## Eşi beklenen çorap: kısa bir parlama ("şimdi beni al").
+func hint() -> void:
+	flash()
+	if _sock_badge != null:
+		_pop(_sock_badge)
+
+
+## Takılı çorap: rozet kırmızıya döner, çorap koyulaşır; serbest kalınca eski haline döner.
+func set_stuck(stuck: bool) -> void:
+	if _sock_badge == null:
+		set_sock()
+	_sock_badge.stuck = stuck
+	_sock_badge.queue_redraw()
+	if _sprite != null:
+		_sprite.modulate = _shown_color().darkened(SOCK_STUCK_DARKEN) if stuck else _shown_color()
+	if stuck:
+		# Askıdaki parçanın ölçeği küçüktür: `wobble` ölçeği sıfırladığından yalnız dönme oynatılır.
+		var shake: Tween = create_tween()
+		for angle: float in [WOBBLE_DEGREES, -WOBBLE_DEGREES, 0.0]:
+			shake.tween_property(self, "rotation_degrees", angle, WOBBLE_SECONDS)
+	_pop(_sock_badge)
+
+
+## Boya akıtan: damla rozeti ve kalan hamle sayısı.
+func set_dye(left: int, dye_color: Color) -> void:
+	if _dye_badge == null:
+		_dye_badge = DyeBadge.new()
+		_dye_badge.radius = size * DYE_BADGE_RATIO
+		_dye_badge.position = Vector2(size * 0.3, size * 0.3)
+		add_child(_dye_badge)
+		_dye_badge.build()
+	_dye_badge.tint = dye_color
+	set_dye_left(left)
+
+
+func set_dye_left(left: int) -> void:
+	if _dye_badge == null:
+		return
+	if left <= 0:
+		_drop_dye_badge()
+		return
+	var changed: bool = _dye_badge.left != left
+	_dye_badge.left = left
+	_dye_badge.urgent = left <= DYE_URGENT_LEFT
+	_dye_badge.refresh()
+	if changed:
+		_pop(_dye_badge)
+
+
+## Boya aktı / etkisizleşti: rozet damla gibi aşağı süzülüp söner.
+func _drop_dye_badge() -> void:
+	if _dye_badge == null:
+		return
+	var badge: DyeBadge = _dye_badge
+	_dye_badge = null
+	var gone: Tween = badge.create_tween().set_parallel(true)
+	gone.tween_property(badge, "position:y", badge.position.y + DRIP_FALL, BADGE_GONE_SECONDS)\
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	gone.tween_property(badge, "modulate:a", 0.0, BADGE_GONE_SECONDS)
+	gone.chain().tween_callback(badge.queue_free)
+
+
+## Renk değişimi (boya akması / geri al): yumuşak geçiş, sonra yeni renk kalıcı olur.
+func recolor(tint: Color, animate: bool = true) -> void:
+	color = tint
+	if _sprite == null or not animate:
+		_apply_color()
+		return
+	var shift: Tween = _sprite.create_tween()
+	shift.tween_property(_sprite, "modulate", _shown_color(), RECOLOR_SECONDS)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_restart_tween()
+	_tween.tween_property(self, "scale", Vector2(1.08, 0.94), RECOLOR_SECONDS * 0.4)
+	_tween.tween_property(self, "scale", Vector2.ONE, RECOLOR_SECONDS * 0.6)
+
+
+## Uçuşsuz yerleştirme (geri al sonrası yeniden kurulum): uçuş anında tamamlanır, mandal düşmez.
+func snap_to(target: Vector2, target_scale: float, folded_width: float, final_rotation_deg: float) -> void:
+	_show_pins = false
+	for pin: Sprite2D in _pins:
+		pin.visible = false
+	if _drops != null:
+		_drops.emitting = false
+	fly_to(target, target_scale, folded_width, final_rotation_deg)
+	_flight_tween.custom_step(_fly_total + Motion.LAND_TOTAL_SECONDS)
+
+
+func _pop(node: Node2D) -> void:
+	var pop: Tween = node.create_tween()
+	pop.tween_property(node, "scale", Vector2.ONE * DYE_PULSE_SCALE, DYE_PULSE_SECONDS)
+	pop.tween_property(node, "scale", Vector2.ONE, BADGE_POP_SECONDS)
+
+
+## Çorap rozeti: beyaz daire içinde iç içe iki halka (takılıyken kırmızı).
+class SockBadge extends Node2D:
+	var radius: float = 20.0
+	var stuck: bool = false
+
+	func _draw() -> void:
+		draw_circle(Vector2.ZERO, radius, GarmentView.SOCK_BADGE_COLOR, true, -1.0, true)
+		var ink: Color = GarmentView.SOCK_STUCK_COLOR if stuck else GarmentView.SOCK_LINK_COLOR
+		var ring: float = radius * 0.38
+		var width: float = maxf(2.0, radius * 0.16)
+		draw_arc(Vector2(-ring * 0.55, 0.0), ring, 0.0, TAU, 24, ink, width, true)
+		draw_arc(Vector2(ring * 0.55, 0.0), ring, 0.0, TAU, 24, ink, width, true)
+
+
+## Boya rozeti: boya renginde damla + beyaz geri sayım rakamı.
+class DyeBadge extends Node2D:
+	var radius: float = 24.0
+	var tint: Color = Color.WHITE
+	var left: int = 0
+	var urgent: bool = false
+	var _label: Label = null
+
+	func build() -> void:
+		_label = Label.new()
+		_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_label.size = Vector2(radius * 2.0, radius * 2.0)
+		_label.position = Vector2(-radius, -radius * 0.82)
+		_label.add_theme_font_size_override("font_size", int(radius * 1.2))
+		_label.add_theme_color_override("font_color", GarmentView.DYE_TEXT_COLOR)
+		_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.35))
+		_label.add_theme_constant_override("outline_size", 4)
+		add_child(_label)
+
+	func refresh() -> void:
+		if _label != null:
+			_label.text = str(left)
+		queue_redraw()
+
+	func _draw() -> void:
+		# Damla: alt daire + üstte sivri uç. Son hamlelerde beyaz halka belirir (aciliyet).
+		var body: Color = tint.darkened(0.08)
+		var tip: PackedVector2Array = PackedVector2Array([
+			Vector2(-radius * 0.72, -radius * 0.25), Vector2(0.0, -radius * 1.55), Vector2(radius * 0.72, -radius * 0.25)])
+		if urgent:
+			draw_circle(Vector2.ZERO, radius * 1.18, Color(1.0, 1.0, 1.0, 0.9), true, -1.0, true)
+		draw_colored_polygon(tip, body)
+		draw_circle(Vector2.ZERO, radius, body, true, -1.0, true)

@@ -176,6 +176,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _board == null or _board.is_over():
 		return
+	if _booster_intercepts(get_canvas_transform().affine_inverse() * position):
+		return
 	var id: int = _pick(get_canvas_transform().affine_inverse() * position)
 	if id != LaundryBoard.EMPTY:
 		_tap(id)
@@ -217,6 +219,7 @@ func _refresh_open() -> void:
 	for id: int in _views.keys():
 		if _board.is_on_line(id):
 			_views[id].set_open(_board.is_open(id))
+	_refresh_obstacle_views()
 
 
 func _run_events() -> void:
@@ -307,6 +310,8 @@ func _play_event(event: Dictionary) -> void:
 			if await _wait_flights():
 				await _wait(Motion.LOSE_DELAY_SECONDS)
 				_show_lose(int(event.get("remaining", 0)))
+		_:
+			await _play_obstacle_event(event)
 
 
 ## Çamaşır ipten ayrılır: sallanma listesinden çıkar, aynı ipteki komşular yumuşakça sallanır.
@@ -507,6 +512,7 @@ func _start_level() -> void:
 	_build_lines()
 	_build_rack()
 	_build_baskets()
+	_setup_boosters()
 	_refresh_open()
 	queue_redraw()
 
@@ -544,6 +550,7 @@ func _build_lines() -> void:
 			view.set_mystery(true)
 		if item.has("lock"):
 			view.set_lock(COLORS[int(item["lock"]) % COLORS.size()])
+		_decorate_view(view, item, spacing_x, spacing_y)
 
 
 func _build_rack() -> void:
@@ -775,3 +782,230 @@ func _save_progress() -> void:
 	config.set_value("progress", "level", _level_number)
 	config.set_value("progress", "coins", _coins)
 	config.save(SAVE_PATH)
+
+
+# --- Derinleşme: yeni engellerin görünümü ve güçlendiriciler ---------------------------------
+# Neden ayrı blok: kurallar `LaundryBoard`/`Boosters` içinde; burada yalnız görünüm bağlantısı
+# var. Mevcut akışa yalnız kısa kancalar eklendi (_unhandled_input, _refresh_open, _play_event,
+# _start_level, _build_lines); geri kalanı bu bloktadır.
+
+## Çarşaf iki ip arasına yayılır: genişlik = sütun aralığı x kapsadığı sütun, yükseklik = ip aralığı + çamaşır.
+const SHEET_WIDTH_FILL: float = 0.96
+const SHEET_HEIGHT_FILL: float = 0.92
+
+var _booster_bar: BoosterBar = null
+var _boosters: Boosters = Boosters.new()
+var _pin_armed: bool = false
+
+
+## `_build_lines` kancası: çarşaf boyutu, çorap rozeti, boya rozeti.
+func _decorate_view(view: GarmentView, item: Dictionary, spacing_x: float, spacing_y: float) -> void:
+	if bool(item.get("sheet", false)):
+		var span: int = int(item.get("span", 2))
+		var span_lines: int = int(item.get("span_lines", 2))
+		view.make_sheet(spacing_x * float(span) * SHEET_WIDTH_FILL,
+			(spacing_y * float(span_lines - 1) + view.size) * SHEET_HEIGHT_FILL)
+		# Çarşaf üst ipe asılır (katman düşüşü yok): iki ipi birden örttüğü okunur.
+		view.position.y = _line_ys[int(item["line"])]
+	if item.has("sock"):
+		view.set_sock()
+	if item.has("dye"):
+		view.set_dye(int(item["dye"]), COLORS[int(item["color"]) % COLORS.size()])
+
+
+## `_refresh_open` kancası: tahtadan okunan sayaçlar ve güçlendirici çubuğu.
+func _refresh_obstacle_views() -> void:
+	for id: int in _views.keys():
+		if _board.is_dye(id) and _board.is_on_line(id):
+			_views[id].set_dye_left(_board.dye_left(id))
+	_refresh_booster_bar()
+
+
+## `_play_event` kancası: yeni olay türleri.
+func _play_obstacle_event(event: Dictionary) -> void:
+	var id: int = int(event.get("id", LaundryBoard.EMPTY))
+	if not _views.has(id):
+		return
+	match String(event["type"]):
+		LaundryBoard.EVENT_SOCK_WAIT:
+			var partner: int = int(event["partner"])
+			if _views.has(partner):
+				_views[partner].hint()
+		LaundryBoard.EVENT_SOCK_STUCK:
+			_views[id].set_stuck(true)
+			AudioService.play_pitched("lock_rattle", randf_range(0.9, 1.0), -6.0)
+		LaundryBoard.EVENT_SOCK_FREE:
+			_views[id].set_stuck(false)
+			AudioService.play_pitched("unlock", 1.1, -6.0)
+		LaundryBoard.EVENT_DYE_TICK:
+			_views[id].set_dye_left(int(event["left"]))
+		LaundryBoard.EVENT_DYE_BLEED:
+			var target: int = int(event["target"])
+			_views[id].recolor(COLORS[int(event["color"]) % COLORS.size()])
+			if _views.has(target):
+				_views[target].recolor(COLORS[int(event["target_color"]) % COLORS.size()])
+			AudioService.play_pitched("wring", 0.8, -4.0)
+			await _wait(GarmentView.RECOLOR_SECONDS)
+		LaundryBoard.EVENT_PIN_REMOVED:
+			_views[id].release_pins()
+			AudioService.play_pitched("unlock", 1.2, -4.0)
+
+
+func _setup_boosters() -> void:
+	if _booster_bar == null:
+		_booster_bar = BoosterBar.new()
+		_ui.add_child(_booster_bar)
+		_booster_bar.setup(get_viewport_rect().size.x)
+		_booster_bar.booster_pressed.connect(_on_booster_pressed)
+	_boosters.reset()
+	_pin_armed = false
+	_booster_bar.set_armed("")
+	_board.enable_history()
+	_refresh_booster_bar()
+
+
+func _refresh_booster_bar() -> void:
+	if _booster_bar == null or _board == null:
+		return
+	var usable: Dictionary = {}
+	for id: String in Boosters.IDS:
+		usable[id] = _boosters.can_use(id, _board)
+	_booster_bar.refresh(_level_number, usable)
+
+
+func _on_booster_pressed(id: String) -> void:
+	if _board == null or not Boosters.is_unlocked(id, _level_number):
+		return
+	match id:
+		Boosters.UNDO:
+			if _boosters.can_use(id, _board) and _booster_bar.spend(id) and _boosters.undo(_board):
+				_set_pin_armed(false)
+				_rebuild_from_board()
+		Boosters.PIN_REMOVER:
+			# Sökücü iki adımlıdır: önce silahlanır, sonra hedef parçaya dokunulur (o an harcanır).
+			_set_pin_armed(not _pin_armed and _boosters.can_use(id, _board) and _booster_bar.count(id) > 0)
+		Boosters.EXTRA_SLOT:
+			if _boosters.can_use(id, _board) and _booster_bar.spend(id) and _boosters.extra_slot(_board):
+				_rebuild_rack_points()
+	_refresh_booster_bar()
+
+
+func _set_pin_armed(armed: bool) -> void:
+	_pin_armed = armed
+	_booster_bar.set_armed(Boosters.PIN_REMOVER if armed else "")
+	if armed:
+		for target: int in Boosters.pin_targets(_board):
+			if _views.has(target):
+				_views[target].flash()
+
+
+## `_unhandled_input` kancası: sökücü silahlıyken dokunuş hedef seçer (normal dokunuş olmaz).
+func _booster_intercepts(point: Vector2) -> bool:
+	if not _pin_armed:
+		return false
+	var id: int = _pick_pin_target(point)
+	_set_pin_armed(false)
+	if id != LaundryBoard.EMPTY and _booster_bar.count(Boosters.PIN_REMOVER) > 0:
+		var events: Array[Dictionary] = _boosters.pin(_board, id)
+		if Boosters.pin_succeeded(events):
+			_booster_bar.spend(Boosters.PIN_REMOVER)
+			Input.vibrate_handheld(20)
+		_events.append_array(events)
+		_refresh_open()
+		_run_events()
+	_refresh_booster_bar()
+	return true
+
+
+## Noktadaki EN ÜSTTEKİ sökülebilir parça: üstteki açık parça kapalı olanı gölgelemesin.
+func _pick_pin_target(point: Vector2) -> int:
+	var best: int = LaundryBoard.EMPTY
+	var best_layer: int = -1
+	for id: int in _views.keys():
+		if not Boosters.is_pin_target(_board, id):
+			continue
+		var view: GarmentView = _views[id]
+		var rect: Rect2 = view.hit_rect()
+		rect.position += view.position
+		if rect.size.x < MIN_TOUCH:
+			rect = rect.grow((MIN_TOUCH - rect.size.x) * 0.5)
+		if rect.has_point(point) and view.layer > best_layer:
+			best = id
+			best_layer = view.layer
+	return best
+
+
+func _rebuild_rack_points() -> void:
+	_rack_points.clear()
+	_build_rack()
+	var rack: Array[int] = _board.rack()
+	for slot: int in range(rack.size()):
+		if rack[slot] != LaundryBoard.EMPTY and _views.has(rack[slot]):
+			_views[rack[slot]].global_position = _rack_points[slot]
+
+
+## Geri al sonrası: dünya tahtanın o anki durumundan yeniden kurulur. Neden baştan kurmak:
+## yarıda kalan uçuş/sepet korutinlerini tek tek geri sarmak hataya açık; `_generation`
+## artınca eski korutinler kendiliğinden çıkar ve görünüm kesin olarak tahtayla eşleşir.
+func _rebuild_from_board() -> void:
+	if _world != null:
+		_world.queue_free()
+	_generation += 1
+	_playing = false
+	_flights_end_msec = 0
+	_applied_sway = Motion.SWAY_CALM
+	_line_views.clear()
+	_events.clear()
+	_views.clear()
+	_baskets.clear()
+	_basket_items.clear()
+	_rack_points.clear()
+	_line_ys.clear()
+	_world = Node2D.new()
+	add_child(_world)
+	_build_particles()
+	_build_lines()
+	_build_rack()
+	_build_baskets()
+	# Önce renk/durum (boya takası geri alınmış olabilir), sonra yerleşim: katlanan parçanın
+	# katlı dokusu rengini uçuş başında sprite'tan alır.
+	var off_line: Dictionary = {}
+	for id: int in _board.rack():
+		off_line[id] = true
+	for index: int in range(_baskets.size()):
+		for id: int in _board.basket_contents(index):
+			off_line[id] = true
+	for id: int in _views.keys().duplicate():
+		var view: GarmentView = _views[id]
+		if not _board.is_on_line(id) and not off_line.has(id):
+			# Tamamlanmış sepette katlanıp gitmiş parça: artık görünmez.
+			_line_views.erase(view)
+			_views.erase(id)
+			view.queue_free()
+			continue
+		view.recolor(COLORS[_board.color_of(id) % COLORS.size()], false)
+		if not _board.is_wet(id):
+			view.set_wet(false)
+		if _board.lock_color(id) != LaundryBoard.EMPTY and not _board.is_locked(id):
+			view.unlock()
+	var rack: Array[int] = _board.rack()
+	for slot: int in range(rack.size()):
+		if rack[slot] != LaundryBoard.EMPTY:
+			var hanging: GarmentView = _views[rack[slot]]
+			_line_views.erase(hanging)
+			hanging.snap_to(_rack_points[slot], RACK_GARMENT_SCALE, 0.0, 0.0)
+			if _board.is_sock_stuck(rack[slot]):
+				hanging.set_stuck(true)
+	for index: int in range(_baskets.size()):
+		var contents: Array[int] = _board.basket_contents(index)
+		for stack_index: int in range(contents.size()):
+			var folded: GarmentView = _views[contents[stack_index]]
+			_line_views.erase(folded)
+			folded.z_index = 60 + stack_index
+			folded.modulate = Color.WHITE.darkened(Motion.STACK_SHADE * float(2 - stack_index))
+			var tilt: float = Motion.STACK_TILT_DEGREES * (1.0 if stack_index % 2 == 0 else -1.0)
+			folded.snap_to(_baskets[index].slot_position(stack_index), 1.0, _baskets[index].folded_width(), tilt)
+			_basket_items[index].append(folded)
+		_baskets[index].set_filled(contents.size())
+	_refresh_open()
+	AudioService.play_pitched("cloth", 0.9, -6.0)
