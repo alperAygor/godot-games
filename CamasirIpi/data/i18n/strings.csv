@@ -116,3 +116,52 @@ TUT_PIN_REMOVER_TITLE,Mandal çıkarıcı,Peg remover,Quitapinzas
 TUT_PIN_REMOVER_LINE,Seçtiğin çamaşırı hemen serbest bırakır.,Instantly frees the item you pick.,Libera al instante la prenda que elijas.
 TUT_EXTRA_SLOT_TITLE,+1 askı,+1 slot,+1 espacio
 TUT_EXTRA_SLOT_LINE,Bekleme askısına bir yer daha ekler.,Adds one more spot to the waiting rack.,Agrega un lugar más a la percha de espera.
+RET_MISSIONS_TITLE,Günlük görevler,Daily missions,Misiones diarias
+RET_CHEST_BONUS,Bonus sandık,Bonus chest,Cofre extra
+RET_MILESTONES_TITLE,Ödül yolu,Reward path,Camino de premios
+RET_TO_GO,%d seviye kaldı,%d levels to go,Faltan %d niveles
+RET_TO_GO_ONE,1 seviye kaldı,1 level to go,Falta 1 nivel
+RET_CLAIM,Al,Claim,Recoger
+RET_LOCKED,Seviye %d'de açılır,Unlocks at level %d,Se abre en el nivel %d
+RET_DAYS_LEFT,%d gün kaldı,%d days left,Quedan %d días
+RET_LAST_DAY,Son gün,Last day,Último día
+RET_WEEK_NOTE,Geçen haftanın ödülleri verildi: +%d,Last week's rewards were granted: +%d,Se entregaron los premios de la semana pasada: +%d
+RET_W_BLUE,Mavi hafta,Blue week,Semana azul
+RET_G_BLUE,Mavi çamaşırları katla,Fold blue laundry,Dobla ropa azul
+RET_W_RED,Kırmızı hafta,Red week,Semana roja
+RET_G_RED,Kırmızı çamaşırları katla,Fold red laundry,Dobla ropa roja
+RET_W_GREEN,Yeşil hafta,Green week,Semana verde
+RET_G_GREEN,Yeşil çamaşırları katla,Fold green laundry,Dobla ropa verde
+RET_W_YELLOW,Sarı hafta,Yellow week,Semana amarilla
+RET_G_YELLOW,Sarı çamaşırları katla,Fold yellow laundry,Dobla ropa amarilla
+RET_W_PURPLE,Mor hafta,Purple week,Semana morada
+RET_G_PURPLE,Mor çamaşırları katla,Fold purple laundry,Dobla ropa morada
+RET_W_CHAIN,Zincir haftası,Chain week,Semana de cadenas
+RET_G_CHAIN,Zincirleme sepet doldur,Fill baskets in a chain,Llena cestas en cadena
+RET_W_BASKETS,Sepet haftası,Basket week,Semana de cestas
+RET_G_BASKETS,Sepet doldur,Fill baskets,Llena cestas
+RET_W_STARS,Yıldız haftası,Star week,Semana de estrellas
+RET_G_STARS,Seviyelerden yıldız topla,Earn stars in levels,Gana estrellas en los niveles
+RET_M_LEVELS,%d seviye bitir,Finish %d levels,Termina %d niveles
+RET_M_STARS3,%d seviyeyi 3 yıldızla bitir,Finish %d levels with 3 stars,Termina %d niveles con 3 estrellas
+RET_M_LOW_RACK,%d seviyeyi en çok %d askıyla bitir,Finish %d levels using at most %d rack spots,Termina %d niveles usando como máximo %d perchas
+RET_M_BASKETS,%d sepet doldur,Fill %d baskets,Llena %d cestas
+RET_M_CHAIN,%d'lü zincir yap,Make a x%d chain,Haz una cadena de x%d
+RET_M_DAILY,Günlük bulmacayı çöz,Solve the daily puzzle,Resuelve el puzzle diario
+RET_M_BOOSTER,%d güçlendirici kullan,Use %d boosters,Usa %d potenciadores
+RET_M_BIRD,%d kuşu kov,Shoo %d birds,Espanta %d pájaros
+RET_M_CAT,Kediyi %d kez sev,Pet the cat %d times,Acaricia al gato %d veces
+RET_WELCOME_TITLE,Tekrar hoş geldin!,Welcome back!,¡Bienvenido de nuevo!
+RET_WELCOME_BODY,%d gündür yoktun. Küçük bir hediye hazırladık.,You were away for %d days. Here is a little gift.,Estuviste fuera %d días. Aquí tienes un pequeño regalo.
+RET_STREAK_TITLE,%d gün üst üste!,%d days in a row!,¡%d días seguidos!
+RET_STREAK_BODY,Her gün uğramanın küçük bir ödülü var.,Dropping by every day has a small reward.,Pasar cada día tiene un pequeño premio.
+RET_N_GIFT_T,Günlük hediyen hazır,Your daily gift is ready,Tu regalo diario está listo
+RET_N_GIFT_B,Çamaşırlar seni bekliyor.,The laundry is waiting for you.,La colada te espera.
+RET_N_MISS_T,Görevlerin seni bekliyor,Your missions are waiting,Tus misiones te esperan
+RET_N_MISS_B,Bugünün görevleri hazır.,Today's missions are ready.,Las misiones de hoy están listas.
+RET_N_WEEK_T,Haftalık etkinlik yarın bitiyor,The weekly event ends tomorrow,El evento semanal termina mañana
+RET_N_WEEK_B,Kalan ödüllerini almayı unutma.,Do not forget your remaining rewards.,No olvides tus premios restantes.
+RET_WEEKLY_TITLE,Haftalık etkinlik,Weekly event,Evento semanal
+RET_M_STARS3_ONE,Bir seviyeyi 3 yıldızla bitir,Finish a level with 3 stars,Termina un nivel con 3 estrellas
+RET_M_LOW_RACK_ONE,Bir seviyeyi en çok %d askıyla bitir,Finish a level using at most %d rack spots,Termina un nivel usando como máximo %d perchas
+RET_M_BOOSTER_ONE,Bir güçlendirici kullan,Use a booster,Usa un potenciador

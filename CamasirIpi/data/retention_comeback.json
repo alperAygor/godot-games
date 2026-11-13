@@ -1,0 +1,12 @@
+{
+  "min_level": 4,
+  "min_away_days": 2,
+  "gifts": [
+    { "from": 2, "to": 6, "coins_base": 30, "coins_per_day": 15, "booster": "any", "count": 1 },
+    { "from": 7, "to": 100000, "coins_base": 200, "coins_per_day": 0, "stars": 3, "booster": "any", "count": 2 }
+  ],
+  "streak": {
+    "cycle": 7,
+    "bonus": { "3": 15, "7": 40 }
+  }
+}
