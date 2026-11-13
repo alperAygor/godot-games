@@ -3,20 +3,22 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bpk514snpol6x"
-path="res://.godot/imported/room_lamp_1.png-348f5235a9dee9f676c5abccb4b8cdbb.ctex"
+path.bptc="res://.godot/imported/room_lamp_1.png-348f5235a9dee9f676c5abccb4b8cdbb.bptc.ctex"
+path.astc="res://.godot/imported/room_lamp_1.png-348f5235a9dee9f676c5abccb4b8cdbb.astc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/sprites/meta/room_lamp_1.png"
-dest_files=["res://.godot/imported/room_lamp_1.png-348f5235a9dee9f676c5abccb4b8cdbb.ctex"]
+dest_files=["res://.godot/imported/room_lamp_1.png-348f5235a9dee9f676c5abccb4b8cdbb.bptc.ctex", "res://.godot/imported/room_lamp_1.png-348f5235a9dee9f676c5abccb4b8cdbb.astc.ctex"]
 
 [params]
 
-compress/mode=0
-compress/high_quality=false
+compress/mode=2
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0

@@ -3,20 +3,22 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://brx7kxm3yyg0s"
-path="res://.godot/imported/bg_grass.png-3a28b86142300096055390e0c3f8954a.ctex"
+path.bptc="res://.godot/imported/bg_grass.png-3a28b86142300096055390e0c3f8954a.bptc.ctex"
+path.astc="res://.godot/imported/bg_grass.png-3a28b86142300096055390e0c3f8954a.astc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/sprites/bg/bg_grass.png"
-dest_files=["res://.godot/imported/bg_grass.png-3a28b86142300096055390e0c3f8954a.ctex"]
+dest_files=["res://.godot/imported/bg_grass.png-3a28b86142300096055390e0c3f8954a.bptc.ctex", "res://.godot/imported/bg_grass.png-3a28b86142300096055390e0c3f8954a.astc.ctex"]
 
 [params]
 
-compress/mode=0
-compress/high_quality=false
+compress/mode=2
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0

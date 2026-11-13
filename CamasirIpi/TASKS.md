@@ -33,3 +33,4 @@
 - [ ] **P4b** Çarşaf, çorap çifti, boya akıtan; güçlendiriciler; renk körlüğü desenleri
 - [ ] **P5** Ana ekran (çamaşırhane), ekonomi, reklam yerleşimi
 - [x] **P6** Premium geçiş (2.5D): Blender render bahçe katmanları + askı, yeniden yapılan çamaşır/sepet/mandal modelleri (Cycles), yavaş ve yumuşak animasyonlar (`Motion`, kumaş sallanma shader'ı), ElevenLabs ses seti (`tools/make_el_sfx.py`)
+- [x] **PERF** Başarım turu: arka plan seviye üretimi (`LevelPrefetch`), VRAM sıkıştırma (ASTC), kare başı işlerin azaltılması, sızıntılar; ölçüm aracı `tools/perf_probe.gd`, sonuçlar `docs/perf/`. Gerçek Android cihazda doğrulanacak: ASTC görüntü kalitesi, kare süresi, açılış süresi.

@@ -40,6 +40,8 @@ var _stars: Array[Sprite2D] = []
 var _star_base: PackedFloat32Array = PackedFloat32Array()
 var _star_speed: PackedFloat32Array = PackedFloat32Array()
 var _star_phase: PackedFloat32Array = PackedFloat32Array()
+## Yıldızlar şu an görünür mü (görünürlük yalnız değişince yazılır). Başta düğümler görünür.
+var _stars_shown: bool = true
 
 
 func setup() -> void:
@@ -81,6 +83,13 @@ func lift_moon(new_parent: Node) -> void:
 
 
 func apply(look: DayLook, time: float) -> void:
+	apply_static(look)
+	twinkle(look, time)
+
+
+## Görünüme bağlı durağan kısım (güneş/ay konum ve renkleri, yıldızların görünürlüğü): yalnız
+## görünüm değişince çağrılır; her karede 40 düğüme aynı değeri yazmaya gerek yok.
+func apply_static(look: DayLook) -> void:
 	var sun_on: bool = look.sun_alpha > VISIBLE_EPSILON
 	_sun_disc.visible = sun_on
 	_sun_halo.visible = sun_on
@@ -102,9 +111,17 @@ func apply(look: DayLook, time: float) -> void:
 		_moon_disc.modulate = Color(look.moon_color.r, look.moon_color.g, look.moon_color.b, 1.0)
 		_moon_halo.modulate = Color(MOON_HALO_COLOR.r, MOON_HALO_COLOR.g, MOON_HALO_COLOR.b, MOON_HALO_ALPHA)
 	var stars_on: bool = look.star_amount > VISIBLE_EPSILON
+	if stars_on != _stars_shown:
+		_stars_shown = stars_on
+		for star: Sprite2D in _stars:
+			star.visible = stars_on
+
+
+## Yıldız pırıltısı (zamana bağlı): yalnız yıldızlar görünürken çalışır.
+func twinkle(look: DayLook, time: float) -> void:
+	if not _stars_shown:
+		return
 	for index: int in range(_stars.size()):
-		_stars[index].visible = stars_on
-		if stars_on:
-			# Her yıldız kendi hızında ve fazında hafifçe parlayıp söner.
-			var twinkle: float = 0.6 + 0.4 * sin(time * _star_speed[index] + _star_phase[index])
-			_stars[index].modulate = Color(0.95, 0.97, 1.0, _star_base[index] * twinkle * look.star_amount)
+		# Her yıldız kendi hızında ve fazında hafifçe parlayıp söner.
+		var twinkle_amount: float = 0.6 + 0.4 * sin(time * _star_speed[index] + _star_phase[index])
+		_stars[index].modulate = Color(0.95, 0.97, 1.0, _star_base[index] * twinkle_amount * look.star_amount)

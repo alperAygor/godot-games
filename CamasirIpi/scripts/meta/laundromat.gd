@@ -14,6 +14,9 @@ extends CanvasLayer
 ## Kullanım (yönetmen): `MetaLaundromat.open(self)` — kapanınca `closed` yayılır.
 
 signal closed
+## Ekran tamamen opak olunca true (açılış solması bitti), kapanış başlarken false. Ana ekran
+## bununla arkada kalan (görünmeyen) bahçeyi çizmeyi/işlemeyi durdurur: mobilde boşa piksel doldurma.
+signal covering_changed(covering: bool)
 
 const SCENE_PATH: String = "res://scenes/meta/Laundromat.tscn"
 const LAYER_DIR: String = "res://assets/sprites/meta/"
@@ -39,6 +42,7 @@ const LAMP_SWAY_DEGREES: float = 0.5
 const LAMP_SWAY_SECONDS: float = 5.5
 ## Dokunma testi: gölge pikselleri (yarı saydam) eşya sayılmasın.
 const HIT_ALPHA: float = 0.6
+const HALF_ALPHA_STEP: float = 0.5 / 255.0
 const TAP_MAX_TRAVEL: float = 24.0
 
 # Alt kart
@@ -97,7 +101,7 @@ var _effects: Node2D = null
 var _layers: Dictionary[String, TextureRect] = {}
 var _manifest: Dictionary = {}
 var _anchors: Dictionary = {}
-var _images: Dictionary[String, Image] = {}
+var _masks: Dictionary[String, BitMap] = {}
 var _star_chip: UiChip = null
 var _coin_chip: UiChip = null
 var _title: Label = null
@@ -151,8 +155,10 @@ func _ready() -> void:
 	_refresh_header(false)
 	_show_card(_default_mode(), false)
 	_root.modulate.a = 0.0
-	create_tween().tween_property(_root, "modulate:a", 1.0, Motion.OVERLAY_FADE_SECONDS)\
+	var intro: Tween = create_tween()
+	intro.tween_property(_root, "modulate:a", 1.0, Motion.OVERLAY_FADE_SECONDS)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	intro.tween_callback(_on_intro_done)
 
 
 ## Yumuşakça kapanır, `closed` yayar ve kendini siler.
@@ -160,11 +166,18 @@ func close() -> void:
 	if _closing:
 		return
 	_closing = true
+	# Solarak kapanırken arkası görünür: ana ekran önce yeniden çizilmeye başlasın.
+	covering_changed.emit(false)
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var tween: Tween = create_tween()
 	tween.tween_property(_root, "modulate:a", 0.0, Motion.OVERLAY_FADE_SECONDS)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	tween.tween_callback(_finish_close)
+
+
+func _on_intro_done() -> void:
+	if not _closing:
+		covering_changed.emit(true)
 
 
 func _finish_close() -> void:
@@ -322,15 +335,23 @@ func _update_fills() -> void:
 	_floor_extension.texture = strip
 
 
-func _image_for(rect: TextureRect) -> Image:
+## Dokunma maskesi (1 bit/piksel). Neden Image değil: tam RGBA kopyası katman başına ~4 MB RAM
+## tutuyordu (duvar/zemin); isabet testi yalnız "alfa >= HIT_ALPHA mı" sorar. Görüntü maskeye
+## çevrilip hemen bırakılır. Sıkıştırılmış doku açılabiliyorsa açılır (yoksa dikdörtgen testi).
+func _mask_for(rect: TextureRect) -> BitMap:
 	var entry_name: String = String(rect.get_meta(&"layer_name", ""))
-	if _images.has(entry_name):
-		return _images[entry_name]
+	if _masks.has(entry_name):
+		return _masks[entry_name]
+	var mask: BitMap = null
 	var image: Image = rect.texture.get_image() if rect.texture != null else null
-	if image != null and image.is_compressed():
+	if image != null and image.is_compressed() and image.decompress() != OK:
 		image = null
-	_images[entry_name] = image
-	return image
+	if image != null:
+		mask = BitMap.new()
+		# BitMap "alfa > eşik" der; eski test "alfa >= HIT_ALPHA" idi: yarım 8 bit adım aşağı = birebir aynı.
+		mask.create_from_image_alpha(image, HIT_ALPHA - HALF_ALPHA_STEP)
+	_masks[entry_name] = mask
+	return mask
 
 
 ## Görevi yenilenmiş hâline geçirir: eski eşya küçülüp söner, yenisi yumuşakça açılır.
@@ -658,7 +679,10 @@ func _thumbnail(task_id: String) -> Control:
 		# Zemin/duvar: katmanın ortasından kare kesit, daire maskeli (doku "örneği" gibi).
 		# NEDEN ayrı doku: AtlasTexture'da UV tüm atlası kapsar, daire maskesi bölgeye oturmaz.
 		var image: Image = texture.get_image()
-		if image != null and not image.is_compressed():
+		# Oda katmanları VRAM sıkıştırmalıdır (mobilde ASTC): kesit almak için önce açılır.
+		if image != null and image.is_compressed() and image.decompress() != OK:
+			image = null
+		if image != null:
 			var tex_size: Vector2 = Vector2(image.get_width(), image.get_height())
 			var crop: float = minf(BIG_THUMB_CROP * tex_size.x / area.size.x, minf(tex_size.x, tex_size.y))
 			var focus: float = float(BIG_THUMB_FOCUS.get(task_id, BIG_THUMB_FOCUS_DEFAULT))
@@ -894,11 +918,12 @@ func _tap_room(at: Vector2) -> void:
 		var rect: TextureRect = _layers.get(slot) as TextureRect
 		if rect == null or not Rect2(rect.position, rect.size).has_point(local):
 			continue
-		var image: Image = _image_for(rect)
-		if image != null:
+		var mask: BitMap = _mask_for(rect)
+		if mask != null:
 			var uv: Vector2 = (local - rect.position) / rect.size
-			var pixel: Vector2i = Vector2i(int(uv.x * float(image.get_width() - 1)), int(uv.y * float(image.get_height() - 1)))
-			if image.get_pixelv(pixel).a < HIT_ALPHA:
+			var mask_size: Vector2i = mask.get_size()
+			var pixel: Vector2i = Vector2i(int(uv.x * float(mask_size.x - 1)), int(uv.y * float(mask_size.y - 1)))
+			if not mask.get_bitv(pixel):
 				continue
 		_choose_task = task
 		MetaUi.play_sound("ui_soft", 1.0, -4.0)

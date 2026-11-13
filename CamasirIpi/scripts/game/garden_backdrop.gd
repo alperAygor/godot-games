@@ -56,6 +56,9 @@ const HUD_DARK_LUMA_RANGE: float = 0.25
 const HUD_LIGHT_TEXT: Color = Color(0.94, 0.96, 1.0)
 ## Hata ayıklama: `-- --phase=N` o gün aşamasını zorlar (ekran görüntüsü için).
 const PHASE_ARG: String = "--phase="
+## Fırtına/tehlike bundan küçük değişince tonlar yeniden yazılmaz: renkte < 1/255 fark eder
+## (görünmez), ama yavaşça sönen fırtına her kare ~60 sprite'a yazmayı tetiklemez.
+const TINT_EPSILON: float = 0.002
 
 var storm: float = 0.0
 var danger: float = 0.0
@@ -86,6 +89,16 @@ var _rack: Sprite2D = null
 var _scenery: Node2D = null
 var _props: Node2D = null
 var _parent: Node2D = null
+## Son uygulanan fırtına/tehlike ve "ton yeniden uygulanmalı" bayrağı: değişmeyen kareler yazılmaz.
+var _applied_storm: float = -1.0
+var _applied_danger: float = -1.0
+var _tints_dirty: bool = true
+## Bahçe dokuları uygulama boyunca bir kez yüklenir. Neden: ana ekran ve oyun aynı bahçeyi
+## kullanır; her sahne geçişinde ~20 MB doku silinip yeniden yükleniyordu (geçiş anında takılma).
+## Bahçe her iki ana sahnede de ekranda olduğundan kalıcı tutmak tepe belleği artırmaz.
+static var _textures: Dictionary[String, Texture2D] = {}
+## İş parçacığında yüklenmesi istenip henüz alınmamış yollar (çıkışta toplanır).
+static var _requested: Array[String] = []
 
 
 func setup(view_size: Vector2, rack_hook_y: float) -> void:
@@ -181,6 +194,7 @@ func set_level(level: int) -> void:
 	if first:
 		_current.copy_from(_fade_to)
 		_apply_look(0.0)
+	_tints_dirty = true
 
 
 ## Gökyüzü koyulaşınca (alacakaranlık/gece) koyu HUD yazısı okunmaz olur; bu yüzden
@@ -204,8 +218,16 @@ func _dimmed(color: Color) -> Color:
 	return Color(color.r * _current.storm_dim, color.g * _current.storm_dim, color.b * _current.storm_dim, color.a)
 
 
-## Geçiş ilerler, paleti sahneye uygular. Kare başına yalnızca ~20 özellik ataması.
+## Paleti sahneye uygular: durağan tonlar + zamana bağlı ışıklar.
 func _apply_look(time: float) -> void:
+	_apply_tints()
+	_animate_lights(time)
+
+
+## Durağan tonlar (katmanlar, çiçekler, direkler, bulutlar, gök cisimleri). Neden ayrı: bunlar
+## yalnız gün geçişinde ya da fırtına değişince değişir; eskiden her kare ~60 sprite'a aynı
+## değer yazılıyordu. Artık yalnız görünüm değişince çağrılır.
+func _apply_tints() -> void:
 	var scenery: Color = _current.scenery_tint
 	for sprite: Sprite2D in _tinted:
 		sprite.modulate = scenery
@@ -214,7 +236,17 @@ func _apply_look(time: float) -> void:
 		flower.modulate = flower_tint
 	_props.modulate = Color.WHITE.lerp(scenery, PROPS_TINT_SHARE)
 	garment_tint = _current.garment_tint
-	_sky_view.apply(_current, time)
+	var cloud_tint: Color = _current.cloud_tint * Color.WHITE.lerp(STORM_CLOUD_TINT, storm)
+	for entry: Array in _clouds:
+		(entry[0] as Sprite2D).modulate = cloud_tint
+	_sky_view.apply_static(_current)
+	modulate = Color.WHITE.lerp(STORM_TINT, storm * 0.8)
+	_applied_storm = storm
+
+
+## Zamana bağlı ışıklar (yıldız pırıltısı, ateş böcekleri, pencereler): görünürken her kare.
+func _animate_lights(time: float) -> void:
+	_sky_view.twinkle(_current, time)
 	_fireflies.apply(_current.firefly_amount, time)
 	_window_lights.apply(_current.window_glow, time)
 	if _far_sprite != null:
@@ -223,20 +255,65 @@ func _apply_look(time: float) -> void:
 
 func _sprite(file_name: String, top_left: Vector2) -> Sprite2D:
 	var sprite: Sprite2D = Sprite2D.new()
-	var path: String = BG_DIR + file_name + ".png"
-	if ResourceLoader.exists(path):
-		sprite.texture = load(path) as Texture2D
+	sprite.texture = _texture(file_name)
 	sprite.centered = false
 	sprite.position = top_left
 	_parent.add_child(sprite)
 	return sprite
 
 
+## Açılışta (Boot beklemesi) tüm bahçe dokularını iş parçacıklarında paralel yüklemeye başlar.
+## `_texture` hazır olanı alır; bitmemişse yalnız o dokuyu bekler.
+static func warm_up() -> void:
+	for file_name: String in _all_files():
+		var path: String = BG_DIR + file_name + ".png"
+		if not _textures.has(path) and not _requested.has(path) and ResourceLoader.exists(path):
+			if ResourceLoader.load_threaded_request(path) == OK:
+				_requested.append(path)
+
+
+## Çıkışta: alınmamış iş parçacığı yüklemeleri bitirilip bırakılır, önbellek boşaltılır. Neden:
+## açılış beklemesinde (0.4 sn) çıkılırsa yarım kalan yüklemeler "ObjectDB leaked" uyarısı veriyordu.
+static func release_textures() -> void:
+	for path: String in _requested:
+		ResourceLoader.load_threaded_get(path)
+	_requested.clear()
+	_textures.clear()
+
+
+static func _all_files() -> Array[String]:
+	var names: Array[String] = ["tree_trunk", "tree_crown", "pole", "rack"]
+	for group: Array[Array] in [LAYERS, FRONT_LAYERS, CLOUDS, FLOWERS]:
+		for spec: Array in group:
+			if not names.has(String(spec[0])):
+				names.append(String(spec[0]))
+	return names
+
+
+static func _texture(file_name: String) -> Texture2D:
+	var path: String = BG_DIR + file_name + ".png"
+	if _textures.has(path):
+		return _textures[path]
+	if not ResourceLoader.exists(path):
+		return null
+	var texture: Texture2D = null
+	if _requested.has(path):
+		_requested.erase(path)
+		texture = ResourceLoader.load_threaded_get(path) as Texture2D
+	if texture == null:
+		texture = load(path) as Texture2D
+	_textures[path] = texture
+	return texture
+
+
 func _process(delta: float) -> void:
 	var time: float = float(Time.get_ticks_msec()) * 0.001
+	var look_changed: bool = _tints_dirty or absf(storm - _applied_storm) > TINT_EPSILON
+	_tints_dirty = false
 	if _fade < 1.0:
 		_fade = minf(_fade + delta / DayCycle.FADE_SECONDS, 1.0)
 		_current.blend(_fade_from, _fade_to, smoothstep(0.0, 1.0, _fade))
+		look_changed = true
 	var wind: float = 1.0 + storm * 4.0
 	# Çok yavaş, küçük yatay salınım: katmanlar farklı genlikte kaydığı için derinlik hissi verir.
 	var drift: float = sin(time * PARALLAX_SPEED)
@@ -247,13 +324,14 @@ func _process(delta: float) -> void:
 		cloud.position.x += float(entry[1]) * wind * delta
 		if cloud.position.x > _width + 40.0:
 			cloud.position.x = -CLOUD_WRAP_MARGIN
-		cloud.modulate = _current.cloud_tint * Color.WHITE.lerp(STORM_CLOUD_TINT, storm)
 	if _crown != null:
 		_crown.rotation_degrees = CROWN_SWAY_DEGREES * wind * 0.6 * sin(time * 0.7 * (1.0 + storm))
 	for index: int in range(_flowers.size()):
 		_flowers[index].rotation_degrees = FLOWER_SWAY_DEGREES * (1.0 + storm * 2.0) \
 			* sin(time * 1.5 + float(index) * 1.9)
-	_apply_look(time)
-	modulate = Color.WHITE.lerp(STORM_TINT, storm * 0.8)
-	if _rack != null:
+	if look_changed:
+		_apply_tints()
+	_animate_lights(time)
+	if _rack != null and absf(danger - _applied_danger) > TINT_EPSILON:
+		_applied_danger = danger
 		_rack.modulate = Color.WHITE.lerp(DANGER_TINT, danger)

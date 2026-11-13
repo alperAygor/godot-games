@@ -251,6 +251,8 @@ func wring() -> void:
 	splash.color = DROP_COLOR
 	add_child(splash)
 	splash.emitting = true
+	# Tek atımlık sıçrama bitince silinir: eskiden her sıkmada bir yayıcı düğüm çamaşırda kalıyordu.
+	splash.finished.connect(splash.queue_free)
 
 
 func set_mystery(mystery: bool) -> void:

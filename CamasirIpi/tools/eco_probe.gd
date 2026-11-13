@@ -98,8 +98,11 @@ func _run() -> void:
 	var paid_before: int = int(progress.call("coins"))
 	_check(paid_before >= 100, "devam için yeterli jeton olmalı (%d)" % paid_before)
 	var cost: int = int(ProgressData.load_balance()["continue_cost"])
-	_game.call("_on_revive_ad", Button.new())
+	# Sahte düğme ağaca eklenmez: iş bitince elle silinir (yoksa çıkışta düğüm/tema/yazı tipi sızıntısı).
+	var revive_button: Button = Button.new()
+	_game.call("_on_revive_ad", revive_button)
 	await _frames(SETTLE_FRAMES)
+	revive_button.free()
 	_check(_board().rack_slots() == slots_before + 1, "reklamla devam +1 askı vermeli")
 	_check(_game.get("_overlay") == null, "devam sonrası katman kapanmalı")
 	# Aynı seviyede ikinci devam (jetonla) reddedilmeli.
@@ -197,8 +200,10 @@ func _win_current_level(double: bool = false) -> void:
 	_expected_coins += reward
 	_expected_stars += rating
 	if double:
-		_game.call("_on_double_coins", Button.new(), reward)
+		var double_button: Button = Button.new()
+		_game.call("_on_double_coins", double_button, reward)
 		await _frames(SETTLE_FRAMES)
+		double_button.free()
 	# Devam: geçiş reklamı kararı burada işler (sağlayıcı anında biter).
 	var flow: Node = _game.get("_eco") as Node
 	flow.call("maybe_interstitial", int(_game.get("_level_number")), func() -> void: pass)

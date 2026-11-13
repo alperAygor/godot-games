@@ -29,6 +29,16 @@ func _notification(what: int) -> void:
 	# Android donanım geri tuşu
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		back_requested.emit()
+	elif what == NOTIFICATION_WM_CLOSE_REQUEST:
+		# Kapanışta arka plan üretimi yarıda kalmasın (iş parçacığı beklenmeden çıkılmaz).
+		LevelPrefetch.drain()
+
+
+func _exit_tree() -> void:
+	# Her çıkış yolunda (prob/araç `quit()` dahil) bekleyen arka plan işleri bitirilir ve
+	# paylaşılan statik önbellekler boşaltılır: çıkışta "sızıntı" uyarısı kalmasın.
+	LevelPrefetch.drain()
+	GardenBackdrop.release_textures()
 
 
 func _unhandled_input(event: InputEvent) -> void:

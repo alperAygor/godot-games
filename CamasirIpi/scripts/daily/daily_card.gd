@@ -57,6 +57,8 @@ func _fill() -> void:
 		close_button.pressed.connect(close)
 		column.add_child(close_button)
 		return
+	# Oyuncu kartı okurken günün bulmacası arka planda kurulur: "Oyna" anında açılır.
+	LevelPrefetch.request(_prefetch_key(), _build_job())
 	var play: Button = UiKit.button(DailyStrings.PLAY, &"", "lucide/play", PLAY_HEIGHT)
 	play.pressed.connect(_on_play)
 	column.add_child(play)
@@ -64,5 +66,16 @@ func _fill() -> void:
 
 func _on_play() -> void:
 	# Seviye oyuncunun seviye kovasına göre kurulur; oyun sahnesi devri tek seferde alır.
-	DailyPuzzle.pending_level = DailyPuzzle.build_level(_today, Progress.level())
+	DailyPuzzle.pending_level = LevelPrefetch.take(_prefetch_key(), _build_job())
 	GameManager.goto_scene(&"game")
+
+
+## Önbellek anahtarı tarih + oyuncu seviyesi: seviye kovası değişirse eski sonuç kullanılmaz.
+func _prefetch_key() -> String:
+	return "daily:%s:%d" % [_today, Progress.level()]
+
+
+## Arka plan işi saf olmalı: kurallar (statik JSON önbelleği) ana iş parçacığında önceden okunur.
+func _build_job() -> Callable:
+	DailyPuzzle.rules()
+	return DailyPuzzle.build_level.bind(_today, Progress.level())

@@ -3,20 +3,22 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bbuivk2f0qxpq"
-path="res://.godot/imported/cloud_1.png-3344a73e4e1f1cd74dad1c30c88942d0.ctex"
+path.bptc="res://.godot/imported/cloud_1.png-3344a73e4e1f1cd74dad1c30c88942d0.bptc.ctex"
+path.astc="res://.godot/imported/cloud_1.png-3344a73e4e1f1cd74dad1c30c88942d0.astc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/sprites/bg/cloud_1.png"
-dest_files=["res://.godot/imported/cloud_1.png-3344a73e4e1f1cd74dad1c30c88942d0.ctex"]
+dest_files=["res://.godot/imported/cloud_1.png-3344a73e4e1f1cd74dad1c30c88942d0.bptc.ctex", "res://.godot/imported/cloud_1.png-3344a73e4e1f1cd74dad1c30c88942d0.astc.ctex"]
 
 [params]
 
-compress/mode=0
-compress/high_quality=false
+compress/mode=2
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0

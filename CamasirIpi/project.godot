@@ -44,9 +44,14 @@ pointing/emulate_touch_from_mouse=true
 
 [physics]
 
-common/physics_ticks_per_second=60
+; Oyun saf 2B ve fizik gövdesi/_physics_process kullanmıyor (Tween/parçacık boşta işlenir):
+; fizik adımı her karede boşa döner. 30 Hz, mobilde kare başına sabit bir yükü yarıya indirir.
+common/physics_ticks_per_second=30
 
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+; Mobil doku sıkıştırma (ASTC). Büyük bahçe/çamaşırhane katmanları "high_quality" VRAM
+; sıkıştırmalıdır: mobilde ASTC 4x4, masaüstünde BPTC (8 bit/piksel, RGBA8'in 1/4'ü).
+textures/vram_compression/import_etc2_astc=true

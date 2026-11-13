@@ -17,6 +17,9 @@ const AMBIENCE_FADE_OUT_S: float = 1.2
 ## Sessizlik: fade-out bitince oynatıcıyı gerçekten susturmak için kullanılan taban.
 const SILENT_DB: float = -80.0
 
+## Çıkışta ses iş parçacığının durdurulan akışları bırakması için beklenen süre (ms).
+const AUDIO_DRAIN_MSEC: int = 50
+
 var _pool: Array[AudioStreamPlayer] = []
 var _next: int = 0
 var _table: Dictionary = {}
@@ -62,6 +65,28 @@ func _ready() -> void:
 	add_child(_music)
 	play_ambience.call_deferred(AMBIENCE_NAME, AMBIENCE_VOLUME_DB)
 	play_music.call_deferred(MUSIC_NAME, MUSIC_VOLUME_DB)
+
+
+## Çıkışta çalan akışlar durdurulup bırakılır. Neden: çalan oynatma (müzik/ambiyans) ses
+## sunucusunda referans tutuyordu; her pencereli çıkışta "6 ObjectDB instances leaked" ve
+## "2 resources still in use" (music_garden.ogg) uyarısı basılıyordu.
+func _exit_tree() -> void:
+	var players: Array[AudioStreamPlayer] = _pool.duplicate()
+	players.append_array([_ambience, _music])
+	for player: AudioStreamPlayer in players:
+		if player != null:
+			player.stop()
+	# Durdurulan oynatmayı ses karıştırma iş parçacığı bir sonraki turunda bırakır; çıkışta o tur
+	# gelmeden nesne denetimi yapılınca sızıntı sayılıyordu. Kısa bekleme yalnız çıkışta olur.
+	OS.delay_msec(AUDIO_DRAIN_MSEC)
+	for player: AudioStreamPlayer in players:
+		if player != null:
+			player.stream = null
+			player.free()
+	_pool.clear()
+	_ambience = null
+	_music = null
+	_cache.clear()
 
 
 ## `data/sounds.json` içinde tanımlı bir sesi çalar. Tanımsız ad sessizce yok sayılır.

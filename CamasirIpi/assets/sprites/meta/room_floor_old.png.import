@@ -3,20 +3,22 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c7ofyrc562mnu"
-path="res://.godot/imported/room_floor_old.png-20ddb76ce7dd6e1df271546adcfdfd53.ctex"
+path.bptc="res://.godot/imported/room_floor_old.png-20ddb76ce7dd6e1df271546adcfdfd53.bptc.ctex"
+path.astc="res://.godot/imported/room_floor_old.png-20ddb76ce7dd6e1df271546adcfdfd53.astc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/sprites/meta/room_floor_old.png"
-dest_files=["res://.godot/imported/room_floor_old.png-20ddb76ce7dd6e1df271546adcfdfd53.ctex"]
+dest_files=["res://.godot/imported/room_floor_old.png-20ddb76ce7dd6e1df271546adcfdfd53.bptc.ctex", "res://.godot/imported/room_floor_old.png-20ddb76ce7dd6e1df271546adcfdfd53.astc.ctex"]
 
 [params]
 
-compress/mode=0
-compress/high_quality=false
+compress/mode=2
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0

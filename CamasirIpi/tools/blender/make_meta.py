@@ -61,6 +61,7 @@ VEIL_ALPHA = 14 / 255.0
 CATCHER_RGB = 0.06
 # Gürültü: bir satır/sütun en az bu kadar dolu piksel içermiyorsa kırpma sınırına sayılmaz.
 CROP_MIN_PIXELS = 3
+BLOCK = 4          # VRAM sıkıştırma blok boyu: katman boyutları bunun katı olur
 
 # Sahne sırası = oyundaki çizim sırası (arkadan öne). Her yuva: eski durum + 3 varyant.
 SLOTS = ["floor", "wall", "window", "door", "sign", "shelf", "lamp",
@@ -1053,7 +1054,20 @@ def crop_and_save(raw_path, out_path):
     y1 = min(int(rows[-1]) + CROP_PAD + 1, h)
     x0 = max(int(cols[0]) - CROP_PAD, 0)
     x1 = min(int(cols[-1]) + CROP_PAD + 1, w)
-    crop = np.ascontiguousarray(px[y0:y1, x0:x1][::-1])
+    # Boyutlar 4'ün katına büyütülür: VRAM sıkıştırma (ASTC/BPTC 4x4 blok) 4'ün katı olmayan
+    # dokuyu YENİDEN ÖLÇEKLER (bulanıklaşır). Dikey pay üstten (zemin alt şeridi ve alt pivot
+    # korunur), yatay pay sağdan (tuval kenarındaysa soldan) eklenir.
+    grow_y = (-(y1 - y0)) % BLOCK
+    if y0 - grow_y >= 0:
+        y0 -= grow_y
+    else:
+        y1 = min(y1 + grow_y, h)
+    grow_x = (-(x1 - x0)) % BLOCK
+    if x1 + grow_x <= w:
+        x1 += grow_x
+    else:
+        x0 = max(x0 - grow_x, 0)
+    crop =np.ascontiguousarray(px[y0:y1, x0:x1][::-1])
     out = bpy.data.images.new("crop", x1 - x0, y1 - y0, alpha=True)
     out.pixels.foreach_set(crop.ravel())
     out.filepath_raw = out_path

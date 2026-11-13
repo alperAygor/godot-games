@@ -3,20 +3,22 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://56s50kcntm4j"
-path="res://.godot/imported/room_rug_old.png-18cea209c64f087d4e71095031c4e92c.ctex"
+path.bptc="res://.godot/imported/room_rug_old.png-18cea209c64f087d4e71095031c4e92c.bptc.ctex"
+path.astc="res://.godot/imported/room_rug_old.png-18cea209c64f087d4e71095031c4e92c.astc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/sprites/meta/room_rug_old.png"
-dest_files=["res://.godot/imported/room_rug_old.png-18cea209c64f087d4e71095031c4e92c.ctex"]
+dest_files=["res://.godot/imported/room_rug_old.png-18cea209c64f087d4e71095031c4e92c.bptc.ctex", "res://.godot/imported/room_rug_old.png-18cea209c64f087d4e71095031c4e92c.astc.ctex"]
 
 [params]
 
-compress/mode=0
-compress/high_quality=false
+compress/mode=2
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0

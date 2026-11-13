@@ -3,20 +3,22 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dd5owo8npfk0u"
-path="res://.godot/imported/bg_fence.png-ec8de69deae8a672ac4034588be6764d.ctex"
+path.bptc="res://.godot/imported/bg_fence.png-ec8de69deae8a672ac4034588be6764d.bptc.ctex"
+path.astc="res://.godot/imported/bg_fence.png-ec8de69deae8a672ac4034588be6764d.astc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/sprites/bg/bg_fence.png"
-dest_files=["res://.godot/imported/bg_fence.png-ec8de69deae8a672ac4034588be6764d.ctex"]
+dest_files=["res://.godot/imported/bg_fence.png-ec8de69deae8a672ac4034588be6764d.bptc.ctex", "res://.godot/imported/bg_fence.png-ec8de69deae8a672ac4034588be6764d.astc.ctex"]
 
 [params]
 
-compress/mode=0
-compress/high_quality=false
+compress/mode=2
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0

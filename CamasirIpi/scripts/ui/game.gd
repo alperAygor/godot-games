@@ -69,6 +69,8 @@ const COIN_SOUND_DELAY: float = 0.7
 const COMBO_SEMITONE: float = 1.0594631
 const COMBO_MAX_STEPS: int = 12
 const SPARKLE_COLOR: Color = Color(1.0, 0.96, 0.7)
+## Gökyüzü gradyanı bu farktan küçük değişimde yeniden üretilmez (8 bit dokunun yarım adımı).
+const SKY_COLOR_EPSILON: float = 0.5 / 255.0
 
 var _level_number: int = 1
 var _level: Dictionary = {}
@@ -149,21 +151,37 @@ func _process(delta: float) -> void:
 		if _board.is_lost():
 			target = 1.0
 	_sky_weight = lerpf(_sky_weight, target * target, 1.0 - exp(-3.0 * delta))
+	var now_msec: int = Time.get_ticks_msec()
 	if _backdrop != null:
-		_sky_gradient.set_color(0, _backdrop.sky_top(SKY_STORM_TOP, _sky_weight))
-		_sky_gradient.set_color(1, _backdrop.sky_bottom(SKY_STORM_BOTTOM, _sky_weight))
-		if _world != null:
+		_set_sky(_backdrop.sky_top(SKY_STORM_TOP, _sky_weight), _backdrop.sky_bottom(SKY_STORM_BOTTOM, _sky_weight))
+		if _world != null and _world.modulate != _backdrop.garment_tint:
 			_world.modulate = _backdrop.garment_tint
 		_backdrop.storm = _sky_weight
-		_backdrop.danger = 1.0 if Time.get_ticks_msec() < _rack_refuse_until_msec else _danger
+		_backdrop.danger = 1.0 if now_msec < _rack_refuse_until_msec else _danger
 	_update_sway()
 	# Tehlike: askıda tek boş slot kalınca askı kırmızı nabız atar. Nabzın şiddeti
 	# yumuşakça açılıp kapanır (ani kırmızı parlama rahatsız eder).
 	var near_full: bool = _board != null and not _board.is_over() \
 		and _board.rack_count() >= _board.rack_slots() - 1
 	_danger_blend = lerpf(_danger_blend, 1.0 if near_full else 0.0, 1.0 - exp(-Motion.DANGER_BLEND_RATE * delta))
-	_danger = _danger_blend * (0.5 + 0.5 * sin(Time.get_ticks_msec() * Motion.DANGER_PULSE_SPEED))
-	queue_redraw()
+	_danger = _danger_blend * (0.5 + 0.5 * sin(now_msec * Motion.DANGER_PULSE_SPEED))
+	# NOT: `_draw` (ipler, kuyruk noktaları, kapalı kancalar) zamana bağlı değildir; her kare
+	# yeniden çizmek yerine yalnız tahta değişince (`_refresh_open`, devam, güçlendirici) çizilir.
+
+
+## Gökyüzü gradyanına yalnız görünür bir değişim olunca yazılır. Neden: her `set_color`
+## GradientTexture2D'yi yeniden üretip GPU'ya yüklüyordu (her karede tam bir doku yüklemesi);
+## gökyüzü çoğu zaman durağandır. Eşik 8 bitlik dokunun yarım adımı: fark görünmez.
+func _set_sky(top: Color, bottom: Color) -> void:
+	if _color_close(top, _sky_gradient.get_color(0)) and _color_close(bottom, _sky_gradient.get_color(1)):
+		return
+	_sky_gradient.set_color(0, top)
+	_sky_gradient.set_color(1, bottom)
+
+
+func _color_close(a: Color, b: Color) -> bool:
+	return absf(a.r - b.r) < SKY_COLOR_EPSILON and absf(a.g - b.g) < SKY_COLOR_EPSILON \
+		and absf(a.b - b.b) < SKY_COLOR_EPSILON and absf(a.a - b.a) < SKY_COLOR_EPSILON
 
 
 ## Fırtına arttıkça ipteki çamaşırların sallanma çarpanı yükselir. Neden eşikli: her karede
@@ -526,8 +544,10 @@ func _start_level() -> void:
 	_run_stats = RunStats.from_balance(Progress.balance_table())
 	_hud.hide_chain()
 	# Prob, belirli bir durumu (ör. kesin kayıp) sınamak için elle kurulmuş seviye verebilir.
+	# Seviye arka plan önbelleğinden gelir (önceden üretildiyse anında; değilse eşzamanlı üretilir,
+	# sonuç her durumda LevelGenerator.generate ile aynıdır).
 	_level = _daily_level if not _daily_level.is_empty() \
-		else (debug_level if not debug_level.is_empty() else LevelGenerator.generate(_level_number))  # [DAILY]
+		else (debug_level if not debug_level.is_empty() else LevelPrefetch.take_level(_level_number))  # [DAILY]
 	_board = LaundryBoard.new(_level)
 	_eco.on_level_start(_level_number, _board)
 	_hud.set_level(_level_number)
@@ -546,6 +566,10 @@ func _start_level() -> void:
 	_refresh_open()
 	queue_redraw()
 	_tutorial.on_level_started(_level, _board, _views, _baskets, _rack_points)
+	# Oyuncu bu seviyeyi oynarken bir sonraki arka planda üretilir: kazanma sayfasındaki
+	# "Devam" ağır seviyelerde (~1 sn üretim) bile donmadan açılır.
+	if _daily_level.is_empty() and debug_level.is_empty():
+		LevelPrefetch.request_level(_level_number + 1)
 
 
 func _build_lines() -> void:
@@ -856,6 +880,7 @@ func _revive() -> void:
 	_revived = true
 	_run_stats.note_revive()
 	_board.add_rack_slot()
+	queue_redraw()
 	_refresh_rules_views()
 	_rack_points.clear()
 	_build_rack()
@@ -905,6 +930,8 @@ func _decorate_view(view: GarmentView, item: Dictionary, spacing_x: float, spaci
 
 ## `_refresh_open` kancası: tahtadan okunan sayaçlar ve güçlendirici çubuğu.
 func _refresh_obstacle_views() -> void:
+	# Kuyruk noktaları/kapalı kancalar tahtadan okunur: tahta değişti, bir kez yeniden çiz.
+	queue_redraw()
 	for id: int in _views.keys():
 		if _board.is_dye(id) and _board.is_on_line(id):
 			_views[id].set_dye_left(_board.dye_left(id))
@@ -917,12 +944,12 @@ func _play_obstacle_event(event: Dictionary) -> void:
 	if await _play_rules_event(event):
 		return
 	var id: int = int(event.get("id", LaundryBoard.EMPTY))
-	if not _views.has(id):
+	if not _live(id):
 		return
 	match String(event["type"]):
 		LaundryBoard.EVENT_SOCK_WAIT:
 			var partner: int = int(event["partner"])
-			if _views.has(partner):
+			if _live(partner):
 				_views[partner].hint()
 		LaundryBoard.EVENT_SOCK_STUCK:
 			_views[id].set_stuck(true)
@@ -935,7 +962,7 @@ func _play_obstacle_event(event: Dictionary) -> void:
 		LaundryBoard.EVENT_DYE_BLEED:
 			var target: int = int(event["target"])
 			_views[id].recolor(COLORS[int(event["color"]) % COLORS.size()])
-			if _views.has(target):
+			if _live(target):
 				_views[target].recolor(COLORS[int(event["target_color"]) % COLORS.size()])
 			AudioService.play_pitched("wring", 0.8, -4.0)
 			await _wait(GarmentView.RECOLOR_SECONDS)
@@ -983,6 +1010,7 @@ func _on_booster_pressed(id: String) -> void:
 				_run_stats.note_booster()
 				_rebuild_rack_points()
 	_refresh_booster_bar()
+	queue_redraw()
 
 
 func _set_pin_armed(armed: bool) -> void:
@@ -1256,24 +1284,24 @@ func _play_rules_event(event: Dictionary) -> bool:
 				_baskets[index].fix_joker(COLORS[int(event["color"]) % COLORS.size()])
 				AudioService.play_pitched("unlock", 1.15, -5.0)
 		LaundryBoard.EVENT_STAIN_WAIT:
-			if _views.has(id):
+			if _live(id):
 				_views[id].set_drying(true)
 		LaundryBoard.EVENT_STAIN_DRY:
-			if _views.has(id):
+			if _live(id):
 				_views[id].dry_stain()
 				AudioService.play_pitched("fold_puff", 1.2, -8.0)
 		LaundryBoard.EVENT_CHAIN_DROP:
 			for chained: int in [id, int(event["by"])]:
-				if _views.has(chained):
+				if _live(chained):
 					_views[chained].release_chain()
 			AudioService.play_pitched("lock_rattle", 1.1, -6.0)
 		LaundryBoard.EVENT_WIND_TICK:
-			if _views.has(id):
+			if _live(id):
 				_views[id].wind_pulse()
 		LaundryBoard.EVENT_WIND:
-			if _views.has(id):
+			if _live(id):
 				_views[id].clear_wind()
-				if bool(event["effective"]) and _views.has(int(event["target"])):
+				if bool(event["effective"]) and _live(int(event["target"])):
 					_views[id].blow_over(_views[int(event["target"])].position, _views[int(event["target"])].z_index)
 					AudioService.play_pitched("wind", 1.3, -8.0)
 					await _wait(Motion.WIND_FLIP_SECONDS)
@@ -1285,6 +1313,13 @@ func _play_rules_event(event: Dictionary) -> bool:
 		_:
 			return false
 	return true
+
+
+## Görünüm hâlâ sahnede mi? Neden: tamamlanan sepetin parçaları `queue_free` ile silinir ama
+## `_views`te kalır; hızlı oynayınca kuyruktaki eski rüzgâr/boya olayı silinmiş görünümü çağırıp
+## "previously freed" betik hatası veriyordu (ölçüm probu 380 ms temposunda yakaladı).
+func _live(id: int) -> bool:
+	return _views.has(id) and is_instance_valid(_views[id])
 
 
 ## Patron: ilk ekran boşaldı; ikinci ekranın çamaşırları sağdan kayarak yerine gelir.

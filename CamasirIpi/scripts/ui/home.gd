@@ -56,6 +56,8 @@ var _meta: Node = null
 
 func _ready() -> void:
 	GameManager.set_phase(GameManager.Phase.MENU)
+	# Oyuncu ana ekrandayken sıradaki seviye arka planda hazırlanır (açılışta zaten istendiyse no-op).
+	LevelPrefetch.request_level(Progress.level())
 	GameManager.back_requested.connect(_on_back)
 	var view: Vector2 = get_viewport_rect().size
 	var insets: Vector4 = UiKit.safe_insets(view)
@@ -154,7 +156,7 @@ func _build_counters(view: Vector2, insets: Vector4) -> void:
 		func() -> void: DailyCalendar.open(self))
 	# Çamaşırhane onarımı: yıldızlar burada harcanır; onarılabilecek bir şey varsa nokta yanar.
 	_laundromat_button = _side_button("lucide/house", settings.position + Vector2(0.0, SIDE_BUTTON_STEP * 3.0),
-		func() -> void: _meta = MetaLaundromat.open(self))
+		func() -> void: _open_meta(MetaLaundromat.open(self)))
 
 
 func _side_button(icon: String, at: Vector2, action: Callable) -> UiIconButton:
@@ -253,7 +255,31 @@ func _on_tab(index: int) -> void:
 	if index == TAB_SHOP:
 		_open_sheet(InfoSheet.soon(self, "lucide/shopping-bag"))
 	elif index == TAB_COLLECTION:
-		_meta = MetaCollection.open(self)
+		_open_meta(MetaCollection.open(self))
+
+
+## Tam ekran meta katmanı (çamaşırhane/koleksiyon) opakken ana ekranın kendi katmanları
+## gizlenir ve işlenmez. Neden: arkadaki gökyüzü + 4 büyük bahçe katmanı + çamaşırlar hiç
+## görünmediği hâlde her kare çiziliyordu (mobilde en pahalı şey piksel doldurma). Görüntü aynı.
+func _open_meta(screen: Node) -> void:
+	_meta = screen
+	if screen.has_signal(&"covering_changed"):
+		screen.connect(&"covering_changed", _set_covered)
+	if screen.has_signal(&"closed"):
+		screen.connect(&"closed", _set_covered.bind(false))
+
+
+func _set_covered(covered: bool) -> void:
+	for child: Node in get_children():
+		if child == _meta:
+			continue
+		if child is CanvasLayer:
+			(child as CanvasLayer).visible = not covered
+		elif child is CanvasItem:
+			(child as CanvasItem).visible = not covered
+		else:
+			continue
+		child.process_mode = Node.PROCESS_MODE_DISABLED if covered else Node.PROCESS_MODE_INHERIT
 
 
 func _open_settings() -> void:

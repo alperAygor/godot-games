@@ -10,6 +10,9 @@ extends CanvasLayer
 ## Kullanım (yönetmen): `MetaCollection.open(self)` — kapanınca `closed` yayılır.
 
 signal closed
+## Ekran tamamen opak olunca true (açılış solması bitti), kapanış başlarken false. Ana ekran
+## bununla arkada kalan (görünmeyen) bahçeyi çizmeyi/işlemeyi durdurur: mobilde boşa piksel doldurma.
+signal covering_changed(covering: bool)
 
 const SCENE_PATH: String = "res://scenes/meta/Collection.tscn"
 const SHADER_PATH: String = "res://scripts/meta/garment_pattern.gdshader"
@@ -98,19 +101,28 @@ func _ready() -> void:
 	_build_list(list_top)
 	MetaUi.connect_back(_on_back)
 	_root.modulate.a = 0.0
-	create_tween().tween_property(_root, "modulate:a", 1.0, Motion.OVERLAY_FADE_SECONDS)\
+	var intro: Tween = create_tween()
+	intro.tween_property(_root, "modulate:a", 1.0, Motion.OVERLAY_FADE_SECONDS)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	intro.tween_callback(_on_intro_done)
 
 
 func close() -> void:
 	if _closing:
 		return
 	_closing = true
+	# Solarak kapanırken arkası görünür: ana ekran önce yeniden çizilmeye başlasın.
+	covering_changed.emit(false)
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var tween: Tween = create_tween()
 	tween.tween_property(_root, "modulate:a", 0.0, Motion.OVERLAY_FADE_SECONDS)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	tween.tween_callback(_finish_close)
+
+
+func _on_intro_done() -> void:
+	if not _closing:
+		covering_changed.emit(true)
 
 
 func _finish_close() -> void:
