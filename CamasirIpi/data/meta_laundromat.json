@@ -1,0 +1,58 @@
+{
+  "variants_per_task": 3,
+  "draw_order": ["floor", "wall", "window", "door", "sign", "shelf", "lamp", "machine1", "machine2", "plant", "rug", "counter"],
+  "locations": [
+    {
+      "id": "corner",
+      "art": true,
+      "completion_coins": 300,
+      "tasks": [
+        {"id": "floor", "cost": 1, "swatches": ["#E2B27C", "#9FD3BD", "#E6A07E"]},
+        {"id": "wall", "cost": 2, "swatches": ["#BFE3D2", "#F6CDB8", "#BCD6EE"]},
+        {"id": "machine1", "cost": 2, "swatches": ["#9ED8C3", "#FFE08A", "#F7B6C2"]},
+        {"id": "shelf", "cost": 1, "swatches": ["#D8A878", "#F4EEE6", "#9A6B4A"]},
+        {"id": "sign", "cost": 1, "swatches": ["#56B08A", "#E27D93", "#5A8FD0"]},
+        {"id": "plant", "cost": 1, "swatches": ["#D9825B", "#F5F0E6", "#8FB3C9"]},
+        {"id": "lamp", "cost": 1, "swatches": ["#7FC4A4", "#F6E7CF", "#E99A7B"]},
+        {"id": "window", "cost": 2, "swatches": ["#FFFFFF", "#A9C9B0", "#E2B27C"]},
+        {"id": "counter", "cost": 2, "swatches": ["#A8CDB4", "#FBEAD6", "#9DBAD9"]},
+        {"id": "machine2", "cost": 3, "swatches": ["#A9CDF0", "#CDB8F0", "#FFF6E8"]},
+        {"id": "rug", "cost": 1, "swatches": ["#E99A7B", "#5FAE8C", "#8E7CC9"]},
+        {"id": "door", "cost": 2, "swatches": ["#8FBF9F", "#8DB3D9", "#F2C36B"]}
+      ]
+    },
+    {
+      "id": "seaside",
+      "art": false,
+      "completion_coins": 400,
+      "tasks": [
+        {"id": "floor", "cost": 2}, {"id": "wall", "cost": 2}, {"id": "machine1", "cost": 2},
+        {"id": "shelf", "cost": 2}, {"id": "sign", "cost": 1}, {"id": "plant", "cost": 2},
+        {"id": "lamp", "cost": 2}, {"id": "window", "cost": 2}, {"id": "counter", "cost": 3},
+        {"id": "machine2", "cost": 3}, {"id": "rug", "cost": 2}, {"id": "door", "cost": 3}
+      ]
+    },
+    {
+      "id": "attic",
+      "art": false,
+      "completion_coins": 500,
+      "tasks": [
+        {"id": "floor", "cost": 2}, {"id": "wall", "cost": 3}, {"id": "machine1", "cost": 3},
+        {"id": "shelf", "cost": 2}, {"id": "sign", "cost": 2}, {"id": "plant", "cost": 2},
+        {"id": "lamp", "cost": 2}, {"id": "window", "cost": 3}, {"id": "counter", "cost": 3},
+        {"id": "machine2", "cost": 3}, {"id": "rug", "cost": 2}, {"id": "door", "cost": 3}
+      ]
+    },
+    {
+      "id": "hotel",
+      "art": false,
+      "completion_coins": 700,
+      "tasks": [
+        {"id": "floor", "cost": 3}, {"id": "wall", "cost": 3}, {"id": "machine1", "cost": 3},
+        {"id": "shelf", "cost": 2}, {"id": "sign", "cost": 2}, {"id": "plant", "cost": 2},
+        {"id": "lamp", "cost": 3}, {"id": "window", "cost": 3}, {"id": "counter", "cost": 3},
+        {"id": "machine2", "cost": 3}, {"id": "rug", "cost": 3}, {"id": "door", "cost": 3}
+      ]
+    }
+  ]
+}
