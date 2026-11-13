@@ -15,7 +15,15 @@
       "fog": "FFE6C2",
       "sun": "FFF0D3",
       "ambient": "DBDBCC",
-      "sun_energy": 1.0
+      "sun_energy": 1.0,
+      "sun_pitch": -55,
+      "sun_yaw": -25,
+      "ambient_energy": 0.35,
+      "fill": "B9C9E6",
+      "fill_energy": 0.16,
+      "glow_intensity": 0.05,
+      "glow_threshold": 1.1,
+      "props": []
     },
     {
       "id": "kitchen",
@@ -32,7 +40,56 @@
       "fog": "E9F3F8",
       "sun": "FFFFFF",
       "ambient": "D8E4EA",
-      "sun_energy": 0.9
+      "sun_energy": 0.82,
+      "sun_pitch": -68,
+      "sun_yaw": 10,
+      "ambient_energy": 0.42,
+      "fill": "CFE3F2",
+      "fill_energy": 0.2,
+      "glow_intensity": 0.04,
+      "glow_threshold": 1.15,
+      "props": [
+        {
+          "model": "zone_kitchen_teapot",
+          "pos": [
+            9,
+            -3,
+            -40
+          ],
+          "scale": 3.2,
+          "yaw": 25
+        },
+        {
+          "model": "zone_kitchen_jar",
+          "pos": [
+            12.5,
+            -3,
+            -56
+          ],
+          "scale": 3.2,
+          "yaw": 25
+        },
+        {
+          "model": "zone_kitchen_plate_stack",
+          "pos": [
+            -12,
+            -2.5,
+            -66
+          ],
+          "scale": 5,
+          "yaw": -25
+        },
+        {
+          "model": "zone_kitchen_cutting_board",
+          "pos": [
+            16,
+            -1.8,
+            -74
+          ],
+          "scale": 3.5,
+          "yaw": 25
+        }
+      ]
     },
     {
       "id": "library",
@@ -49,7 +106,56 @@
       "fog": "F7C890",
       "sun": "FFD8A0",
       "ambient": "D9B896",
-      "sun_energy": 0.95
+      "sun_energy": 0.95,
+      "sun_pitch": -40,
+      "sun_yaw": -50,
+      "ambient_energy": 0.45,
+      "fill": "7C8FB8",
+      "fill_energy": 0.14,
+      "glow_intensity": 0.12,
+      "glow_threshold": 0.95,
+      "props": [
+        {
+          "model": "zone_library_globe",
+          "pos": [
+            9,
+            -3,
+            -40
+          ],
+          "scale": 3.2,
+          "yaw": 25
+        },
+        {
+          "model": "zone_library_candle",
+          "pos": [
+            12.5,
+            -3,
+            -56
+          ],
+          "scale": 3.2,
+          "yaw": 25
+        },
+        {
+          "model": "zone_library_book_tower",
+          "pos": [
+            -12,
+            -3,
+            -66
+          ],
+          "scale": 3.2,
+          "yaw": -25
+        },
+        {
+          "model": "zone_library_hourglass",
+          "pos": [
+            16,
+            -3,
+            -74
+          ],
+          "scale": 3.2,
+          "yaw": 25
+        }
+      ]
     },
     {
       "id": "night",
@@ -66,7 +172,57 @@
       "fog": "2A3566",
       "sun": "B9C8FF",
       "ambient": "7480B0",
-      "sun_energy": 0.75
+      "sun_energy": 0.75,
+      "sun_pitch": -45,
+      "sun_yaw": 35,
+      "ambient_energy": 0.5,
+      "fill": "FFB36B",
+      "fill_energy": 0.28,
+      "glow_intensity": 0.35,
+      "glow_threshold": 0.75,
+      "props": [
+        {
+          "model": "zone_night_alarm_clock",
+          "pos": [
+            9,
+            -3,
+            -40
+          ],
+          "scale": 3.2,
+          "yaw": 25
+        },
+        {
+          "model": "zone_night_moon_lamp",
+          "pos": [
+            12.5,
+            -3,
+            -56
+          ],
+          "scale": 3.2,
+          "yaw": 25
+        },
+        {
+          "model": "zone_night_plush",
+          "pos": [
+            -12,
+            -3,
+            -66
+          ],
+          "scale": 3.2,
+          "yaw": -25
+        },
+        {
+          "model": "zone_night_stars_mobile",
+          "pos": [
+            16,
+            -3,
+            -74
+          ],
+          "scale": 3.2,
+          "yaw": 25,
+          "sway": true
+        }
+      ]
     },
     {
       "id": "pastel",
@@ -83,7 +239,57 @@
       "fog": "FFE0EA",
       "sun": "FFF1F5",
       "ambient": "EBCBD6",
-      "sun_energy": 0.9
+      "sun_energy": 0.9,
+      "sun_pitch": -60,
+      "sun_yaw": -10,
+      "ambient_energy": 0.45,
+      "fill": "FFD0E4",
+      "fill_energy": 0.2,
+      "glow_intensity": 0.1,
+      "glow_threshold": 1.0,
+      "props": [
+        {
+          "model": "zone_pastel_blocks",
+          "pos": [
+            9,
+            -3,
+            -40
+          ],
+          "scale": 3.2,
+          "yaw": 25
+        },
+        {
+          "model": "zone_pastel_duck",
+          "pos": [
+            12.5,
+            -3,
+            -56
+          ],
+          "scale": 3.2,
+          "yaw": 25
+        },
+        {
+          "model": "zone_pastel_balloon",
+          "pos": [
+            -12,
+            -3,
+            -66
+          ],
+          "scale": 2.8,
+          "yaw": -25,
+          "sway": true
+        },
+        {
+          "model": "zone_pastel_toy_train",
+          "pos": [
+            16,
+            -2.4,
+            -74
+          ],
+          "scale": 3.2,
+          "yaw": 25
+        }
+      ]
     }
   ]
 }

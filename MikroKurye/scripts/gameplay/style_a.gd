@@ -38,6 +38,10 @@ const INTERACTIVE_GROUPS: Array[String] = [
 	"robot", "cargo", "keyboard_key", "rolling_pencil", "golden_box",
 ]
 
+## "glow" adlı GLB yüzeyleri (alev, ay lambası, kadran) kendi renginde ışıldar.
+const GLOW_SLOT_NAME: String = "glow"
+const GLOW_SLOT_ENERGY: float = 1.6
+
 var _toon_shader: Shader = null
 var _outline_material: ShaderMaterial = null
 var _cache: Dictionary[String, ShaderMaterial] = {}
@@ -104,6 +108,9 @@ func _restyle_mesh(mesh_instance: MeshInstance3D) -> void:
 			var vertex_strength: float = 1.0 if std.vertex_color_use_as_albedo else 0.0
 			var glow: Color = std.emission if std.emission_enabled else Color(0.0, 0.0, 0.0, 1.0)
 			var glow_energy: float = std.emission_energy_multiplier if std.emission_enabled else 0.0
+			if not std.emission_enabled and String(std.resource_name) == GLOW_SLOT_NAME:
+				glow = base
+				glow_energy = GLOW_SLOT_ENERGY
 			mesh_instance.set_surface_override_material(surface, _toon_material(base, interactive, vertex_strength, glow, glow_energy))
 
 

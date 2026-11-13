@@ -13,6 +13,17 @@ signal zone_changed(zone_name: String, zone_index: int)
 const TABLE_NAME: String = "segments"
 const ZONE_TABLE_NAME: String = "zones"
 const ZONE_BLEND_SECONDS: float = 1.4
+## Dolgu ışığı: gölge atmaz; kenar/arka ışığı gibi siluet çıkarır (ucuz).
+## Bölge eşyaları: modeller +Z'ye bakar; kameraya dönük durmaları için yarım tur.
+const ZONE_PROP_DIR: String = "res://assets/models/v3/zone/"
+const ZONE_PROP_FACING_YAW: float = 180.0
+const ZONE_PROP_POP_SECONDS: float = 0.7
+const ZONE_PROP_HIDE_SECONDS: float = 0.35
+## Masa temalı (bölge 0) arka plan eşyaları; diğer bölgelerde yerlerini bölge eşyaları alır.
+const DESK_DECOR_NODES: Array[String] = ["BgMonitor", "BgLamp", "BgPlant", "BgBooks", "BgHeadphones"]
+const SWAY_SCRIPT_PATH: String = "res://scripts/gameplay/ambient/sway.gd"
+const FILL_YAW_OFFSET: float = 180.0
+const FILL_PITCH_DEGREES: float = -25.0
 const WOOD_MATERIAL_PATH: String = "res://assets/materials/wood.tres"
 const WOOD_EDGE_MATERIAL_PATH: String = "res://assets/materials/wood_edge.tres"
 const DEFAULT_SEED: int = 20261113
@@ -54,6 +65,12 @@ var _environment: Environment = null
 @onready var _style: StyleA = $StyleA as StyleA
 @onready var _sun: DirectionalLight3D = $Sun as DirectionalLight3D
 @onready var _world_environment: WorldEnvironment = $WorldEnvironment as WorldEnvironment
+var _fill: DirectionalLight3D = null
+## Bölge sırası -> o bölgenin arka plan eşya düğümleri ve her düğümün asıl ölçeği.
+var _decor: Dictionary[int, Array] = {}
+var _decor_scale: Dictionary[int, Array] = {}
+var _decor_tween: Tween = null
+var _decor_visible: int = -1
 
 
 func _ready() -> void:
@@ -112,6 +129,7 @@ func preview_zone(index: int) -> void:
 		return
 	var clamped: int = clampi(index, 0, _zones.size() - 1)
 	_apply_zone_instantly(clamped)
+	_show_decor(clamped, false)
 	var pair: Array = _materials_for_zone(clamped)
 	for segment: Segment in _live:
 		segment.apply_floor(pair[0] as Material, pair[1] as Material)
@@ -198,7 +216,101 @@ func _load_zones() -> void:
 		_environment = _world_environment.environment
 		if _environment != null and _environment.sky != null:
 			_sky_material = _environment.sky.sky_material as ProceduralSkyMaterial
+	_create_fill_light()
+	_collect_desk_decor()
 	_apply_zone_instantly(0)
+	_show_decor(0, false)
+
+
+func _create_fill_light() -> void:
+	_fill = DirectionalLight3D.new()
+	_fill.name = "Fill"
+	_fill.shadow_enabled = false
+	add_child(_fill)
+
+
+func _collect_desk_decor() -> void:
+	var nodes: Array = []
+	var scales: Array = []
+	for node_name: String in DESK_DECOR_NODES:
+		var node: Node3D = _backdrop.get_node_or_null(node_name) as Node3D
+		if node != null:
+			nodes.append(node)
+			scales.append(node.scale)
+	_decor[0] = nodes
+	_decor_scale[0] = scales
+
+
+## Bölgenin eşya düğümlerini ilk ihtiyaçta kurar (modeller yüklenir, stil uygulanır).
+func _build_decor(index: int) -> void:
+	var nodes: Array = []
+	var scales: Array = []
+	var zone: Dictionary = _zones[index] as Dictionary
+	var props: Variant = zone.get("props", [])
+	if props is Array:
+		for entry: Variant in props as Array:
+			if not entry is Dictionary:
+				continue
+			var spec: Dictionary = entry as Dictionary
+			var scene: PackedScene = load(ZONE_PROP_DIR + String(spec.get("model", "")) + ".glb") as PackedScene
+			if scene == null:
+				continue
+			var node: Node3D = scene.instantiate() as Node3D
+			var pos: Array = spec.get("pos", [0.0, 0.0, 0.0]) as Array
+			var size: float = float(spec.get("scale", 1.0))
+			node.position = Vector3(float(pos[0]), float(pos[1]), float(pos[2]))
+			node.rotation_degrees.y = ZONE_PROP_FACING_YAW + float(spec.get("yaw", 0.0))
+			node.scale = Vector3.ONE * size
+			node.visible = false
+			if bool(spec.get("sway", false)):
+				node.set_script(load(SWAY_SCRIPT_PATH))
+			_backdrop.add_child(node)
+			var style: StyleA = get_node_or_null("StyleA") as StyleA
+			if style != null:
+				style.restyle(node)
+			nodes.append(node)
+			scales.append(node.scale)
+	_decor[index] = nodes
+	_decor_scale[index] = scales
+
+
+## Seçili bölgenin eşyaları görünür olur, öncekiler küçülüp kaybolur.
+func _show_decor(index: int, animated: bool) -> void:
+	if _zones.is_empty() or index == _decor_visible:
+		return
+	if not _decor.has(index):
+		_build_decor(index)
+	if _decor_tween != null:
+		_decor_tween.kill()
+	var old_index: int = _decor_visible
+	_decor_visible = index
+	if animated:
+		_decor_tween = create_tween().set_parallel(true)
+	if old_index >= 0 and _decor.has(old_index):
+		_retire_decor(old_index, animated)
+	var nodes: Array = _decor[index]
+	var scales: Array = _decor_scale[index]
+	for i: int in range(nodes.size()):
+		var node: Node3D = nodes[i] as Node3D
+		var full: Vector3 = scales[i] as Vector3
+		node.visible = true
+		if animated:
+			node.scale = Vector3.ONE * 0.001
+			_decor_tween.tween_property(node, "scale", full, ZONE_PROP_POP_SECONDS)\
+				.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT).set_delay(0.12 * float(i))
+		else:
+			node.scale = full
+
+
+func _retire_decor(index: int, animated: bool) -> void:
+	var nodes: Array = _decor[index]
+	for node_variant: Variant in nodes:
+		var node: Node3D = node_variant as Node3D
+		if animated:
+			_decor_tween.tween_property(node, "scale", Vector3.ONE * 0.001, ZONE_PROP_HIDE_SECONDS)
+			_decor_tween.tween_callback(node.hide).set_delay(ZONE_PROP_HIDE_SECONDS)
+		else:
+			node.visible = false
 
 
 ## Parçanın zemini, ait olduğu level'ın bölge paletiyle boyanır (önceden üretilen
@@ -237,6 +349,7 @@ func _enter_zone_if_new() -> void:
 		return
 	_zone_index = index
 	_blend_environment(_zones[index] as Dictionary)
+	_show_decor(index, true)
 	zone_changed.emit(String((_zones[index] as Dictionary).get("name", "")), index)
 
 
@@ -268,6 +381,13 @@ func _palette_of(zone: Dictionary) -> Dictionary:
 		"sun": Color.html(String(zone.get("sun", "FFF0D3"))),
 		"ambient": Color.html(String(zone.get("ambient", "DBDBCC"))),
 		"sun_energy": float(zone.get("sun_energy", 1.0)),
+		"sun_pitch": float(zone.get("sun_pitch", -55.0)),
+		"sun_yaw": float(zone.get("sun_yaw", -25.0)),
+		"ambient_energy": float(zone.get("ambient_energy", 0.35)),
+		"fill": Color.html(String(zone.get("fill", "B9C9E6"))),
+		"fill_energy": float(zone.get("fill_energy", 0.16)),
+		"glow_intensity": float(zone.get("glow_intensity", 0.05)),
+		"glow_threshold": float(zone.get("glow_threshold", 1.1)),
 	}
 
 
@@ -281,9 +401,17 @@ func _current_palette() -> Dictionary:
 	if _environment != null:
 		palette["fog"] = _environment.fog_light_color
 		palette["ambient"] = _environment.ambient_light_color
+		palette["ambient_energy"] = _environment.ambient_light_energy
+		palette["glow_intensity"] = _environment.glow_intensity
+		palette["glow_threshold"] = _environment.glow_hdr_threshold
 	if _sun != null:
 		palette["sun"] = _sun.light_color
 		palette["sun_energy"] = _sun.light_energy
+		palette["sun_pitch"] = _sun.rotation_degrees.x
+		palette["sun_yaw"] = _sun.rotation_degrees.y
+	if _fill != null:
+		palette["fill"] = _fill.light_color
+		palette["fill_energy"] = _fill.light_energy
 	return palette
 
 
@@ -308,6 +436,16 @@ func _set_environment_palette(palette: Dictionary) -> void:
 	if _environment != null:
 		_environment.fog_light_color = palette.get("fog", _environment.fog_light_color)
 		_environment.ambient_light_color = palette.get("ambient", _environment.ambient_light_color)
+		_environment.ambient_light_energy = float(palette.get("ambient_energy", _environment.ambient_light_energy))
+		_environment.glow_intensity = float(palette.get("glow_intensity", _environment.glow_intensity))
+		_environment.glow_hdr_threshold = float(palette.get("glow_threshold", _environment.glow_hdr_threshold))
 	if _sun != null:
 		_sun.light_color = palette.get("sun", _sun.light_color)
 		_sun.light_energy = float(palette.get("sun_energy", _sun.light_energy))
+		var pitch: float = float(palette.get("sun_pitch", _sun.rotation_degrees.x))
+		var yaw: float = float(palette.get("sun_yaw", _sun.rotation_degrees.y))
+		_sun.rotation_degrees = Vector3(pitch, yaw, 0.0)
+		if _fill != null:
+			_fill.rotation_degrees = Vector3(FILL_PITCH_DEGREES, yaw + FILL_YAW_OFFSET, 0.0)
+			_fill.light_color = palette.get("fill", _fill.light_color)
+			_fill.light_energy = float(palette.get("fill_energy", _fill.light_energy))

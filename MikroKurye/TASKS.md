@@ -132,3 +132,6 @@ Kullanıcı onayı gerektirenler: oyun hissi (Faz 2 kapısı), mağaza/yayın, �
 - [x] **F9.5** HUD (level/mesafe/kasa), sonuç ve rekor arayüzü, öğretici ✅ (ekonomi dengesi: oyun denemesi sonrası)
 - [x] **F9.6** Çevre temaları (raf, mutfak…) [Z]
 - [x] **F9.7** `endless_probe`, tam kabul, APK [K]
+- [x] **F10.1** Ekonomi: 8 kademe, Sigorta (kırılma ödemesi %50→%80) ve Sözleşme (+%25 altın) yükseltmeleri [Z]
+- [x] **F10.2** Bölge eşyaları: 16 yeni 3D model + bölgeye göre arka plan eşyaları [Z]
+- [x] **F10.3** Bölge ışığı: güneş yönü, ortam, ışıma ve dolgu ışığı bölgeye göre [Z]

@@ -23,6 +23,11 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/), sürümleme [Se
 - Faz 9 sonsuz level modu: `LevelProgression` (level boyu/zorluk/parça planı), `EndlessReward` (level ödülü, kırılınca kasanın yarısı, zor kargo çarpanı), `RunRecords` (en yüksek level/mesafe/puan), `ZoneCycle` (5 level'da bir çevre bölgesi); `EndlessLevel` + `Segment` (parça dizici, 24 yol parçası), HUD'da level/mesafe/kasa, sonuç ve rekor arayüzü; `endless_probe`, `segment_probe`, `tools/segment_tools.py`.
 - Faz 9 bölgeler: Çalışma Masası, Mutfak Tezgâhı, Kitaplık Köşesi, Gece Odası, Pastel Oda (zemin paleti, gökyüzü, sis, ışık; `data/zones.json`).
 
+### Eklendi (Faz 10)
+- Yükseltme kademeleri 5 → 8 (Şasi/Tekerlek/Batarya), Şok Jeli 2 kademe; yeni Sigorta (kırılma ödemesi en çok %80) ve Sözleşme (+%25 altın) yükseltmeleri.
+- 16 yeni bölge eşyası modeli (`assets/models/v3/zone/`); bölge değişince arka plan eşyaları yumuşakça değişir.
+- Bölge başına güneş yönü, ortam ışığı, ışıma ve dolgu ışığı (`data/zones.json`).
+
 ### Değişti
 - Batarya teslimatta level boyuna orantılı dolar (kapasitenin %0.1'i/metre); hız bir ödünleşme olur.
 - Sahne ışığı tek bölmeli gölge (`directional_shadow_mode = 0`, 22 m): çizim çağrısı ~376 → ~263, üçgen ~108k → ~75k.
