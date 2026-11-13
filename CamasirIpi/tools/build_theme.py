@@ -44,85 +44,89 @@ def darken(hex_value, t):
     return rgb_to_color(mix(hex_to_rgb(hex_value), (0.0, 0.0, 0.0), t))
 
 
-def style(id_name, bg, border, radius, px, py, border_width, swap_padding=False):
-    top, bottom = (py + 4, py - 4) if swap_padding else (py, py + 4)
+def style(id_name, bg, radius, px, py, radius_bottom=None):
+    """Duz, cizgisiz, golgesiz StyleBox (kullanici tercihi: minimal modern arayuz)."""
+    rb = radius if radius_bottom is None else radius_bottom
     return """[sub_resource type="StyleBoxFlat" id="{id}"]
 content_margin_left = {px}.0
-content_margin_top = {top}.0
+content_margin_top = {py}.0
 content_margin_right = {px}.0
-content_margin_bottom = {bottom}.0
+content_margin_bottom = {py}.0
 bg_color = {bg}
-border_width_bottom = {bw}
-border_color = {border}
 corner_radius_top_left = {r}
 corner_radius_top_right = {r}
-corner_radius_bottom_right = {r}
-corner_radius_bottom_left = {r}
-""".format(id=id_name, px=px, top=top, bottom=bottom, bg=bg,
-           bw=border_width, border=border, r=radius)
+corner_radius_bottom_right = {rb}
+corner_radius_bottom_left = {rb}
+anti_aliasing = true
+anti_aliasing_size = 1.5
+""".format(id=id_name, px=px, py=py, bg=bg, r=radius, rb=rb)
+
+
+def button_states(blocks, resources, prefix, base, text_hex, font_size, radius, px, py):
+    """Bir dugme turu icin normal/hover/pressed/disabled/focus. Basili: biraz koyu, golge yok."""
+    blocks.append(style("SB_%s" % prefix, color(base), radius, px, py))
+    blocks.append(style("SB_%s_hover" % prefix, lighten(base, 0.08), radius, px, py))
+    blocks.append(style("SB_%s_pressed" % prefix, darken(base, 0.09), radius, px, py))
+    blocks.append(style("SB_%s_disabled" % prefix, color(base, 0.5), radius, px, py))
+    name = "Button" if prefix == "primary" else {"secondary": "SecondaryButton"}[prefix]
+    if prefix != "primary":
+        resources.append('%s/base_type = &"Button"' % name)
+    resources.append("%s/colors/font_color = %s" % (name, color(text_hex)))
+    resources.append("%s/colors/font_hover_color = %s" % (name, color(text_hex)))
+    resources.append("%s/colors/font_pressed_color = %s" % (name, darken(text_hex, 0.1)))
+    resources.append("%s/colors/font_focus_color = %s" % (name, color(text_hex)))
+    resources.append("%s/colors/font_disabled_color = %s" % (name, color(text_hex, 0.6)))
+    resources.append("%s/colors/icon_normal_color = %s" % (name, color(text_hex)))
+    resources.append("%s/colors/icon_hover_color = %s" % (name, color(text_hex)))
+    resources.append("%s/colors/icon_pressed_color = %s" % (name, color(text_hex)))
+    resources.append("%s/constants/icon_max_width = 44" % name)
+    resources.append("%s/constants/h_separation = 16" % name)
+    resources.append("%s/font_sizes/font_size = %d" % (name, font_size))
+    resources.append('%s/styles/normal = SubResource("SB_%s")' % (name, prefix))
+    resources.append('%s/styles/hover = SubResource("SB_%s_hover")' % (name, prefix))
+    resources.append('%s/styles/pressed = SubResource("SB_%s_pressed")' % (name, prefix))
+    resources.append('%s/styles/disabled = SubResource("SB_%s_disabled")' % (name, prefix))
+    resources.append('%s/styles/focus = SubResource("SB_empty")' % name)
 
 
 def build(theme):
     palette = theme["palette"]
     metrics = theme["metrics"]
     radius = int(metrics["radius"])
-    border = int(metrics["border"])
     px = int(metrics["padding_x"])
     py = int(metrics["padding_y"])
+    sheet_r = int(metrics["sheet_radius"])
 
     blocks = []
-    blocks.append(style("SB_primary", color(palette["primary"]),
-                        color(palette["primary_dark"]), radius, px, py, border))
-    blocks.append(style("SB_primary_hover", lighten(palette["primary"], 0.18),
-                        color(palette["primary_dark"]), radius, px, py, border))
-    blocks.append(style("SB_primary_pressed", darken(palette["primary"], 0.10),
-                        color(palette["primary_dark"]), radius, px, py, max(1, border - 4), True))
-    blocks.append(style("SB_primary_disabled", color(palette["primary"], 0.55),
-                        color(palette["primary_dark"], 0.5), radius, px, py, border))
-
-    blocks.append(style("SB_secondary", color(palette["accent"]),
-                        color(palette["accent_dark"]), radius, px, py, max(1, border - 1)))
-    blocks.append(style("SB_secondary_hover", lighten(palette["accent"], 0.25),
-                        color(palette["accent_dark"]), radius, px, py, max(1, border - 1)))
-    blocks.append(style("SB_secondary_pressed", darken(palette["accent"], 0.10),
-                        color(palette["accent_dark"]), radius, px, py, 2, True))
-    blocks.append(style("SB_secondary_disabled", color(palette["accent"], 0.5),
-                        color(palette["accent_dark"], 0.45), radius, px, py, max(1, border - 1)))
-
     resources = []
+    blocks.append('[sub_resource type="StyleBoxEmpty" id="SB_empty"]\n')
     resources.append("default_font = ExtResource(\"1_font\")")
     # default_font_size KULLANILMAZ: Godot onu varyasyon aramasindan once kontrol edip
     # TitleLabel gibi tur varyasyonlarinin puntosunu golgeliyor (olculdu).
     # Taban boyutu tip uzerinden acikca verilir.
     resources.append("Label/font_sizes/font_size = %d" % int(theme["base_font_size"]))
-    resources.append("Button/font_sizes/font_size = %d" % int(metrics["button_font_size"]))
-
-    resources.append("Button/colors/font_color = %s" % color(palette["on_primary"]))
-    resources.append("Button/colors/font_hover_color = %s" % color(palette["on_primary"]))
-    resources.append("Button/colors/font_pressed_color = %s" % darken(palette["on_primary"], 0.15))
-    resources.append("Button/colors/font_disabled_color = %s" % color(palette["on_primary"], 0.75))
-    resources.append("Button/font_sizes/font_size = %d" % int(metrics["button_font_size"]))
-    resources.append('Button/styles/normal = SubResource("SB_primary")')
-    resources.append('Button/styles/hover = SubResource("SB_primary_hover")')
-    resources.append('Button/styles/pressed = SubResource("SB_primary_pressed")')
-    resources.append('Button/styles/disabled = SubResource("SB_primary_disabled")')
-
-    resources.append('SecondaryButton/base_type = &"Button"')
-    resources.append("SecondaryButton/colors/font_color = %s" % color(palette["on_accent"]))
-    resources.append("SecondaryButton/colors/font_hover_color = %s" % color(palette["on_accent"]))
-    resources.append("SecondaryButton/colors/font_pressed_color = %s" % darken(palette["on_accent"], 0.15))
-    resources.append("SecondaryButton/colors/font_disabled_color = %s" % color(palette["on_accent"], 0.7))
-    resources.append("SecondaryButton/font_sizes/font_size = %d" % int(metrics["secondary_button_font_size"]))
-    resources.append('SecondaryButton/styles/normal = SubResource("SB_secondary")')
-    resources.append('SecondaryButton/styles/hover = SubResource("SB_secondary_hover")')
-    resources.append('SecondaryButton/styles/pressed = SubResource("SB_secondary_pressed")')
-    resources.append('SecondaryButton/styles/disabled = SubResource("SB_secondary_disabled")')
-
     resources.append("Label/colors/font_color = %s" % color(palette["text"]))
+    resources.append("RichTextLabel/colors/default_color = %s" % color(palette["text"]))
+    resources.append("RichTextLabel/font_sizes/normal_font_size = %d" % int(theme["base_font_size"]))
+
+    button_states(blocks, resources, "primary", palette["primary"], palette["on_primary"],
+                  int(metrics["button_font_size"]), radius, px, py)
+    button_states(blocks, resources, "secondary", palette["accent"], palette["on_accent"],
+                  int(metrics["secondary_button_font_size"]), radius, px, py)
+
+    # Paneller: krem alt sayfa (SheetPanel) ve yari saydam hap (ChipPanel). Cizgi/golge yok.
+    blocks.append(style("SB_sheet", color(palette["sheet"]), sheet_r,
+                        int(metrics["sheet_padding_x"]), int(metrics["sheet_padding_y"])))
+    blocks.append(style("SB_chip", color("#FFFFFF", 0.62), 60,
+                        int(metrics["chip_padding_x"]), int(metrics["chip_padding_y"])))
+    resources.append('SheetPanel/base_type = &"PanelContainer"')
+    resources.append('SheetPanel/styles/panel = SubResource("SB_sheet")')
+    resources.append('ChipPanel/base_type = &"PanelContainer"')
+    resources.append('ChipPanel/styles/panel = SubResource("SB_chip")')
 
     # NOT: Label tur varyasyonlari (TitleLabel vb.) Godot 4.7.2'de font_size/renk
     # icin UYGULANMIYOR (olculdu; stil varyasyonlari calisiyor). Bu yuzden etiket
-    # punto/renkleri sahne icinde theme_override_* ile verilir (GOTCHAS.md #19).
+    # punto/renkleri kodda/sahnede theme_override_* ile verilir (GOTCHAS.md #19).
 
     header = ('[gd_resource type="Theme" load_steps=%d format=3]\n\n'
               '[ext_resource type="FontFile" path="%s" id="1_font"]\n\n'

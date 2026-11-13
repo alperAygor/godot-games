@@ -22,6 +22,10 @@ var _next: int = 0
 var _table: Dictionary = {}
 var _cache: Dictionary = {}
 var _silent: bool = false
+## Kullanıcı ayarları: efekt+ortam sesi ve müzik ayrı kapanır. `_silent` (headless) ile
+## karışmasın diye ayrı bayraklar; kapalıyken oynatıcılar duraklatılır, akış kaybolmaz.
+var _sound_on: bool = true
+var _music_on: bool = true
 var _missing: Dictionary = {}
 var _ambience: AudioStreamPlayer = null
 var _ambience_tween: Tween = null
@@ -62,7 +66,7 @@ func _ready() -> void:
 
 ## `data/sounds.json` içinde tanımlı bir sesi çalar. Tanımsız ad sessizce yok sayılır.
 func play(sound_name: String, pitch_variance: float = 0.0) -> void:
-	if _silent or _pool.is_empty():
+	if _silent or not _sound_on or _pool.is_empty():
 		return
 	var stream: AudioStream = _stream(sound_name)
 	if stream == null:
@@ -78,7 +82,7 @@ func play(sound_name: String, pitch_variance: float = 0.0) -> void:
 
 ## Belirli bir perdeyle çalar (art arda sepetlerde yükselen nota için).
 func play_pitched(sound_name: String, pitch: float, volume_db: float = 0.0) -> void:
-	if _silent or _pool.is_empty():
+	if _silent or not _sound_on or _pool.is_empty():
 		return
 	var stream: AudioStream = _stream(sound_name)
 	if stream == null:
@@ -124,6 +128,7 @@ func play_ambience(sound_name: String, volume_db: float = AMBIENCE_VOLUME_DB) ->
 	_ambience.volume_db = SILENT_DB  # Klik olmasın diye sessizlikten başla.
 	_ambience.pitch_scale = 1.0
 	_ambience.play()
+	_ambience.stream_paused = not _sound_on
 	_fade_ambience(volume_db, AMBIENCE_FADE_IN_S)
 
 
@@ -148,8 +153,23 @@ func play_music(sound_name: String, volume_db: float = MUSIC_VOLUME_DB) -> void:
 	_music_name = sound_name
 	_music.volume_db = SILENT_DB
 	_music.play()
+	_music.stream_paused = not _music_on
 	var fade: Tween = create_tween()
 	fade.tween_property(_music, "volume_db", volume_db, MUSIC_FADE_IN_S)
+
+
+## Ayar: efektler + ortam sesi.
+func set_sound_enabled(enabled: bool) -> void:
+	_sound_on = enabled
+	if _ambience != null:
+		_ambience.stream_paused = not enabled
+
+
+## Ayar: arka plan müziği.
+func set_music_enabled(enabled: bool) -> void:
+	_music_on = enabled
+	if _music != null:
+		_music.stream_paused = not enabled
 
 
 func has_sound(sound_name: String) -> bool:

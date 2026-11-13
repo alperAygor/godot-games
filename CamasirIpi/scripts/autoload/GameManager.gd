@@ -8,6 +8,7 @@ enum Phase { BOOT, MENU, GAME, RESULT }
 const SCENES: Dictionary = {
 	&"boot": "res://scenes/Boot.tscn",
 	&"menu": "res://scenes/Menu.tscn",
+	&"home": "res://scenes/Home.tscn",
 	&"game": "res://scenes/Game.tscn",
 	&"result": "res://scenes/Result.tscn",
 }
