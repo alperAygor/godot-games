@@ -66,7 +66,7 @@ Eklenti kodu tipsizdir; Godot'un varsayılan `debug/gdscript/warnings/exclude_ad
 3. *Project > Export > Add… > Android*: **Use Gradle Build** AÇIK olmalı (kapalıyken eklenti export'ta hata verir: "Prebuilt APK export is not supported").
    Bu eklentide ayrı bir "Plugins" onay kutusu yoktur: Android tarafı `EditorExportPlugin` olarak otomatik eklenir
    (AAR'lar, Gradle bağımlılıkları, `APPLICATION_ID` meta-data'sı). Aç/kapa anahtarı *Project Settings > General > Admob > General > Android > Enabled*'dır.
-   Bu depoda henüz `export_presets.cfg` yoktur; önayarı editörde oluşturun (imza bilgisi girmeyin, bkz. 6.).
+   Depoda `export_presets.cfg` vardır (`Android (release)`: AAB, Gradle, yalnız arm64, dışlama filtreleri; ayrıntı `docs/size/after.md`); imza bilgisini editörde yerelde girin (bkz. 6.). Filtreye `internal/handlers/*` ve `csharp/*` de eklidir.
 4. Gereksinimler: JDK 17, Android SDK (*Editor Settings > Export > Android*), Min SDK: eklenti belgesi bir değer vermiyor; Godot 4.7 varsayılanı (24) kullanın, Google Mobile Ads Next-Gen SDK 1.4.0'ın güncel alt sınırını Google belgesinden doğrulayın (Gradle derlemesi uyumsuzlukta hata verir), Target SDK güncel, arm64-v8a işaretli.
 5. Release için *Project Settings > Admob > General > Android > Enable R8 Optimization* önerilir (Play "obfuscation < %25" uyarısı; eklenti `minifyEnabled` ve ProGuard kurallarını export sırasında yazar).
 6. Keystore yolu/şifresi bu depoya YAZILMAZ; imzalamayı editörde yerel olarak yapın (`export_credentials.cfg` `.gitignore`'dadır).
