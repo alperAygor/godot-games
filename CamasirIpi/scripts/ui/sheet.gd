@@ -8,8 +8,10 @@ extends Control
 
 signal closed
 
-const CARD_SIDE_GAP: float = 32.0
+const CARD_SIDE_GAP: float = UiKit.SPACE_XL
 const EXIT_SECONDS: float = 0.22
+## Çıkış yükselme mesafesi: girişin yarısı (kapanış girişten daha sakin ve kısa).
+const EXIT_RISE_RATIO: float = 0.5
 
 var dismiss_on_dim: bool = false
 var _pause_tree: bool = false
@@ -69,6 +71,27 @@ func content() -> VBoxContainer:
 	return _content
 
 
+## Standart sayfa anatomisi (bkz. docs/UI_GUIDE.md): başlık -> içerik -> tek birincil eylem.
+## Başlık her sayfada aynı boy ve renkte; alt boşluk SPACE_LG.
+func add_title(text: String) -> Label:
+	var title: Label = UiKit.wrap_label(text, UiKit.TITLE_SIZE)
+	_content.add_child(title)
+	_content.add_child(UiKit.spacer(UiKit.SPACE_LG))
+	return title
+
+
+func add_gap(height: float) -> void:
+	_content.add_child(UiKit.spacer(height))
+
+
+## Sayfanın alt eylemi (başparmak bölgesi: içeriğin en altı). `primary` dolu yeşil, değilse sakin ikincil.
+func add_action(text: String, primary: bool, icon_name: String = "") -> Button:
+	var node: Button = UiKit.button(text, &"" if primary else &"SecondaryButton", icon_name,
+		UiKit.HEIGHT_PRIMARY if primary else UiKit.HEIGHT_SECONDARY)
+	_content.add_child(node)
+	return node
+
+
 func card() -> PanelContainer:
 	return _card
 
@@ -95,7 +118,7 @@ func close() -> void:
 	var outro: Tween = create_tween().set_parallel(true)
 	outro.tween_property(self, "modulate:a", 0.0, EXIT_SECONDS)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	outro.tween_property(_rise, "position:y", Motion.OVERLAY_RISE_DISTANCE * 0.5, EXIT_SECONDS)\
+	outro.tween_property(_rise, "position:y", Motion.OVERLAY_RISE_DISTANCE * EXIT_RISE_RATIO, EXIT_SECONDS)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	outro.chain().tween_callback(_finish_close)
 

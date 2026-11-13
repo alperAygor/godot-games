@@ -18,7 +18,23 @@ void fragment() {
 }
 """
 
+## Dokunun yalnız bir BÖLGESİNİ daire içinde gösterir (kare kesit). NEDEN shader: GPU-sıkıştırmalı
+## (ASTC/BPTC) oda katmanını CPU'da açıp kırpmak bozuk/gürültülü görüntü veriyordu; burada doku olduğu
+## gibi GPU'da örneklenir, kopya/çözme yok. `region`: UV uzayında (x, y, genişlik, yükseklik).
+const REGION_MASK_CODE: String = """
+shader_type canvas_item;
+uniform vec4 region = vec4(0.0, 0.0, 1.0, 1.0);
+uniform float softness = 0.02;
+void fragment() {
+	float d = distance(UV, vec2(0.5));
+	vec4 sampled = texture(TEXTURE, region.xy + UV * region.zw);
+	COLOR = sampled * COLOR;
+	COLOR.a *= 1.0 - smoothstep(0.5 - softness, 0.5, d);
+}
+"""
+
 static var _mask_shader: Shader = null
+static var _region_shader: Shader = null
 
 
 ## Sol üstte geri düğmesi (dokunma alanı 126 px, görsel disk 88 px).
@@ -51,6 +67,16 @@ static func circle_mask() -> ShaderMaterial:
 		_mask_shader.code = CIRCLE_MASK_CODE
 	var material: ShaderMaterial = ShaderMaterial.new()
 	material.shader = _mask_shader
+	return material
+
+
+static func circle_region_mask(region: Rect2) -> ShaderMaterial:
+	if _region_shader == null:
+		_region_shader = Shader.new()
+		_region_shader.code = REGION_MASK_CODE
+	var material: ShaderMaterial = ShaderMaterial.new()
+	material.shader = _region_shader
+	material.set_shader_parameter("region", Vector4(region.position.x, region.position.y, region.size.x, region.size.y))
 	return material
 
 

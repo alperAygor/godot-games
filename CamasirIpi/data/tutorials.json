@@ -112,18 +112,21 @@
     "undo": {
       "unlock_level": 6,
       "demo": "icon",
-      "icon": "lucide/arrow-left"
+      "icon": "lucide/arrow-left",
+      "booster": "undo"
     },
     "pin_remover": {
       "unlock_level": 12,
       "demo": "icon",
-      "icon": "lucide/x"
+      "icon": "lucide/x",
+      "booster": "pin_remover"
     },
     "extra_slot": {
       "unlock_level": 18,
       "demo": "badge",
       "badge": "+1",
-      "icon": "lucide/package"
+      "icon": "lucide/package",
+      "booster": "extra_slot"
     },
     "slide": {
       "level_key": "slide",
@@ -133,32 +136,48 @@
     "washer": {
       "level_key": "washer",
       "demo": "icon",
-      "icon": "lucide/rotate-ccw"
+      "icon": "lucide/rotate-ccw",
+      "sprite": "res://assets/sprites/machines/machine_washer.png"
     },
     "dryer": {
       "level_key": "dryer",
       "demo": "icon",
-      "icon": "lucide/flame"
+      "icon": "lucide/flame",
+      "sprite": "res://assets/sprites/machines/machine_dryer.png"
     },
     "typed_basket": {
       "level_key": "typed",
       "demo": "icon",
-      "icon": "lucide/shirt"
+      "icon": "lucide/shirt",
+      "typed_kind": 1
     },
     "birds": {
       "level_key": "birds",
       "demo": "icon",
-      "icon": "lucide/music"
+      "icon": "lucide/music",
+      "frames": [
+        "res://assets/sprites/critters/bird_idle.png",
+        "res://assets/sprites/critters/bird_flap.png"
+      ],
+      "sprite_height": 200
     },
     "rain": {
       "level_key": "rain",
       "demo": "icon",
-      "icon": "lucide/zap"
+      "icon": "lucide/zap",
+      "sprite": "res://assets/sprites/critters/cloud.png",
+      "falling": "res://assets/sprites/critters/drop.png",
+      "sprite_height": 170
     },
     "cat": {
       "level_key": "cat",
       "demo": "icon",
-      "icon": "lucide/heart"
+      "icon": "lucide/heart",
+      "frames": [
+        "res://assets/sprites/critters/cat_sleep.png",
+        "res://assets/sprites/critters/cat_awake.png"
+      ],
+      "sprite_height": 200
     }
   },
   "levels": {

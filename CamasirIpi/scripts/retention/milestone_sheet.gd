@@ -7,8 +7,8 @@ extends RetentionSheet
 const NODE_DISC: float = 112.0
 const NODE_ICON: float = 52.0
 const LINE_HEIGHT: float = 10.0
-const BIG_TEXT_SIZE: int = 56
-const CLAIM_HEIGHT: float = 132.0
+const BIG_TEXT_SIZE: int = UiKit.TYPE_NUMERIC
+const CLAIM_HEIGHT: float = UiKit.HEIGHT_PRIMARY
 const STRIP_HEIGHT: float = 372.0
 const PULSE_SCALE: float = 1.07
 const PULSE_SECONDS: float = 0.9
@@ -36,11 +36,11 @@ func _fill() -> void:
 	_head_host = VBoxContainer.new()
 	_head_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content().add_child(_head_host)
-	_add_gap(RetentionUi.GAP * 1.2)
+	_add_gap(UiKit.SPACE_XL)
 	_strip_host = VBoxContainer.new()
 	_strip_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content().add_child(_strip_host)
-	_add_gap(RetentionUi.GAP * 1.2)
+	_add_gap(UiKit.SPACE_XL)
 	_foot_host = VBoxContainer.new()
 	_foot_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content().add_child(_foot_host)

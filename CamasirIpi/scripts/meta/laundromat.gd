@@ -677,20 +677,17 @@ func _thumbnail(task_id: String) -> Control:
 	var area: Rect2 = _layer_rect(entry_name)
 	if area.get_area() > CANVAS.x * CANVAS.y * BIG_LAYER_SHARE:
 		# Zemin/duvar: katmanın ortasından kare kesit, daire maskeli (doku "örneği" gibi).
-		# NEDEN ayrı doku: AtlasTexture'da UV tüm atlası kapsar, daire maskesi bölgeye oturmaz.
-		var image: Image = texture.get_image()
-		# Oda katmanları VRAM sıkıştırmalıdır (mobilde ASTC): kesit almak için önce açılır.
-		if image != null and image.is_compressed() and image.decompress() != OK:
-			image = null
-		if image != null:
-			var tex_size: Vector2 = Vector2(image.get_width(), image.get_height())
-			var crop: float = minf(BIG_THUMB_CROP * tex_size.x / area.size.x, minf(tex_size.x, tex_size.y))
-			var focus: float = float(BIG_THUMB_FOCUS.get(task_id, BIG_THUMB_FOCUS_DEFAULT))
-			var origin: Vector2 = (tex_size - Vector2(crop, crop)) * Vector2(0.5, focus)
-			picture.texture = ImageTexture.create_from_image(image.get_region(Rect2i(origin, Vector2(crop, crop))))
-		else:
-			picture.texture = texture
-		picture.material = MetaUi.circle_mask()
+		# NEDEN shader bölgesi: doku GPU-sıkıştırmalıdır; CPU'da açıp kırpmak ("Zemin" küçük resmi)
+		# bozuk görünüyordu. Kesit artık GPU'da, UV bölgesiyle örneklenir (bkz. MetaUi.circle_region_mask).
+		var tex_size: Vector2 = texture.get_size()
+		var crop: float = minf(BIG_THUMB_CROP * tex_size.x / area.size.x, minf(tex_size.x, tex_size.y))
+		var focus: float = float(BIG_THUMB_FOCUS.get(task_id, BIG_THUMB_FOCUS_DEFAULT))
+		var origin: Vector2 = (tex_size - Vector2(crop, crop)) * Vector2(0.5, focus)
+		picture.texture = texture
+		picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		picture.stretch_mode = TextureRect.STRETCH_SCALE
+		picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		picture.material = MetaUi.circle_region_mask(Rect2(origin / tex_size, Vector2(crop, crop) / tex_size))
 		picture.size = Vector2(THUMB_DIAMETER, THUMB_DIAMETER)
 	else:
 		picture.texture = texture

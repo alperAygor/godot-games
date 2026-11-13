@@ -10,25 +10,39 @@ signal booster_pressed(id: String)
 
 const PROGRESS_PATH: String = "/root/Progress"
 const SESSION_FALLBACK: int = 2
+## Görsel daire küçük (92 px), dokunma alanı 126 px: UiIconButton ile aynı ilke.
 const BUTTON_SIZE: float = 92.0
-const BUTTON_GAP: float = 36.0
+const TOUCH_SIZE: float = UiKit.MIN_TOUCH
+const BUTTON_GAP: float = 8.0
 ## Başparmak bölgesinde, sepet kuyruğunun altında durur (üstte başlık ve zincir göstergesi var).
-const BAR_Y: float = 1812.0
+## Değer dairelerin MERKEZ çizgisidir (1858): dokunma alanı bunun etrafında ortalanır.
+const BAR_CENTER_Y: float = 1858.0
 const BADGE_SIZE: float = 40.0
-const BADGE_FONT: int = 24
+const BADGE_FONT: int = UiKit.TYPE_MICRO
+const BADGE_OFFSET_RATIO: float = 0.37
 const ICON_RATIO: float = 0.3
 const ICON_WIDTH: float = 6.0
+const AD_GLYPH_RATIO: float = 0.42
 const FILL: Color = Color(1.0, 1.0, 1.0, 0.82)
-const FILL_PRESSED: Color = Color(0.93, 0.95, 0.97, 0.9)
-const FILL_ARMED: Color = Color("2ec4a6")
-const INK: Color = Color("2a2f3d")
+const FILL_ARMED: Color = UiKit.ACCENT
+const INK: Color = UiKit.TEXT
 const INK_ARMED: Color = Color.WHITE
-const BADGE_COLOR: Color = Color("e5484d")
-const BADGE_EMPTY_COLOR: Color = Color("9aa3af")
+## Sayı rozeti sakin: koyu mürekkep zemin, beyaz rakam (uyarı kırmızısı değil). Sıfır: sönük gri.
+const BADGE_COLOR: Color = UiKit.TEXT
+const BADGE_EMPTY_COLOR: Color = Color(0.49, 0.52, 0.5, 0.55)
+## Sıfırken "reklam izle" durumu: sıcak sarı zemin + oynat işareti.
+const BADGE_AD_COLOR: Color = UiKit.GOLD
 const DISABLED_ALPHA: float = 0.45
-const PRESS_SCALE: float = 0.9
-const PRESS_SECONDS: float = 0.08
-const RELEASE_SECONDS: float = 0.22
+const PRESS_SCALE: float = UiTokens.MOTION_PRESS_SCALE
+const PRESS_SECONDS: float = UiTokens.MOTION_PRESS_SECONDS
+const RELEASE_SECONDS: float = UiTokens.MOTION_RELEASE_SECONDS
+
+## Sıfır adetli güçlendiriciye basılınca (yalnız `ad_enabled` açıkken) reklam izleme isteği.
+signal ad_requested(id: String)
+
+## Açık olursa sıfır adet "reklam izle" durumuna geçer (dokunulabilir, oynat işaretli rozet).
+## Varsayılan kapalı: oyun tarafı bağlanana dek sıfır sönük kalır (davranış değişmez).
+var ad_enabled: bool = false
 
 ## Oturumluk yedek sayılar (autoload yokken seviyeler arasında korunur).
 static var _session: Dictionary = {}
@@ -40,20 +54,25 @@ var _armed: String = ""
 
 func setup(screen_width: float) -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var total: float = BUTTON_SIZE * float(Boosters.IDS.size()) + BUTTON_GAP * float(Boosters.IDS.size() - 1)
-	position = Vector2((screen_width - total) * 0.5, BAR_Y)
-	size = Vector2(total, BUTTON_SIZE)
+	var total: float = TOUCH_SIZE * float(Boosters.IDS.size()) + BUTTON_GAP * float(Boosters.IDS.size() - 1)
+	position = Vector2((screen_width - total) * 0.5, BAR_CENTER_Y - TOUCH_SIZE * 0.5)
+	size = Vector2(total, TOUCH_SIZE)
 	for index: int in range(Boosters.IDS.size()):
 		var id: String = Boosters.IDS[index]
 		var button: BoosterButton = BoosterButton.new()
 		button.booster = id
-		button.custom_minimum_size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
-		button.size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
+		button.draw_disc = true
+		button.disc_diameter = BUTTON_SIZE
+		button.custom_minimum_size = Vector2(TOUCH_SIZE, TOUCH_SIZE)
+		button.size = Vector2(TOUCH_SIZE, TOUCH_SIZE)
 		button.pivot_offset = button.size * 0.5
-		button.position = Vector2(float(index) * (BUTTON_SIZE + BUTTON_GAP), 0.0)
+		button.position = Vector2(float(index) * (TOUCH_SIZE + BUTTON_GAP), 0.0)
 		button.focus_mode = Control.FOCUS_NONE
+		button.flat = true
 		_style(button)
 		button.pressed.connect(_on_pressed.bind(id))
+		button.button_down.connect(_press.bind(button, PRESS_SCALE, PRESS_SECONDS))
+		button.button_up.connect(_press.bind(button, 1.0, RELEASE_SECONDS))
 		add_child(button)
 		_buttons[id] = button
 		_badges[id] = _make_badge(button)
@@ -85,14 +104,17 @@ func refresh(level: int, usable: Dictionary) -> void:
 		button.visible = Boosters.is_unlocked(id, level)
 		var left: int = count(id)
 		var enabled: bool = bool(usable.get(id, false)) and left > 0
-		button.disabled = not enabled and _armed != id
-		button.modulate.a = 1.0 if enabled or _armed == id else DISABLED_ALPHA
+		# Reklam durumu: adet sıfırken (ve oyun tarafı izin verdiyse) düğme dokunulabilir kalır.
+		var ad_mode: bool = ad_enabled and left <= 0
+		button.ad_mode = ad_mode
+		button.disabled = not enabled and _armed != id and not ad_mode
+		button.modulate.a = 1.0 if enabled or _armed == id or ad_mode else DISABLED_ALPHA
 		button.armed = _armed == id
-		button.queue_redraw()
+		button.badge_color = BADGE_AD_COLOR if ad_mode else (BADGE_COLOR if left > 0 else BADGE_EMPTY_COLOR)
 		var badge: Label = _badges[id] as Label
 		badge.text = str(left)
-		button.badge_color = BADGE_COLOR if left > 0 else BADGE_EMPTY_COLOR
-	_restyle_armed()
+		badge.visible = not ad_mode
+		button.queue_redraw()
 
 
 func set_armed(id: String) -> void:
@@ -107,43 +129,36 @@ func armed() -> String:
 func _restyle_armed() -> void:
 	for id: String in Boosters.IDS:
 		var button: BoosterButton = _buttons[id] as BoosterButton
-		var fill: Color = FILL_ARMED if _armed == id else FILL
-		for state: String in ["normal", "hover", "disabled", "focus"]:
-			(button.get_theme_stylebox(state) as StyleBoxFlat).bg_color = fill
 		button.armed = _armed == id
 		button.queue_redraw()
 
 
 func _on_pressed(id: String) -> void:
-	var button: BoosterButton = _buttons[id] as BoosterButton
-	var squash: Tween = button.create_tween()
-	squash.tween_property(button, "scale", Vector2.ONE * PRESS_SCALE, PRESS_SECONDS)\
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	squash.tween_property(button, "scale", Vector2.ONE, RELEASE_SECONDS)\
-		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	AudioService.play_pitched("ui_soft", 1.0, -4.0)
+	UiKit.tap_sound()
+	if ad_enabled and count(id) <= 0:
+		ad_requested.emit(id)
+		return
 	booster_pressed.emit(id)
 
 
+func _press(button: Control, target: float, seconds: float) -> void:
+	var squash: Tween = button.create_tween()
+	squash.tween_property(button, "scale", Vector2.ONE * target, seconds)\
+		.set_trans(Tween.TRANS_BACK if target >= 1.0 else Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
+## Düğme çizimi `BoosterButton._draw`ta (daire + simge + rozet); stil kutuları boş kalır.
 func _style(button: Button) -> void:
+	var none: StyleBoxEmpty = StyleBoxEmpty.new()
 	for state: String in ["normal", "hover", "pressed", "disabled", "focus"]:
-		var box: StyleBoxFlat = StyleBoxFlat.new()
-		box.bg_color = FILL_PRESSED if state == "pressed" else FILL
-		box.set_corner_radius_all(int(BUTTON_SIZE * 0.5))
-		box.anti_aliasing = true
-		button.add_theme_stylebox_override(state, box)
+		button.add_theme_stylebox_override(state, none)
 
 
-func _make_badge(button: Button) -> Label:
-	var badge: Label = Label.new()
-	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+func _make_badge(button: BoosterButton) -> Label:
+	var badge: Label = UiKit.numeric_label("0", BADGE_FONT, Color.WHITE)
 	badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	badge.size = Vector2(BADGE_SIZE, BADGE_SIZE)
-	badge.position = Vector2(BUTTON_SIZE - BADGE_SIZE * 0.8, -BADGE_SIZE * 0.2)
-	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	badge.add_theme_font_size_override("font_size", BADGE_FONT)
-	badge.add_theme_color_override("font_color", Color.WHITE)
-	# Daire düğmenin `_draw`unda çizilir: Label kutusu yazı yüksekliğiyle uzayıp hap şekli alıyordu.
+	badge.position = button.badge_center() - badge.size * 0.5
 	badge.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
 	button.add_child(badge)
 	return badge
@@ -154,13 +169,31 @@ class BoosterButton extends Button:
 	var booster: String = ""
 	var armed: bool = false
 	var badge_color: Color = BoosterBar.BADGE_COLOR
+	## Çubukta daire bu düğmenin kendisi çizer (dokunma alanı daireden büyük); mağaza simgesi çizmez.
+	var draw_disc: bool = false
+	var disc_diameter: float = 0.0
+	var ad_mode: bool = false
+
+	func _diameter() -> float:
+		return disc_diameter if disc_diameter > 0.0 else size.x
+
+	func badge_center() -> Vector2:
+		var d: float = _diameter()
+		return size * 0.5 + Vector2(d * BoosterBar.BADGE_OFFSET_RATIO, -d * BoosterBar.BADGE_OFFSET_RATIO)
 
 	func _draw() -> void:
-		var half: float = BoosterBar.BADGE_SIZE * 0.5
-		draw_circle(Vector2(BoosterBar.BUTTON_SIZE - BoosterBar.BADGE_SIZE * 0.8 + half,
-			-BoosterBar.BADGE_SIZE * 0.2 + half), half, badge_color, true, -1.0, true)
 		var center: Vector2 = size * 0.5
-		var r: float = size.x * BoosterBar.ICON_RATIO
+		var d: float = _diameter()
+		if draw_disc:
+			draw_circle(center, d * 0.5, BoosterBar.FILL_ARMED if armed else BoosterBar.FILL, true, -1.0, true)
+		draw_circle(badge_center(), BoosterBar.BADGE_SIZE * 0.5, badge_color, true, -1.0, true)
+		if ad_mode:
+			# Oynat işareti: "bir reklam izleyip kazan" (yazısız, sakin).
+			var tip: float = BoosterBar.BADGE_SIZE * BoosterBar.AD_GLYPH_RATIO
+			var at: Vector2 = badge_center()
+			draw_colored_polygon(PackedVector2Array([at + Vector2(-tip * 0.5, -tip * 0.6),
+				at + Vector2(tip * 0.7, 0.0), at + Vector2(-tip * 0.5, tip * 0.6)]), BoosterBar.INK)
+		var r: float = d * BoosterBar.ICON_RATIO
 		var ink: Color = BoosterBar.INK_ARMED if armed else BoosterBar.INK
 		var w: float = BoosterBar.ICON_WIDTH
 		match booster:

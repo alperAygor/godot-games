@@ -4,7 +4,7 @@ extends Sheet
 ## Üç tutundurma sayfasının ortak tabanı: başlık, kilitli görünüm, "Tamam" düğmesi, kutlama.
 ## Sayfa kapanınca (closed) giriş satırı rozetleri Progress.changed ile zaten tazelenir.
 
-const OK_HEIGHT: float = 126.0
+const OK_HEIGHT: float = UiKit.HEIGHT_SECONDARY
 const LOCK_ICON: String = "lucide/clock"
 
 var _today: String = ""
@@ -35,13 +35,13 @@ func _add_ok() -> void:
 func _fill_locked(title: String, unlock_level: int) -> void:
 	var holder: CenterContainer = CenterContainer.new()
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	holder.add_child(RetentionUi.disc(LOCK_ICON, UiKit.ACCENT_SOFT, UiKit.ACCENT, 112.0, 52.0))
+	holder.add_child(RetentionUi.disc(LOCK_ICON, UiKit.ACCENT_SOFT, UiKit.ACCENT, UiKit.DISC_LG, UiKit.ICON_LG))
 	content().add_child(holder)
 	_add_gap(RetentionUi.GAP)
 	_add_title(title)
-	_add_gap(RetentionUi.GAP * 0.4)
+	_add_gap(UiKit.SPACE_XS)
 	content().add_child(UiKit.label(RetentionStrings.locked(unlock_level), RetentionUi.BODY_SIZE, UiKit.TEXT_MUTED))
-	_add_gap(RetentionUi.GAP * 1.6)
+	_add_gap(UiKit.SPACE_XL)
 	_add_ok()
 	play_intro()
 

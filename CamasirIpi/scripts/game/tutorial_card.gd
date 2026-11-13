@@ -9,29 +9,27 @@ signal dismissed
 
 const CARD_LAYER: int = 40
 const PANEL_WIDTH: float = 640.0
-const PANEL_RADIUS: int = 40
-const PANEL_MARGIN: float = 44.0
-const PANEL_COLOR: Color = Color("fbfaf6")
-const DIM_COLOR: Color = Color(0.1, 0.12, 0.18, 0.4)
-const TEXT_COLOR: Color = Color("2a2f3d")
+const PANEL_RADIUS: int = UiTokens.RADIUS_SHEET
+const PANEL_MARGIN: float = UiKit.SPACE_XL + UiKit.SPACE_SM
+const PANEL_COLOR: Color = UiKit.SHEET
+const DIM_COLOR: Color = UiKit.DIM
+const TEXT_COLOR: Color = UiKit.TEXT
+const LINE_COLOR: Color = UiKit.TEXT_MUTED
 const STAGE_SIZE: Vector2 = Vector2(560.0, 290.0)
-const STAGE_COLOR: Color = Color("e9f4fb")
-const STAGE_RADIUS: int = 28
+const STAGE_COLOR: Color = UiKit.SURFACE_SOFT
+const STAGE_RADIUS: int = UiKit.RADIUS_CARD
 const ROPE_COLOR: Color = Color("8a6a4a")
 const ROPE_Y: float = 34.0
 const ROPE_WIDTH: float = 5.0
 const GARMENT_SIZE: float = 170.0
 const BASKET_SIZE: float = 170.0
-const TITLE_FONT: int = 46
-const LINE_FONT: int = 32
-const BUTTON_FONT: int = 32
-const BUTTON_COLOR: Color = Color("2ec4a6")
-const BUTTON_MIN: Vector2 = Vector2(260.0, 84.0)
-const BUTTON_RADIUS: int = 40
-const COLUMN_GAP: int = 24
+const TITLE_FONT: int = UiKit.TYPE_HEADING
+const LINE_FONT: int = UiKit.TYPE_CAPTION + 4
+const BUTTON_MIN_WIDTH: float = 300.0
+const COLUMN_GAP: int = UiTokens.SPACE_LG
 const ICON_SIZE: float = 150.0
 const ICON_PLATE: float = 210.0
-const BADGE_FONT: int = 96
+const BADGE_FONT: int = UiKit.TYPE_DISPLAY + 12
 const HAND_SCALE: float = 0.62
 const HAND_TARGET_RATIO: float = 0.42
 const WET_KIND: int = 0
@@ -40,6 +38,19 @@ const SPARE_KIND: int = 1
 const LOOP_PAUSE: float = 0.7
 const AFTER_TAP_PAUSE: float = 1.5
 const FALLBACK_ICON: String = "lucide/star"
+## Gerçek sprite gösterisi (tutorials.json `sprite` / `frames` / `falling` / `typed_kind` / `booster`).
+const SPRITE_HEIGHT: float = 230.0
+const FRAME_SECONDS: float = 0.9
+const SWAY_DEGREES: float = 3.0
+const SWAY_SECONDS: float = 1.6
+const FALL_DISTANCE: float = 90.0
+const FALL_SECONDS: float = 1.1
+const FALL_SPREAD: float = 70.0
+const FALL_COUNT: int = 3
+const FALL_HEIGHT: float = 46.0
+const CLOUD_Y_RATIO: float = 0.4
+const TYPED_KIND_DEFAULT: int = 1
+const BOOSTER_GLYPH: float = 200.0
 const DEFAULT_COLORS: Array[Color] = [
 	Color("e5484d"), Color("3e8ef7"), Color("f5c02e"), Color("3dbb6e"),
 ]
@@ -89,15 +100,17 @@ func setup(feature: String, spec: Dictionary, palette: Array[Color]) -> void:
 	var column: VBoxContainer = VBoxContainer.new()
 	column.add_theme_constant_override("separation", COLUMN_GAP)
 	panel.add_child(column)
-	column.add_child(_label(TutorialStrings.card_title(feature), TITLE_FONT, TEXT_COLOR))
+	var title: Label = _label(TutorialStrings.card_title(feature), TITLE_FONT, TEXT_COLOR)
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title.custom_minimum_size = Vector2(STAGE_SIZE.x, 0.0)
+	column.add_child(title)
 	_build_stage(column)
-	var line: Label = _label(TutorialStrings.card_line(feature), LINE_FONT, TEXT_COLOR.lerp(Color.WHITE, 0.25))
+	var line: Label = _label(TutorialStrings.card_line(feature), LINE_FONT, LINE_COLOR)
 	line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	line.custom_minimum_size = Vector2(STAGE_SIZE.x, 0.0)
 	column.add_child(line)
-	var ok: Button = _ok_button()
 	var holder: CenterContainer = CenterContainer.new()
-	holder.add_child(ok)
+	holder.add_child(_ok_button())
 	column.add_child(holder)
 	_open_animation()
 	_run_demo(String(spec.get("demo", "icon")), spec)
@@ -113,19 +126,10 @@ func _label(text: String, font_size: int, tint: Color) -> Label:
 	return label
 
 
+## Tek birincil eylem: ortak düğme (UiKit) — diğer sayfalarla aynı yeşil, boy ve basma hissi.
 func _ok_button() -> Button:
-	var button: Button = Button.new()
-	button.text = TutorialStrings.ok_button()
-	button.custom_minimum_size = BUTTON_MIN
-	for state: String in ["normal", "hover", "pressed", "focus"]:
-		var box: StyleBoxFlat = StyleBoxFlat.new()
-		box.bg_color = BUTTON_COLOR.darkened(0.08) if state == "pressed" else BUTTON_COLOR
-		box.set_corner_radius_all(BUTTON_RADIUS)
-		box.anti_aliasing = true
-		button.add_theme_stylebox_override(state, box)
-	for key: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-		button.add_theme_color_override(key, Color.WHITE)
-	button.add_theme_font_size_override("font_size", BUTTON_FONT)
+	var button: Button = UiKit.button(TutorialStrings.ok_button(), &"", "", UiKit.HEIGHT_COMPACT)
+	button.custom_minimum_size.x = BUTTON_MIN_WIDTH
 	button.pressed.connect(close)
 	return button
 
@@ -178,6 +182,16 @@ func _finish() -> void:
 # --- Gösteriler -----------------------------------------------------------------------------
 
 func _run_demo(kind: String, spec: Dictionary) -> void:
+	# Gerçek sprite alanları varsa (veri güdümlü) kind'a bakılmadan onlar gösterilir.
+	if spec.has("typed_kind"):
+		_demo_typed(int(spec["typed_kind"]))
+		return
+	if spec.has("booster"):
+		_demo_booster(String(spec["booster"]))
+		return
+	if spec.has("sprite") or spec.has("frames"):
+		_demo_sprite(spec)
+		return
 	match kind:
 		"wet":
 			_demo_wet()
@@ -309,7 +323,7 @@ func _demo_lock() -> void:
 func _demo_badge(text: String) -> void:
 	var plate: Panel = Panel.new()
 	var box: StyleBoxFlat = StyleBoxFlat.new()
-	box.bg_color = BUTTON_COLOR
+	box.bg_color = UiKit.ACCENT
 	box.set_corner_radius_all(int(ICON_PLATE * 0.5))
 	box.anti_aliasing = true
 	plate.add_theme_stylebox_override("panel", box)
@@ -331,7 +345,7 @@ func _demo_icon(icon_name: String) -> void:
 		texture = Icons.texture(FALLBACK_ICON)
 	var plate: Panel = Panel.new()
 	var box: StyleBoxFlat = StyleBoxFlat.new()
-	box.bg_color = BUTTON_COLOR
+	box.bg_color = UiKit.ACCENT
 	box.set_corner_radius_all(int(ICON_PLATE * 0.5))
 	box.anti_aliasing = true
 	plate.add_theme_stylebox_override("panel", box)
@@ -357,6 +371,135 @@ func _breathe(node: Control) -> void:
 	node.pivot_offset = node.size * 0.5
 	var loop: Tween = node.create_tween().set_loops()
 	loop.tween_property(node, "scale", Vector2.ONE * 1.05, 1.1)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	loop.tween_property(node, "scale", Vector2.ONE, 1.1)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+## Gerçek sprite gösterisi: tek görsel (`sprite`) ya da sırayla değişen kareler (`frames`: kuş kanat
+## çırpar, kedi uyur/uyanır). `falling`: bulutun altından süzülen damlalar. Hafif sallanma: durağan
+## kart ölü görünmesin. Görseller ağırlıksız (≤512 px) ve elle ölçeklenir; piksel kırılması yok (mipmap/linear).
+func _demo_sprite(spec: Dictionary) -> void:
+	var paths: Array[String] = []
+	if spec.has("frames"):
+		for entry: Variant in spec["frames"] as Array:
+			paths.append(String(entry))
+	else:
+		paths.append(String(spec["sprite"]))
+	var height: float = float(spec.get("sprite_height", SPRITE_HEIGHT))
+	var holder: Control = Control.new()
+	holder.position = STAGE_SIZE * 0.5
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_stage.add_child(holder)
+	var frames: Array[TextureRect] = []
+	for path: String in paths:
+		var texture: Texture2D = load(path) as Texture2D if ResourceLoader.exists(path) else null
+		if texture == null:
+			continue
+		var view: TextureRect = TextureRect.new()
+		view.texture = texture
+		view.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		view.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		view.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		var ratio: float = texture.get_size().x / texture.get_size().y
+		view.size = Vector2(height * ratio, height)
+		view.position = -view.size * 0.5
+		view.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		view.visible = frames.is_empty()
+		holder.add_child(view)
+		frames.append(view)
+	if frames.is_empty():
+		_demo_icon(String(spec.get("icon", FALLBACK_ICON)))
+		holder.queue_free()
+		return
+	if spec.has("falling"):
+		_rain(holder, String(spec["falling"]), frames[0].size)
+	_sway(holder)
+	var index: int = 0
+	while _alive and frames.size() > 1:
+		if not await _pause(FRAME_SECONDS):
+			return
+		frames[index].visible = false
+		index = (index + 1) % frames.size()
+		frames[index].visible = true
+
+
+func _sway(node: Control) -> void:
+	var loop: Tween = node.create_tween().set_loops()
+	loop.tween_property(node, "rotation_degrees", SWAY_DEGREES, SWAY_SECONDS)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	loop.tween_property(node, "rotation_degrees", -SWAY_DEGREES, SWAY_SECONDS)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+## Bulutun altında yavaşça düşüp solan birkaç damla (ASMR yağmur; hafif: 3 sprite + 3 tween).
+func _rain(holder: Control, path: String, cloud_size: Vector2) -> void:
+	var texture: Texture2D = load(path) as Texture2D if ResourceLoader.exists(path) else null
+	if texture == null:
+		return
+	for index: int in range(FALL_COUNT):
+		var drop: TextureRect = TextureRect.new()
+		drop.texture = texture
+		drop.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		drop.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		drop.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		var ratio: float = texture.get_size().x / texture.get_size().y
+		drop.size = Vector2(FALL_HEIGHT * ratio, FALL_HEIGHT)
+		var x: float = (float(index) - float(FALL_COUNT - 1) * 0.5) * FALL_SPREAD
+		var top: float = cloud_size.y * CLOUD_Y_RATIO
+		drop.position = Vector2(x, top) - drop.size * 0.5
+		drop.modulate.a = 0.0
+		drop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		holder.add_child(drop)
+		var loop: Tween = drop.create_tween().set_loops()
+		loop.tween_interval(FALL_SECONDS * float(index) / float(FALL_COUNT))
+		loop.tween_property(drop, "modulate:a", 1.0, FALL_SECONDS * 0.2)
+		loop.parallel().tween_property(drop, "position:y", drop.position.y + FALL_DISTANCE, FALL_SECONDS)\
+			.from(drop.position.y).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		loop.tween_property(drop, "modulate:a", 0.0, FALL_SECONDS * 0.3)
+
+
+## Türlü sepet: gerçek sepet + önünde türün rozeti (oyundakiyle aynı KindBadge).
+func _demo_typed(kind_index: int) -> void:
+	var basket: BasketView = BasketView.new()
+	basket.setup(BASKET_SIZE)
+	basket.position = Vector2(STAGE_SIZE.x * 0.5, STAGE_SIZE.y * 0.6)
+	_stage.add_child(basket)
+	basket.set_color(_colors[TYPED_KIND_DEFAULT % _colors.size()])
+	var badge: KindBadge = KindBadge.new()
+	badge.setup(basket, BASKET_SIZE)
+	_stage.add_child(badge)
+	badge.set_kind(kind_index, _colors[TYPED_KIND_DEFAULT % _colors.size()])
+	_breathe_node(basket)
+
+
+## Güçlendirici: oyun çubuğundaki aynı çizim (BoosterButton) yuvarlak zeminde, nefes alır.
+func _demo_booster(id: String) -> void:
+	var plate: Panel = Panel.new()
+	var box: StyleBoxFlat = StyleBoxFlat.new()
+	box.bg_color = UiKit.ACCENT_SOFT
+	box.set_corner_radius_all(int(ICON_PLATE * 0.5))
+	box.anti_aliasing = true
+	plate.add_theme_stylebox_override("panel", box)
+	plate.size = Vector2.ONE * ICON_PLATE
+	plate.position = (STAGE_SIZE - plate.size) * 0.5
+	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_stage.add_child(plate)
+	var glyph: BoosterBar.BoosterButton = BoosterBar.BoosterButton.new()
+	glyph.booster = id
+	glyph.badge_color = Color(0.0, 0.0, 0.0, 0.0)
+	glyph.flat = true
+	glyph.focus_mode = Control.FOCUS_NONE
+	glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	glyph.size = Vector2.ONE * BOOSTER_GLYPH
+	glyph.position = (plate.size - glyph.size) * 0.5
+	plate.add_child(glyph)
+	_breathe(plate)
+
+
+func _breathe_node(node: Node2D) -> void:
+	var loop: Tween = node.create_tween().set_loops()
+	loop.tween_property(node, "scale", Vector2.ONE * 1.04, 1.1)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	loop.tween_property(node, "scale", Vector2.ONE, 1.1)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)

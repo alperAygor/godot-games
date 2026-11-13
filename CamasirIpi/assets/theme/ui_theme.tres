@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=13 format=3]
+[gd_resource type="Theme" load_steps=14 format=3]
 
 [ext_resource type="FontFile" path="res://assets/fonts/Baloo2.ttf" id="1_font"]
 
@@ -109,15 +109,31 @@ anti_aliasing = true
 anti_aliasing_size = 1.5
 
 [sub_resource type="StyleBoxFlat" id="SB_sheet"]
-content_margin_left = 56.0
-content_margin_top = 56.0
-content_margin_right = 56.0
-content_margin_bottom = 56.0
+content_margin_left = 48.0
+content_margin_top = 48.0
+content_margin_right = 48.0
+content_margin_bottom = 48.0
 bg_color = Color(0.9843, 0.9725, 0.9412, 1.0000)
 corner_radius_top_left = 56
 corner_radius_top_right = 56
 corner_radius_bottom_right = 56
 corner_radius_bottom_left = 56
+anti_aliasing = true
+anti_aliasing_size = 1.5
+shadow_size = 40
+shadow_color = Color(0.1000, 0.1600, 0.1300, 0.1000)
+shadow_offset = Vector2(0, -6)
+
+[sub_resource type="StyleBoxFlat" id="SB_card"]
+content_margin_left = 28.0
+content_margin_top = 22.0
+content_margin_right = 28.0
+content_margin_bottom = 22.0
+bg_color = Color(0.9529, 0.9373, 0.8902, 1.0000)
+corner_radius_top_left = 40
+corner_radius_top_right = 40
+corner_radius_bottom_right = 40
+corner_radius_bottom_left = 40
 anti_aliasing = true
 anti_aliasing_size = 1.5
 
@@ -175,5 +191,7 @@ SecondaryButton/styles/disabled = SubResource("SB_secondary_disabled")
 SecondaryButton/styles/focus = SubResource("SB_empty")
 SheetPanel/base_type = &"PanelContainer"
 SheetPanel/styles/panel = SubResource("SB_sheet")
+CardPanel/base_type = &"PanelContainer"
+CardPanel/styles/panel = SubResource("SB_card")
 ChipPanel/base_type = &"PanelContainer"
 ChipPanel/styles/panel = SubResource("SB_chip")

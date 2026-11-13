@@ -7,16 +7,16 @@ extends Sheet
 ## karo "alındı" görünümüne geçer. Süreler `Motion`dan.
 
 const SCENE_PATH: String = "res://scenes/daily/DailyCalendar.tscn"
-const TITLE_SIZE: int = 48
-const GAP: float = 28.0
-const TILE_GAP: int = 10
+const TITLE_SIZE: int = UiKit.TITLE_SIZE
+const GAP: float = UiKit.SPACE_LG
+const TILE_GAP: int = UiTokens.SPACE_SM
 const TILE_HEIGHT: float = 176.0
 const TILE_MIN_WIDTH: float = 96.0
-const TILE_RADIUS: int = 30
+const TILE_RADIUS: int = UiKit.RADIUS_TILE
 const TILE_ICON: float = 48.0
-const DAY_FONT: int = 28
-const AMOUNT_FONT: int = 30
-const CLAIM_HEIGHT: float = 132.0
+const DAY_FONT: int = UiKit.TYPE_CAPTION
+const AMOUNT_FONT: int = UiKit.TYPE_CAPTION
+const CLAIM_HEIGHT: float = UiKit.HEIGHT_PRIMARY
 const TODAY_SCALE: float = 1.04
 const POP_SCALE: float = 1.18
 const CHECK_ICON: String = "lucide/check"
@@ -25,7 +25,7 @@ const GIFT_ICON: String = "lucide/package"
 const FINAL_ICON: String = "lucide/trophy"
 const RISE_DISTANCE: float = 110.0
 const RISE_SECONDS: float = 1.1
-const RISE_FONT: int = 52
+const RISE_FONT: int = UiKit.TITLE_SIZE
 const SPARK_COLOR: Color = Color(1.0, 0.93, 0.62)
 const SPARK_SPEED_MIN: float = 120.0
 const SPARK_SPEED_MAX: float = 320.0
@@ -66,7 +66,7 @@ func _fill() -> void:
 	var states: Array[int] = DailyCalendarLogic.tile_states(DailyStore.calendar_state(), _today)
 	for index: int in range(states.size()):
 		row.add_child(_make_tile(index + 1, states[index]))
-	column.add_child(UiKit.spacer(GAP * 1.6))
+	column.add_child(UiKit.spacer(UiKit.SPACE_XL))
 	_footer = VBoxContainer.new()
 	_footer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(_footer)

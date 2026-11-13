@@ -34,16 +34,16 @@ func _fill() -> void:
 		_fill_locked(RetentionStrings.missions_title(), unlock)
 		return
 	_add_title(RetentionStrings.missions_title())
-	_add_gap(RetentionUi.GAP * 0.3)
+	_add_gap(UiKit.SPACE_XS)
 	var streak: int = Comeback.streak_position(RetentionFlow.comeback_state(), RetentionData.comeback())
 	if streak > 0:
 		content().add_child(RetentionUi.flame_row(streak))
-	_add_gap(RetentionUi.GAP * 0.9)
+	_add_gap(UiKit.SPACE_LG)
 	_list = VBoxContainer.new()
 	_list.add_theme_constant_override("separation", ROW_GAP)
 	_list.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content().add_child(_list)
-	_add_gap(RetentionUi.GAP * 1.2)
+	_add_gap(UiKit.SPACE_XL)
 	_add_ok()
 	_rebuild()
 

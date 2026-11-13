@@ -7,13 +7,16 @@ extends Control
 
 signal pause_requested
 
-const TITLE_SIZE: int = 40
+const TITLE_SIZE: int = UiTokens.TYPE_NUMERIC_SM
+## Başlık ile yan öğeler (duraklat düğmesi, jeton hapı) arası en az boşluk.
+const TITLE_SIDE_GAP: float = UiKit.SPACE_MD
+const TITLE_MAX_WIDTH: float = 400.0
 const ROW_HEIGHT: float = UiKit.MIN_TOUCH
 ## Zincir hapı: başlığın altında, tahtanın üstünde küçük bir "×N" (ikon + sayı).
 const CHAIN_ICON: String = "lucide/zap"
-const CHAIN_ICON_PIXELS: float = 34.0
-const CHAIN_FONT_SIZE: int = 40
-const CHAIN_GAP: float = 8.0
+const CHAIN_ICON_PIXELS: float = UiKit.ICON_SM + 2.0
+const CHAIN_FONT_SIZE: int = UiTokens.TYPE_NUMERIC_SM
+const CHAIN_GAP: float = UiKit.SPACE_XS
 const CHAIN_POP_SCALE: float = 1.2
 const CHAIN_POP_IN_SECONDS: float = 0.12
 const CHAIN_POP_OUT_SECONDS: float = 0.32
@@ -41,10 +44,12 @@ func _ready() -> void:
 	_pause_button.pressed.connect(pause_requested.emit)
 	add_child(_pause_button)
 	_title = UiKit.label("", TITLE_SIZE)
-	_title.position = Vector2(view.x * 0.5 - 200.0, row_top)
-	_title.custom_minimum_size = Vector2(400.0, ROW_HEIGHT)
-	_title.size = Vector2(400.0, ROW_HEIGHT)
+	_title.position = Vector2(view.x * 0.5 - TITLE_MAX_WIDTH * 0.5, row_top)
+	_title.custom_minimum_size = Vector2(0.0, ROW_HEIGHT)
+	_title.size = Vector2(TITLE_MAX_WIDTH, ROW_HEIGHT)
 	_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	# Uzun başlık (EN/ES günlük bulmaca) yan öğelere binmesin: genişlik hap ölçüsüne göre kısılır, taşan "…" olur.
+	_title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	add_child(_title)
 	_coin_chip = UiChip.new()
 	_coin_chip.setup("lucide/coins", UiKit.GOLD)
@@ -88,6 +93,12 @@ func _place_chip(view: Vector2, insets: Vector4, row_top: float) -> void:
 	_coin_chip.size = chip_size
 	_coin_chip.position = Vector2(view.x - insets.z - UiKit.SIDE_MARGIN - chip_size.x,
 		row_top + (ROW_HEIGHT - chip_size.y) * 0.5)
+	# Başlık ekran ortasında kalır; yarı genişliği hapın sol kenarına ve duraklat düğmesine göre sınırlanır.
+	var left_limit: float = insets.x + UiKit.SIDE_MARGIN + UiIconButton.DISC_DIAMETER + TITLE_SIDE_GAP
+	var half: float = minf(TITLE_MAX_WIDTH * 0.5, minf(view.x * 0.5 - left_limit,
+		_coin_chip.position.x - TITLE_SIDE_GAP - view.x * 0.5))
+	_title.size.x = maxf(half, 0.0) * 2.0
+	_title.position.x = view.x * 0.5 - half
 
 
 func _build_chain_pill(view: Vector2, row_top: float) -> void:
@@ -98,7 +109,7 @@ func _build_chain_pill(view: Vector2, row_top: float) -> void:
 	_chain_pill.visible = false
 	_chain_pill.position = Vector2(view.x * 0.5, row_top + ROW_HEIGHT + CHAIN_GAP)
 	var row: HBoxContainer = HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
+	row.add_theme_constant_override("separation", UiTokens.SPACE_SM)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_chain_pill.add_child(row)

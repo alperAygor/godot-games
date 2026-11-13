@@ -226,3 +226,6 @@ NET_RETRY,Tekrar dene,Try again,Reintentar
 NET_CHECKING,Bağlantı denetleniyor...,Checking connection...,Comprobando la conexión...
 PATTERN_SETTING,Renk desenleri,Colour patterns,Patrones de color
 PATTERN_SETTING_HINT,Her rengin kendi deseni olur (renk körlüğü için),Each colour gets its own pattern (colour-blind friendly),Cada color tiene su propio patrón (para daltonismo)
+UI_SETTING_NOTIFICATIONS,Bildirimler,Notifications,Notificaciones
+UI_SETTING_PATTERNS,Desenler,Patterns,Patrones
+UI_PRIVACY_OPTIONS,Gizlilik seçenekleri,Privacy options,Opciones de privacidad

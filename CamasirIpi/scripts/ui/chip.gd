@@ -5,9 +5,10 @@ extends PanelContainer
 ## Sayı değişince kısa, yumuşak bir sayma animasyonu oynar.
 
 const ICON_PIXELS: float = 40.0
-const FONT_SIZE: int = 40
-const HEIGHT: float = 80.0
-const COUNT_SECONDS: float = 0.6
+const FONT_SIZE: int = UiTokens.TYPE_NUMERIC_SM
+const HEIGHT: float = float(UiTokens.H_CHIP)
+const COUNT_SECONDS: float = UiTokens.MOTION_COUNT_SECONDS
+const ICON_GAP: int = UiTokens.SPACE_SM
 
 var _value: int = 0
 var _shown: float = 0.0
@@ -22,14 +23,15 @@ func setup(icon_name: String, icon_color: Color) -> void:
 	custom_minimum_size = Vector2(0.0, HEIGHT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var row: HBoxContainer = HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
+	row.add_theme_constant_override("separation", ICON_GAP)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(row)
 	var icon: TextureRect = UiKit.tinted_icon(icon_name, ICON_PIXELS, icon_color)
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(icon)
-	_label = UiKit.label("0", FONT_SIZE)
+	# Sabit genişlikli rakamlar: sayı artarken hap titremesin.
+	_label = UiKit.numeric_label("0", FONT_SIZE)
 	row.add_child(_label)
 
 
@@ -53,4 +55,4 @@ func set_value(value: int, animated: bool = true) -> void:
 
 func _set_shown(value: float) -> void:
 	_shown = value
-	_label.text = str(roundi(value))
+	_label.text = UiKit.fmt_int(roundi(value))

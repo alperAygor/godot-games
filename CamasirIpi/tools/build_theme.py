@@ -44,9 +44,13 @@ def darken(hex_value, t):
     return rgb_to_color(mix(hex_to_rgb(hex_value), (0.0, 0.0, 0.0), t))
 
 
-def style(id_name, bg, radius, px, py, radius_bottom=None):
-    """Duz, cizgisiz, golgesiz StyleBox (kullanici tercihi: minimal modern arayuz)."""
+def style(id_name, bg, radius, px, py, radius_bottom=None, shadow=None):
+    """Duz, cizgisiz StyleBox (kullanici tercihi: minimal modern arayuz).
+    `shadow`: (boyut, renk, y) - tek, cok yumusak yukseklik duzeyi; yalniz alt sayfada kullanilir."""
     rb = radius if radius_bottom is None else radius_bottom
+    extra = ""
+    if shadow is not None:
+        extra = "shadow_size = %d\nshadow_color = %s\nshadow_offset = Vector2(0, %d)\n" % shadow
     return """[sub_resource type="StyleBoxFlat" id="{id}"]
 content_margin_left = {px}.0
 content_margin_top = {py}.0
@@ -59,7 +63,7 @@ corner_radius_bottom_right = {rb}
 corner_radius_bottom_left = {rb}
 anti_aliasing = true
 anti_aliasing_size = 1.5
-""".format(id=id_name, px=px, py=py, bg=bg, r=radius, rb=rb)
+""".format(id=id_name, px=px, py=py, bg=bg, r=radius, rb=rb) + extra
 
 
 def button_states(blocks, resources, prefix, base, text_hex, font_size, radius, px, py):
@@ -115,12 +119,19 @@ def build(theme):
                   int(metrics["secondary_button_font_size"]), radius, px, py)
 
     # Paneller: krem alt sayfa (SheetPanel) ve yari saydam hap (ChipPanel). Cizgi/golge yok.
+    elev = theme["elevation"]
+    sheet_shadow = (int(elev["shadow_size"]), rgb_to_color((0.1, 0.16, 0.13), float(elev["shadow_alpha"])),
+                    int(elev["shadow_offset_y"]))
     blocks.append(style("SB_sheet", color(palette["sheet"]), sheet_r,
-                        int(metrics["sheet_padding_x"]), int(metrics["sheet_padding_y"])))
+                        int(metrics["sheet_padding_x"]), int(metrics["sheet_padding_y"]), None, sheet_shadow))
+    # Kart (satir/karo yuzeyi): yumusak krem, golgesiz.
+    blocks.append(style("SB_card", color(palette["surface_soft"]), int(theme["radius"]["card"]), 28, 22))
     blocks.append(style("SB_chip", color("#FFFFFF", 0.62), 60,
                         int(metrics["chip_padding_x"]), int(metrics["chip_padding_y"])))
     resources.append('SheetPanel/base_type = &"PanelContainer"')
     resources.append('SheetPanel/styles/panel = SubResource("SB_sheet")')
+    resources.append('CardPanel/base_type = &"PanelContainer"')
+    resources.append('CardPanel/styles/panel = SubResource("SB_card")')
     resources.append('ChipPanel/base_type = &"PanelContainer"')
     resources.append('ChipPanel/styles/panel = SubResource("SB_chip")')
 
@@ -133,6 +144,31 @@ def build(theme):
               % (len(blocks) + 2, theme["font"]))
     body = "\n".join(blocks)
     return header + body + "\n[resource]\n" + "\n".join(resources) + "\n"
+
+
+def gd_color(hex_value):
+    return 'Color("%s")' % hex_value.lstrip("#").lower()
+
+
+def build_tokens(theme):
+    """Ayni json'dan GDScript sabitleri: kod tarafinda sihirli sayi kalmasin, tek kaynak kalsin."""
+    out = ["# UYARI: tools/build_theme.py data/theme.json'dan URETIR; elle duzenleme.",
+           "class_name UiTokens", "extends RefCounted", "",
+           "## Arayuz tasarim belirteclerinin (token) derleme zamani sabitleri. Aciklama: docs/UI_GUIDE.md", ""]
+    for key, value in theme["palette"].items():
+        out.append("const C_%s: Color = %s" % (key.upper(), gd_color(value)))
+    out.append("")
+    for group, prefix in (("space", "SPACE"), ("radius", "RADIUS"), ("type", "TYPE"), ("height", "H"),
+                          ("icon", "ICON")):
+        for key, value in theme[group].items():
+            out.append("const %s_%s: int = %d" % (prefix, key.upper(), int(value)))
+        out.append("")
+    for key, value in theme["elevation"].items():
+        out.append("const ELEV_%s: float = %s" % (key.upper(), repr(float(value))))
+    out.append("")
+    for key, value in theme["motion"].items():
+        out.append("const MOTION_%s: float = %s" % (key.upper(), repr(float(value))))
+    return "\n".join(out) + "\n"
 
 
 def main():
@@ -153,19 +189,28 @@ def main():
         theme = json.load(handle)
 
     generated = build(theme)
+    tokens = build_tokens(theme)
+    tokens_path = os.path.join(project, "scripts", "ui", "kit", "ui_tokens.gd")
 
     if args.check:
         current = ""
         if os.path.exists(out_path):
             with open(out_path, encoding="utf-8") as handle:
                 current = handle.read()
-        if current != generated:
+        current_tokens = ""
+        if os.path.exists(tokens_path):
+            with open(tokens_path, encoding="utf-8") as handle:
+                current_tokens = handle.read()
+        if current != generated or current_tokens != tokens:
             print("guncel degil: %s (tools/build_theme.py kosun)" % os.path.relpath(out_path, project),
                   file=sys.stderr)
             return 1
         print("tema guncel")
         return 0
 
+    os.makedirs(os.path.dirname(tokens_path), exist_ok=True)
+    with open(tokens_path, "w", encoding="utf-8") as handle:
+        handle.write(tokens)
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as handle:
         handle.write(generated)

@@ -3,12 +3,9 @@ extends Sheet
 
 ## Ana ekranın küçük sayfaları: "Yakında" (mağaza/koleksiyon yer tutucusu) ve Ayarlar.
 
-const TITLE_SIZE: int = 52
-const BODY_SIZE: int = 32
-const DISC: float = 112.0
-const ICON_PIXELS: float = 52.0
-const GAP: float = 24.0
-const OK_HEIGHT: float = 126.0
+const BODY_SIZE: int = UiKit.TYPE_BODY
+const GAP: float = UiKit.SPACE_LG
+const SECTION_GAP: float = UiKit.SPACE_XL
 
 
 ## Yer tutucu: "yakında". `icon_name` sekmenin ikonudur (sayfa hangi bölümden açıldığı belli olsun).
@@ -17,15 +14,12 @@ static func soon(parent: Node, icon_name: String) -> InfoSheet:
 	sheet.build(parent, false)
 	sheet.dismiss_on_dim = true
 	var column: VBoxContainer = sheet.content()
-	column.add_child(sheet._icon_disc(icon_name))
-	column.add_child(UiKit.spacer(GAP))
-	column.add_child(UiKit.label(UiStrings.soon_title(), TITLE_SIZE))
-	column.add_child(UiKit.spacer(GAP * 0.4))
-	var body: Label = UiKit.label(UiStrings.soon_body(), BODY_SIZE, UiKit.TEXT_MUTED)
-	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	column.add_child(body)
-	column.add_child(UiKit.spacer(GAP * 1.5))
-	column.add_child(sheet._ok_button())
+	column.add_child(UiKit.centered_disc(icon_name))
+	sheet.add_gap(GAP)
+	sheet.add_title(UiStrings.soon_title())
+	column.add_child(UiKit.wrap_label(UiStrings.soon_body(), BODY_SIZE, UiKit.TEXT_MUTED))
+	sheet.add_gap(SECTION_GAP)
+	sheet._ok_button()
 	sheet.play_intro()
 	return sheet
 
@@ -35,15 +29,22 @@ static func settings(parent: Node) -> InfoSheet:
 	sheet.build(parent, false)
 	sheet.dismiss_on_dim = true
 	var column: VBoxContainer = sheet.content()
-	column.add_child(UiKit.label(UiStrings.settings_title(), TITLE_SIZE))
-	column.add_child(UiKit.spacer(GAP * 1.5))
-	column.add_child(UiSettingsRow.new())
-	column.add_child(UiKit.spacer(GAP * 1.4))
+	sheet.add_title(UiStrings.settings_title())
+	column.add_child(UiSettingsRow.new(true))
+	sheet.add_gap(SECTION_GAP)
 	var languages: UiLanguageRow = UiLanguageRow.new()
 	languages.language_changed.connect(sheet._on_language_changed)
 	column.add_child(languages)
-	column.add_child(UiKit.spacer(GAP * 1.8))
-	column.add_child(sheet._ok_button())
+	# Gizlilik seçenekleri yalnız reklam katmanı sunuyorsa görünür (AB/ABD onay formu için kanca).
+	if UiData.privacy_options_available():
+		sheet.add_gap(SECTION_GAP)
+		var privacy: Button = UiKit.button(Loc.t("UI_PRIVACY_OPTIONS"), &"SecondaryButton", "lucide/lock",
+			UiKit.HEIGHT_COMPACT)
+		privacy.name = "PrivacyOptions"
+		privacy.pressed.connect(UiData.show_privacy_options)
+		column.add_child(privacy)
+	sheet.add_gap(SECTION_GAP)
+	sheet._ok_button()
 	sheet.play_intro()
 	return sheet
 
@@ -54,24 +55,6 @@ func _on_language_changed() -> void:
 
 
 func _ok_button() -> Button:
-	var ok: Button = UiKit.button(UiStrings.ok(), &"SecondaryButton", "", OK_HEIGHT)
+	var ok: Button = add_action(UiStrings.ok(), false)
 	ok.pressed.connect(close)
 	return ok
-
-
-func _icon_disc(icon_name: String) -> Control:
-	var holder: CenterContainer = CenterContainer.new()
-	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var disc: Panel = Panel.new()
-	var box: StyleBoxFlat = StyleBoxFlat.new()
-	box.bg_color = UiKit.ACCENT_SOFT
-	box.set_corner_radius_all(int(DISC * 0.5))
-	box.anti_aliasing = true
-	disc.add_theme_stylebox_override("panel", box)
-	disc.custom_minimum_size = Vector2(DISC, DISC)
-	disc.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	holder.add_child(disc)
-	var icon: TextureRect = UiKit.tinted_icon(icon_name, ICON_PIXELS, UiKit.ACCENT)
-	icon.position = Vector2((DISC - ICON_PIXELS) * 0.5, (DISC - ICON_PIXELS) * 0.5)
-	disc.add_child(icon)
-	return holder
