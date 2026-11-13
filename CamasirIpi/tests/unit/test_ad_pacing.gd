@@ -1,6 +1,6 @@
 extends TestCase
 
-## AdPacing: geçiş reklamı sıklığı. Saat dışarıdan verildiği için süreler anında sınanır.
+## AdPacing: geçiş reklamı kararı. 4. seviyeden itibaren her geçişte; üç istisna test edilir.
 
 var _pacing: Dictionary = {}
 
@@ -11,26 +11,32 @@ func before_each() -> void:
 
 func test_never_before_first_level() -> void:
 	for level: int in range(1, 4):
-		assert_false(AdPacing.should_show(level, 99, 10000.0, 0.0, 0.0, _pacing), "seviye %d" % level)
+		assert_false(AdPacing.should_show(level, false, false, _pacing), "seviye %d reklamsız" % level)
 
 
-func test_needs_two_or_three_levels_since_last() -> void:
-	for level: int in range(4, 40):
-		var needed: int = AdPacing.levels_needed(level, _pacing)
-		assert_true(needed == 2 or needed == 3, "gereken 2-3 olmalı")
-		assert_false(AdPacing.should_show(level, needed - 1, 10000.0, 0.0, 0.0, _pacing))
-		assert_true(AdPacing.should_show(level, needed, 10000.0, 0.0, 0.0, _pacing))
+func test_every_transition_from_level_four() -> void:
+	for level: int in range(4, 60):
+		assert_true(AdPacing.should_show(level, false, false, _pacing), "seviye %d her geçişte" % level)
 
 
-func test_needs_ninety_seconds_between() -> void:
-	var level: int = 4
-	var needed: int = AdPacing.levels_needed(level, _pacing)
-	assert_false(AdPacing.should_show(level, needed, 1089.0, 1000.0, 0.0, _pacing))
-	assert_true(AdPacing.should_show(level, needed, 1090.0, 1000.0, 0.0, _pacing))
+func test_balance_file_first_level_is_four() -> void:
+	var balance: Dictionary = ProgressData.load_balance()
+	var pacing: Dictionary = balance["interstitial"] as Dictionary
+	assert_eq(int(pacing["first_level"]), 4)
+	assert_false(pacing.has("min_seconds_between"), "süre aralığı kaldırıldı")
+	assert_false(pacing.has("min_levels_between"), "seviye aralığı kaldırıldı")
 
 
-func test_never_right_after_rewarded_ad() -> void:
-	var level: int = 4
-	var needed: int = AdPacing.levels_needed(level, _pacing)
-	assert_false(AdPacing.should_show(level, needed, 5000.0, 0.0, 4950.0, _pacing))
-	assert_true(AdPacing.should_show(level, needed, 5000.0, 0.0, 4800.0, _pacing))
+func test_never_when_remove_ads_owned() -> void:
+	for level: int in range(1, 30):
+		assert_false(AdPacing.should_show(level, true, false, _pacing))
+
+
+func test_never_right_after_rewarded_ad_in_same_transition() -> void:
+	assert_false(AdPacing.should_show(5, false, true, _pacing))
+	assert_true(AdPacing.should_show(5, false, false, _pacing), "bir sonraki geçişte yine gösterilir")
+
+
+func test_missing_pacing_falls_back_to_default_first_level() -> void:
+	assert_false(AdPacing.should_show(3, false, false, {}))
+	assert_true(AdPacing.should_show(4, false, false, {}))

@@ -135,10 +135,10 @@ func test_plural_and_format() -> void:
 	assert_eq(Loc.n("LOSE_LEFT_FEW_ONE", "LOSE_LEFT_FEW_OTHER", 4) % "4", "Only 4 items left")
 	assert_eq(Loc.f("LEVEL", [7]), "Level 7")
 	Loc.set_language(Loc.LANG_ES)
-	assert_eq(Loc.n("LOSE_COINS_ONE", "LOSE_COINS_OTHER", 1) % 1, "Seguir por 1 moneda")
-	assert_eq(Loc.n("LOSE_COINS_ONE", "LOSE_COINS_OTHER", 30) % 30, "Seguir por 30 monedas")
+	assert_eq(Loc.n("LOSE_LEFT_FEW_ONE", "LOSE_LEFT_FEW_OTHER", 1) % "1", "Solo queda 1 prenda")
+	assert_eq(Loc.n("LOSE_LEFT_FEW_ONE", "LOSE_LEFT_FEW_OTHER", 30) % "30", "Solo quedan 30 prendas")
 	Loc.set_language(Loc.LANG_TR)
-	assert_eq(Loc.n("LOSE_COINS_ONE", "LOSE_COINS_OTHER", 1) % 1, "1 jeton ile devam")
+	assert_eq(Loc.n("LOSE_LEFT_FEW_ONE", "LOSE_LEFT_FEW_OTHER", 1) % "1", "Sadece 1 çamaşır kaldı")
 
 
 func test_unknown_key_returns_key() -> void:

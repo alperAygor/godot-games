@@ -4,12 +4,12 @@ extends Sheet
 ## Kazanma ve kaybetme sayfası. `game.gd` yalnız `ResultSheet.win(...)` / `.lose(...)` çağırır
 ## ve sinyallere bağlanır; ödül/reklam mantığı burada değildir (yalnız gösterir).
 ## Kazanma: katlanmış çamaşır yığını, sayarak artan ödül, ikincil "2×", büyük "Devam".
-## Kaybetme: "Fırtına çıktı", kalan çamaşır (azsa vurgulu), birincil "+1 askı", ikincil "Tekrar dene".
+## Kaybetme: "Fırtına çıktı", kalan çamaşır (azsa vurgulu), birincil "+1 askı" (YALNIZ ödüllü reklam;
+## jetonla devam kaldırıldı), ikincil "Tekrar dene".
 
 signal continue_pressed
 signal double_pressed
 signal revive_pressed
-signal coins_pressed
 signal retry_pressed
 
 const TITLE_SIZE: int = 56
@@ -115,12 +115,10 @@ static func win(parent: Node, reward: int, tints: Array[Color], can_double: bool
 
 ## Kaybetme sayfası. `can_revive` false ise (seviyede zaten kullanıldı) "Tekrar dene" birincil olur.
 ## `moves_out`: kayıp nedeni hamle sınırı (başlık ve devam düğmesi buna göre yazılır).
-## `coin_cost` > 0 ise "jetonla devam" seçeneği de gösterilir (`can_afford` değilse sönük).
-static func lose(parent: Node, remaining: int, can_revive: bool, moves_out: bool = false,
-		coin_cost: int = 0, can_afford: bool = false) -> ResultSheet:
+static func lose(parent: Node, remaining: int, can_revive: bool, moves_out: bool = false) -> ResultSheet:
 	var sheet: ResultSheet = ResultSheet.new()
 	sheet.build(parent, false)
-	sheet._fill_lose(remaining, can_revive, moves_out, coin_cost, can_afford)
+	sheet._fill_lose(remaining, can_revive, moves_out)
 	sheet.play_intro()
 	return sheet
 
@@ -296,8 +294,7 @@ func _start_confetti() -> void:
 	_confetti.emitting = true
 
 
-func _fill_lose(remaining: int, can_revive: bool, moves_out: bool = false, coin_cost: int = 0,
-		can_afford: bool = false) -> void:
+func _fill_lose(remaining: int, can_revive: bool, moves_out: bool = false) -> void:
 	var column: VBoxContainer = content()
 	var storm: CenterContainer = CenterContainer.new()
 	storm.custom_minimum_size = Vector2(0.0, STORM_DISC)
@@ -325,14 +322,6 @@ func _fill_lose(remaining: int, can_revive: bool, moves_out: bool = false, coin_
 			&"", "lucide/video", MAIN_HEIGHT)
 		revive.pressed.connect(revive_pressed.emit)
 		column.add_child(revive)
-		column.add_child(UiKit.spacer(UiKit.AD_BUTTON_GAP))
-	if coin_cost > 0:
-		# Reklam izlemek istemeyen oyuncu jetonla devam edebilir; yetmiyorsa düğme sönük kalır.
-		var pay: Button = UiKit.button(UiStrings.lose_coins(coin_cost), &"SecondaryButton", "lucide/coins",
-			UiKit.MIN_TOUCH)
-		pay.disabled = not can_afford
-		pay.pressed.connect(coins_pressed.emit)
-		column.add_child(pay)
 		column.add_child(UiKit.spacer(UiKit.AD_BUTTON_GAP))
 	var retry: Button = UiKit.button(UiStrings.lose_retry(), &"SecondaryButton" if can_revive else &"",
 		"lucide/rotate-ccw", MAIN_HEIGHT if not can_revive else UiKit.MIN_TOUCH)

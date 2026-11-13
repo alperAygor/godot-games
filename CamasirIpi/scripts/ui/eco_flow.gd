@@ -13,6 +13,9 @@ var _pending_reward: Callable = Callable()
 var _pending_failure: Callable = Callable()
 var _pending_interstitial: Callable = Callable()
 var _pending_interstitial_level: int = 0
+## Oyuncu bu seviye geçişinde (kazanma sayfasında) ödüllü reklam izledi mi? Öyleyse hemen ardından
+## geçiş reklamı gösterilmez. Her sonuç sayfasında (kazanma/kayıp) ve seviye başında sıfırlanır.
+var _rewarded_in_transition: bool = false
 
 
 func _ready() -> void:
@@ -25,6 +28,7 @@ func _ready() -> void:
 func on_level_start(level_number: int, board: LaundryBoard) -> bool:
 	# Reklam sınırı "seviye başına" sayılır.
 	AdManager.reset_run_limits()
+	_rewarded_in_transition = false
 	var bonus: bool = Progress.streak_extra_slot()
 	if bonus:
 		board.add_rack_slot()
@@ -37,6 +41,7 @@ func on_level_start(level_number: int, board: LaundryBoard) -> bool:
 ## ustalık hesabı da yapılır ve sözlüğe {"rating","base_coins","perfect_bonus","chain_bonus",
 ## "best_chain","rack_max","total_coins"} eklenir. `coins` her durumda ÖDENEN toplamdır.
 func on_win(level_number: int, board: LaundryBoard, hard: bool, stats: RunStats = null) -> Dictionary:
+	_rewarded_in_transition = false
 	if stats == null:
 		AnalyticsLog.level_win(level_number, _elapsed_seconds(), board.moves(),
 			board.rack_count(), board.remaining_on_line())
@@ -62,6 +67,7 @@ func on_win(level_number: int, board: LaundryBoard, hard: bool, stats: RunStats 
 
 
 func on_lose(level_number: int, board: LaundryBoard, remaining: int) -> void:
+	_rewarded_in_transition = false
 	AnalyticsLog.level_lose(level_number, _elapsed_seconds(), board.moves(),
 		board.rack_count(), remaining)
 	Progress.fail_level()
@@ -86,21 +92,21 @@ func watch(placement: AdManager.Placement, on_success: Callable,
 
 
 ## Güçlendirici sayısı 0 iken reklamla +1: UI işçisi bu yardımcıyı çağırır.
-func refill_booster(id: String, on_done: Callable = Callable()) -> void:
+func refill_booster(id: String, on_done: Callable = Callable(), on_failed: Callable = Callable()) -> void:
 	var grant: int = ProgressData.to_count(Progress.balance_table().get("refill_booster_grant"), 1)
 	watch(AdManager.Placement.REFILL_BOOSTER, func() -> void:
 		Progress.add_booster(id, grant)
 		if on_done.is_valid():
-			on_done.call())
+			on_done.call(), on_failed)
 
 
 ## Seviye geçişinde (Devam) geçiş reklamı gerekiyorsa gösterir, sonra `then` çalışır.
+## Karar saf `AdPacing`dedir: 4. seviyeden itibaren her geçişte; "reklamları kaldır" varsa asla;
+## bu geçişte ödüllü reklam izlendiyse asla. Reklam hazır değilse/zaman aşımında akış sessizce sürer.
 func maybe_interstitial(next_level: int, then: Callable) -> void:
 	var pacing: Dictionary = Progress.balance_table().get("interstitial", {}) as Dictionary
-	var counters: ProgressData = Progress.data
-	var show: bool = AdPacing.should_show(next_level, counters.levels_since_interstitial,
-		Time.get_unix_time_from_system(), counters.last_interstitial_time,
-		counters.last_rewarded_time, pacing)
+	var show: bool = AdPacing.should_show(next_level, Progress.remove_ads_owned(),
+		_rewarded_in_transition, pacing)
 	if not show or _pending_placement != -1:
 		then.call()
 		return
@@ -123,6 +129,7 @@ func _on_rewarded_finished(placement: AdManager.Placement, success: bool) -> voi
 	_pending_failure = Callable()
 	if success:
 		AnalyticsLog.rewarded_watched(key)
+		_rewarded_in_transition = true
 		Progress.mark_rewarded_watched()
 		if reward.is_valid():
 			reward.call()

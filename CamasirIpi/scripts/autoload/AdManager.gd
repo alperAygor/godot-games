@@ -18,6 +18,9 @@ const PLACEMENT_KEYS: Dictionary = {
 }
 
 const LIMITS_PATH: String = "res://data/ads.json"
+const SETTINGS_KEY: String = "settings"
+## Gösterim istendikten sonra reklam bu sürede ekrana gelmezse akış reklamsız sürer.
+const DEFAULT_SHOW_TIMEOUT: float = 3.0
 
 ## Tur içi kullanım (GameManager.reset_run_limits() ile sıfırlanır).
 const DEFAULT_LIMITS: Dictionary = {
@@ -42,12 +45,26 @@ var _limits: Dictionary = {}
 var _used_run: Dictionary = {}
 var _used_session: Dictionary = {}
 var _pending: int = -1
+## Bekleyen gösterim "ekrana geldi" sinyalini aldı mı; gelmediyse zaman aşımı akışı serbest bırakır.
+var _pending_shown: bool = false
+var _pending_ticket: int = 0
+var _show_timeout: float = DEFAULT_SHOW_TIMEOUT
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_load_limits()
-	set_provider(MockAdsProvider.new())
+	set_provider(make_default_provider())
+
+
+## Seçim: AdMob eklentisi varsa AdMob; yoksa hata ayıklama sürümünde sahte sağlayıcı; yayın
+## sürümünde reklamsız (sahte "ödül" ASLA gerçek oyuncuya verilmez).
+static func make_default_provider() -> AdsProvider:
+	if AdmobAdsProvider.plugin_present():
+		return AdmobAdsProvider.new()
+	if OS.is_debug_build():
+		return MockAdsProvider.new()
+	return NoAdsProvider.new()
 
 
 func set_provider(new_provider: AdsProvider) -> void:
@@ -58,11 +75,14 @@ func set_provider(new_provider: AdsProvider) -> void:
 			provider.rewarded.disconnect(_on_provider_rewarded)
 		if provider.failed.is_connected(_on_provider_failed):
 			provider.failed.disconnect(_on_provider_failed)
+		if provider.dismissed.is_connected(_on_provider_dismissed):
+			provider.dismissed.disconnect(_on_provider_dismissed)
 	provider = new_provider
 	if provider != null:
 		provider.shown.connect(_on_provider_shown)
 		provider.rewarded.connect(_on_provider_rewarded)
 		provider.failed.connect(_on_provider_failed)
+		provider.dismissed.connect(_on_provider_dismissed)
 		provider.initialize()
 
 
@@ -85,7 +105,7 @@ func show_rewarded(placement: Placement) -> void:
 	if not can_offer(placement):
 		ad_failed.emit(placement, "not_available")
 		return
-	_pending = placement
+	_begin_pending(placement)
 	provider.show(placement)
 	ad_started.emit(placement)
 
@@ -94,10 +114,16 @@ func show_rewarded(placement: Placement) -> void:
 func show_interstitial() -> bool:
 	if _pending != -1 or provider == null or not provider.is_ready(Placement.INTERSTITIAL):
 		return false
-	_pending = Placement.INTERSTITIAL
+	_begin_pending(Placement.INTERSTITIAL)
 	provider.show(Placement.INTERSTITIAL)
 	ad_started.emit(Placement.INTERSTITIAL)
 	return true
+
+
+## Sağlayıcıya sıradaki reklamları önceden yüklemesini söyler (açılış ve ekran geçişleri).
+func preload_ads() -> void:
+	if provider != null:
+		provider.preload_ads()
 
 
 func reset_run_limits() -> void:
@@ -116,8 +142,31 @@ func used_in_run(placement: Placement) -> int:
 	return int(_used_run.get(PLACEMENT_KEYS.get(placement, ""), 0))
 
 
+## Bekleyen gösterim için ters sayım başlar: reklam `_show_timeout` sn içinde ekrana gelmezse
+## başarısız sayılır. Neden: yüklü sanılan reklam gösterilemezse "Devam" düğmesi sonsuza dek
+## beklemesin (ürün kararı: reklam yoksa oyuncu hiçbir şey fark etmeden devam eder).
+func _begin_pending(placement: int) -> void:
+	_pending = placement
+	_pending_shown = false
+	_pending_ticket += 1
+	var ticket: int = _pending_ticket
+	get_tree().create_timer(_show_timeout, true, false, true).timeout.connect(_on_show_timeout.bind(ticket))
+
+
+func _on_show_timeout(ticket: int) -> void:
+	if ticket == _pending_ticket and _pending != -1 and not _pending_shown:
+		_on_provider_failed("timeout")
+
+
 func _on_provider_shown() -> void:
-	pass
+	_pending_shown = true
+
+
+## Geçiş reklamı kapanınca tamamlanır; ödüllü reklamda kapanış tek başına ödül sayılmaz
+## (ödül `rewarded` ile gelir; ödülsüz kapanışı sağlayıcı `failed` olarak bildirir).
+func _on_provider_dismissed() -> void:
+	if _pending == Placement.INTERSTITIAL:
+		_on_provider_rewarded()
 
 
 func _on_provider_rewarded() -> void:
@@ -148,6 +197,7 @@ func _on_provider_failed(reason: String) -> void:
 
 func _load_limits() -> void:
 	_limits = DEFAULT_LIMITS.duplicate(true)
+	_show_timeout = DEFAULT_SHOW_TIMEOUT
 	if not FileAccess.file_exists(LIMITS_PATH):
 		push_warning("AdManager: %s yok, varsayılan limitler kullanılıyor" % LIMITS_PATH)
 		return
@@ -157,3 +207,7 @@ func _load_limits() -> void:
 		push_warning("AdManager: %s okunamadı, varsayılan limitler" % LIMITS_PATH)
 		return
 	_limits = (parsed as Dictionary).duplicate(true)
+	var settings: Variant = _limits.get(SETTINGS_KEY)
+	if settings is Dictionary:
+		_show_timeout = maxf(float((settings as Dictionary).get("show_start_timeout_seconds",
+			DEFAULT_SHOW_TIMEOUT)), 0.5)

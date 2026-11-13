@@ -5,5 +5,27 @@
   "REVIVE_EXTRA_SLOT": { "per_run": 1, "per_session": 30 },
   "DOUBLE_COINS": { "per_run": 1, "per_session": 30 },
   "REFILL_BOOSTER": { "per_run": 3, "per_session": 30 },
-  "INTERSTITIAL": { "per_run": 99, "per_session": 999 }
+  "INTERSTITIAL": { "per_run": 99, "per_session": 999 },
+  "settings": {
+    "_note": "show_start_timeout_seconds: gosterim istendikten sonra reklam bu surede ekrana gelmezse akis reklamsiz devam eder (Devam dugmesi asla takilmaz).",
+    "show_start_timeout_seconds": 3.0
+  },
+  "admob": {
+    "_note": "mode=test iken Google'in RESMI TEST kimlikleri kullanilir. Yayin oncesi production blogundaki REPLACE_* alanlarini AdMob konsolundaki gercek kimliklerle doldurun ve mode'u production yapin. Hata ayiklama surumu mode ne olursa olsun test kimliklerini kullanir.",
+    "mode": "test",
+    "request_consent": true,
+    "test_device_ids": [],
+    "load_retry_seconds": 20.0,
+    "consent_timeout_seconds": 8.0,
+    "test": {
+      "app_id": "ca-app-pub-3940256099942544~3347511713",
+      "rewarded_unit_id": "ca-app-pub-3940256099942544/5224354917",
+      "interstitial_unit_id": "ca-app-pub-3940256099942544/1033173712"
+    },
+    "production": {
+      "app_id": "REPLACE_WITH_REAL_ADMOB_APP_ID",
+      "rewarded_unit_id": "REPLACE_WITH_REAL_REWARDED_UNIT_ID",
+      "interstitial_unit_id": "REPLACE_WITH_REAL_INTERSTITIAL_UNIT_ID"
+    }
+  }
 }
