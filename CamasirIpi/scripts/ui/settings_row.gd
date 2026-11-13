@@ -18,7 +18,7 @@ func _init() -> void:
 	add_theme_constant_override("separation", 56)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var captions: Dictionary = {
-		"SOUND": UiStrings.SOUND, "MUSIC": UiStrings.MUSIC, "VIBRATION": UiStrings.VIBRATION,
+		"SOUND": UiStrings.sound(), "MUSIC": UiStrings.music(), "VIBRATION": UiStrings.vibration(),
 	}
 	for entry: Array in ENTRIES:
 		var column: VBoxContainer = VBoxContainer.new()

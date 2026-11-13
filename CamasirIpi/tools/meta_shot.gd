@@ -26,6 +26,7 @@ var _screen: Node = null
 
 
 func _initialize() -> void:
+	Loc.apply_from_args(OS.get_cmdline_user_args())  # --lang=tr|en|es
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--shot="):
 			_shot = arg.split("=")[1]

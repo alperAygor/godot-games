@@ -4,6 +4,15 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/), sürümleme [Se
 
 ## [Unreleased]
 
+### Yerelleştirme (orch/ci-i18n) — Türkçe / İngilizce / İspanyolca
+- Tek kaynak tablo `data/i18n/strings.csv` (`keys,tr,en,es`; Godot CSV içe aktarımı -> `.translation`,
+  `project.godot` `locale/translations`, `locale/fallback="tr"`). Anahtarlar sabit UPPER_SNAKE.
+- `Loc` (scripts/core/loc.gd): `t/f/n` (çoğul duyarlı), cihaz dilinden otomatik seçim (tr/en/es, diğer -> en),
+  kayıt `Progress` `settings.language`; `Boot` ilk ekrandan önce uygular.
+- `UiStrings/TutorialStrings/DailyStrings/MetaStrings` anahtar sarmalayıcıları oldu; serbest metinler tabloya taşındı.
+- Ayarlar sayfasında TR/EN/ES hap düğmeleri (`UiLanguageRow`); dil değişince sahne baştan kurulur.
+- Araçlar `--lang=tr|en|es` alır; `tests/unit/test_loc.gd` tablo/yer tutucu/kullanılmayan anahtar denetimi yapar.
+
 ### Eklenecek
 - Oyun mekaniği
 

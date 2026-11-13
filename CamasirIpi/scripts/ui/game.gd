@@ -553,7 +553,7 @@ func _start_level() -> void:
 	_eco.on_level_start(_level_number, _board)
 	_hud.set_level(_level_number)
 	if not _daily_level.is_empty():
-		_hud.set_title(UiStrings.DAILY_TITLE)
+		_hud.set_title(UiStrings.daily_title())
 	_hud.set_coins(Progress.coins())
 	_backdrop.set_level(_level_number)
 	_hud.set_title_color(_backdrop.hud_text_color(TEXT_COLOR))
@@ -864,7 +864,7 @@ func _on_double_coins(button: Button, reward: int) -> void:
 	button.disabled = true
 	var granted: Callable = func() -> void:
 		Progress.add_coins(reward)
-		button.text = "+%d jeton eklendi" % reward
+		button.text = UiStrings.coins_added(reward)
 	var failed: Callable = func() -> void: button.disabled = false
 	_eco.watch(AdManager.Placement.DOUBLE_COINS, granted, failed)
 
@@ -1165,7 +1165,6 @@ const ANNOUNCE_FONT: int = 56
 const ANNOUNCE_Y_RATIO: float = 0.42
 const ANNOUNCE_PAD: float = 36.0
 const ANNOUNCE_FILL: Color = Color(1.0, 1.0, 1.0, 0.94)
-const LOSE_MOVES_TEXT: String = "Hamle bitti"
 
 var _rules_hud: RulesHud = null
 ## Yeniden kurulumdan sonraki ilk tazelemede zincir/rüzgâr/askı durumları yerleştirilir (o an
@@ -1358,7 +1357,7 @@ func _announce_lose(event: Dictionary) -> void:
 	if _announce != null:
 		_announce.queue_free()
 	_announce = Label.new()
-	_announce.text = LOSE_MOVES_TEXT
+	_announce.text = UiStrings.lose_title_moves()
 	_announce.add_theme_font_size_override("font_size", ANNOUNCE_FONT)
 	_announce.add_theme_color_override("font_color", DANGER_COLOR)
 	var box: StyleBoxFlat = StyleBoxFlat.new()

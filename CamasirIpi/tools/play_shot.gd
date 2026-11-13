@@ -28,6 +28,7 @@ func _initialize() -> void:
 	var progress_guard: Node = root.get_node_or_null("Progress")
 	if progress_guard != null:
 		progress_guard.set("persist", false)
+	Loc.apply_from_args(OS.get_cmdline_user_args())  # --lang=tr|en|es
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--level="):
 			_level = int(arg.split("=")[1])

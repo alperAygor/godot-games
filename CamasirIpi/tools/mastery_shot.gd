@@ -26,6 +26,7 @@ var _chain_seen_at_ms: int = -1
 
 func _initialize() -> void:
 	root.get_node("Progress").set("persist", false)
+	Loc.apply_from_args(OS.get_cmdline_user_args())  # --lang=tr|en|es
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--shot="):
 			_shot = arg.split("=")[1]

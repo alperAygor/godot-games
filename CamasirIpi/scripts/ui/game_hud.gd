@@ -58,7 +58,7 @@ func _ready() -> void:
 
 
 func set_level(number: int) -> void:
-	_title.text = UiStrings.LEVEL % number
+	_title.text = UiStrings.level(number)
 
 
 ## Progress yoksa jeton sayısı buradan gelir.

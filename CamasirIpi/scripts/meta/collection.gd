@@ -156,7 +156,7 @@ func _build_header() -> float:
 	var back: UiIconButton = MetaUi.back_button(_view, _insets)
 	back.pressed.connect(close)
 	_root.add_child(back)
-	var title: Label = UiKit.label(MetaStrings.COLLECTION_TITLE, TITLE_SIZE)
+	var title: Label = UiKit.label(MetaStrings.collection_title(), TITLE_SIZE)
 	title.position = Vector2(0.0, _insets.y)
 	title.size = Vector2(_view.x, UiKit.MIN_TOUCH)
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -173,7 +173,7 @@ func _build_header() -> float:
 	next.add_theme_constant_override("separation", 12)
 	next.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var remaining: int = MetaState.levels_to_next_piece(store.level(), catalog.levels_per_piece, total)
-	var text: String = MetaStrings.NEXT_PIECE_FORMAT % remaining if remaining > 0 else MetaStrings.ALL_PIECES
+	var text: String = MetaStrings.next_piece(remaining) if remaining > 0 else MetaStrings.all_pieces()
 	next.add_child(UiKit.label(text, SMALL_SIZE, UiKit.TEXT_MUTED))
 	var bar: MetaBar = MetaBar.new()
 	bar.setup(NEXT_BAR_SIZE, UiKit.GOLD, BAR_TRACK)

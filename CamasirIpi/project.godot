@@ -42,6 +42,11 @@ theme/custom="res://assets/theme/ui_theme.tres"
 
 pointing/emulate_touch_from_mouse=true
 
+[internationalization]
+
+locale/fallback="tr"
+locale/translations=PackedStringArray("res://data/i18n/strings.en.translation", "res://data/i18n/strings.es.translation", "res://data/i18n/strings.tr.translation")
+
 [physics]
 
 ; Oyun saf 2B ve fizik gövdesi/_physics_process kullanmıyor (Tween/parçacık boşta işlenir):

@@ -59,6 +59,14 @@ func goto_scene(scene_key: StringName) -> void:
 		push_error("GameManager: sahne yüklenemedi (%s), hata %d" % [path, error])
 
 
+## Geçerli sahneyi baştan kurar (dil değişince ekran yarım çevrilmiş kalmasın).
+func reload_scene() -> void:
+	get_tree().paused = false
+	var error: Error = get_tree().reload_current_scene()
+	if error != OK:
+		push_error("GameManager: sahne yeniden yüklenemedi, hata %d" % error)
+
+
 func set_phase(next: Phase) -> void:
 	if next == phase:
 		return

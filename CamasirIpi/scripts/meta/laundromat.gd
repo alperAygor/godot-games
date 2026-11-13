@@ -657,7 +657,7 @@ func _update_cost_button() -> void:
 		(node as TextureRect).modulate = STAR_COLOR if not affordable else Color.WHITE
 	var catalog: MetaCatalog = store.catalog
 	_hint.text = MetaStrings.PROGRESS_FORMAT % [store.state.done_count(catalog, _art_location),
-		catalog.task_count(_art_location)] if affordable else MetaStrings.NEED_STARS
+		catalog.task_count(_art_location)] if affordable else MetaStrings.need_stars()
 
 
 func _thumbnail(task_id: String) -> Control:
@@ -751,7 +751,7 @@ func _fill_choose() -> void:
 	var entry_name: Label = UiKit.label(MetaStrings.task_name(id), NAME_SIZE)
 	entry_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	column.add_child(entry_name)
-	var sub: Label = UiKit.label(MetaStrings.PICK_LOOK, SUB_SIZE, UiKit.TEXT_MUTED)
+	var sub: Label = UiKit.label(MetaStrings.pick_look(), SUB_SIZE, UiKit.TEXT_MUTED)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	column.add_child(sub)
 	var confirm: UiIconButton = UiIconButton.new()
@@ -823,7 +823,7 @@ func _fill_done() -> void:
 	var entry_name: Label = UiKit.label(MetaStrings.location_name(catalog.location_id(_art_location)), NAME_SIZE - 4)
 	entry_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	column.add_child(entry_name)
-	var sub: Label = UiKit.label(MetaStrings.LOCATION_DONE, SUB_SIZE, UiKit.TEXT_MUTED)
+	var sub: Label = UiKit.label(MetaStrings.location_done(), SUB_SIZE, UiKit.TEXT_MUTED)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	column.add_child(sub)
 	if _last_bonus > 0:
@@ -877,7 +877,7 @@ func _location_tile(index: int) -> Control:
 	entry_name.custom_minimum_size = Vector2(200.0, 0.0)
 	column.add_child(entry_name)
 	if unlocked:
-		column.add_child(UiKit.label(MetaStrings.SOON, 24, UiKit.ACCENT))
+		column.add_child(UiKit.label(MetaStrings.soon(), 24, UiKit.ACCENT))
 	else:
 		tile.modulate.a = LOCKED_ALPHA
 	return tile

@@ -115,7 +115,7 @@ func _label(text: String, font_size: int, tint: Color) -> Label:
 
 func _ok_button() -> Button:
 	var button: Button = Button.new()
-	button.text = TutorialStrings.OK_BUTTON
+	button.text = TutorialStrings.ok_button()
 	button.custom_minimum_size = BUTTON_MIN
 	for state: String in ["normal", "hover", "pressed", "focus"]:
 		var box: StyleBoxFlat = StyleBoxFlat.new()

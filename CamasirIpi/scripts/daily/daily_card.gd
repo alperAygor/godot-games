@@ -36,13 +36,13 @@ func _fill() -> void:
 	column.add_child(DailyUi.icon_disc(SOLVED_ICON if solved else READY_ICON,
 		UiKit.ACCENT_SOFT if solved else READY_DISC, UiKit.ACCENT if solved else UiKit.GOLD))
 	column.add_child(UiKit.spacer(GAP))
-	column.add_child(UiKit.label(DailyStrings.PUZZLE_TITLE, TITLE_SIZE))
+	column.add_child(UiKit.label(DailyStrings.puzzle_title(), TITLE_SIZE))
 	column.add_child(UiKit.spacer(GAP * 0.4))
-	var subtitle: String = DailyStrings.PUZZLE_READY
+	var subtitle: String = DailyStrings.puzzle_ready()
 	if solved:
-		subtitle = DailyStrings.PUZZLE_TOMORROW
+		subtitle = DailyStrings.puzzle_tomorrow()
 	elif locked:
-		subtitle = DailyStrings.PUZZLE_LOCKED % DailyPuzzle.unlock_level()
+		subtitle = DailyStrings.puzzle_locked(DailyPuzzle.unlock_level())
 	column.add_child(UiKit.label(subtitle, SUBTITLE_SIZE, UiKit.TEXT_MUTED))
 	column.add_child(UiKit.spacer(GAP * 1.4))
 	column.add_child(DailyUi.streak_row(DailyPuzzle.display_streak(state, _today), int(state["best"])))
@@ -53,13 +53,13 @@ func _fill() -> void:
 			int(preview["booster_count"])))
 	column.add_child(UiKit.spacer(GAP * 1.6))
 	if solved or locked:
-		var close_button: Button = UiKit.button(DailyStrings.CLOSE, &"SecondaryButton", "lucide/x", PLAY_HEIGHT)
+		var close_button: Button = UiKit.button(DailyStrings.close(), &"SecondaryButton", "lucide/x", PLAY_HEIGHT)
 		close_button.pressed.connect(close)
 		column.add_child(close_button)
 		return
 	# Oyuncu kartı okurken günün bulmacası arka planda kurulur: "Oyna" anında açılır.
 	LevelPrefetch.request(_prefetch_key(), _build_job())
-	var play: Button = UiKit.button(DailyStrings.PLAY, &"", "lucide/play", PLAY_HEIGHT)
+	var play: Button = UiKit.button(DailyStrings.play(), &"", "lucide/play", PLAY_HEIGHT)
 	play.pressed.connect(_on_play)
 	column.add_child(play)
 

@@ -122,7 +122,7 @@ func _build_garments(view: Vector2) -> void:
 
 
 func _build_title(view: Vector2) -> void:
-	var title: Label = UiKit.label(UiStrings.GAME_TITLE, TITLE_SIZE)
+	var title: Label = UiKit.label(UiStrings.game_title(), TITLE_SIZE)
 	title.position = Vector2(0.0, TITLE_Y)
 	title.size = Vector2(view.x, TITLE_SIZE * 1.4)
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -196,7 +196,7 @@ func _build_play(view: Vector2) -> void:
 	var streak_size: Vector2 = streak_chip.get_combined_minimum_size()
 	streak_chip.size = streak_size
 	streak_chip.position = Vector2((view.x - streak_size.x) * 0.5, STREAK_CENTER_Y - streak_size.y * 0.5)
-	_play_button = UiKit.button(UiStrings.LEVEL % 1, &"", "lucide/play", PLAY_HEIGHT)
+	_play_button = UiKit.button(UiStrings.level(1), &"", "lucide/play", PLAY_HEIGHT)
 	_play_button.size = Vector2(PLAY_WIDTH, PLAY_HEIGHT)
 	_play_button.custom_minimum_size = Vector2(PLAY_WIDTH, PLAY_HEIGHT)
 	_play_button.position = Vector2((view.x - PLAY_WIDTH) * 0.5, PLAY_CENTER_Y - PLAY_HEIGHT * 0.5)
@@ -241,7 +241,7 @@ func _refresh() -> void:
 		(_laundromat_button.get_node("Badge") as Control).visible = MetaStore.new().can_renovate()
 	_coin_chip.set_value(UiData.coins())
 	_star_chip.set_value(UiData.stars())
-	UiKit.set_button_text(_play_button, UiStrings.LEVEL % UiData.level())
+	UiKit.set_button_text(_play_button, UiStrings.level(UiData.level()))
 	var streak: int = UiData.streak()
 	for index: int in range(_flames.size()):
 		_flames[index].modulate = UiKit.FLAME if index < streak else UNLIT_FLAME
