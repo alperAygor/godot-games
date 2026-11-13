@@ -148,6 +148,7 @@ func set_color(tint: Color) -> void:
 			_band_tween = null
 		_rim.scale = Vector2.ONE
 		_set_band_modulate(tint)
+		_apply_band_pattern(tint)
 	queue_redraw()
 
 
@@ -297,6 +298,15 @@ func pulse_band() -> void:
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	_band_tween.tween_property(_rim, "scale", Vector2.ONE, Motion.COMPLETE_BAND_SECONDS)\
 		.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+
+
+## Renk deseni astarın iki yarısına ORTAK bir materyalle (tek toplu çizim grubu) basılır.
+## Rengini almamış joker (beyaz bant) palette olmadığı için desensiz kalır; rengi alınca set_color
+## yeniden çağrılır ve desen gelir. Desen kapalıysa materyal null: bugünkü görünüm.
+func _apply_band_pattern(tint: Color) -> void:
+	var material: ShaderMaterial = ColorPatterns.band_material(ColorPatterns.color_id_of(tint))
+	_band_back.material = material
+	_band_front.material = material
 
 
 ## Astarın iki yarısı her zaman aynı renkte (yan birleşme yerinde ton sıçraması olmasın).

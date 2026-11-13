@@ -1216,6 +1216,7 @@ func _draw_queue_dot(index: int, center: Vector2, radius: float, tint: Color) ->
 			draw_circle(center + reach, radius, tint, true, -1.0, true)
 		_:
 			draw_circle(center, radius, tint, true, -1.0, true)
+	if _board.queue_kind(index) != LaundryBoard.KIND_JOKER: ColorPatterns.draw_glyph(self, center, radius, ColorPatterns.color_id_of(tint))  # [PATTERN] kuyruk noktası deseni (joker gizli kalır)
 
 
 ## `_draw` kancası: kısa askıda kullanılamayan kancalar soluk bir diskle kapatılır.

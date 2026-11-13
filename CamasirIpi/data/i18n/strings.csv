@@ -206,3 +206,5 @@ MACHINE_MOVES_ONE,%d hamle,%d move,%d movimiento
 MACHINE_MOVES_OTHER,%d hamle,%d moves,%d movimientos
 MACHINE_MAX,En üst seviye,Maxed,Al máximo
 MACHINE_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d
+PATTERN_SETTING,Renk desenleri,Colour patterns,Patrones de color
+PATTERN_SETTING_HINT,Her rengin kendi deseni olur (renk körlüğü için),Each colour gets its own pattern (colour-blind friendly),Cada color tiene su propio patrón (para daltonismo)
