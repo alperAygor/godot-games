@@ -16,6 +16,8 @@ import subprocess
 import sys
 import tempfile
 
+import numpy as np
+
 from dotenv import load_dotenv
 from elevenlabs import ElevenLabs
 
@@ -42,9 +44,25 @@ RECIPES = {
     "win": ("A short gentle success jingle on kalimba and soft glockenspiel, five rising notes with a soft shimmer, cozy and satisfying.", 2.5, 0.6, False, -6),
     "basket_slide": ("A wicker laundry basket sliding softly across grass, short gentle rustling drag.", 0.8, 0.6, False, -11),
     "sparkle": ("A very soft delicate magical sparkle, tiny high bells twinkling briefly, gentle.", 0.9, 0.6, False, -12),
+    "blocked": ("A soft muffled tug on a piece of fabric that does not come loose, gentle dull cloth pull.", 0.5, 0.6, False, -10),
+    "lock_rattle": ("A tiny wooden latch rattling briefly, locked, soft and small.", 0.5, 0.6, False, -10),
+    "rack_hang": ("A wooden clothes hanger being hooked onto a wooden rail, soft woody clack with a little fabric rustle.", 0.6, 0.6, False, -9),
+    "ui_soft": ("A very soft rounded wooden button tap for a cozy game interface, short and gentle.", 0.5, 0.7, False, -10),
+    "level_start": ("A light fresh breeze whoosh followed by one gentle warm chime, calm and inviting.", 1.2, 0.6, False, -9),
+    "coin": ("Three small coins dropping softly into a cloth pouch, gentle muted clinks.", 0.9, 0.6, False, -9),
+    "lose": ("A soft sad descending three-note kalimba phrase fading into a gentle sigh of wind, tender not harsh.", 2.0, 0.6, False, -8),
     "garden_ambience": ("Calm sunny garden ambience, very gentle breeze in leaves, a few distant soft songbirds, peaceful and quiet, no people, no traffic.", 22.0, 0.5, True, -16),
 }
+# ad: (tarif, süre ms, hedef tepe dB, döngü geçiş süresi sn) — arka plan müziği (ElevenLabs Music).
+MUSIC = {
+    "music_garden": ("Calm cozy instrumental background music for a relaxing laundry puzzle game in a sunny "
+                     "garden: soft fingerpicked acoustic guitar, warm kalimba and light marimba, gentle upright "
+                     "bass, very light brushed percussion, slow tempo around 80 bpm, major key, peaceful, "
+                     "ASMR-soft, no vocals, steady from start to end so it can loop seamlessly.", 60000, -9, 3.0),
+}
+MUSIC_DIR = os.path.join(ROOT, "assets", "audio", "music")
 ALIASES = {"pin_click": "pin_click_1", "cloth": "cloth_1"}
+MIN_WAV_BYTES = 4000
 START_DB = -42
 END_DB = -60
 # Ham API çıktısı burada saklanır: yeniden işleme kredi harcamaz.
@@ -84,6 +102,44 @@ def to_wav(source, target, loop, peak_db):
     filters.append("volume=%.2fdB" % gain)
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", source, "-af", ",".join(filters),
                     "-ac", "1", "-ar", "44100", "-sample_fmt", "s16", target], check=True)
+    if not loop and os.path.getsize(target) < MIN_WAV_BYTES:
+        # Çok sessiz kayıtta kırpma her şeyi atabilir; o durumda kırpmadan yeniden yazılır.
+        plain = ["highpass=f=60", "volume=%.2fdB" % (peak_db - measure_peak(source, ["highpass=f=60"]))]
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", source, "-af", ",".join(plain),
+                        "-ac", "1", "-ar", "44100", "-sample_fmt", "s16", target], check=True)
+
+
+def make_music(client, force, wanted, table):
+    """Müzik üretir ve sonunu başına çapraz geçişle bağlar: döngü noktasında kesinti olmaz."""
+    os.makedirs(MUSIC_DIR, exist_ok=True)
+    for name, (prompt, length_ms, peak, cross) in MUSIC.items():
+        if wanted and name not in wanted:
+            continue
+        raw = os.path.join(RAW_DIR, name + ".mp3")
+        try:
+            if force or not os.path.exists(raw):
+                audio = client.music.compose(prompt=prompt, music_length_ms=length_ms, model_id="music_v2_5")
+                with open(raw, "wb") as handle:
+                    for chunk in audio:
+                        handle.write(chunk)
+                print("üretildi:", name)
+            pcm = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", raw, "-f", "s16le", "-ac", "2",
+                                  "-ar", "44100", "-"], capture_output=True, check=True).stdout
+            samples = np.frombuffer(pcm, dtype="<i2").astype(np.float32).reshape(-1, 2) / 32768.0
+            fade = int(44100 * cross)
+            body = samples[fade:].copy()
+            ramp = np.linspace(0.0, 1.0, fade, dtype=np.float32)[:, None]
+            # Son `cross` saniye, baştaki `cross` saniyeyle karışır; döngü başa sardığında aynı yerden sürer.
+            body[-fade:] = body[-fade:] * (1.0 - ramp) + samples[:fade] * ramp
+            body *= (10.0 ** (peak / 20.0)) / max(float(np.max(np.abs(body))), 1e-6)
+            target = os.path.join(MUSIC_DIR, name + ".ogg")
+            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "s16le", "-ac", "2", "-ar", "44100",
+                            "-i", "-", "-c:a", "vorbis", "-strict", "experimental", "-b:a", "128k", target],
+                           input=(body * 32767.0).astype("<i2").tobytes(), check=True)
+            table[name] = "res://assets/audio/music/%s.ogg" % name
+        except Exception as error:  # noqa: BLE001
+            detail = getattr(error, "body", None) or str(error)
+            print("HATA %s: %s %s" % (name, getattr(error, "status_code", ""), str(detail)[:300]))
 
 
 def main():
@@ -115,6 +171,7 @@ def main():
             # Yalnız durum kodu ve gövde yazılır (başlıklar gürültü; anahtar hiç yazılmaz).
             detail = getattr(error, "body", None) or str(error)
             print("HATA %s: %s %s" % (name, getattr(error, "status_code", ""), str(detail)[:300]))
+    make_music(client, force, args, table)
     for alias, original in ALIASES.items():
         source = os.path.join(SFX_DIR, original + ".wav")
         if os.path.exists(source):

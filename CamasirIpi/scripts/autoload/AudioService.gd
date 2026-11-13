@@ -7,6 +7,10 @@ const SOUNDS_PATH: String = "res://data/sounds.json"
 const POOL_SIZE: int = 6
 ## Oyun açılınca otomatik başlayan bahçe ortamı; çok kısık: efektlerin altında "oda tonu" olsun.
 const AMBIENCE_NAME: String = "garden_ambience"
+const MUSIC_NAME: String = "music_garden"
+## Müzik efektlerin altında kalır: ASMR sesleri öne çıksın.
+const MUSIC_VOLUME_DB: float = -13.0
+const MUSIC_FADE_IN_S: float = 4.0
 const AMBIENCE_VOLUME_DB: float = -6.0
 const AMBIENCE_FADE_IN_S: float = 3.0
 const AMBIENCE_FADE_OUT_S: float = 1.2
@@ -22,6 +26,8 @@ var _missing: Dictionary = {}
 var _ambience: AudioStreamPlayer = null
 var _ambience_tween: Tween = null
 var _ambience_name: String = ""
+var _music: AudioStreamPlayer = null
+var _music_name: String = ""
 ## Her ses adı için son çalınan varyant: aynı varyantın arka arkaya tekrarı "makine" gibi duyulur.
 var _last_variant: Dictionary = {}
 
@@ -46,7 +52,12 @@ func _ready() -> void:
 	_ambience.volume_db = SILENT_DB
 	add_child(_ambience)
 	# Tablo/akışlar hazır; diğer autoload'lar bitsin diye bir kare sonra başlat.
+	_music = AudioStreamPlayer.new()
+	_music.bus = bus_name
+	_music.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_music)
 	play_ambience.call_deferred(AMBIENCE_NAME, AMBIENCE_VOLUME_DB)
+	play_music.call_deferred(MUSIC_NAME, MUSIC_VOLUME_DB)
 
 
 ## `data/sounds.json` içinde tanımlı bir sesi çalar. Tanımsız ad sessizce yok sayılır.
@@ -121,6 +132,24 @@ func stop_ambience() -> void:
 	if _ambience == null or not _ambience.playing:
 		return
 	_fade_ambience(SILENT_DB, AMBIENCE_FADE_OUT_S, true)
+
+
+## Döngülü arka plan müziğini yumuşakça açar (ortam sesinden ayrı oynatıcıda).
+func play_music(sound_name: String, volume_db: float = MUSIC_VOLUME_DB) -> void:
+	if _silent or _music == null or (_music.playing and _music_name == sound_name):
+		return
+	var stream: AudioStream = _stream(sound_name)
+	if stream == null:
+		return
+	var ogg: AudioStreamOggVorbis = stream as AudioStreamOggVorbis
+	if ogg != null:
+		ogg.loop = true
+	_music.stream = _looped(stream)
+	_music_name = sound_name
+	_music.volume_db = SILENT_DB
+	_music.play()
+	var fade: Tween = create_tween()
+	fade.tween_property(_music, "volume_db", volume_db, MUSIC_FADE_IN_S)
 
 
 func has_sound(sound_name: String) -> bool:

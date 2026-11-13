@@ -8,17 +8,17 @@ extends RefCounted
 
 # --- Çamaşır: mandal ve hazırlık ---
 ## Uçuştan önce çamaşır hafifçe kalkıp "çekilir"; mandallar bu sırada fırlar.
-const ANTICIPATE_SECONDS: float = 0.18
+const ANTICIPATE_SECONDS: float = 0.15
 const ANTICIPATE_LIFT: float = 16.0
 const ANTICIPATE_STRETCH: float = 0.05
 const PIN_POP_HEIGHT: float = 26.0
 const PIN_POP_SECONDS: float = 0.12
 const PIN_FALL_DISTANCE: float = 190.0
-const PIN_FALL_SECONDS: float = 0.62
+const PIN_FALL_SECONDS: float = 0.52
 const PIN_SPIN_DEGREES: float = 220.0
 
 # --- Uçuş ---
-const FLIGHT_SECONDS: float = 0.64
+const FLIGHT_SECONDS: float = 0.54
 const FLIGHT_ARC_MIN: float = 90.0
 const FLIGHT_ARC_MAX: float = 230.0
 const FLIGHT_ARC_PER_DISTANCE: float = 0.28
@@ -32,7 +32,7 @@ const FLIGHT_KICK_MAX: float = 0.9
 
 # --- İniş ---
 const LAND_SQUASH_SECONDS: float = 0.09
-const LAND_SETTLE_SECONDS: float = 0.34
+const LAND_SETTLE_SECONDS: float = 0.29
 const LAND_SQUASH: Vector2 = Vector2(1.10, 0.88)
 const LAND_TOTAL_SECONDS: float = LAND_SQUASH_SECONDS + LAND_SETTLE_SECONDS
 
@@ -50,7 +50,7 @@ const FOLD_CENTER_RATIO: float = 0.45
 const FOLDED_POP_FROM: float = 0.78
 
 # --- Sıra / yığılma ---
-const STAGGER_SECONDS: float = 0.14
+const STAGGER_SECONDS: float = 0.12
 const STAGGER_MIN_SECONDS: float = 0.05
 const STACK_TILT_DEGREES: float = 4.0
 const STACK_SHADE: float = 0.07
@@ -58,22 +58,22 @@ const STACK_SHADE: float = 0.07
 # --- Sepet tepkisi ---
 const BASKET_BOUNCE_SQUASH: Vector2 = Vector2(1.05, 0.93)
 const BASKET_BOUNCE_IN_SECONDS: float = 0.1
-const BASKET_BOUNCE_OUT_SECONDS: float = 0.42
+const BASKET_BOUNCE_OUT_SECONDS: float = 0.36
 const BASKET_HOP_SCALE: float = 1.1
 const BASKET_BREATH: float = 0.008
 const BASKET_BREATH_SPEED: float = 1.9
 
 # --- Sepet tamamlanma ---
-const COMPLETE_PRESS_SECONDS: float = 0.28
+const COMPLETE_PRESS_SECONDS: float = 0.24
 const COMPLETE_PRESS_RATIO: float = 0.45
-const COMPLETE_HOLD_SECONDS: float = 0.12
-const COMPLETE_ABSORB_SECONDS: float = 0.34
+const COMPLETE_HOLD_SECONDS: float = 0.1
+const COMPLETE_ABSORB_SECONDS: float = 0.29
 const COMPLETE_BAND_GLOW: float = 0.45
 const COMPLETE_BAND_SECONDS: float = 0.7
 const BASKET_SLIDE: float = 330.0
-const BASKET_SLIDE_OUT_SECONDS: float = 0.5
+const BASKET_SLIDE_OUT_SECONDS: float = 0.42
 const BASKET_ARRIVE_DELAY: float = 0.1
-const BASKET_ARRIVE_SECONDS: float = 0.8
+const BASKET_ARRIVE_SECONDS: float = 0.68
 const BASKET_ARRIVE_FROM_SCALE: float = 0.9
 
 # --- Parçacıklar (düşük sayı, yumuşak) ---
@@ -99,8 +99,8 @@ const DANGER_PULSE_SPEED: float = 0.0042
 const DANGER_BLEND_RATE: float = 4.0
 
 # --- Katman (kazandın/kaybettin) ---
-const OVERLAY_FADE_SECONDS: float = 0.5
-const OVERLAY_RISE_SECONDS: float = 0.7
+const OVERLAY_FADE_SECONDS: float = 0.42
+const OVERLAY_RISE_SECONDS: float = 0.6
 const OVERLAY_RISE_DISTANCE: float = 80.0
 const WIN_DELAY_SECONDS: float = 0.45
 const LOSE_DELAY_SECONDS: float = 0.6

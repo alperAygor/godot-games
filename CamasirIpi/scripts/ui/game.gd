@@ -64,6 +64,9 @@ const LAND_SOUND_DB: float = -10.0
 const WIN_COINS: int = 20
 const HARD_WIN_COINS: int = 40
 const MIN_TOUCH: float = 126.0
+## Mandal ve kumaş seslerinin çeşit sayısı (aynı ses art arda tekrarlamasın).
+const SOUND_VARIANTS: int = 3
+const COIN_SOUND_DELAY: float = 0.7
 ## Art arda sepet tamamlandıkça nota perdesi yükselir (yarım ton adımları).
 const COMBO_SEMITONE: float = 1.0594631
 const COMBO_RESET_SECONDS: float = 4.0
@@ -200,7 +203,7 @@ func _tap(id: int) -> void:
 	var first: String = String(events[0]["type"])
 	if first != LaundryBoard.EVENT_BLOCKED and first != LaundryBoard.EVENT_LOCKED:
 		Input.vibrate_handheld(12)
-		AudioService.play_pitched("pin_click", randf_range(0.94, 1.08))
+		AudioService.play_variant("pin_click", SOUND_VARIANTS, randf_range(0.94, 1.08), 0.0)
 	_events.append_array(events)
 	_refresh_open()
 	_run_events()
@@ -244,10 +247,12 @@ func _wait_flights() -> bool:
 func _play_event(event: Dictionary) -> void:
 	match String(event["type"]):
 		LaundryBoard.EVENT_BLOCKED:
+			AudioService.play_pitched("blocked", randf_range(0.95, 1.05), -6.0)
 			_views[int(event["id"])].wobble()
 			for blocker: Variant in event["by"] as Array:
 				_views[int(blocker)].flash()
 		LaundryBoard.EVENT_LOCKED:
+			AudioService.play_pitched("lock_rattle", randf_range(0.95, 1.05), -5.0)
 			_views[int(event["id"])].wobble()
 			# Hangi sepetin beklendiğini göster: o renkteki aktif sepet yumuşakça şişer.
 			for basket: BasketView in _baskets:
@@ -318,12 +323,12 @@ func _fly(view: GarmentView, target: Vector2, target_scale: float, folded_width:
 	_flights_end_msec = maxi(_flights_end_msec,
 		Time.get_ticks_msec() + int(Motion.total_fly_seconds() * MS_PER_SECOND))
 	get_tree().create_timer(Motion.ANTICIPATE_SECONDS).timeout.connect(
-		AudioService.play_pitched.bind("cloth", randf_range(0.9, 1.1), -6.0))
+		AudioService.play_variant.bind("cloth", SOUND_VARIANTS, randf_range(0.9, 1.1), -6.0))
 
 
 func _on_rack_landed(view: GarmentView) -> void:
 	if is_instance_valid(view):
-		AudioService.play_pitched("cloth", randf_range(0.7, 0.8), LAND_SOUND_DB)
+		AudioService.play_pitched("rack_hang", randf_range(0.94, 1.06), -5.0)
 
 
 func _on_basket_landed(index: int, stack_index: int, view: GarmentView) -> void:
@@ -485,6 +490,7 @@ func _start_level() -> void:
 	_level = LevelGenerator.generate(_level_number)
 	_board = LaundryBoard.new(_level)
 	_level_label.text = "Seviye %d" % _level_number
+	AudioService.play_pitched("level_start", 1.0, -6.0)
 	_world = Node2D.new()
 	add_child(_world)
 	_build_particles()
@@ -621,6 +627,7 @@ func _build_ui() -> void:
 func _flat_button(text: String, primary: bool) -> Button:
 	var button: Button = Button.new()
 	button.text = text
+	button.pressed.connect(AudioService.play_pitched.bind("ui_soft", 1.0, -4.0))
 	var fill: Color = Color("2ec4a6") if primary else Color(0.0, 0.0, 0.0, 0.08)
 	for state: String in ["normal", "hover", "pressed", "focus"]:
 		var box: StyleBoxFlat = StyleBoxFlat.new()
@@ -704,12 +711,15 @@ func _show_win() -> void:
 	_level_number += 1
 	_save_progress()
 	AudioService.play_pitched("win", 1.0, -3.0)
+	get_tree().create_timer(COIN_SOUND_DELAY).timeout.connect(
+		AudioService.play_pitched.bind("coin", 1.0, -4.0))
 	var next: Button = _flat_button("Devam", true)
 	next.pressed.connect(_start_level)
 	_show_overlay("Harika!", "+%d jeton" % reward, [next])
 
 
 func _show_lose(remaining: int) -> void:
+	AudioService.play_pitched("lose", 1.0, -3.0)
 	var buttons: Array[Button] = []
 	if not _revived:
 		var revive: Button = _flat_button("Reklam izle, +1 askı", true)
