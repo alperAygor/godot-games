@@ -165,3 +165,7 @@ RET_WEEKLY_TITLE,Haftalık etkinlik,Weekly event,Evento semanal
 RET_M_STARS3_ONE,Bir seviyeyi 3 yıldızla bitir,Finish a level with 3 stars,Termina un nivel con 3 estrellas
 RET_M_LOW_RACK_ONE,Bir seviyeyi en çok %d askıyla bitir,Finish a level using at most %d rack spots,Termina un nivel usando como máximo %d perchas
 RET_M_BOOSTER_ONE,Bir güçlendirici kullan,Use a booster,Usa un potenciador
+PLACE_ARRIVE,Yeni durak: %s,Next stop: %s,Próxima parada: %s
+PLACE_GARDEN,Bahçe,Garden,Jardín
+PLACE_BEACH,Sahil,Seaside,Playa
+PLACE_ROOFTOP,Çatı Katı,Rooftop,Azotea

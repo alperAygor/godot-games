@@ -1,18 +1,22 @@
 class_name GardenBackdrop
 extends Node2D
 
-## Bahçe arka planı: Blender'da 3B modellenip render edilen katmanlar (assets/sprites/bg).
-## Katmanlar derinliğe göre çok hafif kayar (parallaks), bulutlar süzülür, ağaç tacı ve
-## çiçekler sallanır. `storm` 0..1 arttıkça sahne kararır ve rüzgâr hızlanır.
-## Bekleme askısı da buradadır; `danger` 0..1 ile kırmızıya döner.
-## Gün döngüsü: `set_level(n)` günün saatini seçer (DayCycle); önceki aşamadan yeni aşamaya
-## ~1.5 sn'de yumuşakça geçilir. Önce aşama paleti uygulanır, `storm` onun üstüne biner.
+## Arka plan: Blender'da 3B modellenip render edilen katmanlar. Hangi MEKÂNIN katmanlarının
+## kurulacağı seviyeye göre LocationCycle'dan gelir (bahçe / sahil / çatı katı, data/locations.json).
+## Her mekân aynı katman sözleşmesine uyar: uzak, orta, çit eşdeğeri, zemin + sallanan "kahraman"
+## (ağaç/palmiye tacı), direkler, süs bitkileri. Askı ve bulutlar tüm mekânlarda ortaktır.
+## Katmanlar derinliğe göre çok hafif kayar (parallaks), bulutlar süzülür, taç ve süsler sallanır.
+## `storm` 0..1 arttıkça sahne kararır ve rüzgâr hızlanır. Bekleme askısı `danger` ile kırmızıya döner.
+## Gün döngüsü: `set_level(n)` günün saatini (DayCycle) ve mekânı seçer; görünüm ~1.5 sn'de,
+## mekân değişirse katman seti ~1.8 sn'de yumuşakça geçer (eski set geçiş bitince bellekten atılır).
+## Ana ekran `set_level` çağırmaz: kurulumda oyuncunun kayıtlı seviyesinin mekânı gösterilir.
 
+## Ortak dokular (bulut, askı) ve bahçe dokuları burada.
 const BG_DIR: String = "res://assets/sprites/bg/"
 const DESIGN_WIDTH: float = 1080.0
 const STORM_TINT: Color = Color(0.6, 0.65, 0.74)
 const DANGER_TINT: Color = Color(1.0, 0.55, 0.5)
-## Katman: [dosya, sol-üst konum, parallaks genliği (px)] — uzak katman az, yakın çok kayar.
+## Veri eksikse kullanılan bahçe varsayılanları — [dosya, sol-üst konum, parallaks genliği (px)].
 const LAYERS: Array[Array] = [
 	["bg_far", Vector2(0.0, 620.0), 3.0],
 	["bg_mid", Vector2(0.0, 760.0), 5.0],
@@ -26,10 +30,11 @@ const CLOUDS: Array[Array] = [
 	["cloud_2", Vector2(520.0, 200.0), 0.8, 10.0],
 	["cloud_3", Vector2(180.0, 430.0), 0.6, 5.0],
 ]
+const RACK_FILE: String = "rack"
 const TREE_BASE: Vector2 = Vector2(150.0, 1230.0)
 const TRUNK_BASE_PIXEL: Vector2 = Vector2(180.0, 900.0)
 const CROWN_PIVOT_PIXEL: Vector2 = Vector2(320.0, 500.0)
-const CROWN_RISE: float = 740.0
+const CROWN_PIVOT: Vector2 = Vector2(150.0, 670.0)
 const CROWN_SWAY_DEGREES: float = 1.4
 const POLE_TOP: float = 200.0
 const POLE_AXIS_PIXEL: float = 80.0
@@ -42,13 +47,14 @@ const FLOWERS: Array[Array] = [
 ]
 const FLOWER_PIVOT_PIXEL: Vector2 = Vector2(80.0, 240.0)
 const FLOWER_SWAY_DEGREES: float = 4.0
+const DECOR_MODE_SKEW: String = "skew"
 const PARALLAX_SPEED: float = 0.22
 const CLOUD_WRAP_MARGIN: float = 700.0
 ## Fırtınada bulutlar bu renge çekilir (aşama bulut tonuyla çarpılır).
 const STORM_CLOUD_TINT: Color = Color(0.62, 0.65, 0.72)
 ## Direk/askı manzara tonunu bu oranda alır: gece de görünür kalsın, ama sahneden kopmasın.
 const PROPS_TINT_SHARE: float = 0.4
-## Çiçekler doygun renkli; sahne tonunu bu oranda alır.
+## Süs bitkileri doygun renkli; sahne tonunu bu oranda alır.
 const FLOWER_TINT_SHARE: float = 0.6
 ## HUD yazısı: gökyüzü parlaklığı bu değerin altına inince açık renge geçmeye başlar.
 const HUD_DARK_LUMA_START: float = 0.5
@@ -56,9 +62,18 @@ const HUD_DARK_LUMA_RANGE: float = 0.25
 const HUD_LIGHT_TEXT: Color = Color(0.94, 0.96, 1.0)
 ## Hata ayıklama: `-- --phase=N` o gün aşamasını zorlar (ekran görüntüsü için).
 const PHASE_ARG: String = "--phase="
+## Hata ayıklama: `-- --level=N` (oyun sahnesiyle aynı argüman) ana ekranda da o seviyenin
+## mekânını gösterir; kayda dokunmadan mekân çekimi alınabilsin.
+const LEVEL_ARG: String = "--level="
 ## Fırtına/tehlike bundan küçük değişince tonlar yeniden yazılmaz: renkte < 1/255 fark eder
 ## (görünmez), ama yavaşça sönen fırtına her kare ~60 sprite'a yazmayı tetiklemez.
 const TINT_EPSILON: float = 0.002
+## Mekân geçişi (crossfade) süresi: gün geçişinden biraz uzun, "yolculuk" hissi için.
+const PLACE_FADE_SECONDS: float = 1.8
+## Yeni set erken belirir, eski set geç söner: arada gökyüzü yarı saydam iki katmandan
+## "delik" gibi görünmesin.
+const PLACE_FADE_IN_END: float = 0.65
+const PLACE_FADE_OUT_START: float = 0.35
 
 var storm: float = 0.0
 var danger: float = 0.0
@@ -73,128 +88,241 @@ var _level_seen: int = -1
 var _forced_phase: int = -1
 var _sky_node: Node2D = null
 var _sky_view: SkyView = null
-var _window_lights: WindowLights = null
 var _fireflies: Fireflies = null
-var _far_sprite: Sprite2D = null
-## Sahne tonu uygulanan sprite'lar (parallaks katmanları + ağaç); çiçekler ayrı, daha hafif.
-var _tinted: Array[Sprite2D] = []
+var _view: Vector2 = Vector2(DESIGN_WIDTH, 1920.0)
+var _cover: float = 1.0
 
 var _width: float = DESIGN_WIDTH
-var _parallax: Array[Array] = []
 var _clouds: Array[Array] = []
-var _crown: Sprite2D = null
-var _flowers: Array[Sprite2D] = []
 var _rack: Sprite2D = null
 ## Manzara katmanları (ekran 1080'den genişse büyütülür); direk ve askı oyunla hizalı kalır.
 var _scenery: Node2D = null
 var _props: Node2D = null
-var _parent: Node2D = null
+## Etkin mekân seti ve (geçiş sırasında) sönen önceki set. `_sets` ikisini kare döngüsü için
+## tutar; yalnız mekân değişince yeniden kurulur (kare başı bellek ayırma yok).
+var _active: PlaceSet = null
+var _leaving: PlaceSet = null
+var _sets: Array[PlaceSet] = []
+var _place_fade: float = 1.0
 ## Son uygulanan fırtına/tehlike ve "ton yeniden uygulanmalı" bayrağı: değişmeyen kareler yazılmaz.
 var _applied_storm: float = -1.0
 var _applied_danger: float = -1.0
 var _tints_dirty: bool = true
-## Bahçe dokuları uygulama boyunca bir kez yüklenir. Neden: ana ekran ve oyun aynı bahçeyi
+## Dokular uygulama boyunca önbellekte tutulur. Neden: ana ekran ve oyun aynı mekânı
 ## kullanır; her sahne geçişinde ~20 MB doku silinip yeniden yükleniyordu (geçiş anında takılma).
-## Bahçe her iki ana sahnede de ekranda olduğundan kalıcı tutmak tepe belleği artırmaz.
+## Yalnız ETKİN mekânın dokuları kalır: mekân değişince eskisinin dokuları geçiş sonunda atılır.
 static var _textures: Dictionary[String, Texture2D] = {}
 ## İş parçacığında yüklenmesi istenip henüz alınmamış yollar (çıkışta toplanır).
 static var _requested: Array[String] = []
+## Bu oturumda "yeni yer" afişi gösterilmiş seviyeler (aynı seviye tekrarında yeniden çıkmasın).
+static var _banner_shown: Dictionary[int, bool] = {}
+
+
+## Bir mekânın sahnedeki düğümleri ve kare döngüsünün ihtiyaç duyduğu önceden hazır listeler.
+class PlaceSet:
+	var id: String = ""
+	var scenery_root: Node2D = null
+	var props_root: Node2D = null
+	var parallax: Array[Sprite2D] = []
+	var parallax_base: PackedFloat32Array = PackedFloat32Array()
+	var parallax_amp: PackedFloat32Array = PackedFloat32Array()
+	## Sahne tonu uygulanan sprite'lar (katmanlar + kahraman); süsler ayrı, daha hafif tonlanır.
+	var tinted: Array[Sprite2D] = []
+	var decor: Array[Sprite2D] = []
+	var decor_amp: PackedFloat32Array = PackedFloat32Array()
+	var decor_skew: Array[bool] = []
+	var crown: Sprite2D = null
+	var crown_sway: float = CROWN_SWAY_DEGREES
+	var lights: Array[WindowLights] = []
+	var glints: SeaGlints = null
+	var firefly_scale: float = 1.0
+	var paths: Array[String] = []
+
+	func set_alpha(alpha: float) -> void:
+		scenery_root.modulate.a = alpha
+		props_root.modulate.a = alpha
+
+	func free_nodes() -> void:
+		scenery_root.queue_free()
+		props_root.queue_free()
+
+
+## Sahilde deniz bandında kıpırdayan yumuşak ışık pırıltıları: gündüz güneş, gece ay ışığı.
+## İki grup ters fazda söner/parlar ve çok yavaş yana kayar; kare başına yalnız 2 grup yazılır.
+class SeaGlints extends Node2D:
+	const DAY_ALPHA: float = 0.42
+	const NIGHT_ALPHA: float = 0.36
+	const MOON_GLINT: Color = Color(0.86, 0.92, 1.0)
+	const SUN_WHITEN: float = 0.6
+	const PULSE_SPEED: float = 1.1
+	const DRIFT_SPEED: float = 0.25
+	const DRIFT_PIXELS: float = 7.0
+	const LENGTH_MIN: float = 14.0
+	const LENGTH_MAX: float = 34.0
+	## Yassı parıltı: uzunluğun bu oranı kalınlık olur (su yüzeyinde yatay çizgi).
+	const THICKNESS_SHARE: float = 0.12
+	const VISIBLE_EPSILON: float = 0.01
+	var _groups: Array[Node2D] = []
+
+	func setup(spec: Dictionary) -> void:
+		var raw_rect: Array = spec.get("rect", [0, 0, 0, 0]) as Array
+		var area: Rect2 = Rect2(float(raw_rect[0]), float(raw_rect[1]), float(raw_rect[2]), float(raw_rect[3]))
+		var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+		rng.seed = int(spec.get("seed", 1))
+		for group_index: int in range(2):
+			var group: Node2D = Node2D.new()
+			add_child(group)
+			_groups.append(group)
+		for index: int in range(int(spec.get("count", 0))):
+			# Ufka yakın (üst) pırıltılar daha küçük: perspektif.
+			var depth: float = rng.randf()
+			var length: float = lerpf(LENGTH_MIN, LENGTH_MAX, depth)
+			var glint: Sprite2D = GlowTextures.make_sprite(GlowTextures.dot(), length, true)
+			glint.scale.y *= THICKNESS_SHARE
+			glint.position = area.position + Vector2(rng.randf() * area.size.x, depth * area.size.y)
+			_groups[index % 2].add_child(glint)
+		visible = false
+
+	func apply(look: DayLook, time: float) -> void:
+		var day: float = look.sun_alpha * DAY_ALPHA
+		var night: float = look.moon_alpha * NIGHT_ALPHA
+		var strength: float = maxf(day, night)
+		var on: bool = strength > VISIBLE_EPSILON
+		if visible != on:
+			visible = on
+		if not on:
+			return
+		var tint: Color = look.sun_color.lerp(Color.WHITE, SUN_WHITEN) if day >= night else MOON_GLINT
+		for index: int in range(_groups.size()):
+			var pulse: float = 0.5 + 0.5 * sin(time * PULSE_SPEED + float(index) * PI)
+			_groups[index].modulate = Color(tint.r, tint.g, tint.b, strength * pulse)
+			_groups[index].position.x = sin(time * DRIFT_SPEED + float(index) * 1.7) * DRIFT_PIXELS
+
+
+## Yeni mekâna ilk girişte üstte beliren tek satırlık, sakin afiş ("Yeni durak: Sahil").
+## Ayrı CanvasLayer: katman 0 = oyun dünyasıyla (çamaşırlar) aynı düzlemde ama ondan sonra çizilir;
+## HUD ve açılan pencerelerin (katman 1: tanıtım kartı, duraklat) karartmasının ALTINDA kalır.
+## Kendi kendini yok eder.
+class PlaceBanner extends CanvasLayer:
+	const LAYER: int = 0
+	const FONT_SIZE: int = 34
+	const PANEL_COLOR: Color = Color(0.985, 0.972, 0.94, 0.9)
+	const SHADOW_COLOR: Color = Color(0.18, 0.2, 0.3, 0.1)
+	const SHADOW_SIZE: int = 14
+	const CORNER_RADIUS: int = 36
+	const PAD_X: float = 40.0
+	const PAD_Y: float = 10.0
+	const BOX_HEIGHT: float = 120.0
+	## Güvenli alanın üstünden itibaren afiş merkezi: HUD başlığının altı, en üst ipin üstü.
+	const TOP_OFFSET: float = 158.0
+	const RISE_PIXELS: float = 18.0
+	const IN_SECONDS: float = 0.7
+	const HOLD_SECONDS: float = 2.2
+	const OUT_SECONDS: float = 0.8
+
+	func show_text(text: String, view: Vector2) -> void:
+		layer = LAYER
+		var box: CenterContainer = CenterContainer.new()
+		box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		box.size = Vector2(view.x, BOX_HEIGHT)
+		var top: float = UiKit.safe_insets(view).y + TOP_OFFSET - BOX_HEIGHT * 0.5
+		box.position = Vector2(0.0, top + RISE_PIXELS)
+		box.modulate.a = 0.0
+		add_child(box)
+		var panel: PanelContainer = PanelContainer.new()
+		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var style: StyleBoxFlat = StyleBoxFlat.new()
+		style.bg_color = PANEL_COLOR
+		style.set_corner_radius_all(CORNER_RADIUS)
+		style.shadow_color = SHADOW_COLOR
+		style.shadow_size = SHADOW_SIZE
+		style.content_margin_left = PAD_X
+		style.content_margin_right = PAD_X
+		style.content_margin_top = PAD_Y
+		style.content_margin_bottom = PAD_Y
+		style.anti_aliasing = true
+		panel.add_theme_stylebox_override("panel", style)
+		box.add_child(panel)
+		panel.add_child(UiKit.label(text, FONT_SIZE, UiKit.TEXT))
+		var tween: Tween = box.create_tween()
+		tween.tween_property(box, "modulate:a", 1.0, IN_SECONDS).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.parallel().tween_property(box, "position:y", top, IN_SECONDS)\
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.tween_interval(HOLD_SECONDS)
+		tween.tween_property(box, "modulate:a", 0.0, OUT_SECONDS).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		tween.tween_callback(queue_free)
 
 
 func setup(view_size: Vector2, rack_hook_y: float) -> void:
+	_view = view_size
 	_width = view_size.x
 	# Geniş ekranlarda (tablet) manzara kenarlarda boşluk bırakmasın diye büyütülür.
-	var cover: float = maxf(view_size.x / DESIGN_WIDTH, 1.0)
+	_cover = maxf(view_size.x / DESIGN_WIDTH, 1.0)
 	# Gök cisimleri/bulutlar manzaranın arkasında, ama sahne tonundan etkilenmeyen ayrı katmanda.
 	_sky_node = Node2D.new()
-	_sky_node.scale = Vector2.ONE * cover
+	_sky_node.scale = Vector2.ONE * _cover
 	add_child(_sky_node)
 	_sky_view = SkyView.new()
 	_sky_node.add_child(_sky_view)
 	_sky_view.setup()
 	_scenery = Node2D.new()
-	_scenery.scale = Vector2.ONE * cover
+	_scenery.scale = Vector2.ONE * _cover
 	add_child(_scenery)
+	var start_level: int = _start_level()
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with(PHASE_ARG):
 			_forced_phase = posmod(int(arg.substr(PHASE_ARG.length())), DayCycle.PHASE_COUNT)
 	_props = Node2D.new()
 	_props.position.x = (view_size.x - DESIGN_WIDTH) * 0.5
 	add_child(_props)
-	_width = view_size.x / cover
-	_parent = _sky_node
+	_width = view_size.x / _cover
 	for spec: Array in CLOUDS:
-		var cloud: Sprite2D = _sprite(String(spec[0]), spec[1] as Vector2)
+		var cloud: Sprite2D = _sprite(_sky_node, BG_DIR, String(spec[0]), spec[1] as Vector2)
 		cloud.scale = Vector2.ONE * float(spec[2])
 		_clouds.append([cloud, float(spec[3])])
 	_sky_view.lift_moon(_sky_node)
-	_parent = _scenery
-	for spec: Array in LAYERS:
-		var layer_sprite: Sprite2D = _sprite(String(spec[0]), spec[1] as Vector2)
-		_parallax.append([layer_sprite, (spec[1] as Vector2).x, float(spec[2])])
-		_tinted.append(layer_sprite)
-		if _far_sprite == null:
-			# Pencere ışıkları uzak katmanın hemen üstüne, orta katmanın arkasına gelir.
-			_far_sprite = layer_sprite
-			_window_lights = WindowLights.new()
-			_scenery.add_child(_window_lights)
-			_window_lights.setup()
-	# Ağaç çitin arkasında durur; taç ayrı sprite olduğu için rüzgârda sallanır.
-	_tinted.append(_sprite("tree_trunk", TREE_BASE - TRUNK_BASE_PIXEL))
-	_crown = _sprite("tree_crown", Vector2.ZERO)
-	_tinted.append(_crown)
-	_crown.centered = false
-	_crown.offset = -CROWN_PIVOT_PIXEL
-	_crown.position = TREE_BASE - Vector2(0.0, CROWN_RISE) \
-		+ (CROWN_PIVOT_PIXEL - Vector2(320.0, 320.0))
-	for spec: Array in FRONT_LAYERS:
-		var front_sprite: Sprite2D = _sprite(String(spec[0]), spec[1] as Vector2)
-		_parallax.append([front_sprite, (spec[1] as Vector2).x, float(spec[2])])
-		_tinted.append(front_sprite)
-	# Uzun ekranlarda (dar-uzun telefon) çim ekranın altına kadar uzatılır.
-	var grass: Sprite2D = (_parallax[_parallax.size() - 1] as Array)[0] as Sprite2D
-	var grass_top: float = grass.position.y
-	var needed: float = view_size.y / cover - grass_top
-	if grass.texture != null and needed > grass.texture.get_size().y:
-		grass.scale.y = needed / grass.texture.get_size().y
-	# Direkler iki kenarda; sağdaki aynalanır. Oyun koordinatlarıyla hizalıdır (büyütülmez).
-	_parent = _props
-	_sprite("pole", Vector2(POLE_AXIS_INSET - POLE_AXIS_PIXEL, POLE_TOP))
-	var right_pole: Sprite2D = _sprite("pole", Vector2(DESIGN_WIDTH - POLE_AXIS_INSET - POLE_AXIS_PIXEL, POLE_TOP))
-	right_pole.flip_h = true
-	_parent = _scenery
-	for spec: Array in FLOWERS:
-		var flower: Sprite2D = _sprite(String(spec[0]), Vector2.ZERO)
-		flower.offset = -FLOWER_PIVOT_PIXEL
-		flower.position = (spec[1] as Vector2)
-		flower.scale = Vector2.ONE * float(spec[2])
-		_flowers.append(flower)
-	# Ateş böcekleri çimin önünde, direklerin arkasında uçar; ışıklı olduğu için tonlanmaz.
+	# Ateş böcekleri tüm mekân setlerinin önünde, direklerin arkasında uçar; ışıklı olduğu için tonlanmaz.
 	_fireflies = Fireflies.new()
 	_scenery.add_child(_fireflies)
 	_fireflies.setup()
-	_parent = _props
-	# Askı: kanca uçları oyunun askı hizasına (çamaşırın asıldığı nokta) oturur.
-	_rack = _sprite("rack", Vector2((DESIGN_WIDTH - 1024.0) * 0.5, rack_hook_y - RACK_HOOK_TIP_PIXEL_Y))
-	# İlk set_level() çağrısı gelene kadar geçerli bir görünüm olsun (şafak ya da zorlanan aşama).
-	_current.copy_from(DayCycle.look_for_phase(maxi(_forced_phase, 0)))
+	# Askı: kanca uçları oyunun askı hizasına (çamaşırın asıldığı nokta) oturur. Tüm mekânlarda ortak.
+	_rack = _sprite(_props, BG_DIR, RACK_FILE, Vector2((DESIGN_WIDTH - 1024.0) * 0.5, rack_hook_y - RACK_HOOK_TIP_PIXEL_Y))
+	var place_id: String = LocationCycle.location_for(start_level)
+	_active = _build_place(place_id)
+	_refresh_sets()
+	# İlk set_level() çağrısı gelene kadar geçerli bir görünüm olsun: ana ekranda kayıtlı seviyenin
+	# mekânı, şafak (ya da zorlanan aşama) paletiyle.
+	_current.copy_from(LocationCycle.look_for(maxi(_forced_phase, 0), place_id))
 	_apply_look(0.0)
 
 
-## Seviye numarasına göre günün saatini ayarlar. İlk çağrı anında oturur; sonrakiler
-## önceki görünümden DayCycle.FADE_SECONDS sürede yumuşakça geçer. Aynı seviye tekrarı geçiş başlatmaz.
+## Seviye numarasına göre günün saatini ve mekânı ayarlar. İlk çağrı anında oturur; sonrakiler
+## önceki görünümden DayCycle.FADE_SECONDS sürede yumuşakça geçer. Mekân değişirse katman seti
+## de PLACE_FADE_SECONDS sürede geçer. Aynı seviye tekrarı geçiş başlatmaz.
 func set_level(level: int) -> void:
 	if level == _level_seen:
 		return
 	var first: bool = _level_seen < 0
 	_level_seen = level
+	var place_id: String = LocationCycle.location_for(level)
 	_fade_from.copy_from(_current)
-	_fade_to = DayCycle.look_for_phase(_forced_phase) if _forced_phase >= 0 else DayCycle.look_for_level(level)
+	_fade_to = LocationCycle.look_for_level(level, place_id, _forced_phase)
 	_fade = 1.0 if first else 0.0
+	if place_id != _active.id:
+		if first:
+			_replace_place_now(place_id)
+		else:
+			_begin_place_fade(place_id)
 	if first:
 		_current.copy_from(_fade_to)
 		_apply_look(0.0)
 	_tints_dirty = true
+	_maybe_show_banner(level, place_id)
+	# Sonraki seviye yeni mekândaysa dokuları şimdiden iş parçacığında yüklenir: geçiş anında
+	# ~4 MB doku eşzamanlı yüklenip seviye başında takılma yapmasın.
+	var next_id: String = LocationCycle.location_for(level + 1)
+	if next_id != place_id:
+		_request_paths(_all_paths(next_id))
 
 
 ## Gökyüzü koyulaşınca (alacakaranlık/gece) koyu HUD yazısı okunmaz olur; bu yüzden
@@ -213,9 +341,196 @@ func sky_bottom(storm_color: Color, weight: float) -> Color:
 	return _current.sky_bottom.lerp(_dimmed(storm_color), weight)
 
 
+## Etkin mekânın kimliği (ana ekran / testler için bilgi amaçlı).
+func place_id() -> String:
+	return _active.id if _active != null else ""
+
+
 ## Fırtına rengi geceleyin de parlak gri kalmasın: aşamanın storm_dim değeriyle koyulur.
 func _dimmed(color: Color) -> Color:
 	return Color(color.r * _current.storm_dim, color.g * _current.storm_dim, color.b * _current.storm_dim, color.a)
+
+
+## Ana ekran `set_level` çağırmaz: başlangıç mekânı `--level=` hata ayıklama argümanından ya da
+## oyuncunun kayıtlı seviyesinden (Progress) seçilir.
+func _start_level() -> int:
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with(LEVEL_ARG):
+			return maxi(int(arg.substr(LEVEL_ARG.length())), 1)
+	return _saved_level()
+
+
+static func _saved_level() -> int:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return 1
+	var progress: Node = tree.root.get_node_or_null(^"Progress")
+	if progress == null or not progress.has_method(&"level"):
+		return 1
+	return maxi(int(progress.call(&"level")), 1)
+
+
+func _maybe_show_banner(level: int, place_id: String) -> void:
+	if level <= 1 or not LocationCycle.is_first_level_of_location(level) or _banner_shown.has(level):
+		return
+	var key: String = LocationCycle.name_key(place_id)
+	if key.is_empty():
+		return
+	_banner_shown[level] = true
+	var banner: PlaceBanner = PlaceBanner.new()
+	add_child(banner)
+	banner.show_text(Loc.f("PLACE_ARRIVE", [Loc.t(key)]), _view)
+
+
+## İlk seviye farklı bir mekândaysa (ör. oyun doğrudan 52. seviyeden açıldı) geçiş beklenmeden kurulur.
+func _replace_place_now(place_id: String) -> void:
+	var old: PlaceSet = _active
+	_active = _build_place(place_id)
+	old.free_nodes()
+	_forget_textures(old, _active)
+	_refresh_sets()
+
+
+func _begin_place_fade(place_id: String) -> void:
+	if _leaving != null:
+		# Geçiş sürerken yine değişirse (pratikte olmaz) yarım kalan eski set hemen atılır.
+		_leaving.free_nodes()
+		_forget_textures(_leaving, _active)
+	_leaving = _active
+	_active = _build_place(place_id)
+	_active.set_alpha(0.0)
+	_place_fade = 0.0
+	_refresh_sets()
+
+
+func _finish_place_fade() -> void:
+	_leaving.free_nodes()
+	_forget_textures(_leaving, _active)
+	_leaving = null
+	_active.set_alpha(1.0)
+	_refresh_sets()
+
+
+func _refresh_sets() -> void:
+	_sets.clear()
+	if _leaving != null:
+		_sets.append(_leaving)
+	_sets.append(_active)
+	_tints_dirty = true
+
+
+## Mekân setini kurar: manzara düğümü ateş böceklerinin hemen arkasına, direkler askının arkasına.
+func _build_place(place_id: String) -> PlaceSet:
+	var data: Dictionary = LocationCycle.data_for(place_id)
+	var dir: String = String(data.get("dir", BG_DIR))
+	var place: PlaceSet = PlaceSet.new()
+	place.id = place_id
+	place.firefly_scale = float(data.get("fireflies", 1.0))
+	place.scenery_root = Node2D.new()
+	_scenery.add_child(place.scenery_root)
+	_scenery.move_child(place.scenery_root, _fireflies.get_index())
+	place.props_root = Node2D.new()
+	_props.add_child(place.props_root)
+	_props.move_child(place.props_root, _rack.get_index())
+	var layers: Array[Sprite2D] = []
+	for spec: Dictionary in _layer_specs(data, "back", LAYERS):
+		layers.append(_add_layer(place, dir, spec))
+	var hero: Dictionary = data.get("hero", {}) as Dictionary
+	var hero_base: Vector2 = _vec(hero, "base", TREE_BASE)
+	# Kahraman (ağaç/palmiye) çitin arkasında durur; taç ayrı sprite olduğu için rüzgârda sallanır.
+	place.tinted.append(_sprite(place.scenery_root, dir, String(hero.get("trunk", "tree_trunk")),
+		hero_base - _vec(hero, "trunk_base_px", TRUNK_BASE_PIXEL), place))
+	place.crown = _sprite(place.scenery_root, dir, String(hero.get("crown", "tree_crown")), Vector2.ZERO, place)
+	place.crown.offset = -_vec(hero, "crown_pivot_px", CROWN_PIVOT_PIXEL)
+	place.crown.position = _vec(hero, "crown_pivot", CROWN_PIVOT)
+	place.crown_sway = float(hero.get("sway", CROWN_SWAY_DEGREES))
+	place.tinted.append(place.crown)
+	for spec: Dictionary in _layer_specs(data, "front", FRONT_LAYERS):
+		layers.append(_add_layer(place, dir, spec))
+	# Uzun ekranlarda (dar-uzun telefon) zemin ekranın altına kadar uzatılır.
+	var ground: Sprite2D = layers[layers.size() - 1]
+	var needed: float = _view.y / _cover - ground.position.y
+	if ground.texture != null and needed > ground.texture.get_size().y:
+		ground.scale.y = needed / ground.texture.get_size().y
+	# Işıklar ait oldukları katmanın çocuğu: parallaks ile birlikte kayar, katman tonundan etkilenmez
+	# (katmanlar self_modulate ile tonlanır).
+	for raw: Variant in (data.get("lights", [{}]) as Array):
+		var light_spec: Dictionary = raw as Dictionary
+		var lights: WindowLights = WindowLights.new()
+		layers[clampi(int(light_spec.get("layer", 0)), 0, layers.size() - 1)].add_child(lights)
+		if light_spec.has("points"):
+			lights.setup_from(light_spec)
+		else:
+			lights.setup()
+		place.lights.append(lights)
+	var glint_spec: Dictionary = data.get("glints", {}) as Dictionary
+	if not glint_spec.is_empty():
+		place.glints = SeaGlints.new()
+		layers[clampi(int(glint_spec.get("layer", 0)), 0, layers.size() - 1)].add_child(place.glints)
+		place.glints.setup(glint_spec)
+	# Direkler iki kenarda; sağdaki aynalanır. Oyun koordinatlarıyla hizalıdır (büyütülmez).
+	var pole_file: String = String(data.get("pole", "pole"))
+	_sprite(place.props_root, dir, pole_file, Vector2(POLE_AXIS_INSET - POLE_AXIS_PIXEL, POLE_TOP), place)
+	var right_pole: Sprite2D = _sprite(place.props_root, dir, pole_file,
+		Vector2(DESIGN_WIDTH - POLE_AXIS_INSET - POLE_AXIS_PIXEL, POLE_TOP), place)
+	right_pole.flip_h = true
+	for spec: Dictionary in _decor_specs(data):
+		var decor: Sprite2D = _sprite(place.scenery_root, dir, String(spec.get("file", "")), Vector2.ZERO, place)
+		decor.offset = -_vec(spec, "pivot_px", FLOWER_PIVOT_PIXEL)
+		decor.position = _vec(spec, "pos", Vector2.ZERO)
+		decor.scale = Vector2.ONE * float(spec.get("scale", 1.0))
+		place.decor.append(decor)
+		place.decor_amp.append(float(spec.get("sway", FLOWER_SWAY_DEGREES)))
+		place.decor_skew.append(String(spec.get("mode", "")) == DECOR_MODE_SKEW)
+	return place
+
+
+## Parallaks katmanı. Neden yatay taşma payı: katman ±genlik kadar kaydığında kenarda gökyüzü
+## şeridi açılıyordu; doku genlik kadar geniş çizilir (en çok %2 — gözle fark edilmez).
+func _add_layer(place: PlaceSet, dir: String, spec: Dictionary) -> Sprite2D:
+	var amp: float = float(spec.get("parallax", 0.0))
+	var top_left: Vector2 = _vec(spec, "pos", Vector2.ZERO)
+	var layer: Sprite2D = _sprite(place.scenery_root, dir, String(spec.get("file", "")), top_left, place)
+	if layer.texture != null and amp > 0.0:
+		var width: float = layer.texture.get_size().x
+		layer.scale.x = (width + 2.0 * amp) / width
+	place.parallax.append(layer)
+	place.parallax_base.append(top_left.x - amp)
+	place.parallax_amp.append(amp)
+	place.tinted.append(layer)
+	return layer
+
+
+## Katman listesi: veride varsa o, yoksa bahçe sabitleri ([dosya, konum, genlik] -> sözlük).
+static func _layer_specs(data: Dictionary, key: String, fallback: Array[Array]) -> Array[Dictionary]:
+	var specs: Array[Dictionary] = []
+	if data.has(key):
+		for raw: Variant in (data[key] as Array):
+			specs.append(raw as Dictionary)
+		return specs
+	for spec: Array in fallback:
+		var pos: Vector2 = spec[1] as Vector2
+		specs.append({"file": spec[0], "pos": [pos.x, pos.y], "parallax": spec[2]})
+	return specs
+
+
+static func _decor_specs(data: Dictionary) -> Array[Dictionary]:
+	var specs: Array[Dictionary] = []
+	if data.has("decor"):
+		for raw: Variant in (data["decor"] as Array):
+			specs.append(raw as Dictionary)
+		return specs
+	for spec: Array in FLOWERS:
+		var pos: Vector2 = spec[1] as Vector2
+		specs.append({"file": spec[0], "pos": [pos.x, pos.y], "scale": spec[2]})
+	return specs
+
+
+static func _vec(data: Dictionary, key: String, fallback: Vector2) -> Vector2:
+	var raw: Variant = data.get(key, null)
+	if raw is Array and (raw as Array).size() >= 2:
+		return Vector2(float((raw as Array)[0]), float((raw as Array)[1]))
+	return fallback
 
 
 ## Paleti sahneye uygular: durağan tonlar + zamana bağlı ışıklar.
@@ -224,16 +539,16 @@ func _apply_look(time: float) -> void:
 	_animate_lights(time)
 
 
-## Durağan tonlar (katmanlar, çiçekler, direkler, bulutlar, gök cisimleri). Neden ayrı: bunlar
-## yalnız gün geçişinde ya da fırtına değişince değişir; eskiden her kare ~60 sprite'a aynı
-## değer yazılıyordu. Artık yalnız görünüm değişince çağrılır.
+## Durağan tonlar (katmanlar, süsler, direkler, bulutlar, gök cisimleri). Neden ayrı: bunlar
+## yalnız gün/mekân geçişinde ya da fırtına değişince değişir; her kare yazılmaz.
 func _apply_tints() -> void:
 	var scenery: Color = _current.scenery_tint
-	for sprite: Sprite2D in _tinted:
-		sprite.modulate = scenery
 	var flower_tint: Color = Color.WHITE.lerp(scenery, FLOWER_TINT_SHARE)
-	for flower: Sprite2D in _flowers:
-		flower.modulate = flower_tint
+	for place: PlaceSet in _sets:
+		for sprite: Sprite2D in place.tinted:
+			sprite.self_modulate = scenery
+		for decor: Sprite2D in place.decor:
+			decor.self_modulate = flower_tint
 	_props.modulate = Color.WHITE.lerp(scenery, PROPS_TINT_SHARE)
 	garment_tint = _current.garment_tint
 	var cloud_tint: Color = _current.cloud_tint * Color.WHITE.lerp(STORM_CLOUD_TINT, storm)
@@ -244,29 +559,45 @@ func _apply_tints() -> void:
 	_applied_storm = storm
 
 
-## Zamana bağlı ışıklar (yıldız pırıltısı, ateş böcekleri, pencereler): görünürken her kare.
+## Zamana bağlı ışıklar (yıldız pırıltısı, ateş böcekleri, pencereler, deniz pırıltısı): her kare.
 func _animate_lights(time: float) -> void:
 	_sky_view.twinkle(_current, time)
-	_fireflies.apply(_current.firefly_amount, time)
-	_window_lights.apply(_current.window_glow, time)
-	if _far_sprite != null:
-		_window_lights.position = _far_sprite.position
+	_fireflies.apply(_current.firefly_amount * _active.firefly_scale, time)
+	for place: PlaceSet in _sets:
+		for lights: WindowLights in place.lights:
+			lights.apply(_current.window_glow, time)
+		if place.glints != null:
+			place.glints.apply(_current, time)
 
 
-func _sprite(file_name: String, top_left: Vector2) -> Sprite2D:
+func _sprite(parent: Node, dir: String, file_name: String, top_left: Vector2, place: PlaceSet = null) -> Sprite2D:
+	var path: String = dir + file_name + ".png"
 	var sprite: Sprite2D = Sprite2D.new()
-	sprite.texture = _texture(file_name)
+	sprite.texture = _texture_at(path)
 	sprite.centered = false
 	sprite.position = top_left
-	_parent.add_child(sprite)
+	parent.add_child(sprite)
+	if place != null and not place.paths.has(path):
+		place.paths.append(path)
 	return sprite
 
 
-## Açılışta (Boot beklemesi) tüm bahçe dokularını iş parçacıklarında paralel yüklemeye başlar.
-## `_texture` hazır olanı alır; bitmemişse yalnız o dokuyu bekler.
+## Eski mekânın dokuları önbellekten atılır (yeni mekân ve ortak dokular kalır). Sprite'lar
+## queue_free ile çıktığında son referans da düşer; yalnız etkin mekân bellekte kalır.
+static func _forget_textures(old: PlaceSet, keep: PlaceSet) -> void:
+	for path: String in old.paths:
+		if not keep.paths.has(path) and not path.begins_with(BG_DIR + "cloud") and path != BG_DIR + RACK_FILE + ".png":
+			_textures.erase(path)
+
+
+## Açılışta (Boot beklemesi) ortak dokuları ve oyuncunun kayıtlı mekânının dokularını iş
+## parçacıklarında paralel yüklemeye başlar. `_texture_at` hazır olanı alır; bitmemişse onu bekler.
 static func warm_up() -> void:
-	for file_name: String in _all_files():
-		var path: String = BG_DIR + file_name + ".png"
+	_request_paths(_all_paths(LocationCycle.location_for(_saved_level())))
+
+
+static func _request_paths(paths: Array[String]) -> void:
+	for path: String in paths:
 		if not _textures.has(path) and not _requested.has(path) and ResourceLoader.exists(path):
 			if ResourceLoader.load_threaded_request(path) == OK:
 				_requested.append(path)
@@ -281,17 +612,28 @@ static func release_textures() -> void:
 	_textures.clear()
 
 
-static func _all_files() -> Array[String]:
-	var names: Array[String] = ["tree_trunk", "tree_crown", "pole", "rack"]
-	for group: Array[Array] in [LAYERS, FRONT_LAYERS, CLOUDS, FLOWERS]:
-		for spec: Array in group:
-			if not names.has(String(spec[0])):
-				names.append(String(spec[0]))
-	return names
+## Bir mekânın ihtiyaç duyduğu tüm doku yolları (ortak bulut + askı dahil).
+static func _all_paths(place_id: String) -> Array[String]:
+	var paths: Array[String] = [BG_DIR + RACK_FILE + ".png"]
+	for spec: Array in CLOUDS:
+		paths.append(BG_DIR + String(spec[0]) + ".png")
+	var data: Dictionary = LocationCycle.data_for(place_id)
+	var dir: String = String(data.get("dir", BG_DIR))
+	var names: Array[String] = []
+	for spec: Dictionary in _layer_specs(data, "back", LAYERS) + _layer_specs(data, "front", FRONT_LAYERS) + _decor_specs(data):
+		names.append(String(spec.get("file", "")))
+	var hero: Dictionary = data.get("hero", {}) as Dictionary
+	names.append(String(hero.get("trunk", "tree_trunk")))
+	names.append(String(hero.get("crown", "tree_crown")))
+	names.append(String(data.get("pole", "pole")))
+	for file_name: String in names:
+		var path: String = dir + file_name + ".png"
+		if not paths.has(path):
+			paths.append(path)
+	return paths
 
 
-static func _texture(file_name: String) -> Texture2D:
-	var path: String = BG_DIR + file_name + ".png"
+static func _texture_at(path: String) -> Texture2D:
 	if _textures.has(path):
 		return _textures[path]
 	if not ResourceLoader.exists(path):
@@ -314,21 +656,32 @@ func _process(delta: float) -> void:
 		_fade = minf(_fade + delta / DayCycle.FADE_SECONDS, 1.0)
 		_current.blend(_fade_from, _fade_to, smoothstep(0.0, 1.0, _fade))
 		look_changed = true
+	if _leaving != null:
+		_place_fade = minf(_place_fade + delta / PLACE_FADE_SECONDS, 1.0)
+		_active.set_alpha(smoothstep(0.0, PLACE_FADE_IN_END, _place_fade))
+		_leaving.set_alpha(1.0 - smoothstep(PLACE_FADE_OUT_START, 1.0, _place_fade))
+		if _place_fade >= 1.0:
+			_finish_place_fade()
 	var wind: float = 1.0 + storm * 4.0
 	# Çok yavaş, küçük yatay salınım: katmanlar farklı genlikte kaydığı için derinlik hissi verir.
 	var drift: float = sin(time * PARALLAX_SPEED)
-	for entry: Array in _parallax:
-		(entry[0] as Sprite2D).position.x = float(entry[1]) + drift * float(entry[2])
+	var crown_angle: float = 0.6 * wind * sin(time * 0.7 * (1.0 + storm))
+	for place: PlaceSet in _sets:
+		for index: int in range(place.parallax.size()):
+			place.parallax[index].position.x = place.parallax_base[index] + drift * place.parallax_amp[index]
+		place.crown.rotation_degrees = place.crown_sway * crown_angle
+		for index: int in range(place.decor.size()):
+			var sway: float = place.decor_amp[index] * (1.0 + storm * 2.0) * sin(time * 1.5 + float(index) * 1.9)
+			if place.decor_skew[index]:
+				# Saksılı bitki: dönerse saksı da sallanırdı; kaykılma (skew) tabanı sabit tutar.
+				place.decor[index].skew = deg_to_rad(sway)
+			else:
+				place.decor[index].rotation_degrees = sway
 	for entry: Array in _clouds:
 		var cloud: Sprite2D = entry[0] as Sprite2D
 		cloud.position.x += float(entry[1]) * wind * delta
 		if cloud.position.x > _width + 40.0:
 			cloud.position.x = -CLOUD_WRAP_MARGIN
-	if _crown != null:
-		_crown.rotation_degrees = CROWN_SWAY_DEGREES * wind * 0.6 * sin(time * 0.7 * (1.0 + storm))
-	for index: int in range(_flowers.size()):
-		_flowers[index].rotation_degrees = FLOWER_SWAY_DEGREES * (1.0 + storm * 2.0) \
-			* sin(time * 1.5 + float(index) * 1.9)
 	if look_changed:
 		_apply_tints()
 	_animate_lights(time)
