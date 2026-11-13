@@ -533,6 +533,7 @@ func _start_level() -> void:
 	_hud.set_level(_level_number)
 	_hud.set_coins(Progress.coins())
 	_backdrop.set_level(_level_number)
+	_hud.set_title_color(_backdrop.hud_text_color(TEXT_COLOR))
 	AudioService.play_pitched("level_start", 1.0, -6.0)
 	_world = Node2D.new()
 	add_child(_world)

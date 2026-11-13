@@ -62,6 +62,11 @@ func set_level(number: int) -> void:
 
 
 ## Progress yoksa jeton sayısı buradan gelir.
+## Başlık rengi günün evresine göre değişir (gece koyu zeminde açık renk) ki okunur kalsın.
+func set_title_color(color: Color) -> void:
+	_title.add_theme_color_override("font_color", color)
+
+
 func set_coins(value: int) -> void:
 	if not _has_progress_coins:
 		_coin_chip.set_value(value)
