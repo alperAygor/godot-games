@@ -26,9 +26,7 @@ const COUNT_SECONDS: float = 0.9
 const FEW_REMAINING: int = 6
 const STORM_DISC: float = 112.0
 const STORM_ICON: float = 56.0
-## Ustalık (yıldız) bölümü. Metin "Kusursuz" strings.gd'de değil burada: strings.gd bu işin
-## dosyaları arasında değil; birleştirmede UiStrings'e taşınabilir.
-const PERFECT_TITLE: String = "Kusursuz"
+## Ustalık (yıldız) bölümü.
 const PERFECT_COLOR: Color = Color("e0a526")
 const STAR_SIZE: float = 92.0
 const STAR_GAP: float = 30.0
@@ -150,7 +148,7 @@ func _fill_win(reward: int, tints: Array[Color], can_double: bool, mastery: Dict
 	if rating > 0:
 		column.add_child(_star_row(rating))
 		column.add_child(UiKit.spacer(BLOCK_GAP * 0.5))
-	column.add_child(UiKit.label(PERFECT_TITLE if perfect else UiStrings.WIN_TITLE, TITLE_SIZE,
+	column.add_child(UiKit.label(UiStrings.perfect_title() if perfect else UiStrings.win_title(), TITLE_SIZE,
 		PERFECT_COLOR if perfect else UiKit.TEXT))
 	column.add_child(UiKit.spacer(BLOCK_GAP * 0.5))
 	var reward_row: HBoxContainer = HBoxContainer.new()
@@ -179,7 +177,7 @@ func _fill_win(reward: int, tints: Array[Color], can_double: bool, mastery: Dict
 		column.add_child(_double_button)
 		# Reklam düğmesi ile "Devam" arasında en az 42 px (16 dp) boşluk: yanlışlıkla basılmasın.
 		column.add_child(UiKit.spacer(UiKit.AD_BUTTON_GAP))
-	var next: Button = UiKit.button(UiStrings.WIN_CONTINUE, &"", "", MAIN_HEIGHT)
+	var next: Button = UiKit.button(UiStrings.win_continue(), &"", "", MAIN_HEIGHT)
 	next.pressed.connect(continue_pressed.emit)
 	column.add_child(next)
 	if rating > 0:
@@ -318,25 +316,25 @@ func _fill_lose(remaining: int, can_revive: bool, moves_out: bool = false, coin_
 	disc.add_child(wind)
 	column.add_child(storm)
 	column.add_child(UiKit.spacer(BLOCK_GAP))
-	column.add_child(UiKit.label(UiStrings.LOSE_TITLE_MOVES if moves_out else UiStrings.LOSE_TITLE, TITLE_SIZE))
+	column.add_child(UiKit.label(UiStrings.lose_title_moves() if moves_out else UiStrings.lose_title(), TITLE_SIZE))
 	column.add_child(UiKit.spacer(BLOCK_GAP * 0.5))
 	column.add_child(_remaining_label(remaining))
 	column.add_child(UiKit.spacer(BLOCK_GAP * 2.0))
 	if can_revive:
-		var revive: Button = UiKit.button(UiStrings.LOSE_REVIVE_MOVES if moves_out else UiStrings.LOSE_REVIVE,
+		var revive: Button = UiKit.button(UiStrings.lose_revive_moves() if moves_out else UiStrings.lose_revive(),
 			&"", "lucide/video", MAIN_HEIGHT)
 		revive.pressed.connect(revive_pressed.emit)
 		column.add_child(revive)
 		column.add_child(UiKit.spacer(UiKit.AD_BUTTON_GAP))
 	if coin_cost > 0:
 		# Reklam izlemek istemeyen oyuncu jetonla devam edebilir; yetmiyorsa düğme sönük kalır.
-		var pay: Button = UiKit.button(UiStrings.LOSE_COINS % coin_cost, &"SecondaryButton", "lucide/coins",
+		var pay: Button = UiKit.button(UiStrings.lose_coins(coin_cost), &"SecondaryButton", "lucide/coins",
 			UiKit.MIN_TOUCH)
 		pay.disabled = not can_afford
 		pay.pressed.connect(coins_pressed.emit)
 		column.add_child(pay)
 		column.add_child(UiKit.spacer(UiKit.AD_BUTTON_GAP))
-	var retry: Button = UiKit.button(UiStrings.LOSE_RETRY, &"SecondaryButton" if can_revive else &"",
+	var retry: Button = UiKit.button(UiStrings.lose_retry(), &"SecondaryButton" if can_revive else &"",
 		"lucide/rotate-ccw", MAIN_HEIGHT if not can_revive else UiKit.MIN_TOUCH)
 	retry.pressed.connect(retry_pressed.emit)
 	column.add_child(retry)
@@ -346,7 +344,6 @@ func _fill_lose(remaining: int, can_revive: bool, moves_out: bool = false, coin_
 ## oyuncu "neredeyse bitirdim" hissiyle tekrar denemeye itilir.
 func _remaining_label(remaining: int) -> RichTextLabel:
 	var few: bool = remaining <= FEW_REMAINING
-	var text: String = UiStrings.LOSE_REMAINING_SUFFIX
 	var rich: RichTextLabel = RichTextLabel.new()
 	rich.bbcode_enabled = true
 	rich.fit_content = true
@@ -357,8 +354,7 @@ func _remaining_label(remaining: int) -> RichTextLabel:
 	var number: String = "[font_size=%d][color=#%s]%d[/color][/font_size]" % [
 		REMAINING_BIG_SIZE if few else REMAINING_SIZE + 12,
 		(UiKit.DANGER if few else UiKit.TEXT).to_html(false), remaining]
-	var prefix: String = (UiStrings.LOSE_FEW_PREFIX + " ") if few else ""
-	rich.text = "[center]%s%s %s[/center]" % [prefix, number, text]
+	rich.text = "[center]%s[/center]" % UiStrings.remaining_sentence(number, remaining, few)
 	return rich
 
 

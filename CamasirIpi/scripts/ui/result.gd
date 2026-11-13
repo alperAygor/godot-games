@@ -14,10 +14,12 @@ func _ready() -> void:
 	var fee: int = int(result.get("fee", 0))
 	var damage: float = float(result.get("damage", 0.0))
 
-	title_label.text = "Teslimat Tamamlandı" if stars > 0 else "Teslimat Hasarlı"
-	stars_label.text = "Yıldız: %d / 3" % stars
-	detail_label.text = "Hasar: %%%d    Ücret: %d" % [int(roundf(damage * 100.0)), fee]
+	title_label.text = Loc.t("RESULT_DONE") if stars > 0 else Loc.t("RESULT_FAILED")
+	stars_label.text = Loc.f("RESULT_STARS", [stars])
+	detail_label.text = Loc.f("RESULT_DETAIL", [int(roundf(damage * 100.0)), fee])
 
+	(%RetryButton as Button).text = Loc.t("RESULT_RETRY")
+	(%MenuButton as Button).text = Loc.t("RESULT_MENU")
 	if stars > 0:
 		AudioService.play("success")
 

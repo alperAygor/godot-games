@@ -1,63 +1,80 @@
 class_name MetaStrings
 extends RefCounted
 
-## Meta katmanının (çamaşırhane + koleksiyon) kullanıcıya görünen tüm metinleri (Türkçe).
+## Meta katmanının (çamaşırhane + koleksiyon) metinleri: `strings.csv` anahtarlarına sarmalayıcılar.
 ## NEDEN ayrı dosya: meta ekranları başka işçiyle paralel geliştirildi; ortak `UiStrings`'e
 ## dokunmadan dil/metin cilası tek yerden yapılabilsin.
 
-# Çamaşırhane
-const LOCATION_NAMES: Dictionary[String, String] = {
-	"corner": "Köşe Çamaşırhanesi",
-	"seaside": "Sahil Çamaşırhanesi",
-	"attic": "Çatı Katı",
-	"hotel": "Otel",
+# Çamaşırhane: kimlik -> CSV anahtarı
+const LOCATION_KEYS: Dictionary[String, String] = {
+	"corner": "META_LOC_CORNER",
+	"seaside": "META_LOC_SEASIDE",
+	"attic": "META_LOC_ATTIC",
+	"hotel": "META_LOC_HOTEL",
 }
-const TASK_NAMES: Dictionary[String, String] = {
-	"floor": "Zemin",
-	"wall": "Duvar boyası",
-	"machine1": "Çamaşır makinesi",
-	"shelf": "Raf",
-	"sign": "Tabela",
-	"plant": "Saksı çiçeği",
-	"lamp": "Lamba",
-	"window": "Pencere",
-	"counter": "Tezgâh",
-	"machine2": "İkinci makine",
-	"rug": "Halı",
-	"door": "Kapı",
+const TASK_KEYS: Dictionary[String, String] = {
+	"floor": "META_TASK_FLOOR",
+	"wall": "META_TASK_WALL",
+	"machine1": "META_TASK_MACHINE1",
+	"shelf": "META_TASK_SHELF",
+	"sign": "META_TASK_SIGN",
+	"plant": "META_TASK_PLANT",
+	"lamp": "META_TASK_LAMP",
+	"window": "META_TASK_WINDOW",
+	"counter": "META_TASK_COUNTER",
+	"machine2": "META_TASK_MACHINE2",
+	"rug": "META_TASK_RUG",
+	"door": "META_TASK_DOOR",
+}
+const SET_KEYS: Dictionary[String, String] = {
+	"turkiye": "META_SET_TURKIYE",
+	"japonya": "META_SET_JAPONYA",
+	"meksika": "META_SET_MEKSIKA",
+	"iskocya": "META_SET_ISKOCYA",
+	"hindistan": "META_SET_HINDISTAN",
+	"hollanda": "META_SET_HOLLANDA",
 }
 const PROGRESS_FORMAT: String = "%d/%d"
 const COST_FORMAT: String = "%d"
-const NEED_STARS: String = "Seviye geç, yıldız kazan"
-const PICK_LOOK: String = "Görünümü seç"
-const LOCATION_DONE: String = "Tamamlandı"
 const BONUS_FORMAT: String = "+%d"
-const SOON: String = "Yakında"
-const NEXT_LOCATION: String = "Sıradaki"
-
-# Koleksiyon
-const COLLECTION_TITLE: String = "Koleksiyon"
-const SET_NAMES: Dictionary[String, String] = {
-	"turkiye": "Türkiye",
-	"japonya": "Japonya",
-	"meksika": "Meksika",
-	"iskocya": "İskoçya",
-	"hindistan": "Hindistan",
-	"hollanda": "Hollanda",
-}
-const NEXT_PIECE_FORMAT: String = "%d seviye sonra yeni parça"
-const ALL_PIECES: String = "Tüm parçalar toplandı"
 const SET_PROGRESS_FORMAT: String = "%d/%d"
-const NEW_BADGE: String = "Yeni"
 
 
 static func location_name(id: String) -> String:
-	return LOCATION_NAMES.get(id, id)
+	return Loc.t(LOCATION_KEYS[id]) if LOCATION_KEYS.has(id) else id
 
 
 static func task_name(id: String) -> String:
-	return TASK_NAMES.get(id, id)
+	return Loc.t(TASK_KEYS[id]) if TASK_KEYS.has(id) else id
 
 
 static func country_name(id: String) -> String:
-	return SET_NAMES.get(id, id)
+	return Loc.t(SET_KEYS[id]) if SET_KEYS.has(id) else id
+
+
+static func need_stars() -> String:
+	return Loc.t("META_NEED_STARS")
+
+
+static func pick_look() -> String:
+	return Loc.t("META_PICK_LOOK")
+
+
+static func location_done() -> String:
+	return Loc.t("META_LOCATION_DONE")
+
+
+static func soon() -> String:
+	return Loc.t("META_SOON")
+
+
+static func collection_title() -> String:
+	return Loc.t("META_COLLECTION_TITLE")
+
+
+static func next_piece(remaining: int) -> String:
+	return Loc.n("META_NEXT_PIECE_ONE", "META_NEXT_PIECE_OTHER", remaining) % remaining
+
+
+static func all_pieces() -> String:
+	return Loc.t("META_ALL_PIECES")

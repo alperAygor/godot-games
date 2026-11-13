@@ -53,7 +53,7 @@ func _fill_win(outcome: Dictionary, tints: Array[Color]) -> void:
 	pile.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	pile.play(Motion.OVERLAY_FADE_SECONDS)
 	column.add_child(UiKit.spacer(GAP))
-	column.add_child(UiKit.label(DailyStrings.WIN_TITLE, TITLE_SIZE))
+	column.add_child(UiKit.label(DailyStrings.win_title(), TITLE_SIZE))
 	column.add_child(UiKit.spacer(GAP * 0.6))
 	if bool(outcome["first"]):
 		var row: HBoxContainer = DailyUi.reward_row(0, String(outcome["booster"]), int(outcome["booster_count"]))
@@ -63,9 +63,9 @@ func _fill_win(outcome: Dictionary, tints: Array[Color]) -> void:
 		column.add_child(UiKit.spacer(GAP))
 		column.add_child(DailyUi.streak_row(int(outcome["streak"]), int(outcome["best"])))
 	else:
-		column.add_child(UiKit.label(DailyStrings.WIN_AGAIN, BODY_SIZE, UiKit.TEXT_MUTED))
+		column.add_child(UiKit.label(DailyStrings.win_again(), BODY_SIZE, UiKit.TEXT_MUTED))
 	column.add_child(UiKit.spacer(GAP * 1.8))
-	var next: Button = UiKit.button(DailyStrings.CONTINUE, &"", "", MAIN_HEIGHT)
+	var next: Button = UiKit.button(DailyStrings.continue_text(), &"", "", MAIN_HEIGHT)
 	next.pressed.connect(home_pressed.emit)
 	column.add_child(next)
 
@@ -74,7 +74,7 @@ func _fill_lose() -> void:
 	var column: VBoxContainer = content()
 	column.add_child(DailyUi.icon_disc(STORM_ICON, UiKit.ACCENT_SOFT, UiKit.TEXT_MUTED))
 	column.add_child(UiKit.spacer(GAP))
-	column.add_child(UiKit.label(DailyStrings.LOSE_TITLE, TITLE_SIZE))
+	column.add_child(UiKit.label(DailyStrings.lose_title(), TITLE_SIZE))
 	column.add_child(UiKit.spacer(GAP * 2.0))
 	var row: HBoxContainer = HBoxContainer.new()
 	row.add_theme_constant_override("separation", int(GAP))
@@ -85,7 +85,7 @@ func _fill_lose() -> void:
 	home.disc_color = UiKit.ACCENT_SOFT
 	home.pressed.connect(home_pressed.emit)
 	row.add_child(home)
-	var retry: Button = UiKit.button(DailyStrings.LOSE_RETRY, &"", "lucide/rotate-ccw", MAIN_HEIGHT)
+	var retry: Button = UiKit.button(DailyStrings.lose_retry(), &"", "lucide/rotate-ccw", MAIN_HEIGHT)
 	retry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	retry.pressed.connect(retry_pressed.emit)
 	row.add_child(retry)

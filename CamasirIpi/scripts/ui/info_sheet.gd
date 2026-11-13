@@ -19,9 +19,9 @@ static func soon(parent: Node, icon_name: String) -> InfoSheet:
 	var column: VBoxContainer = sheet.content()
 	column.add_child(sheet._icon_disc(icon_name))
 	column.add_child(UiKit.spacer(GAP))
-	column.add_child(UiKit.label(UiStrings.SOON_TITLE, TITLE_SIZE))
+	column.add_child(UiKit.label(UiStrings.soon_title(), TITLE_SIZE))
 	column.add_child(UiKit.spacer(GAP * 0.4))
-	var body: Label = UiKit.label(UiStrings.SOON_BODY, BODY_SIZE, UiKit.TEXT_MUTED)
+	var body: Label = UiKit.label(UiStrings.soon_body(), BODY_SIZE, UiKit.TEXT_MUTED)
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(body)
 	column.add_child(UiKit.spacer(GAP * 1.5))
@@ -35,17 +35,26 @@ static func settings(parent: Node) -> InfoSheet:
 	sheet.build(parent, false)
 	sheet.dismiss_on_dim = true
 	var column: VBoxContainer = sheet.content()
-	column.add_child(UiKit.label(UiStrings.SETTINGS_TITLE, TITLE_SIZE))
+	column.add_child(UiKit.label(UiStrings.settings_title(), TITLE_SIZE))
 	column.add_child(UiKit.spacer(GAP * 1.5))
 	column.add_child(UiSettingsRow.new())
+	column.add_child(UiKit.spacer(GAP * 1.4))
+	var languages: UiLanguageRow = UiLanguageRow.new()
+	languages.language_changed.connect(sheet._on_language_changed)
+	column.add_child(languages)
 	column.add_child(UiKit.spacer(GAP * 1.8))
 	column.add_child(sheet._ok_button())
 	sheet.play_intro()
 	return sheet
 
 
+## Dil değişince ekran baştan kurulur: yarım çevrilmiş ekran kalmasın (bkz. Loc).
+func _on_language_changed() -> void:
+	GameManager.reload_scene()
+
+
 func _ok_button() -> Button:
-	var ok: Button = UiKit.button(UiStrings.OK, &"SecondaryButton", "", OK_HEIGHT)
+	var ok: Button = UiKit.button(UiStrings.ok(), &"SecondaryButton", "", OK_HEIGHT)
 	ok.pressed.connect(close)
 	return ok
 

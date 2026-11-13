@@ -8,6 +8,10 @@ const HOLD_SECONDS: float = 0.4
 
 func _ready() -> void:
 	GameManager.set_phase(GameManager.Phase.BOOT)
+	# Dil, ilk ekran kurulmadan önce uygulanır: hiçbir ekran yarım çevrilmiş açılmaz.
+	Loc.apply_saved()
+	(get_node("Center/Column/Sub") as Label).text = Loc.t("BOOT_LOADING")
+	(get_node("Center/Column/Title") as Label).text = Loc.t("GAME_TITLE")
 	# Açılış beklemesi boşa gitmesin: oyuncunun seviyesi şimdiden arka planda üretilir
 	# ("Oyna"ya basınca ağır seviyede bile anında açılır).
 	LevelPrefetch.request_level(Progress.level())

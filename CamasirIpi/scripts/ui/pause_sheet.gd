@@ -25,7 +25,7 @@ static func open(parent: Node) -> PauseSheet:
 
 func _fill() -> void:
 	var column: VBoxContainer = content()
-	column.add_child(UiKit.label(UiStrings.PAUSED, TITLE_SIZE))
+	column.add_child(UiKit.label(UiStrings.paused(), TITLE_SIZE))
 	column.add_child(UiKit.spacer(ROW_GAP))
 	column.add_child(UiSettingsRow.new())
 	column.add_child(UiKit.spacer(ROW_GAP + 12.0))
@@ -43,7 +43,7 @@ func _fill() -> void:
 	home.disc_color = UiKit.ACCENT_SOFT
 	home.pressed.connect(_emit_after_close.bind(home_pressed))
 	row.add_child(home)
-	var resume: Button = UiKit.button(UiStrings.RESUME, &"", "lucide/play", RESUME_HEIGHT)
+	var resume: Button = UiKit.button(UiStrings.resume(), &"", "lucide/play", RESUME_HEIGHT)
 	resume.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	resume.pressed.connect(_emit_after_close.bind(resume_pressed))
 	row.add_child(resume)

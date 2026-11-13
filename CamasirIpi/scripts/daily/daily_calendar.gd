@@ -57,7 +57,7 @@ static func open(parent: Node, today_override: String = "") -> DailyCalendar:
 
 func _fill() -> void:
 	var column: VBoxContainer = content()
-	column.add_child(UiKit.label(DailyStrings.CALENDAR_TITLE, TITLE_SIZE))
+	column.add_child(UiKit.label(DailyStrings.calendar_title(), TITLE_SIZE))
 	column.add_child(UiKit.spacer(GAP))
 	var row: HBoxContainer = HBoxContainer.new()
 	row.add_theme_constant_override("separation", TILE_GAP)
@@ -78,11 +78,11 @@ func _build_footer() -> void:
 		child.queue_free()
 	_claim_button = null
 	if DailyCalendarLogic.can_claim_today(DailyStore.calendar_state(), _today):
-		_claim_button = UiKit.button(DailyStrings.CLAIM, &"", COIN_ICON, CLAIM_HEIGHT)
+		_claim_button = UiKit.button(DailyStrings.claim(), &"", COIN_ICON, CLAIM_HEIGHT)
 		_claim_button.pressed.connect(_on_claim)
 		_footer.add_child(_claim_button)
 	else:
-		var done: Button = UiKit.button(DailyStrings.CLAIMED_TODAY, &"SecondaryButton", CHECK_ICON, CLAIM_HEIGHT)
+		var done: Button = UiKit.button(DailyStrings.claimed_today(), &"SecondaryButton", CHECK_ICON, CLAIM_HEIGHT)
 		done.pressed.connect(close)
 		_footer.add_child(done)
 

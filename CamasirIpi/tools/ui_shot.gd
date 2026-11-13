@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Arayüz ekran görüntüsü (gerçek pencere; headless ÇALIŞMAZ).
 ##   godot --path . --resolution 1080x1920 -s res://tools/ui_shot.gd -- --shot=win --out=docs/art/ui_win.png
-## --shot: home | soon | settings | hud | pause | win | lose | lose_few | lose_many
+## --shot: home | soon | settings | hud | pause | win | lose | lose_few | lose_many | lose_moves
 ## Giriş animasyonları bitsin diye tetikten sonra `--wait=` ms beklenir (varsayılan 2600).
 
 var _shot: String = "home"
@@ -19,6 +19,7 @@ func _initialize() -> void:
 	var progress_guard: Node = root.get_node_or_null("Progress")
 	if progress_guard != null:
 		progress_guard.set("persist", false)
+	Loc.apply_from_args(OS.get_cmdline_user_args())  # --lang=tr|en|es
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--shot="):
 			_shot = arg.split("=")[1]
@@ -40,6 +41,12 @@ func _initialize() -> void:
 
 func _process(_delta: float) -> bool:
 	_frame += 1
+	# Tanıtım kartları ekran görüntüsünü örtmesin: tüm kartlar "görüldü" sayılır (yalnız bellekte).
+	if _frame == 1 and _scene.get("_tutorial") is TutorialDirector:
+		var flags: Array[String] = []
+		for feature: String in TutorialStrings.CARDS.keys():
+			flags.append("tut_card_%s" % feature)
+		(_scene.get("_tutorial") as TutorialDirector).preseed_seen(flags)
 	if _frame == 20:
 		_trigger()
 		_trigger_at_ms = Time.get_ticks_msec()
@@ -64,3 +71,6 @@ func _trigger() -> void:
 			_scene.call("_show_lose", 4)
 		"lose_many":
 			_scene.call("_show_lose", 11)
+		"lose_moves":
+			(_scene.get("_board") as LaundryBoard).set("_lose_reason", LaundryBoard.LOSE_MOVES)
+			_scene.call("_show_lose", 4)
