@@ -80,3 +80,35 @@ func test_extra_rack_slot_revives() -> void:
 	assert_false(board.is_lost())
 	assert_eq(board.rack_slots(), 5)
 	assert_false(board.tap(6).is_empty())
+
+
+func test_wet_item_needs_two_taps() -> void:
+	var level: Dictionary = _level([0, 0, 0], [0])
+	((level["items"] as Array)[0] as Dictionary)["wet"] = true
+	var board: LaundryBoard = LaundryBoard.new(level)
+	var first: Array[Dictionary] = board.tap(0)
+	assert_eq(String(first[0]["type"]), LaundryBoard.EVENT_WRING)
+	assert_true(board.is_on_line(0), "ilk dokunuş yalnız sıkar")
+	board.tap(0)
+	assert_false(board.is_on_line(0))
+
+
+func test_locked_item_opens_when_its_basket_completes() -> void:
+	var level: Dictionary = _level([0, 0, 0, 1, 1, 1], [0, 1])
+	((level["items"] as Array)[3] as Dictionary)["lock"] = 0
+	var board: LaundryBoard = LaundryBoard.new(level)
+	var events: Array[Dictionary] = board.tap(3)
+	assert_eq(String(events[0]["type"]), LaundryBoard.EVENT_LOCKED)
+	assert_true(board.is_locked(3))
+	assert_false(board.open_ids().has(3))
+	board.tap(0)
+	board.tap(1)
+	var done: Array[Dictionary] = board.tap(2)
+	var types: Array[String] = []
+	for event: Dictionary in done:
+		types.append(String(event["type"]))
+	assert_true(types.has(LaundryBoard.EVENT_UNLOCK))
+	assert_false(board.is_locked(3))
+	board.tap(3)
+	assert_false(board.is_on_line(3))
+

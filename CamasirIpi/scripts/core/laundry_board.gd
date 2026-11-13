@@ -21,6 +21,10 @@ const EVENT_BASKET_DONE: String = "basket_done"
 const EVENT_BASKET_NEW: String = "basket_new"
 const EVENT_WIN: String = "win"
 const EVENT_LOSE: String = "lose"
+## Engeller (PROJECT_SPEC §3).
+const EVENT_WRING: String = "wring"
+const EVENT_LOCKED: String = "locked"
+const EVENT_UNLOCK: String = "unlock"
 
 ## Çamaşır kimliği -> {color:int, blockers:Array[int], ...yerleşim alanları}.
 var _items: Dictionary = {}
@@ -35,6 +39,8 @@ var _queue: Array[int] = []
 var _won: bool = false
 var _lost: bool = false
 var _moves: int = 0
+## Tamamlanan sepet renkleri: kilitli mandallar bununla açılır.
+var _completed: Dictionary = {}
 
 
 ## `level`: {items:[{id,color,blockers,...}], queue:[renk...], active_baskets:int, rack_slots:int}
@@ -103,10 +109,47 @@ func is_open(id: int) -> bool:
 	return _on_line.has(id) and blockers_of(id).is_empty()
 
 
+## Islak çamaşır: ilk dokunuşta sıkılır, ikincide alınır.
+func is_wet(id: int) -> bool:
+	return bool((_items.get(id, {}) as Dictionary).get("wet", false))
+
+
+## Gizemli çamaşır: rengi üstü açılınca belli olur (yalnız görünüm; kural aynı).
+func is_mystery(id: int) -> bool:
+	return bool((_items.get(id, {}) as Dictionary).get("mystery", false))
+
+
+## Kilitli mandalın beklediği sepet rengi; kilit yoksa EMPTY.
+func lock_color(id: int) -> int:
+	return int((_items.get(id, {}) as Dictionary).get("lock", EMPTY))
+
+
+func is_locked(id: int) -> bool:
+	var color: int = lock_color(id)
+	return _on_line.has(id) and color != EMPTY and not _completed.has(color)
+
+
+func wet_ids() -> Array[int]:
+	var result: Array[int] = []
+	for id: int in item_ids():
+		if _on_line.has(id) and is_wet(id):
+			result.append(id)
+	return result
+
+
+func completed_colors() -> Array[int]:
+	var result: Array[int] = []
+	for color: Variant in _completed.keys():
+		result.append(int(color))
+	result.sort()
+	return result
+
+
+## Şu an alınabilen (açık ve kilitsiz) çamaşırlar.
 func open_ids() -> Array[int]:
 	var result: Array[int] = []
 	for id: int in item_ids():
-		if is_open(id):
+		if is_open(id) and not is_locked(id):
 			result.append(id)
 	return result
 
@@ -157,6 +200,14 @@ func tap(id: int) -> Array[Dictionary]:
 	if not blockers.is_empty():
 		events.append({"type": EVENT_BLOCKED, "id": id, "by": blockers})
 		return events
+	if is_locked(id):
+		events.append({"type": EVENT_LOCKED, "id": id, "color": lock_color(id)})
+		return events
+	if is_wet(id):
+		(_items[id] as Dictionary)["wet"] = false
+		_moves += 1
+		events.append({"type": EVENT_WRING, "id": id})
+		return events
 	var color: int = color_of(id)
 	var basket_index: int = _basket_for(color)
 	if basket_index == EMPTY and _free_rack_slot() == EMPTY:
@@ -184,6 +235,7 @@ func _settle(events: Array[Dictionary]) -> void:
 			if basket.is_empty() or int(basket["count"]) < BASKET_CAPACITY:
 				continue
 			events.append({"type": EVENT_BASKET_DONE, "basket": index, "color": int(basket["color"])})
+			_complete_color(int(basket["color"]), events)
 			_baskets[index] = _next_basket()
 			var fresh: Dictionary = _baskets[index]
 			if not fresh.is_empty():
@@ -205,6 +257,15 @@ func _settle(events: Array[Dictionary]) -> void:
 	elif _free_rack_slot() == EMPTY:
 		_lost = true
 		events.append({"type": EVENT_LOSE, "remaining": _on_line.size() + rack_count()})
+
+
+func _complete_color(color: int, events: Array[Dictionary]) -> void:
+	if _completed.has(color):
+		return
+	_completed[color] = true
+	for id: int in item_ids():
+		if _on_line.has(id) and lock_color(id) == color:
+			events.append({"type": EVENT_UNLOCK, "id": id})
 
 
 func _put_in_basket(id: int, basket_index: int, event_type: String,

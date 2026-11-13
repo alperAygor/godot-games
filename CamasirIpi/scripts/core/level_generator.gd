@@ -18,6 +18,14 @@ const HARD_EVERY: int = 5
 const THREE_BASKETS_FROM_LEVEL: int = 15
 const SHUFFLE_ATTEMPTS: int = 12
 const SEED_SALT: int = 7919
+## Engellerin açıldığı seviyeler: her biri ilk göründüğü seviyede tek başına ve azdır.
+const WET_FROM_LEVEL: int = 8
+const MYSTERY_FROM_LEVEL: int = 14
+const LOCK_FROM_LEVEL: int = 20
+const OBSTACLE_RAMP_LEVELS: int = 6
+const MAX_WET: int = 5
+const MAX_MYSTERY: int = 6
+const MAX_LOCKS: int = 3
 
 
 ## Zorluk parametreleri: {lines, columns, layers, colors, twist, active_baskets, hard}.
@@ -61,7 +69,70 @@ static func generate(level: int) -> Dictionary:
 		"hard": bool(params["hard"]),
 	}
 	_twist_queue(result, int(params["twist"]), rng)
+	_add_obstacles(result, rng)
 	return result
+
+
+## Seviyeye göre engel sayısı: açıldığı seviyede 1, sonra her OBSTACLE_RAMP_LEVELS'ta +1.
+static func obstacle_count(level: int, from_level: int, maximum: int) -> int:
+	if level < from_level:
+		return 0
+	return clampi(1 + (level - from_level) / OBSTACLE_RAMP_LEVELS, 1, maximum)
+
+
+## Yeni engelin tanıtıldığı seviyede eskiler karışmaz (yalnız yeni engel gelir).
+static func _add_obstacles(level: Dictionary, rng: RandomNumberGenerator) -> void:
+	var number: int = int(level["level"])
+	var items: Array[Dictionary] = level["items"] as Array[Dictionary]
+	var intro: bool = number in [WET_FROM_LEVEL, MYSTERY_FROM_LEVEL, LOCK_FROM_LEVEL]
+	var wet: int = obstacle_count(number, WET_FROM_LEVEL, MAX_WET)
+	var mystery: int = obstacle_count(number, MYSTERY_FROM_LEVEL, MAX_MYSTERY)
+	var locks: int = obstacle_count(number, LOCK_FROM_LEVEL, MAX_LOCKS)
+	if intro:
+		wet = 1 if number == WET_FROM_LEVEL else 0
+		mystery = 2 if number == MYSTERY_FROM_LEVEL else 0
+		locks = 1 if number == LOCK_FROM_LEVEL else 0
+	var pool: Array[int] = []
+	for index: int in range(items.size()):
+		pool.append(index)
+	_shuffle(pool, rng)
+	# Gizemli: başta üstü kapalı olanlardan seçilir (yoksa anlamı kalmaz).
+	for index: int in pool:
+		if mystery <= 0:
+			break
+		if not (items[index]["blockers"] as Array).is_empty():
+			items[index]["mystery"] = true
+			mystery -= 1
+	for index: int in pool:
+		if wet <= 0:
+			break
+		if not bool(items[index].get("mystery", false)):
+			items[index]["wet"] = true
+			wet -= 1
+	# Kilit: çözülebilirlik bozulursa geri alınır.
+	var queue: Array = level["queue"] as Array
+	for index: int in pool:
+		if locks <= 0 or queue.size() < 3:
+			break
+		var entry: Dictionary = items[index]
+		if entry.has("wet") or entry.has("mystery"):
+			continue
+		var key_color: int = int(queue[rng.randi_range(0, mini(2, queue.size() - 1))])
+		if key_color == int(entry["color"]):
+			continue
+		entry["lock"] = key_color
+		if LevelSolver.is_solvable(level):
+			locks -= 1
+		else:
+			entry.erase("lock")
+
+
+static func _shuffle(values: Array[int], rng: RandomNumberGenerator) -> void:
+	for index: int in range(values.size() - 1, 0, -1):
+		var other: int = rng.randi_range(0, index)
+		var held: int = values[index]
+		values[index] = values[other]
+		values[other] = held
 
 
 ## Piramit düzeni: her ipte katman 0'da `columns` parça; üst katman yarım kaydırılır ve

@@ -76,4 +76,5 @@ static func _state_key(board: LaundryBoard) -> String:
 		if id != LaundryBoard.EMPTY:
 			rack_colors.append(board.color_of(id))
 	rack_colors.sort()
-	return "%s|%s|%s|%d" % [str(line), str(rack_colors), str(board.baskets()), board.queue().size()]
+	return "%s|%s|%s|%d|%s|%s" % [str(line), str(rack_colors), str(board.baskets()),
+		board.queue().size(), str(board.wet_ids()), str(board.completed_colors())]

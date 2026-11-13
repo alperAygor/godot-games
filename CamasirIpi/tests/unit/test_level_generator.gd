@@ -2,7 +2,7 @@ extends TestCase
 
 ## Üretilen seviyeler: deterministik, 3'ün katı, kuyrukla birebir ve ÇÖZÜLEBİLİR.
 
-const CHECKED_LEVELS: int = 40
+const CHECKED_LEVELS: int = 60
 
 
 func test_same_level_is_deterministic() -> void:
@@ -46,3 +46,22 @@ func test_difficulty_grows() -> void:
 	var early: int = (LevelGenerator.generate(4)["items"] as Array).size()
 	var late: int = (LevelGenerator.generate(40)["items"] as Array).size()
 	assert_greater(late, early)
+
+
+func test_obstacles_unlock_by_level() -> void:
+	assert_eq(_count(LevelGenerator.generate(7), "wet"), 0)
+	assert_eq(_count(LevelGenerator.generate(LevelGenerator.WET_FROM_LEVEL), "wet"), 1)
+	assert_eq(_count(LevelGenerator.generate(LevelGenerator.WET_FROM_LEVEL), "mystery"), 0)
+	assert_greater(_count(LevelGenerator.generate(LevelGenerator.MYSTERY_FROM_LEVEL), "mystery"), 0)
+	assert_eq(_count(LevelGenerator.generate(LevelGenerator.MYSTERY_FROM_LEVEL), "wet"), 0,
+		"tanıtım seviyesinde yalnız yeni engel olmalı")
+	assert_greater(_count(LevelGenerator.generate(30), "wet"), 1)
+
+
+func _count(level: Dictionary, key: String) -> int:
+	var total: int = 0
+	for entry: Variant in level["items"] as Array:
+		if (entry as Dictionary).has(key):
+			total += 1
+	return total
+
