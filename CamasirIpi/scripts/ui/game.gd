@@ -1393,10 +1393,12 @@ func _play_slide_event(event: Dictionary) -> bool:
 			var phase: float = float(event["phase"])
 			var moved: bool = false
 			for id: Variant in _slide_home.keys():
-				var view: GarmentView = _views.get(int(id)) as GarmentView
-				# Uçmaya başlamış (ipten ayrılmış) parça kaydırılmaz.
-				if view == null or not is_instance_valid(view) or not _board.is_on_line(int(id)):
+				# Sepete girip silinmiş parça sözlükte serbest bırakılmış nesne olarak kalabilir:
+				# dönüştürmeden ÖNCE geçerliliği sınanır. Uçmaya başlamış parça da kaydırılmaz.
+				var raw: Variant = _views.get(int(id))
+				if not is_instance_valid(raw) or not _board.is_on_line(int(id)):
 					continue
+				var view: GarmentView = raw as GarmentView
 				var home: Vector2 = _slide_home[id] as Vector2
 				var tween: Tween = view.create_tween()
 				tween.tween_property(view, "position:x", home.x + home.y * _slide_spacing_x * phase, SLIDE_SECONDS)\
