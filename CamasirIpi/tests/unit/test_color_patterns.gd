@@ -87,3 +87,44 @@ func test_glyph_atlas_and_shaders_load() -> void:
 	for color_id: int in range(ColorPatterns.PALETTE.size()):
 		regions[ColorPatterns.glyph_region(color_id).position.x] = true
 	assert_eq(regions.size(), 7, "her renk ayrı glif hücresi")
+
+
+## Çift renkli çamaşır: iki yarı kendi desenini taşır; gizem/polen deseni siler; yerleşince tek renk deseni.
+func test_dual_garment_halves_carry_own_patterns() -> void:
+	var view: GarmentView = GarmentView.new()
+	view.setup(1, ColorPatterns.PALETTE[2], 150.0, 0, 0)
+	view.set_dual(ColorPatterns.PALETTE[3])
+	var material_a: ShaderMaterial = view.get("_material") as ShaderMaterial
+	var material_b: ShaderMaterial = view.get("_dual_material") as ShaderMaterial
+	assert_not_null(material_b, "ikinci yarının kendi materyali var")
+	assert_true(material_a != material_b, "iki yarı materyali paylaşmaz")
+	assert_eq(int(material_a.get_shader_parameter("pattern_id")), ColorPatterns.DOTS, "sol/ana yarı: sarı puan")
+	assert_eq(int(material_b.get_shader_parameter("pattern_id")), ColorPatterns.CHECKS, "ikinci yarı: yeşil kare")
+	view.set_mystery(true)
+	assert_eq(int(material_a.get_shader_parameter("pattern_id")), ColorPatterns.NONE, "gizemde ana yarı desensiz")
+	assert_eq(int(material_b.get_shader_parameter("pattern_id")), ColorPatterns.NONE, "gizemde ikinci yarı desensiz")
+	view.set_mystery(false)
+	view.set_dusty(true, true)
+	assert_eq(int(material_b.get_shader_parameter("pattern_id")), ColorPatterns.NONE, "polende desen yok")
+	view.set_dusty(false, false)
+	view.set_open(false)
+	assert_true(float(material_b.get_shader_parameter("pattern_strength")) < 1.0, "kapalıda ikinci yarı da silik")
+	view.settle_dual(ColorPatterns.PALETTE[3], false)
+	assert_eq(int(material_a.get_shader_parameter("pattern_id")), ColorPatterns.CHECKS, "yerleşince kalan rengin deseni")
+	view.free()
+
+
+## Ayar anahtarı çevrilince ağaçtaki çamaşırlar HEMEN güncellenir (bir sonraki seviye beklenmez).
+func test_toggle_refreshes_live_garments() -> void:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	var view: GarmentView = GarmentView.new()
+	view.setup(2, ColorPatterns.PALETTE[1], 150.0, 0, 0)
+	tree.root.add_child(view)
+	var material: ShaderMaterial = view.get("_material") as ShaderMaterial
+	assert_eq(int(material.get_shader_parameter("pattern_id")), ColorPatterns.STRIPES_V)
+	ColorPatterns.set_enabled(false, false)
+	assert_eq(int(material.get_shader_parameter("pattern_id")), ColorPatterns.NONE, "kapatınca canlı yenilenir")
+	ColorPatterns.set_enabled(true, false)
+	assert_eq(int(material.get_shader_parameter("pattern_id")), ColorPatterns.STRIPES_V, "açınca canlı yenilenir")
+	tree.root.remove_child(view)
+	view.free()

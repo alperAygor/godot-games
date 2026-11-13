@@ -51,43 +51,42 @@
     },
     "sheet": {
       "item_key": "sheet",
-      "demo": "icon",
+      "demo": "sheet",
       "icon": "lucide/package"
     },
     "sock_pair": {
       "item_key": "pair",
-      "demo": "icon",
+      "demo": "sock_pair",
       "icon": "lucide/heart"
     },
     "dye": {
       "item_key": "dye",
-      "demo": "icon",
+      "demo": "dye",
       "icon": "lucide/droplet"
     },
     "joker": {
       "level_key": "jokers",
-      "demo": "icon",
+      "demo": "joker",
       "icon": "lucide/star"
     },
     "big_basket": {
       "level_key": "big",
-      "demo": "badge",
-      "badge": "5",
+      "demo": "big_basket",
       "icon": "lucide/package"
     },
     "stain": {
       "item_key": "stain",
-      "demo": "icon",
+      "demo": "stain",
       "icon": "lucide/flame"
     },
     "chain": {
       "item_key": "chain",
-      "demo": "icon",
+      "demo": "chain",
       "icon": "lucide/heart"
     },
     "wind": {
       "level_key": "wind",
-      "demo": "icon",
+      "demo": "wind",
       "icon": "lucide/wind"
     },
     "mode_moves": {
@@ -135,7 +134,7 @@
     },
     "slide": {
       "level_key": "slide",
-      "demo": "icon",
+      "demo": "slide",
       "icon": "lucide/rotate-ccw"
     },
     "washer": {
@@ -186,27 +185,27 @@
     },
     "dual": {
       "item_key": "twin",
-      "demo": "icon",
+      "demo": "dual",
       "icon": "lucide/shirt"
     },
     "sun_fade": {
       "item_key": "sun",
-      "demo": "icon",
+      "demo": "sun_fade",
       "icon": "lucide/flame"
     },
     "leaves": {
       "level_key": "leaves",
-      "demo": "icon",
+      "demo": "leaves",
       "icon": "lucide/wind"
     },
     "frost": {
       "item_key": "frost",
-      "demo": "icon",
+      "demo": "frost",
       "icon": "lucide/star"
     },
     "pollen": {
       "level_key": "pollen",
-      "demo": "icon",
+      "demo": "pollen",
       "icon": "lucide/zap"
     }
   },

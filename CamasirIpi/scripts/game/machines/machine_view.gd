@@ -43,6 +43,11 @@ const CHIP_FILL: Color = Color(1.0, 1.0, 1.0, 0.98)
 const CHIP_EMPTY: Color = Color(0.0, 0.0, 0.0, 0.1)
 const CHIP_INK: Color = Color("2a2f3d")
 const CHIP_RING_RATIO: float = 0.22
+## Renk körü deseni açıkken çalışan yuva dolu renkli disk olur: glif temiz, kalan hamle sağ-alt rozette.
+const CHIP_GLYPH_ALPHA: float = 0.9
+const CHIP_TAG_OFFSET: Vector2 = Vector2(0.62, 0.62)
+const CHIP_TAG_RATIO: float = 0.55
+const CHIP_TAG_FONT_RATIO: float = 1.75
 const CHIP_FONT_RATIO: float = 1.4
 const READY_INK: Color = Color("38a276")
 const BOUNCE: Vector2 = Vector2(1.06, 0.92)
@@ -300,6 +305,22 @@ class ChipPanel extends Node2D:
 				draw_circle(at, radius * 0.55, MachineView.CHIP_EMPTY, true, -1.0, true)
 				continue
 			draw_circle(at, radius, _tints[slot], true, -1.0, true)
+			var color_id: int = ColorPatterns.color_id_of(_tints[slot])
+			if _lefts[slot] > 0 and ColorPatterns.pattern_for(color_id) >= ColorPatterns.SOLID:
+				# Renk körü: halka desen taşıyamayacak kadar ince. Çalışırken yuva dolu renkli disktir ve temiz
+				# desen glifi taşır; kalan hamle sayısı sağ-altta küçük beyaz bir rozete taşınır (bitince
+				# beyaz iç disk + onay eski gibi). Sayı glifin üstüne binmez, ikisi de okunur.
+				ColorPatterns.draw_glyph(self, at, radius, color_id, MachineView.CHIP_GLYPH_ALPHA)
+				var tag_at: Vector2 = at + Vector2(radius, radius) * MachineView.CHIP_TAG_OFFSET
+				var tag_radius: float = radius * MachineView.CHIP_TAG_RATIO
+				draw_circle(tag_at, tag_radius, MachineView.CHIP_FILL, true, -1.0, true)
+				draw_arc(tag_at, tag_radius, 0.0, TAU, 20, _tints[slot], maxf(1.5, radius * 0.1), true)
+				var count_text: String = str(_lefts[slot])
+				var count_size: int = int(tag_radius * MachineView.CHIP_TAG_FONT_RATIO)
+				var count_extent: Vector2 = _font.get_string_size(count_text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, count_size)
+				draw_string(_font, tag_at + Vector2(-count_extent.x * 0.5, count_size * 0.36), count_text,
+					HORIZONTAL_ALIGNMENT_LEFT, -1.0, count_size, MachineView.CHIP_INK)
+				continue
 			draw_circle(at, radius * (1.0 - MachineView.CHIP_RING_RATIO), MachineView.CHIP_FILL, true, -1.0, true)
 			if _lefts[slot] == 0:
 				# Bitti: yeşil onay (çıkmayı bekliyor ya da çıkıyor).

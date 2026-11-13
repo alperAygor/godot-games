@@ -273,6 +273,9 @@ class Pill extends Node2D:
 				RulesHud.PILL_HEIGHT * 0.5)
 			var scale_by: float = RulesHud.DOT_CURRENT_SCALE if index == _done and not _broken else 1.0
 			draw_circle(at, radius * scale_by, tint, true, -1.0, true)
+			# Renk körü: sipariş sırası yalnız renkle değil desenle de okunur (bozulunca glif de soluk).
+			var glyph_alpha: float = RulesHud.BROKEN_ALPHA if _broken else 1.0
+			ColorPatterns.draw_glyph(self, at, radius * scale_by, ColorPatterns.color_id_of(tint), glyph_alpha)
 			if index < _done:
 				draw_circle(at, radius * 0.42, RulesHud.DONE_DOT, true, -1.0, true)
 

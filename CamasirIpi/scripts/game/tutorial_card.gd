@@ -51,6 +51,34 @@ const FALL_HEIGHT: float = 46.0
 const CLOUD_Y_RATIO: float = 0.4
 const TYPED_KIND_DEFAULT: int = 1
 const BOOSTER_GLYPH: float = 200.0
+## Mekanik gösterileri (dual, sun_fade, yaprak, don, polen, sürgü, rüzgâr, leke, zincir, joker, büyük sepet,
+## çarşaf, çorap çifti, boya): hepsi oyundaki GarmentView/BasketView'in kendi durum çağrılarıyla oynar;
+## yeni çizim yoktur, yani kartta görülen şey tahtada görülenin AYNISIDIR.
+const TOKEN_KIND: int = 0
+const DRESS_KIND: int = 2
+const TOWEL_KIND: int = 3
+const SOCK_KIND: int = 6
+const MID_X: float = STAGE_SIZE.x * 0.5
+const PAIR_GAP: float = 125.0
+## Üçlü gösterilerde sıradaki üç parçanın türü (tişört, elbise, pantolon): şekil çeşidi sakin ama canlı kalsın.
+const PAIR_KINDS: Array[int] = [0, 2, 1]
+const MINI_BASKET: float = 104.0
+const MINI_BASKET_Y: float = STAGE_SIZE.y - 72.0
+## Çift renk gösterisinde iki renk numarası (sarı puan + yeşil kare: iki desen birden görünür).
+const DUAL_COLORS: Vector2i = Vector2i(2, 3)
+const SUN_COUNT: int = 3
+const SHEET_SIZE: Vector2 = Vector2(360.0, 190.0)
+const SHEET_LIFT: float = 70.0
+const DROP_OUT: float = 150.0
+const SLIDE_STEP: float = 150.0
+const BIG_CAPACITY: int = 5
+## Büyük sepet: altındaki doluluk noktaları sahne kenarında kırpılmasın diye biraz yukarıda.
+const BIG_BASKET_SIZE: float = 180.0
+const BIG_BASKET_Y: float = STAGE_SIZE.y * 0.58
+const DYE_COUNT: int = 2
+## Boya rengi: yeşil kare; komşu (mavi çizgi) dönüşünce desen de değişir.
+const DYE_COLOR: int = 3
+const GENTLE: float = 0.4
 const DEFAULT_COLORS: Array[Color] = [
 	Color("e5484d"), Color("3e8ef7"), Color("f5c02e"), Color("3dbb6e"),
 ]
@@ -201,6 +229,34 @@ func _run_demo(kind: String, spec: Dictionary) -> void:
 			_demo_lock()
 		"badge":
 			_demo_badge(String(spec.get("badge", "+1")))
+		"dual":
+			_demo_dual()
+		"sun_fade":
+			_demo_sun_fade()
+		"leaves":
+			_demo_leaves()
+		"frost":
+			_demo_frost()
+		"pollen":
+			_demo_pollen()
+		"slide":
+			_demo_slide()
+		"wind":
+			_demo_wind()
+		"stain":
+			_demo_stain()
+		"chain":
+			_demo_chain()
+		"joker":
+			_demo_joker()
+		"big_basket":
+			_demo_big_basket()
+		"sheet":
+			_demo_sheet()
+		"sock_pair":
+			_demo_sock_pair()
+		"dye":
+			_demo_dye()
 		_:
 			_demo_icon(String(spec.get("icon", FALLBACK_ICON)))
 
@@ -457,6 +513,311 @@ func _rain(holder: Control, path: String, cloud_size: Vector2) -> void:
 		loop.parallel().tween_property(drop, "position:y", drop.position.y + FALL_DISTANCE, FALL_SECONDS)\
 			.from(drop.position.y).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 		loop.tween_property(drop, "modulate:a", 0.0, FALL_SECONDS * 0.3)
+
+
+# --- Mekanik gösterileri (oyundaki görünümün aynısı) ----------------------------------------------
+
+## Mini sepet: gösteri sahnesinin altında, renk + desen astarıyla (oyundakiyle aynı BasketView).
+func _mini_basket(slot_x: float, color_index: int) -> BasketView:
+	var basket: BasketView = BasketView.new()
+	basket.setup(MINI_BASKET)
+	basket.position = Vector2(slot_x, MINI_BASKET_Y)
+	_stage.add_child(basket)
+	basket.set_color(_colors[color_index % _colors.size()])
+	return basket
+
+
+func _tap_target(view: GarmentView) -> bool:
+	_hand.tap_once(_target_of(view))
+	return await _pause(Motion.OVERLAY_FADE_SECONDS + 0.2)
+
+
+## Çift renk: iki rengin sepetinin ortasında; yerleşince tek renge (kalan renge) döner.
+func _demo_dual() -> void:
+	_rope()
+	_mini_basket(MID_X - PAIR_GAP * 1.55, DUAL_COLORS.x)
+	_mini_basket(MID_X + PAIR_GAP * 1.55, DUAL_COLORS.y)
+	while _alive:
+		var view: GarmentView = _garment(MID_X, DUAL_COLORS.x, DRESS_KIND)
+		view.set_dual(_colors[DUAL_COLORS.y % _colors.size()])
+		if not await _pause(LOOP_PAUSE + 0.9):
+			return
+		if not await _tap_target(view):
+			return
+		view.settle_dual(_colors[DUAL_COLORS.y % _colors.size()])
+		if not await _pause(AFTER_TAP_PAUSE + 0.9):
+			return
+		view.queue_free()
+
+
+## Güneşte solma: sayaç iner, biter, parça solar; bir dokunuşla silkelenip rengi gelir.
+func _demo_sun_fade() -> void:
+	_rope()
+	while _alive:
+		var view: GarmentView = _garment(MID_X, 0, TOKEN_KIND)
+		view.set_sun(SUN_COUNT)
+		if not await _pause(LOOP_PAUSE + 0.6):
+			return
+		for left: int in range(SUN_COUNT - 1, 0, -1):
+			view.set_sun_left(left)
+			if not await _pause(FRAME_SECONDS):
+				return
+		view.set_faded(true)
+		if not await _pause(AFTER_TAP_PAUSE):
+			return
+		if not await _tap_target(view):
+			return
+		view.shake_out()
+		if not await _pause(AFTER_TAP_PAUSE + 0.8):
+			return
+		view.queue_free()
+
+
+## Yaprak: parçanın üstüne konar; tek dokunuş süpürür.
+func _demo_leaves() -> void:
+	_rope()
+	while _alive:
+		var view: GarmentView = _garment(MID_X, 2, TOKEN_KIND)
+		if not await _pause(GENTLE):
+			return
+		view.land_leaf(true)
+		if not await _pause(AFTER_TAP_PAUSE + 0.6):
+			return
+		if not await _tap_target(view):
+			return
+		view.brush_leaf()
+		if not await _pause(AFTER_TAP_PAUSE + 0.4):
+			return
+		view.queue_free()
+
+
+## Don: kırağı örter, askıda ısınır (sıcak ton), çözülür.
+func _demo_frost() -> void:
+	_rope()
+	while _alive:
+		var view: GarmentView = _garment(MID_X, 1, DRESS_KIND)
+		view.set_frost(true)
+		if not await _pause(LOOP_PAUSE + 1.0):
+			return
+		view.set_warming(true)
+		if not await _pause(AFTER_TAP_PAUSE + 0.6):
+			return
+		view.set_warming(false)
+		view.thaw()
+		if not await _pause(AFTER_TAP_PAUSE + 0.8):
+			return
+		view.queue_free()
+
+
+## Polen: üç parçanın rengi örtülür (desen de gizlenir), sonra renkler açılır.
+func _demo_pollen() -> void:
+	_rope()
+	while _alive:
+		var views: Array[GarmentView] = []
+		for index: int in range(3):
+			var view: GarmentView = _garment(MID_X + (float(index) - 1.0) * PAIR_GAP, index, PAIR_KINDS[index])
+			view.set_dusty(true, false)
+			views.append(view)
+		if not await _pause(LOOP_PAUSE + 1.4):
+			return
+		for view: GarmentView in views:
+			view.set_dusty(false)
+		if not await _pause(AFTER_TAP_PAUSE + 1.0):
+			return
+		for view: GarmentView in views:
+			view.queue_free()
+
+
+## Sürgülü ip: sıra bir adım yana kayar (uçtaki parça solup öbür uçta belirir).
+func _demo_slide() -> void:
+	_rope()
+	while _alive:
+		var views: Array[GarmentView] = []
+		for index: int in range(3):
+			views.append(_garment(MID_X + (float(index) - 1.0) * SLIDE_STEP, index, PAIR_KINDS[index]))
+		if not await _pause(LOOP_PAUSE + 0.8):
+			return
+		var glide: Tween = create_tween().set_parallel(true)
+		for view: GarmentView in views:
+			glide.tween_property(view, "position:x", view.position.x + SLIDE_STEP, 0.7)\
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			view.nudge(0.8)
+		glide.tween_property(views[2], "modulate:a", 0.0, 0.5)
+		if not await _pause(AFTER_TAP_PAUSE + 1.0):
+			return
+		for view: GarmentView in views:
+			view.queue_free()
+
+
+## Rüzgâr: işaretli parça sayaç bitince yanındakinin üstüne savrulur.
+func _demo_wind() -> void:
+	_rope()
+	while _alive:
+		var neighbour: GarmentView = _garment(MID_X + PAIR_GAP * 0.5, 1, DRESS_KIND)
+		var blown: GarmentView = _garment(MID_X - PAIR_GAP * 0.5, 0, TOKEN_KIND, 1)
+		blown.set_wind(1.0, true)
+		if not await _pause(LOOP_PAUSE + 1.0):
+			return
+		blown.wind_pulse()
+		if not await _pause(0.5):
+			return
+		blown.clear_wind()
+		blown.blow_over(neighbour.position, neighbour.z_index)
+		if not await _pause(AFTER_TAP_PAUSE + 1.0):
+			return
+		neighbour.queue_free()
+		blown.queue_free()
+
+
+## Leke: kurur (soluk + güneş), sonra silinir; ancak o zaman sepete gider.
+func _demo_stain() -> void:
+	_rope()
+	while _alive:
+		var view: GarmentView = _garment(MID_X, 1, TOKEN_KIND)
+		view.set_stain(true)
+		if not await _pause(LOOP_PAUSE + 0.8):
+			return
+		view.set_drying(true)
+		if not await _pause(AFTER_TAP_PAUSE + 0.8):
+			return
+		view.dry_stain()
+		if not await _pause(AFTER_TAP_PAUSE + 0.8):
+			return
+		view.queue_free()
+
+
+## Zincir: ortak mandalla bağlı iki parçadan biri alınınca eşi de askıya düşer.
+func _demo_chain() -> void:
+	_rope()
+	while _alive:
+		var first: GarmentView = _garment(MID_X - PAIR_GAP * 0.5, 0, TOKEN_KIND)
+		var second: GarmentView = _garment(MID_X + PAIR_GAP * 0.5, 1, DRESS_KIND)
+		first.set_chain(Vector2(PAIR_GAP, 0.0))
+		if not await _pause(LOOP_PAUSE + 1.0):
+			return
+		if not await _tap_target(first):
+			return
+		first.release_chain()
+		var drop: Tween = create_tween().set_parallel(true)
+		drop.tween_property(first, "position:y", first.position.y + DROP_OUT, 0.5)\
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		drop.tween_property(first, "modulate:a", 0.0, 0.5)
+		drop.tween_property(second, "position:y", second.position.y + DROP_OUT, 0.5).set_delay(0.25)\
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		drop.tween_property(second, "modulate:a", 0.0, 0.5).set_delay(0.25)
+		if not await _pause(AFTER_TAP_PAUSE + 0.8):
+			return
+		first.queue_free()
+		second.queue_free()
+
+
+## Joker: gökkuşağı (beyaz bant) sepet ilk konan rengi alır, o renkle (ve deseniyle) dolar.
+func _demo_joker() -> void:
+	_rope()
+	var basket: BasketView = BasketView.new()
+	basket.setup(BASKET_SIZE)
+	basket.position = Vector2(MID_X + PAIR_GAP * 1.1, STAGE_SIZE.y * 0.62)
+	_stage.add_child(basket)
+	while _alive:
+		basket.set_joker(true)
+		basket.set_color(BasketView.JOKER_BAND)
+		basket.set_filled(0)
+		var view: GarmentView = _garment(MID_X - PAIR_GAP * 1.1, 1, TOKEN_KIND)
+		if not await _pause(LOOP_PAUSE + 1.0):
+			return
+		if not await _tap_target(view):
+			return
+		basket.fix_joker(_colors[1 % _colors.size()])
+		view.queue_free()
+		basket.receive(0.8)
+		basket.set_filled(1)
+		if not await _pause(AFTER_TAP_PAUSE + 1.2):
+			return
+
+
+## Büyük sepet: 3 değil 5 parçayla dolar.
+func _demo_big_basket() -> void:
+	var basket: BasketView = BasketView.new()
+	basket.setup(BIG_BASKET_SIZE)
+	basket.position = Vector2(MID_X, BIG_BASKET_Y)
+	_stage.add_child(basket)
+	basket.set_color(_colors[2 % _colors.size()])
+	basket.set_capacity(BIG_CAPACITY)
+	while _alive:
+		basket.set_filled(0)
+		if not await _pause(LOOP_PAUSE):
+			return
+		for count: int in range(1, BIG_CAPACITY + 1):
+			basket.receive(0.8)
+			basket.set_filled(count)
+			if not await _pause(0.5):
+				return
+		basket.pulse_band()
+		if not await _pause(AFTER_TAP_PAUSE + 0.8):
+			return
+
+
+## Çarşaf: iki parçayı örter; dokununca kalkar, altındakiler görünür.
+func _demo_sheet() -> void:
+	_rope()
+	while _alive:
+		var under_a: GarmentView = _garment(MID_X - PAIR_GAP * 0.7, 0, TOKEN_KIND, 0)
+		var under_b: GarmentView = _garment(MID_X + PAIR_GAP * 0.7, 3, DRESS_KIND, 0)
+		var sheet: GarmentView = _garment(MID_X, 1, TOWEL_KIND, 1)
+		sheet.make_sheet(SHEET_SIZE.x, SHEET_SIZE.y)
+		sheet.position.y += 12.0
+		if not await _pause(LOOP_PAUSE + 1.0):
+			return
+		_hand.tap_once(sheet.position + Vector2(0.0, SHEET_SIZE.y * HAND_TARGET_RATIO))
+		if not await _pause(Motion.OVERLAY_FADE_SECONDS + 0.2):
+			return
+		var lift: Tween = sheet.create_tween().set_parallel(true)
+		lift.tween_property(sheet, "position:y", sheet.position.y - SHEET_LIFT, 0.45)\
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		lift.tween_property(sheet, "modulate:a", 0.0, 0.45)
+		if not await _pause(AFTER_TAP_PAUSE + 1.0):
+			return
+		for view: GarmentView in [under_a, under_b, sheet]:
+			view.queue_free()
+
+
+## Çorap çifti: iki çorap halka rozetiyle bağlı; biri vurgulanır ("birlikte").
+func _demo_sock_pair() -> void:
+	_rope()
+	var basket: BasketView = _mini_basket(MID_X, 3)
+	while _alive:
+		var left: GarmentView = _garment(MID_X - PAIR_GAP * 0.95, 0, SOCK_KIND)
+		var right: GarmentView = _garment(MID_X + PAIR_GAP * 0.95, 0, SOCK_KIND)
+		left.set_sock()
+		right.set_sock()
+		if not await _pause(LOOP_PAUSE + 0.8):
+			return
+		left.hint()
+		right.hint()
+		if not await _pause(AFTER_TAP_PAUSE + 0.8):
+			return
+		left.queue_free()
+		right.queue_free()
+
+
+## Boya: damla rozetinin sayacı iner; bitince yanındaki parça boya rengine döner.
+func _demo_dye() -> void:
+	_rope()
+	while _alive:
+		var source: GarmentView = _garment(MID_X - PAIR_GAP * 0.55, DYE_COLOR, TOKEN_KIND)
+		var neighbour: GarmentView = _garment(MID_X + PAIR_GAP * 0.55, 1, DRESS_KIND)
+		source.set_dye(DYE_COUNT, _colors[DYE_COLOR % _colors.size()])
+		if not await _pause(LOOP_PAUSE + 0.9):
+			return
+		for left: int in range(DYE_COUNT - 1, -1, -1):
+			source.set_dye_left(left)
+			if not await _pause(FRAME_SECONDS):
+				return
+		neighbour.recolor(_colors[DYE_COLOR % _colors.size()])
+		if not await _pause(AFTER_TAP_PAUSE + 1.2):
+			return
+		source.queue_free()
+		neighbour.queue_free()
 
 
 ## Türlü sepet: gerçek sepet + önünde türün rozeti (oyundakiyle aynı KindBadge).

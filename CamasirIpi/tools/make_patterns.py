@@ -90,7 +90,57 @@ def g_plus(d, s):
 GLYPHS = [None, g_stripes, g_dots, g_checks, g_diag, g_zigzag, g_plus]
 
 
+# --- Mevsim işaretleri için kontur (okunabilirlik) ---------------------------------------------
+# Neden: turuncu yaprak turuncu/kırmızı/sarı çamaşırda, beyaz kar tanesi açık sarıda, sarı polen bej tozda
+# kayboluyordu. Sprite'ın etrafına ince koyu/soğuk bir kontur çekilir; renkten bağımsız okunur.
+# Tuval boyu DEĞİŞMEZ (oyun ölçeği dokunun boyundan hesaplar): çizim kontur payı kadar küçülür.
+# Tekrar çalıştırmak güvenlidir (PNG üst verisinde işaret var; ikinci kez kontur çekilmez).
+
+SEASON_DIR = Path(__file__).resolve().parents[1] / "assets" / "sprites" / "seasons_fx"
+OUTLINES = {
+    # ad: (kontur rengi RGBA, kontur genişliği px, gölge opaklığı)
+    "leaf": ((74, 36, 16, 235), 6, 0.30),
+    "icon_frost": ((86, 130, 190, 235), 6, 0.0),
+    "icon_pollen": ((150, 98, 30, 235), 6, 0.0),
+}
+OUTLINE_MARK = "outlined"
+
+
+def outline_season_sprites():
+    from PIL import ImageFilter, PngImagePlugin
+    for name, (ink, width, shadow) in OUTLINES.items():
+        path = SEASON_DIR / f"{name}.png"
+        src = Image.open(path)
+        if src.info.get(OUTLINE_MARK):
+            print("zaten konturlu", name)
+            continue
+        src = src.convert("RGBA")
+        w, h = src.size
+        inner = (w - 2 * width, h - 2 * width)
+        body = src.resize(inner, Image.LANCZOS)
+        layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        layer.alpha_composite(body, (width, width))
+        alpha = layer.getchannel("A")
+        grown = alpha.filter(ImageFilter.MaxFilter(width * 2 + 1)).filter(ImageFilter.GaussianBlur(0.8))
+        out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        if shadow > 0.0:
+            soft = Image.new("RGBA", (w, h), (30, 20, 10, 255))
+            soft.putalpha(grown.filter(ImageFilter.GaussianBlur(width * 0.9)).point(lambda v: int(v * shadow)))
+            out.alpha_composite(soft, (0, width // 2))
+        ring = Image.new("RGBA", (w, h), ink[:3] + (255,))
+        ring.putalpha(grown.point(lambda v: int(v * ink[3] / 255)))
+        out.alpha_composite(ring)
+        out.alpha_composite(layer)
+        info = PngImagePlugin.PngInfo()
+        info.add_text(OUTLINE_MARK, "1")
+        out.save(path, pnginfo=info)
+        print("kontur eklendi", name)
+
+
 def main():
+    if "--outlines" in __import__("sys").argv:
+        outline_season_sprites()
+        return
     atlas = Image.new("RGBA", (CELL * COUNT, CELL), (255, 255, 255, 0))
     for i, fn in enumerate(GLYPHS):
         if fn is None:

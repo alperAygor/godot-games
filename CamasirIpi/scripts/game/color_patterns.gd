@@ -96,8 +96,13 @@ static func enabled() -> bool:
 
 
 ## `persist=false`: yalnız bellekte (test/ekran görüntüsü aracı oyuncu kaydına dokunmasın).
+## Ayar değişince sahnedeki çamaşır/sepet/rozetler HEMEN yenilenir (`refresh_all`): ayar satırı
+## ayrıca bir şey çağırmak zorunda kalmaz, desen bir sonraki seviyeyi beklemez.
 static func set_enabled(value: bool, persist: bool = true) -> void:
+	var changed: bool = _cached != (1 if value else 0)
 	_cached = 1 if value else 0
+	if changed:
+		refresh_all(Engine.get_main_loop() as SceneTree)
 	if not persist:
 		return
 	var progress: Node = _progress()
@@ -108,6 +113,28 @@ static func set_enabled(value: bool, persist: bool = true) -> void:
 ## Önbelleği unutur (kayıt sıfırlama/yükleme sonrası).
 static func reset_cache() -> void:
 	_cached = -1
+
+
+## Ağaçtaki tüm desen yüzeylerini bugünkü ayara göre yeniler: çamaşır materyalleri, sepet astarı ve
+## `_draw` ile çizilen glifler (kuyruk noktası, kilit/boya rozeti, sipariş hapı, makine yuvası).
+## Neden ağaç gezisi: tek seferlik (ayar anahtarı çevrilince) ve yüzlerce düğümden fazla değil;
+## her yüzeyi bir gruba kaydettirmek ek bağımlılık ve unutma riski getirirdi.
+static func refresh_all(tree: SceneTree) -> void:
+	if tree == null or tree.root == null:
+		return
+	_refresh_node(tree.root)
+
+
+static func _refresh_node(node: Node) -> void:
+	if node is GarmentView:
+		(node as GarmentView).refresh_pattern()
+	elif node is BasketView and node.get("_band_back") != null:
+		# Astar materyali özel yöntemle verilir; sepet dosyası bu işin dışında kaldığı için çağrı dolaylıdır.
+		node.call("_apply_band_pattern", node.get("color"))
+	if node is CanvasItem and not (node is Sprite2D):
+		(node as CanvasItem).queue_redraw()
+	for child: Node in node.get_children():
+		_refresh_node(child)
 
 
 static func _progress() -> Node:
@@ -156,6 +183,20 @@ static func apply_garment(view: Node2D, material: ShaderMaterial, color_a: Color
 
 
 ## İki renk numarası: ikincisi geçerliyse sol yarı `id_a`, sağ yarı `id_b` deseni alır.
+## İkinci rengin (çift renkli çamaşırın sağ-alt yarısı) deseni: yalnız ikinci katmanın kendi
+## materyaline yazılır. Neden ayrı materyal: iki yarı aynı sprite'tır, tek materyalde tek desen olurdu.
+static func apply_second(view: Node2D, material: ShaderMaterial, color_b: Color, hidden: bool, open: bool) -> void:
+	var state: Dictionary = {
+		"id": pattern_for(color_id_of(color_b), hidden),
+		"id_b": NONE,
+		"split": false,
+		"strength": 1.0 if open else CLOSED_STRENGTH,
+		"light": light_ink(color_id_of(color_b)),
+		"light_b": 0.0,
+	}
+	_write(material, state, _garment_cells(view))
+
+
 static func apply_ids(view: Node2D, material: ShaderMaterial, id_a: int, id_b: int, strength: float,
 		hidden: bool) -> void:
 	var split: bool = id_b >= 0 and id_b != id_a
@@ -279,7 +320,9 @@ static func glyph_region(color_id: int) -> Rect2:
 
 ## Noktanın içine desen glifi çizer. `canvas` `_draw` içindeki düğüm; `radius` noktanın yarıçapı;
 ## Glifin koyu/açık tonu renk numarasından seçilir. Desen kapalı / düz renk: hiçbir şey çizmez.
-static func draw_glyph(canvas: CanvasItem, center: Vector2, radius: float, color_id: int) -> void:
+## `alpha_scale`: üstüne sayı yazılan rozetlerde glifi biraz silikleştirir (sayı okunur kalsın).
+static func draw_glyph(canvas: CanvasItem, center: Vector2, radius: float, color_id: int,
+		alpha_scale: float = 1.0) -> void:
 	if pattern_for(color_id) < 1:
 		return
 	var atlas: Texture2D = glyph_texture()
@@ -288,8 +331,8 @@ static func draw_glyph(canvas: CanvasItem, center: Vector2, radius: float, color
 	var side: float = radius * GLYPH_SPAN
 	var rect: Rect2 = Rect2(center - Vector2(side, side) * 0.5, Vector2(side, side))
 	var dark_ink: bool = light_ink(color_id) < 0.5
-	var ink: Color = Color(GLYPH_DARK.r, GLYPH_DARK.g, GLYPH_DARK.b, GLYPH_ALPHA_ON_LIGHT) if dark_ink \
-		else Color(1.0, 1.0, 1.0, GLYPH_ALPHA_ON_DARK)
+	var ink: Color = Color(GLYPH_DARK.r, GLYPH_DARK.g, GLYPH_DARK.b, GLYPH_ALPHA_ON_LIGHT * alpha_scale) if dark_ink \
+		else Color(1.0, 1.0, 1.0, GLYPH_ALPHA_ON_DARK * alpha_scale)
 	canvas.draw_texture_rect_region(atlas, rect, glyph_region(color_id), ink)
 
 

@@ -41,6 +41,12 @@ const WOBBLE_SECONDS: float = 0.09
 const FLASH_SECONDS: float = 0.16
 const PIN_COLOR: Color = Color("c99a5b")
 const CIRCLE_TEXTURE_SIZE: int = 128
+## Kilit rozeti: beyaz halka ve anahtar rengi noktasının yarıçapı (boy oranı).
+const LOCK_RING_RATIO: float = 0.18
+const LOCK_KEY_RATIO: float = 0.13
+const LOCK_RING_COLOR: Color = Color(1.0, 1.0, 1.0, 0.96)
+## Boya rozetinde glif, üstündeki sayıyı bastırmasın diye silik çizilir.
+const DYE_GLYPH_ALPHA: float = 0.7
 
 ## Çamaşır bir sepete/askıya oturduğu an (iniş başlangıcı) yayılır.
 signal landed
@@ -166,6 +172,8 @@ func _cloth_material(silhouette: bool) -> ShaderMaterial:
 func _set_param(param: StringName, value: float) -> void:
 	if _material != null:
 		_material.set_shader_parameter(param, value)
+	if _dual_material != null:
+		_dual_material.set_shader_parameter(param, value)
 	if _shadow_material != null:
 		_shadow_material.set_shader_parameter(param, value)
 
@@ -285,15 +293,14 @@ func _reveal() -> void:
 func set_lock(key_color: Color) -> void:
 	_lock_color = key_color
 	_locked = true
-	_badge = Node2D.new()
-	_badge.position = Vector2(0.0, size * 0.45)
+	# Tek çizim düğümü (eskiden iki Sprite2D): beyaz halka + anahtar rengi + renk körü deseni glifi.
+	var badge: LockBadge = LockBadge.new()
+	badge.outer = size * LOCK_RING_RATIO
+	badge.inner = size * LOCK_KEY_RATIO
+	badge.key_color = key_color
+	badge.position = Vector2(0.0, size * 0.45)
+	_badge = badge
 	add_child(_badge)
-	for spec: Array in [[0.36, Color(1.0, 1.0, 1.0, 0.96)], [0.26, key_color]]:
-		var dot: Sprite2D = Sprite2D.new()
-		dot.texture = circle_texture()
-		dot.scale = Vector2.ONE * (size * float(spec[0]) / float(CIRCLE_TEXTURE_SIZE))
-		dot.modulate = spec[1] as Color
-		_badge.add_child(dot)
 
 
 func unlock() -> void:
@@ -567,9 +574,26 @@ func _shade(base: Color) -> Color:
 func _apply_color() -> void:
 	if _sprite != null:
 		_sprite.modulate = _shown_color()
-		ColorPatterns.apply_garment(self, _material, color, _mystery, _open)  # [PATTERN] renk körü deseni (gizemde yok)
+		_apply_pattern()
 	if _dual_sprite != null:
 		_dual_sprite.modulate = _shade(_dual_color)
+	queue_redraw()
+
+
+## Renk körü deseni: gizemli VE polen tozlu çamaşırda desen yoktur (renk gizlidir, desen onu sızdırırdı).
+## Çift renkte ikinci yarı kendi materyalinden kendi desenini alır.
+func _apply_pattern() -> void:
+	if _sprite == null:
+		return
+	var hidden: bool = _mystery or _dusty
+	ColorPatterns.apply_garment(self, _material, color, hidden, _open)  # [PATTERN] renk körü deseni
+	if _dual_material != null:
+		ColorPatterns.apply_second(self, _dual_material, _dual_color, hidden, _open)
+
+
+## Desen ayarı değişince (ColorPatterns.refresh_all) canlı yenileme.
+func refresh_pattern() -> void:
+	_apply_pattern()
 	queue_redraw()
 
 
@@ -743,6 +767,8 @@ func recolor(tint: Color, animate: bool = true) -> void:
 	if _sprite == null or not animate:
 		_apply_color()
 		return
+	# Renk yumuşakça geçer ama desen yeni rengin desenine hemen döner (yoksa eski renkten kalırdı).
+	_apply_pattern()
 	var shift: Tween = _sprite.create_tween()
 	shift.tween_property(_sprite, "modulate", _shown_color(), RECOLOR_SECONDS)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
@@ -782,6 +808,18 @@ class SockBadge extends Node2D:
 		draw_arc(Vector2(ring * 0.55, 0.0), ring, 0.0, TAU, 24, ink, width, true)
 
 
+## Kilit rozeti: beyaz halka içinde anahtar rengi nokta; renk körü için noktanın içinde desen glifi.
+class LockBadge extends Node2D:
+	var outer: float = 36.0
+	var inner: float = 26.0
+	var key_color: Color = Color.WHITE
+
+	func _draw() -> void:
+		draw_circle(Vector2.ZERO, outer, GarmentView.LOCK_RING_COLOR, true, -1.0, true)
+		draw_circle(Vector2.ZERO, inner, key_color, true, -1.0, true)
+		ColorPatterns.draw_glyph(self, Vector2.ZERO, inner, ColorPatterns.color_id_of(key_color))
+
+
 ## Boya rozeti: boya renginde damla + beyaz geri sayım rakamı.
 class DyeBadge extends Node2D:
 	var radius: float = 24.0
@@ -812,10 +850,13 @@ class DyeBadge extends Node2D:
 		var body: Color = tint.darkened(0.08)
 		var tip: PackedVector2Array = PackedVector2Array([
 			Vector2(-radius * 0.72, -radius * 0.25), Vector2(0.0, -radius * 1.55), Vector2(radius * 0.72, -radius * 0.25)])
-		if urgent:
+		var glyph_id: int = ColorPatterns.color_id_of(tint)
+		# Desen açıkken halka hep vardır: aynı renkli çamaşırın üstünde de damla ve desen seçilsin.
+		if urgent or ColorPatterns.pattern_for(glyph_id) >= ColorPatterns.SOLID:
 			draw_circle(Vector2.ZERO, radius * 1.18, Color(1.0, 1.0, 1.0, 0.9), true, -1.0, true)
 		draw_colored_polygon(tip, body)
 		draw_circle(Vector2.ZERO, radius, body, true, -1.0, true)
+		ColorPatterns.draw_glyph(self, Vector2.ZERO, radius, glyph_id, GarmentView.DYE_GLYPH_ALPHA)
 
 
 # --- Kural çeşitlemeleri: lekeli, zincirli mandal, rüzgâr ------------------------------------
@@ -1102,7 +1143,7 @@ const DUST_VEIL: Color = Color(1.0, 0.95, 0.8, 0.35)
 const DUST_MARK: Color = Color(1.0, 0.86, 0.38, 0.95)
 ## İşaretlerin gövde çapasına göre yerleri (boy oranı) ve büyüklüğü.
 const OVERLAY_MARKS: Array[Vector2] = [Vector2(-0.16, -0.12), Vector2(0.15, 0.02), Vector2(-0.05, 0.16)]
-const OVERLAY_MARK_RATIO: float = 0.2
+const OVERLAY_MARK_RATIO: float = 0.25
 const FROST_WARM_TINT: Color = Color(1.0, 0.86, 0.7, 0.85)
 const FROST_THAW_SECONDS: float = 0.6
 ## Polen tozu: renk gizlenir (sıcak bej), üstünde benekli toz.
@@ -1113,6 +1154,8 @@ const DUST_FADE_SECONDS: float = 0.35
 var _dual_color: Color = Color.WHITE
 var _dual_mask: Sprite2D = null
 var _dual_sprite: Sprite2D = null
+## İkinci yarının kendi materyali (ana materyalin kopyası): iki yarı farklı desen taşıyabilsin.
+var _dual_material: ShaderMaterial = null
 var _sun_badge: SunBadge = null
 var _faded: bool = false
 var _leaf: Sprite2D = null
@@ -1176,7 +1219,10 @@ func _make_dual_layer(area: Vector2) -> Sprite2D:
 	var copy: Sprite2D = Sprite2D.new()
 	copy.texture = _sprite.texture
 	copy.centered = false
-	copy.material = _material
+	# Ana materyalin kopyası: sallanma değerleri aynı başlar, `_set_param` ikisini birlikte günceller;
+	# yalnız desen farklıdır (sağ-alt yarı ikinci rengin deseni).
+	_dual_material = _material.duplicate() as ShaderMaterial
+	copy.material = _dual_material
 	# Maskenin ölçeği geri alınır: kopya ana sprite ile aynı piksellerde durur.
 	copy.scale = _sprite.scale / mask.scale
 	mask.add_child(copy)
@@ -1195,6 +1241,8 @@ func settle_dual(tint: Color, animate: bool = true) -> void:
 	var mask: Sprite2D = _dual_mask
 	_dual_mask = null
 	_dual_sprite = null
+	# Eriyen yarı kendi (eski) desenini taşımaya devam eder; ana materyal artık tek renk desenidir.
+	_dual_material = null
 	color = tint
 	_apply_color()
 	if not animate:
@@ -1416,6 +1464,8 @@ func set_dusty(dusty: bool, animate: bool = true) -> void:
 		else:
 			_dust.modulate.a = target
 	if _sprite != null and animate:
+		# Toz renk gibi yumuşak gelir; ama desen rengi sızdırmasın diye anında kapanır/açılır.
+		_apply_pattern()
 		var shift: Tween = _sprite.create_tween()
 		shift.tween_property(_sprite, "modulate", _shown_color(), DUST_FADE_SECONDS)
 		if _dual_sprite != null:
