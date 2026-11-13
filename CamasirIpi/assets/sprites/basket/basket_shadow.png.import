@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bu6oavwpon7ox"
-path="res://.godot/imported/basket_body.png-9a23605b2af615b08237c4e53fe8f8a7.ctex"
+uid="uid://dcaatfk5a6qfs"
+path="res://.godot/imported/basket_shadow.png-aa34abb333e60cfd7118b7fe8f93aa17.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/basket_body.png"
-dest_files=["res://.godot/imported/basket_body.png-9a23605b2af615b08237c4e53fe8f8a7.ctex"]
+source_file="res://assets/sprites/basket/basket_shadow.png"
+dest_files=["res://.godot/imported/basket_shadow.png-aa34abb333e60cfd7118b7fe8f93aa17.ctex"]
 
 [params]
 
