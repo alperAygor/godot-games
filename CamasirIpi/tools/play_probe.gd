@@ -21,6 +21,9 @@ var _lose_taps: Array[int] = []
 
 
 func _initialize() -> void:
+	# Prob oyuncunun gerçek kaydını ASLA ezmemeli.
+	var progress: Node = root.get_node("Progress")
+	progress.set("persist", false)
 	_queue = LEVELS.duplicate()
 
 
@@ -61,6 +64,8 @@ func _process(_delta: float) -> bool:
 				_fail("seviye kazanılmadı ya da katman yok")
 			_phase = "load"
 		"lose_load":
+			# Seri bonusu (+1 askı) kayıp senaryosunu bozmasın diye ilerleme sıfırlanır.
+			root.get_node("Progress").call("reset_state")
 			# Kesin kayıp: askı dolunca sepete gidebilecek açık parça kalmayan elle kurulmuş seviye.
 			_load_level(1, _losing_level())
 			_lose_taps = [0, 1, 2, 3]

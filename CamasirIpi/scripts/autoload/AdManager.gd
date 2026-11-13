@@ -3,12 +3,18 @@ extends Node
 ## Ödüllü reklam orkestrasyonu. SDK bilmez; `AdsProvider` ile konuşur.
 ## Ödül YALNIZCA sağlayıcıdan `rewarded` geldikten sonra verilir (idempotent).
 
-enum Placement { EXTRA_POCKET, TAPE_RESCUE, DOUBLE_REWARD }
+## Eski üç yerleşim korunur; ekonomi yerleşimleri sona eklendi (sıra numaraları değişmez).
+## INTERSTITIAL ödüllü değildir: `show_interstitial()` ile gösterilir, ödül sinyali vermez.
+enum Placement { EXTRA_POCKET, TAPE_RESCUE, DOUBLE_REWARD, REVIVE_EXTRA_SLOT, DOUBLE_COINS, REFILL_BOOSTER, INTERSTITIAL }
 
 const PLACEMENT_KEYS: Dictionary = {
 	Placement.EXTRA_POCKET: "EXTRA_POCKET",
 	Placement.TAPE_RESCUE: "TAPE_RESCUE",
 	Placement.DOUBLE_REWARD: "DOUBLE_REWARD",
+	Placement.REVIVE_EXTRA_SLOT: "REVIVE_EXTRA_SLOT",
+	Placement.DOUBLE_COINS: "DOUBLE_COINS",
+	Placement.REFILL_BOOSTER: "REFILL_BOOSTER",
+	Placement.INTERSTITIAL: "INTERSTITIAL",
 }
 
 const LIMITS_PATH: String = "res://data/ads.json"
@@ -18,11 +24,17 @@ const DEFAULT_LIMITS: Dictionary = {
 	"EXTRA_POCKET": {"per_run": 1, "per_session": 3},
 	"TAPE_RESCUE": {"per_run": 1, "per_session": 5},
 	"DOUBLE_REWARD": {"per_run": 1, "per_session": 3},
+	"REVIVE_EXTRA_SLOT": {"per_run": 1, "per_session": 30},
+	"DOUBLE_COINS": {"per_run": 1, "per_session": 30},
+	"REFILL_BOOSTER": {"per_run": 3, "per_session": 30},
+	"INTERSTITIAL": {"per_run": 99, "per_session": 999},
 }
 
 signal ad_started(placement: Placement)
 signal rewarded_finished(placement: Placement, success: bool)
 signal ad_failed(placement: Placement, reason: String)
+## Geçiş reklamı bitti (success=false: gösterilemedi); akış her iki durumda da devam eder.
+signal interstitial_finished(success: bool)
 
 var provider: AdsProvider = null
 
@@ -78,6 +90,16 @@ func show_rewarded(placement: Placement) -> void:
 	ad_started.emit(placement)
 
 
+## Geçiş reklamı: sıklık kararı `AdPacing`de; burası yalnız sağlayıcıyı çalıştırır.
+func show_interstitial() -> bool:
+	if _pending != -1 or provider == null or not provider.is_ready(Placement.INTERSTITIAL):
+		return false
+	_pending = Placement.INTERSTITIAL
+	provider.show(Placement.INTERSTITIAL)
+	ad_started.emit(Placement.INTERSTITIAL)
+	return true
+
+
 func reset_run_limits() -> void:
 	_used_run.clear()
 	_pending = -1
@@ -103,6 +125,9 @@ func _on_provider_rewarded() -> void:
 		return
 	var placement: Placement = _pending
 	_pending = -1
+	if placement == Placement.INTERSTITIAL:
+		interstitial_finished.emit(true)
+		return
 	var key: String = PLACEMENT_KEYS.get(placement, "")
 	_used_run[key] = int(_used_run.get(key, 0)) + 1
 	_used_session[key] = int(_used_session.get(key, 0)) + 1
@@ -114,6 +139,9 @@ func _on_provider_failed(reason: String) -> void:
 		return
 	var placement: Placement = _pending
 	_pending = -1
+	if placement == Placement.INTERSTITIAL:
+		interstitial_finished.emit(false)
+		return
 	rewarded_finished.emit(placement, false)
 	ad_failed.emit(placement, reason)
 
