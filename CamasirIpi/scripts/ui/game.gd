@@ -40,9 +40,6 @@ const BASKET_GARMENT_SCALE: float = 0.42
 const QUEUE_Y: float = 1772.0
 const QUEUE_DOT: float = 20.0
 const QUEUE_SHOWN: int = 6
-## Yığın basarken/içine çökerken parçaların sepet içindeki hedef sapmaları.
-const ABSORB_DROP_RATIO: float = 0.1
-const ABSORB_SCALE: Vector2 = Vector2(0.8, 0.5)
 const MS_PER_SECOND: float = 1000.0
 const PUFF_COLOR: Color = Color(1.0, 1.0, 1.0, 0.55)
 const PUFF_SPEED_MIN: float = 30.0
@@ -392,6 +389,8 @@ func _on_basket_landed(index: int, stack_index: int, view: GarmentView) -> void:
 	basket.set_filled(stack_index + 1)
 	if is_instance_valid(view):
 		_puff(view.global_position)
+		# [sepet kancası] Parça sepetin yığınına geçer: ön duvarın arkasında, sepetle birlikte hareket eder.
+		basket.adopt(view, stack_index)
 	AudioService.play_pitched("fold_puff", randf_range(1.0, 1.12), LAND_SOUND_DB)
 
 
@@ -403,16 +402,8 @@ func _complete_basket(index: int, chain_step: int = 1) -> void:
 	var basket: BasketView = _baskets[index]
 	var pieces: Array = _basket_items[index]
 	# 1) Yığın basar: parçalar birbirine yaklaşır, sepet çöker.
+	# [sepet kancası] Parçalar sepetin yığın düğümünde: sıkışmayı sepet kendi yığınıyla yapar.
 	basket.press(Motion.COMPLETE_PRESS_SECONDS)
-	for position_in_stack: int in range(pieces.size()):
-		var piece: GarmentView = pieces[position_in_stack] as GarmentView
-		var squeezed: Vector2 = basket.slot_position(0) + Vector2(0.0,
-			-float(position_in_stack) * basket.size * 0.19 * Motion.COMPLETE_PRESS_RATIO)
-		var press: Tween = piece.create_tween().set_parallel(true)
-		press.tween_property(piece, "global_position", squeezed, Motion.COMPLETE_PRESS_SECONDS)\
-			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		press.tween_property(piece, "scale", Vector2(1.04, 0.88), Motion.COMPLETE_PRESS_SECONDS)\
-			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	if not await _wait(Motion.COMPLETE_PRESS_SECONDS + Motion.COMPLETE_HOLD_SECONDS):
 		return
 	# 2) Parıltı + bant nabzı + sesler.
@@ -425,21 +416,11 @@ func _complete_basket(index: int, chain_step: int = 1) -> void:
 	AudioService.play_pitched("note", pow(COMBO_SEMITONE, float(mini(_combo, COMBO_MAX_STEPS)) * 2.0), -5.0)
 	_sparkle(basket.rest_position + Vector2(0.0, -BASKET_SIZE * 0.3), basket.color)
 	basket.pulse_band()
-	# 3) Parçalar sepetin içine karışıp solar.
-	for garment: Variant in pieces:
-		var piece: GarmentView = garment as GarmentView
-		var absorb: Tween = piece.create_tween().set_parallel(true)
-		absorb.tween_property(piece, "global_position",
-			basket.rest_position + Vector2(0.0, -BASKET_SIZE * ABSORB_DROP_RATIO), Motion.COMPLETE_ABSORB_SECONDS)\
-			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-		absorb.tween_property(piece, "scale", ABSORB_SCALE, Motion.COMPLETE_ABSORB_SECONDS)\
-			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-		absorb.tween_property(piece, "modulate:a", 0.0, Motion.COMPLETE_ABSORB_SECONDS * 0.7)\
-			.set_delay(Motion.COMPLETE_ABSORB_SECONDS * 0.3)
+	# 3) Parçalar sepetin içine çöker (ön duvarın arkasına iner).
+	# [sepet kancası] Solup silinmezler: sepet yığını içinde taşıyarak gider, gidince serbest bırakır.
+	basket.sink_pile(Motion.COMPLETE_ABSORB_SECONDS)
 	if not await _wait(Motion.COMPLETE_ABSORB_SECONDS):
 		return
-	for garment: Variant in pieces:
-		(garment as GarmentView).queue_free()
 	pieces.clear()
 	# 4) Sepet yavaşça kayıp gider; yenisi (BASKET_NEW) kayma bitince gelir.
 	basket.leave()
@@ -1136,6 +1117,8 @@ func _rebuild_from_board() -> void:
 			folded.modulate = Color.WHITE.darkened(Motion.STACK_SHADE * float(2 - stack_index))
 			var tilt: float = Motion.STACK_TILT_DEGREES * (1.0 if stack_index % 2 == 0 else -1.0)
 			folded.snap_to(_baskets[index].slot_position(stack_index), 1.0, _baskets[index].folded_width(), tilt)
+			# [sepet kancası] Geri al sonrası da parça sepetin yığınında (ön duvarın arkasında) durur.
+			_baskets[index].adopt(folded, stack_index)
 			_basket_items[index].append(folded)
 		_baskets[index].set_filled(contents.size())
 	_refresh_open()

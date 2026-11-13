@@ -1029,23 +1029,182 @@ def tube(name, points, radius, mat, cyclic=False, resolution=6, tone=None):
     return obj
 
 
-BASKET_TOP, BASKET_BOTTOM = 0.27, -0.3
-STAKES = 28
-BASKET_LINER = False
+# Sepet v2 (katmanlı, assets/sprites/basket/): oyunda katlanmış çamaşırlar sepetin İÇİNE girsin diye aynı kameradan
+# ayrı katmanlar render edilir:
+#   basket_back  : iç arka duvar örgüsü + taban + arka kenar (çamaşırların ARKASINDA çizilir)
+#   band_back    : astarın arka yarısı (nötr beyaz; oyunda sepet rengiyle çarpılır)
+#   basket_front : ön duvar + kulplar (çamaşırların ÖNÜNDE; alt kısımlarını keser)
+#   band_front   : astarın ön yarısı (ön kenardaki kalın kumaş rulo)
+#   basket_shadow: çimdeki yumuşak temas gölgesi -> tools/post_sprites.py üretir (ayak izinden)
+# Bölme geometri kesmeden, gölgelendiricide yapılır: dünya y<0 (kameraya bakan yarı) "ön"dür.
+# Katmana ait olmayan yüzey yalnız KAMERA ışınları için saydamdır; gölge/sekme ışınları için katı
+# kalır -> dört katmanın ışığı birebir aynıdır, üst üste konunca dikiş görünmez.
+BASKET_TOP, BASKET_BOTTOM = 0.25, -0.3
+STAKES = 30
 ROWS = 11
+# Hafif oval ağız: yandan tutulan çamaşır sepeti gibi, kulplar uzun eksenin uçlarında.
+BASKET_OVAL = 1.07
+BASKET_TILT = 34.0
+BASKET_ORTHO = 1.22
+BASKET_RES = 512
+# Astar: kenarda dolgun kumaş rulo + içe ve dışa sarkan büzgülü etek.
+CUFF_MINOR = 0.054
+SKIRT_IN_DEPTH = 0.2
+SKIRT_OUT_DEPTH = 0.13
+# İç yüzün dipte ne kadar koyulaşacağı (0 = hiç).
+INNER_SHADE = 0.6
+BAND_INNER_SHADE = 0.42
+# Ön katmanın arka yarıya taşma payı (dünya birimi).
+SEAM_OVERLAP = 0.03
+FLOOR_Z = BASKET_BOTTOM + 0.03
+
+_LAYER_PASS = "back"      # "back" | "front"
+_LAYER_TARGET = "body"    # "body" | "band"
 
 
 def basket_radius(z):
     t = (z - BASKET_BOTTOM) / (BASKET_TOP - BASKET_BOTTOM)
-    return 0.345 + 0.085 * t + 0.02 * math.sin(math.pi * t)
+    return 0.34 + 0.09 * t + 0.02 * math.sin(math.pi * t)
+
+
+def layer_wrap(mat, kind, target):
+    """Malzemeyi geçerli katmana göre sarar. kind: "wall" (y'ye göre ön/arka bölünür) ya da
+    "inside" (her zaman arka). target: bu yüzey "body" mi "band" mı (renklenen astar)."""
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+    out = nodes["Material Output"]
+    surface = out.inputs["Surface"].links[0].from_socket
+    path = nodes.new("ShaderNodeLightPath")
+    if target != _LAYER_TARGET:
+        # Hedef dışı ama bu katmandaki yüzey: kamerada delik (holdout) -> öbür hedef katmanı oraya oturur.
+        hold = nodes.new("ShaderNodeHoldout")
+        mix = nodes.new("ShaderNodeMixShader")
+        links.new(path.outputs["Is Camera Ray"], mix.inputs[0])
+        links.new(surface, mix.inputs[1])
+        links.new(hold.outputs[0], mix.inputs[2])
+        surface = mix.outputs[0]
+    clear = nodes.new("ShaderNodeBsdfTransparent")
+    mix = nodes.new("ShaderNodeMixShader")
+    fac = nodes.new("ShaderNodeMath")
+    fac.operation = "MULTIPLY"
+    links.new(path.outputs["Is Camera Ray"], fac.inputs[0])
+    if kind == "wall":
+        geo = nodes.new("ShaderNodeNewGeometry")
+        sep = nodes.new("ShaderNodeSeparateXYZ")
+        links.new(geo.outputs["Position"], sep.inputs[0])
+        side = nodes.new("ShaderNodeMath")
+        # back geçişinde ön yarı (y<0) saydam; front geçişinde arka yarı (y>0) saydam.
+        # Ön katman yan birleşme yerinde arkayı biraz örter (aynı ışıkla render edildiği için fark
+        # edilmez): kenar yumuşatma pikselleri üst üste binip ince koyu bir dikiş çizgisi bırakmaz.
+        side.operation = "LESS_THAN" if _LAYER_PASS == "back" else "GREATER_THAN"
+        side.inputs[1].default_value = 0.0 if _LAYER_PASS == "back" else SEAM_OVERLAP
+        links.new(sep.outputs["Y"], side.inputs[0])
+        # Kesik borunun İÇİ (arka yüz) kamerada hiç görünmesin: kesitte siyah halka kalmaz.
+        either = nodes.new("ShaderNodeMath")
+        either.operation = "MAXIMUM"
+        links.new(side.outputs[0], either.inputs[0])
+        links.new(geo.outputs["Backfacing"], either.inputs[1])
+        links.new(either.outputs[0], fac.inputs[1])
+    else:
+        fac.inputs[1].default_value = 0.0 if _LAYER_PASS == "back" else 1.0
+    links.new(fac.outputs[0], mix.inputs[0])
+    links.new(surface, mix.inputs[1])
+    links.new(clear.outputs[0], mix.inputs[2])
+    links.new(mix.outputs[0], out.inputs["Surface"])
+    return mat
+
+
+def _ring_mesh(name, rings, cyclic_cols, mat):
+    """rings: [satır][sütun] (x,y,z) ızgarası -> yüzey (sütunlar çevresel olarak kapalı)."""
+    verts, faces = [], []
+    rows, cols = len(rings), len(rings[0])
+    for row in rings:
+        verts.extend(row)
+    for j in range(rows - 1):
+        for i in range(cols if cyclic_cols else cols - 1):
+            a = j * cols + i
+            b = j * cols + (i + 1) % cols
+            faces.append((a, b, b + cols, a + cols))
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(verts, [], faces)
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.scene.collection.objects.link(obj)
+    for poly in mesh.polygons:
+        poly.use_smooth = True
+    obj.data.materials.append(mat)
+    return obj
+
+
+def _strand_tube(name, path, radius, mat, strands=3, twist=5.0, tone=0.2):
+    """Kulp: yol çevresinde helis gibi burulmuş üç hasır lif (tek düz boru yerine dokunsal)."""
+    pts = np.asarray(chaikin(path, 2, closed=False))
+    out = []
+    for s in range(strands):
+        offs = []
+        for i in range(len(pts)):
+            tangent = pts[min(i + 1, len(pts) - 1)] - pts[max(i - 1, 0)]
+            tangent /= max(np.linalg.norm(tangent), 1e-9)
+            up = np.array([0.0, 1.0, 0.0])
+            normal = np.cross(tangent, up)
+            normal /= max(np.linalg.norm(normal), 1e-9)
+            phase = s / strands * math.tau + i / (len(pts) - 1) * twist * math.tau
+            offs.append(tuple(pts[i] + radius * 1.05 * (math.cos(phase) * normal + math.sin(phase) * up)))
+        out.append(tube(name, offs, radius, mat, resolution=6, tone=tone + 0.08 * s))
+    return out
+
+
+def inner_shade(mat, strength, floor=False, top=BASKET_TOP, bottom=BASKET_BOTTOM):
+    """İçeride derinlik: duvarın İÇ yüzü ve taban aşağı indikçe koyulaşır (yumuşak iç gölge).
+    Dışarıdan bakılan yüz etkilenmez; böylece ağız "derin bir oyuk" gibi okunur."""
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+    bsdf = nodes["Principled BSDF"]
+    source = bsdf.inputs["Base Color"].links[0].from_socket
+    geo = nodes.new("ShaderNodeNewGeometry")
+    sep = nodes.new("ShaderNodeSeparateXYZ")
+    links.new(geo.outputs["Position"], sep.inputs[0])
+    depth = nodes.new("ShaderNodeMapRange")
+    depth.inputs["From Min"].default_value = top
+    depth.inputs["From Max"].default_value = bottom
+    links.new(sep.outputs["Z"], depth.inputs["Value"])
+    if floor:
+        inner = depth.outputs["Result"]
+    else:
+        flat = nodes.new("ShaderNodeVectorMath")
+        flat.operation = "MULTIPLY"
+        flat.inputs[1].default_value = (1.0, 1.0, 0.0)
+        links.new(geo.outputs["Position"], flat.inputs[0])
+        facing = nodes.new("ShaderNodeVectorMath")
+        facing.operation = "DOT_PRODUCT"
+        links.new(geo.outputs["Normal"], facing.inputs[0])
+        links.new(flat.outputs[0], facing.inputs[1])
+        inward = nodes.new("ShaderNodeMapRange")
+        inward.inputs["From Min"].default_value = 0.0
+        inward.inputs["From Max"].default_value = -0.15
+        links.new(facing.outputs["Value"], inward.inputs["Value"])
+        both = nodes.new("ShaderNodeMath")
+        both.operation = "MULTIPLY"
+        links.new(inward.outputs["Result"], both.inputs[0])
+        links.new(depth.outputs["Result"], both.inputs[1])
+        inner = both.outputs[0]
+    amount = nodes.new("ShaderNodeMath")
+    amount.operation = "MULTIPLY_ADD"
+    amount.inputs[1].default_value = -strength
+    amount.inputs[2].default_value = 1.0
+    links.new(inner, amount.inputs[0])
+    mul = nodes.new("ShaderNodeVectorMath")
+    mul.operation = "SCALE"
+    links.new(source, mul.inputs[0])
+    links.new(amount.outputs[0], mul.inputs["Scale"])
+    links.new(mul.outputs[0], bsdf.inputs["Base Color"])
+    return mat
 
 
 def basket_parts():
-    """Örgü sepet: dikey çubuklar + aralarından alt-üst geçen yatay hasır sıralar."""
-    wicker = wicker_material("Wicker")
-    rng = random.Random(7)
+    """Örgü sepet + kumaş astar. Dönüş: katmanlara bölünecek tüm parçalar."""
     parts = []
-    # Dikey çubuklar (çoğu örgünün arkasında; aralardan görünür).
+    wall_wicker = layer_wrap(inner_shade(wicker_material("WickerWall"), INNER_SHADE), "wall", "body")
+    floor_wicker = layer_wrap(inner_shade(wicker_material("WickerFloor"), INNER_SHADE, floor=True), "inside", "body")
+    rng = random.Random(7)
+    # Dikey çubuklar.
     for k in range(STAKES):
         a = k / STAKES * math.tau
         pts = []
@@ -1053,8 +1212,8 @@ def basket_parts():
             z = BASKET_BOTTOM + (BASKET_TOP - 0.02 - BASKET_BOTTOM) * i / 12
             r = basket_radius(z)
             pts.append((r * math.cos(a), r * math.sin(a), z))
-        parts.append(tube("stake", pts, 0.013, wicker, tone=rng.uniform(0.0, 0.2)))
-    # Yatay örgü: her sıra çubuklar arasında içe/dışa dalgalanır, komşu sıra ters fazda.
+        parts.append(tube("stake", pts, 0.013, wall_wicker, tone=rng.uniform(0.0, 0.2)))
+    # Yatay yassı örgü: çubuklar arasında içe/dışa dalgalanır, komşu sıra ters fazda.
     pitch = (BASKET_TOP - 0.035 - BASKET_BOTTOM - 0.02) / (ROWS - 1)
     for row in range(ROWS):
         z0 = BASKET_BOTTOM + 0.02 + row * pitch
@@ -1066,8 +1225,7 @@ def basket_parts():
             r = basket_radius(z0) + 0.014 * weave
             z = z0 + 0.003 * math.sin(a * 3 + row)
             pts.append((r * math.cos(a), r * math.sin(a), z))
-        flat = tube("row", pts, pitch * 0.55, wicker, cyclic=True, resolution=8, tone=rng.uniform(0.0, 0.45))
-        # Hasır şerit yassıdır: kesit radyal yönde ezilir (yuvarlak ip gibi değil).
+        flat = tube("row", pts, pitch * 0.55, wall_wicker, cyclic=True, resolution=8, tone=rng.uniform(0.0, 0.45))
         co = get_co(flat)
         ang = np.arctan2(co[:, 1], co[:, 0])
         rv = np.hypot(co[:, 0], co[:, 1])
@@ -1076,83 +1234,182 @@ def basket_parts():
         co[:, 0], co[:, 1] = np.cos(ang) * rn, np.sin(ang) * rn
         set_co(flat, co)
         parts.append(flat)
-    # Taban halkası (kalın, yuvarlak) ve taban.
-    base_pts = [(basket_radius(BASKET_BOTTOM) * math.cos(i / 160 * math.tau),
-                 basket_radius(BASKET_BOTTOM) * math.sin(i / 160 * math.tau), BASKET_BOTTOM) for i in range(160)]
-    parts.append(tube("foot", base_pts, 0.026, wicker, cyclic=True, resolution=8, tone=0.15))
-    # İç astar: aralardan arka plan görünmesin; içi yumuşak, sıcak gölgede.
-    inner = principled("Inner", (0.45, 0.33, 0.2), 0.85)[0]
-    bpy.ops.mesh.primitive_cylinder_add(vertices=128, radius=1.0, depth=1.0, location=(0, 0, 0), end_fill_type="NOTHING")
-    liner = bpy.context.view_layer.objects.active
-    for v in liner.data.vertices:
-        z = BASKET_BOTTOM + (v.co.z + 0.5) * (BASKET_TOP - 0.01 - BASKET_BOTTOM)
-        r = basket_radius(z) - 0.03
-        length = math.hypot(v.co.x, v.co.y)
-        v.co.x, v.co.y, v.co.z = v.co.x / length * r, v.co.y / length * r, z
-    bpy.ops.object.shade_smooth()
-    liner.data.materials.append(inner)
-    parts.append(liner)
-    liner.hide_render = not BASKET_LINER
-    bpy.ops.mesh.primitive_circle_add(vertices=128, radius=basket_radius(BASKET_BOTTOM) - 0.02, fill_type="NGON",
-                                      location=(0, 0, BASKET_BOTTOM + 0.015))
-    floor = bpy.context.view_layer.objects.active
-    floor.data.materials.append(inner)
-    parts.append(floor)
-    # Arka duvarın dışında koyu perde: içeriden bakınca örgü aralıkları boşluk değil gölge görünür.
-    shade = principled("Backing", (0.3, 0.2, 0.11), 0.9)[0]
-    mesh = bpy.data.meshes.new("backing")
-    verts, faces = [], []
-    cols, rows = 64, 8
-    for j in range(rows + 1):
-        z = BASKET_BOTTOM + (BASKET_TOP - 0.03 - BASKET_BOTTOM) * j / rows
-        for i in range(cols + 1):
-            a = math.radians(35 + 110 * i / cols)
-            r = basket_radius(z) + 0.03
-            verts.append((r * math.cos(a), r * math.sin(a), z))
-    for j in range(rows):
-        for i in range(cols):
-            k = j * (cols + 1) + i
-            faces.append((k, k + 1, k + cols + 2, k + cols + 1))
-    mesh.from_pydata(verts, [], faces)
-    backing = bpy.data.objects.new("backing", mesh)
-    bpy.context.scene.collection.objects.link(backing)
-    backing.data.materials.append(shade)
-    parts.append(backing)
+    # Kalın taban halkası.
+    rb = basket_radius(BASKET_BOTTOM)
+    base_pts = [(rb * math.cos(i / 160 * math.tau), rb * math.sin(i / 160 * math.tau), BASKET_BOTTOM)
+                for i in range(160)]
+    parts.append(tube("foot", base_pts, 0.028, wall_wicker, cyclic=True, resolution=8, tone=0.15))
 
-    # Yan tutamaklar: ağzın altında, dışa taşan "D" biçimli hasır kulplar.
-    for side in (-1.0, 1.0):
+    # İç taban: koyu disk üstünde iç içe hasır halkalar (düz kahverengi değil, örgü okunur).
+    dark = layer_wrap(principled("FloorShade", (0.32, 0.22, 0.12), 0.9)[0], "inside", "body")
+    bpy.ops.mesh.primitive_circle_add(vertices=128, radius=rb - 0.01, fill_type="NGON", location=(0, 0, FLOOR_Z - 0.012))
+    disk = bpy.context.view_layer.objects.active
+    disk.data.materials.append(dark)
+    parts.append(disk)
+    ring_r = 0.03
+    ring_index = 0
+    while ring_r < rb - 0.03:
         pts = []
-        for i in range(41):
-            t = i / 40
-            z = 0.2 - 0.15 * t
-            pts.append((side * (basket_radius(z) - 0.005 + 0.07 * math.sin(math.pi * t) ** 0.8), 0.0, z))
-        parts.append(tube("handle", pts, 0.021, wicker, resolution=8, tone=0.2))
+        for i in range(120):
+            a = i / 120 * math.tau
+            wob = 1.0 + 0.04 * math.sin(a * 5 + ring_index)
+            pts.append((ring_r * wob * math.cos(a), ring_r * wob * math.sin(a), FLOOR_Z + 0.002 * math.sin(a * 7)))
+        parts.append(tube("floor_ring", pts, 0.0165, floor_wicker, cyclic=True, resolution=6,
+                          tone=rng.uniform(0.0, 0.35)))
+        ring_r += 0.036
+        ring_index += 1
 
-    # Ağız bandı (oyunda renklenir): dolgun, kumaş kaplı yuvarlak kenar + iki sıra dikiş.
-    band_mat = fabric_material("Band", None, "cotton", uv_scale=1.0)
-    bpy.ops.mesh.primitive_torus_add(major_radius=basket_radius(BASKET_TOP) + 0.005, minor_radius=0.058,
+    # Örgü aralıklarından boşluk görünmesin: arka yarıda duvarın DIŞINDA, ön yarıda İÇİNDE koyu perde
+    # (içeriden bakınca arka örgü aralığı gölge; dışarıdan bakınca ön örgü aralığı gölge okunur).
+    shade = layer_wrap(principled("Backing", (0.28, 0.18, 0.1), 0.9)[0], "wall", "body")
+    rings = []
+    for j in range(9):
+        z = BASKET_BOTTOM + (BASKET_TOP - 0.03 - BASKET_BOTTOM) * j / 8
+        row = []
+        for i in range(128):
+            a = i / 128 * math.tau
+            r = basket_radius(z) + (0.03 if math.sin(a) > 0.0 else -0.032)
+            row.append((r * math.cos(a), r * math.sin(a), z))
+        rings.append(row)
+    parts.append(_ring_mesh("backing", rings, True, shade))
+
+    # Yan kulplar: ağzın altında dışa taşan "D" yolu, burulmuş üç lif.
+    for side in (-1.0, 1.0):
+        path = []
+        for i in range(25):
+            t = i / 24
+            z = 0.17 - 0.16 * t
+            path.append((side * (basket_radius(z) - 0.005 + 0.085 * math.sin(math.pi * t) ** 0.75), 0.0, z))
+        parts.extend(_strand_tube("handle", path, 0.0125, wall_wicker, tone=0.2))
+
+    # --- Astar (oyunda renklenir) --------------------------------------------------------------
+    # Astarın içe bakan yüzü de ağızdan aşağı koyulaşır: kumaş rulonun içi ve etek gölgede kalır.
+    tube_r = basket_radius(BASKET_TOP) + 0.005
+    band_mat = _band_material()
+    _add_band_stitches(band_mat, tube_r)
+    band_mat = layer_wrap(inner_shade(band_mat, BAND_INNER_SHADE, top=BASKET_TOP + 0.03,
+                                      bottom=BASKET_TOP - SKIRT_IN_DEPTH - 0.04), "wall", "band")
+    bpy.ops.mesh.primitive_torus_add(major_radius=tube_r, minor_radius=CUFF_MINOR,
                                      location=(0, 0, BASKET_TOP), major_segments=256, minor_segments=48)
     band = bpy.context.view_layer.objects.active
-    band.scale = (1.0, 1.0, 1.12)
+    band.scale = (1.0, 1.0, 1.1)
+    bpy.ops.object.transform_apply(scale=True)
     co = get_co(band)
     angle = np.arctan2(co[:, 1], co[:, 0])
     radial = np.hypot(co[:, 0], co[:, 1])
-    tube_r = basket_radius(BASKET_TOP) + 0.005
     rel = radial - tube_r
-    # Hafif büzgü: kumaş, kenarın etrafında dalgalanır.
-    wobble = 1.0 + 0.045 * np.sin(angle * 30.0) + 0.025 * np.sin(angle * 11.0 + 1.0)
+    # Dolgun kumaş rulo: çevre boyunca yumuşak büzgü (düzenli ama mekanik değil).
+    wobble = 1.0 + 0.05 * np.sin(angle * 28.0) + 0.025 * np.sin(angle * 9.0 + 1.0)
     co[:, 0] = np.cos(angle) * (tube_r + rel * wobble)
     co[:, 1] = np.sin(angle) * (tube_r + rel * wobble)
-    co[:, 2] = co[:, 2] * wobble
+    co[:, 2] = BASKET_TOP + (co[:, 2] - BASKET_TOP) * wobble
     set_co(band, co)
     bpy.ops.object.shade_smooth()
     add_subsurf(band)
     band.data.materials.append(band_mat)
-    _add_band_stitches(band_mat, tube_r)
-    return parts, band
+    parts.append(band)
+    # İç astar RENKLENMEZ: krem ham pamuk. Sepete giren çamaşır sepetle aynı renkte olduğundan iç
+    # yüz de renkli olsaydı katlar zemine karışırdı; kremde her renk net ayrılır.
+    liner_mat = _cream_material()
+    _add_band_stitches(liner_mat, tube_r, LINER_CREAM)
+    liner_mat = layer_wrap(inner_shade(liner_mat, BAND_INNER_SHADE, top=BASKET_TOP + 0.03,
+                                       bottom=BASKET_TOP - SKIRT_IN_DEPTH - 0.04), "wall", "body")
+    # Etekler: kenardan içeri ve dışarı sarkan büzgülü kumaş; ucu yuvarlak bir kıvrımla biter.
+    for inner in (True, False):
+        depth = SKIRT_IN_DEPTH if inner else SKIRT_OUT_DEPTH
+        cols, rows = 256, 14
+        rings = []
+        hem = []
+        for j in range(rows + 1):
+            f = j / rows
+            row = []
+            for i in range(cols):
+                a = i / cols * math.tau
+                drop = depth * (1.0 + 0.12 * math.sin(a * 4.0 + 0.7) + 0.06 * math.sin(a * 11.0))
+                z = BASKET_TOP - 0.01 - drop * f
+                pleat = (0.5 + 0.5 * math.sin(a * 36.0 + 0.4 * math.sin(a * 5.0))) * f ** 1.3
+                if inner:
+                    r = basket_radius(z) - 0.032 - 0.014 * pleat
+                else:
+                    r = basket_radius(z) + 0.034 + 0.012 * pleat
+                row.append((r * math.cos(a), r * math.sin(a), z))
+            rings.append(row)
+        hem = rings[-1]
+        mat = liner_mat if inner else band_mat
+        skirt = _ring_mesh("skirt", rings, True, mat)
+        solid = skirt.modifiers.new("Solid", "SOLIDIFY")
+        solid.thickness = 0.008
+        add_subsurf(skirt)
+        parts.append(skirt)
+        parts.append(tube("hem", list(hem), 0.011, mat, cyclic=True, resolution=6))
+    return parts
 
 
-def _add_band_stitches(mat, tube_r):
+def _band_material():
+    return fabric_material("Band", None, "cotton", uv_scale=1.0)
+
+
+# Ham pamuk astar rengi (doğrusal): sıcak krem, hasırdan biraz açık.
+LINER_CREAM = (0.86, 0.78, 0.64)
+
+
+def _cream_material():
+    mat = fabric_material("Liner", None, "cotton", uv_scale=1.0)
+    _set(mat.node_tree.nodes["Principled BSDF"], "Sheen Tint", (*LINER_CREAM, 1.0))
+    return mat
+
+
+def _basket_frame():
+    """Sahnedeki tüm sepet köşelerinin ekran kutusu: kamera merkezi (tuval ortası) buna göre."""
+    tilt = math.radians(BASKET_TILT)
+    lo, hi = 1e9, -1e9
+    for obj in bpy.context.scene.objects:
+        if obj.type != "MESH":
+            continue
+        co = get_co(obj) * np.array([obj.scale.x, obj.scale.y, obj.scale.z])
+        v = co[:, 1] * math.sin(tilt) + co[:, 2] * math.cos(tilt)
+        lo, hi = min(lo, v.min()), max(hi, v.max())
+    return 0.5 * (lo + hi) / math.cos(tilt)
+
+
+def _project(point, center_z):
+    """Dünya noktası -> tuval oranı (u, v; 0..1, v aşağı). Oyun yerleşimi bu sayılarla ayarlanır."""
+    tilt = math.radians(BASKET_TILT)
+    x, y, z = point
+    screen_v = y * math.sin(tilt) + z * math.cos(tilt) - center_z * math.cos(tilt)
+    return (0.5 + x / BASKET_ORTHO, 0.5 - screen_v / BASKET_ORTHO)
+
+
+def make_basket():
+    global _LAYER_PASS, _LAYER_TARGET
+    jobs = [("basket_back", "back", "body", BASKET_RES), ("band_back", "back", "band", BASKET_RES),
+            ("basket_front", "front", "body", BASKET_RES), ("band_front", "front", "band", BASKET_RES)]
+    wanted = set(sys.argv[sys.argv.index("--") + 1:]) if "--" in sys.argv else set()
+    for name, layer_pass, target, res in jobs:
+        if wanted and name not in wanted and "basket" not in wanted:
+            continue
+        _LAYER_PASS, _LAYER_TARGET = layer_pass, target
+        scene = reset()
+        scene.cycles.transparent_max_bounces = 24
+        add_lights(key=2.4, fill=0.6, rim=1.9)
+        parts = basket_parts()
+        for obj in parts:
+            obj.scale.x = BASKET_OVAL
+        center_z = _basket_frame()
+        add_camera(center_z=center_z, ortho_scale=BASKET_ORTHO, res_x=res, res_y=res, tilt_deg=BASKET_TILT)
+        # Katmanlar kendi klasöründe (assets/sprites/basket/): sepet sanatı tek yerde toplanır.
+        os.makedirs(os.path.join(OUT_DIR, "basket"), exist_ok=True)
+        render(os.path.join("basket", name), res, res)
+        if name == "basket_back":
+            rim = basket_radius(BASKET_TOP)
+            for label, point in (("floor_center", (0, 0, FLOOR_Z)), ("rim_front", (0, -rim, BASKET_TOP)),
+                                 ("rim_back", (0, rim, BASKET_TOP)), ("rim_side", (rim * BASKET_OVAL, 0, BASKET_TOP)),
+                                 ("foot_front", (0, -basket_radius(BASKET_BOTTOM), BASKET_BOTTOM - 0.028))):
+                u, v = _project(point, center_z)
+                print("BASKET_POINT %s u=%.4f v=%.4f" % (label, u, v))
+
+
+def _add_band_stitches(mat, tube_r, tint=None):
     """Bandın üst ve alt kenarına yakın, çevre boyunca kesik dikiş (gölgelendiricide)."""
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     bsdf = nodes["Principled BSDF"]
@@ -1205,7 +1462,14 @@ def _add_band_stitches(mat, tube_r):
     shade.inputs[1].default_value = -0.1
     shade.inputs[2].default_value = 0.93
     links.new(mask.outputs[0], shade.inputs[0])
-    links.new(shade.outputs[0], bsdf.inputs["Base Color"])
+    if tint is None:
+        links.new(shade.outputs[0], bsdf.inputs["Base Color"])
+        return
+    colored = nodes.new("ShaderNodeVectorMath")
+    colored.operation = "SCALE"
+    colored.inputs[0].default_value = tint
+    links.new(shade.outputs[0], colored.inputs["Scale"])
+    links.new(colored.outputs[0], bsdf.inputs["Base Color"])
 
 
 def _add(nodes, links, a, b):
@@ -1214,22 +1478,6 @@ def _add(nodes, links, a, b):
     links.new(a.outputs[0], node.inputs[0])
     links.new(b.outputs[0], node.inputs[1])
     return node
-
-
-def make_basket():
-    for target in ("basket_body", "basket_band"):
-        reset()
-        add_lights(key=2.4, fill=0.6, rim=1.6)
-        body_parts, band = basket_parts()
-        if target == "basket_body":
-            # Bant "holdout": gövdede bandın yeri boş kalır (bant tam o boşluğa oturur),
-            # ama bant gölgesini hasıra yine düşürür.
-            band.is_holdout = True
-        else:
-            for part in body_parts:
-                part.is_holdout = True
-        add_camera(center_z=0.03, ortho_scale=1.12, res_x=512, res_y=512, tilt_deg=24.0)
-        render(target, 512, 512)
 
 
 # ----------------------------------------------------------------------------- giriş
@@ -1245,7 +1493,7 @@ def main():
         make_folded()
     if not wanted or "pin" in wanted:
         make_pin()
-    if not wanted or wanted & {"basket_body", "basket_band"}:
+    if not wanted or wanted & {"basket", "basket_back", "band_back", "basket_front", "band_front", "basket_shadow"}:
         make_basket()
 
 
