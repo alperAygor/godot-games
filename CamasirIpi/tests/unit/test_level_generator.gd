@@ -11,24 +11,28 @@ func test_same_level_is_deterministic() -> void:
 
 func test_counts_match_queue() -> void:
 	for level: int in range(1, CHECKED_LEVELS + 1):
-		var data: Dictionary = LevelGenerator.generate(level)
+		var data: Dictionary = LevelCache.level(level)
 		var items: Array = data["items"] as Array
 		var queue: Array = data["queue"] as Array
-		assert_eq(items.size() % 3, 0, "seviye %d: parça sayısı 3'ün katı" % level)
+		var big: Array = data.get("big", []) as Array
+		# Büyük sepet 5 parça ister: toplam = 3 x normal + 5 x büyük.
+		assert_eq((items.size() - 5 * big.size()) % 3, 0, "seviye %d: parça sayısı sepetlerle uyumlu" % level)
 		var per_color: Dictionary = {}
 		for entry: Variant in items:
 			var color: int = int((entry as Dictionary)["color"])
 			per_color[color] = int(per_color.get(color, 0)) + 1
 		var from_queue: Dictionary = {}
-		for color: Variant in queue:
-			from_queue[int(color)] = int(from_queue.get(int(color), 0)) + 3
+		for index: int in range(queue.size()):
+			var color: int = int(queue[index])
+			var size: int = LaundryBoard.BIG_BASKET_CAPACITY if big.has(index) else LaundryBoard.BASKET_CAPACITY
+			from_queue[color] = int(from_queue.get(color, 0)) + size
 		assert_eq(per_color, from_queue, "seviye %d: renk sayıları kuyrukla eşleşmeli" % level)
 
 
 func test_every_level_is_solvable() -> void:
 	for level: int in range(1, CHECKED_LEVELS + 1):
-		var data: Dictionary = LevelGenerator.generate(level)
-		var path: Array[int] = LevelSolver.solve(data, 200000)
+		var data: Dictionary = LevelCache.level(level)
+		var path: Array[int] = LevelCache.path(level)
 		assert_false(path.is_empty(), "seviye %d çözülebilir olmalı" % level)
 		var board: LaundryBoard = LaundryBoard.new(data)
 		for id: int in path:

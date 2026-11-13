@@ -13,6 +13,8 @@ static func is_solvable(level: Dictionary, node_limit: int = DEFAULT_NODE_LIMIT)
 
 ## Kazandıran dokunuş sırası; bulunamazsa (ya da sınır aşılırsa) boş dizi.
 static func solve(level: Dictionary, node_limit: int = DEFAULT_NODE_LIMIT) -> Array[int]:
+	if not counts_fit(level):
+		return []
 	var budget: Array[int] = [node_limit]
 	var path: Array[int] = []
 	var seen: Dictionary = {}
@@ -47,7 +49,7 @@ static func _search(board: LaundryBoard, path: Array[int], seen: Dictionary, bud
 	budget[0] -= 1
 	if budget[0] <= 0:
 		return false
-	var key: String = _state_key(board)
+	var key: PackedInt32Array = board.state_key()
 	if seen.has(key):
 		return false
 	seen[key] = true
@@ -55,7 +57,7 @@ static func _search(board: LaundryBoard, path: Array[int], seen: Dictionary, bud
 	var direct: Array[int] = []
 	var parked: Array[int] = []
 	for id: int in board.open_ids():
-		if _matches_basket(board, board.color_of(id)):
+		if board.accepts(board.color_of(id)):
 			direct.append(id)
 		else:
 			parked.append(id)
@@ -75,34 +77,28 @@ static func _search(board: LaundryBoard, path: Array[int], seen: Dictionary, bud
 	return false
 
 
-static func _replay(level: Dictionary, path: Array[int]) -> LaundryBoard:
-	var board: LaundryBoard = LaundryBoard.new(level)
-	for id: int in path:
-		board.tap(id)
-	return board
+## Durum anahtarı tahtadadır (iç alanlara kopyasız erişir); burada geriye uyum için durur.
+static func _state_key(board: LaundryBoard) -> PackedInt32Array:
+	return board.state_key()
 
 
-static func _matches_basket(board: LaundryBoard, color: int) -> bool:
-	for basket: Dictionary in board.baskets():
-		if basket.is_empty():
-			continue
-		if int(basket["color"]) == color and int(basket["count"]) < LaundryBoard.BASKET_CAPACITY:
-			return true
-	return false
-
-
-static func _state_key(board: LaundryBoard) -> String:
-	var line: Array[int] = []
-	for id: int in board.item_ids():
-		if board.is_on_line(id):
-			line.append(id)
-	var rack_colors: Array[int] = []
-	for id: int in board.rack():
-		if id != LaundryBoard.EMPTY:
-			rack_colors.append(board.color_of(id))
-	rack_colors.sort()
-	# Çorap (bekleyen/takılı) ve boya (sayaç + takas sonrası renkler) durumu da anahtara girer:
-	# aynı ip/askı görünümü bu kurallar yüzünden farklı gelecekler taşıyabilir.
-	return "%s|%s|%s|%d|%s|%s|%d|%s|%s" % [str(line), str(rack_colors), str(board.baskets()),
-		board.queue().size(), str(board.wet_ids()), str(board.completed_colors()),
-		board.sock_waiting(), str(board.stuck_ids()), str(board.dye_state())]
+## Hızlı ön denetim: her rengin parça sayısı o rengin sepet kapasitesini (kuyruk; büyük sepet 5,
+## joker asıl rengiyle sayılır) aşmamalı. Aşan renk hiçbir zaman askıdan boşalamaz -> kesin
+## çözümsüz. Neden: renkleri sepet türünü gözetmeden takas eden çağıranlar (ör. günlük bulmacanın
+## ek karıştırması) aksi hâlde her adayda bütün düğüm bütçesini boşa yakıyordu. Geçerli seviyede
+## sonuç değişmez (yalnız kesin çözümsüzleri erken eler).
+static func counts_fit(level: Dictionary) -> bool:
+	var items: Dictionary = {}
+	for entry: Variant in level.get("items", []) as Array:
+		var color: int = int((entry as Dictionary).get("color", LaundryBoard.EMPTY))
+		items[color] = int(items.get(color, 0)) + 1
+	var big: Array = level.get("big", []) as Array
+	var capacity: Dictionary = {}
+	var queue: Array = level.get("queue", []) as Array
+	for index: int in range(queue.size()):
+		var size: int = LaundryBoard.BIG_BASKET_CAPACITY if big.has(index) else LaundryBoard.BASKET_CAPACITY
+		capacity[int(queue[index])] = int(capacity.get(int(queue[index]), 0)) + size
+	for color: Variant in items.keys():
+		if int(items[color]) > int(capacity.get(color, 0)):
+			return false
+	return true

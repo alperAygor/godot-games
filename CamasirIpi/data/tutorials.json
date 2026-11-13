@@ -1,7 +1,8 @@
 {
   "version": 1,
   "_not": "Metinler scripts/ui/tutorial_strings.gd içindedir; burada yalnız veri ve davranış var.",
-  "card_order": ["wet", "mystery", "lock", "sheet", "sock_pair", "dye", "undo", "pin_remover", "extra_slot"],
+  "card_order": ["wet", "mystery", "lock", "sheet", "sock_pair", "dye", "joker", "big_basket", "stain", "chain", "wind",
+    "mode_moves", "mode_short_rack", "mode_orders", "mode_boss", "undo", "pin_remover", "extra_slot"],
   "cards": {
     "wet": {"item_key": "wet", "demo": "wet", "icon": "lucide/package"},
     "mystery": {"item_key": "mystery", "demo": "mystery", "icon": "lucide/star"},
@@ -9,6 +10,15 @@
     "sheet": {"item_key": "sheet", "demo": "icon", "icon": "lucide/package"},
     "sock_pair": {"item_key": "pair", "demo": "icon", "icon": "lucide/heart"},
     "dye": {"item_key": "dye", "demo": "icon", "icon": "lucide/droplet"},
+    "joker": {"level_key": "jokers", "demo": "icon", "icon": "lucide/star"},
+    "big_basket": {"level_key": "big", "demo": "badge", "badge": "5", "icon": "lucide/package"},
+    "stain": {"item_key": "stain", "demo": "icon", "icon": "lucide/flame"},
+    "chain": {"item_key": "chain", "demo": "icon", "icon": "lucide/heart"},
+    "wind": {"level_key": "wind", "demo": "icon", "icon": "lucide/wind"},
+    "mode_moves": {"level_key": "mode", "level_value": "moves", "demo": "icon", "icon": "lucide/clock"},
+    "mode_short_rack": {"level_key": "mode", "level_value": "short_rack", "demo": "icon", "icon": "lucide/shirt"},
+    "mode_orders": {"level_key": "mode", "level_value": "orders", "demo": "icon", "icon": "lucide/check"},
+    "mode_boss": {"level_key": "mode", "level_value": "boss", "demo": "icon", "icon": "lucide/trophy"},
     "undo": {"unlock_level": 6, "demo": "icon", "icon": "lucide/arrow-left"},
     "pin_remover": {"unlock_level": 12, "demo": "icon", "icon": "lucide/x"},
     "extra_slot": {"unlock_level": 18, "demo": "badge", "badge": "+1", "icon": "lucide/package"}
