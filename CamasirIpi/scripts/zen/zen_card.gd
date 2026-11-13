@@ -52,7 +52,7 @@ func _fill() -> void:
 	column.add_child(sub)
 	if unlocked and ZenMode.total_cleared() > 0:
 		column.add_child(UiKit.spacer(GAP * 0.5))
-		column.add_child(UiKit.label(Loc.f("ZEN_TOTAL", [ZenMode.total_cleared()]), SMALL_SIZE, UiKit.TEXT_MUTED))
+		column.add_child(UiKit.label(Loc.n("ZEN_TOTAL_ONE", "ZEN_TOTAL_OTHER", ZenMode.total_cleared()) % ZenMode.total_cleared(), SMALL_SIZE, UiKit.TEXT_MUTED))
 	column.add_child(UiKit.spacer(GAP * 1.4))
 	if unlocked:
 		var start: Button = UiKit.button(Loc.t("ZEN_START"), &"", "lucide/play", BUTTON_HEIGHT)
