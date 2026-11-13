@@ -1,38 +1,356 @@
 {
   "chassis": {
-    "max_level": 5,
+    "max_level": 8,
     "levels": [
-      {"cost": {"gold": 100, "scrap": 5}, "mods": {"cargo_damping_bonus": 1.0}},
-      {"cost": {"gold": 200, "scrap": 10}, "mods": {"cargo_damping_bonus": 1.0}},
-      {"cost": {"gold": 350, "scrap": 18}, "mods": {"cargo_damping_bonus": 1.0}},
-      {"cost": {"gold": 550, "scrap": 28}, "mods": {"cargo_damping_bonus": 1.0}},
-      {"cost": {"gold": 800, "scrap": 40}, "mods": {"cargo_damping_bonus": 1.0}}
+      {
+        "cost": {
+          "gold": 100,
+          "scrap": 5
+        },
+        "mods": {
+          "cargo_damping_bonus": 1.0
+        }
+      },
+      {
+        "cost": {
+          "gold": 200,
+          "scrap": 10
+        },
+        "mods": {
+          "cargo_damping_bonus": 1.0
+        }
+      },
+      {
+        "cost": {
+          "gold": 350,
+          "scrap": 18
+        },
+        "mods": {
+          "cargo_damping_bonus": 1.0
+        }
+      },
+      {
+        "cost": {
+          "gold": 550,
+          "scrap": 28
+        },
+        "mods": {
+          "cargo_damping_bonus": 1.0
+        }
+      },
+      {
+        "cost": {
+          "gold": 800,
+          "scrap": 40
+        },
+        "mods": {
+          "cargo_damping_bonus": 1.0
+        }
+      },
+      {
+        "cost": {
+          "gold": 1150,
+          "scrap": 58
+        },
+        "mods": {
+          "cargo_damping_bonus": 0.5
+        }
+      },
+      {
+        "cost": {
+          "gold": 1650,
+          "scrap": 80
+        },
+        "mods": {
+          "cargo_damping_bonus": 0.5
+        }
+      },
+      {
+        "cost": {
+          "gold": 2400,
+          "scrap": 108
+        },
+        "mods": {
+          "cargo_damping_bonus": 0.5
+        }
+      }
     ]
   },
   "wheels": {
-    "max_level": 5,
+    "max_level": 8,
     "levels": [
-      {"cost": {"gold": 80, "scrap": 4}, "mods": {"wheel_grip_bonus": 0.6}},
-      {"cost": {"gold": 160, "scrap": 8}, "mods": {"wheel_grip_bonus": 0.6}},
-      {"cost": {"gold": 300, "scrap": 15}, "mods": {"wheel_grip_bonus": 0.6}},
-      {"cost": {"gold": 480, "scrap": 24}, "mods": {"wheel_grip_bonus": 0.6}},
-      {"cost": {"gold": 700, "scrap": 35}, "mods": {"wheel_grip_bonus": 0.6}}
+      {
+        "cost": {
+          "gold": 80,
+          "scrap": 4
+        },
+        "mods": {
+          "wheel_grip_bonus": 0.6
+        }
+      },
+      {
+        "cost": {
+          "gold": 160,
+          "scrap": 8
+        },
+        "mods": {
+          "wheel_grip_bonus": 0.6
+        }
+      },
+      {
+        "cost": {
+          "gold": 300,
+          "scrap": 15
+        },
+        "mods": {
+          "wheel_grip_bonus": 0.6
+        }
+      },
+      {
+        "cost": {
+          "gold": 480,
+          "scrap": 24
+        },
+        "mods": {
+          "wheel_grip_bonus": 0.6
+        }
+      },
+      {
+        "cost": {
+          "gold": 700,
+          "scrap": 35
+        },
+        "mods": {
+          "wheel_grip_bonus": 0.6
+        }
+      },
+      {
+        "cost": {
+          "gold": 1000,
+          "scrap": 50
+        },
+        "mods": {
+          "wheel_grip_bonus": 0.3
+        }
+      },
+      {
+        "cost": {
+          "gold": 1400,
+          "scrap": 68
+        },
+        "mods": {
+          "wheel_grip_bonus": 0.3
+        }
+      },
+      {
+        "cost": {
+          "gold": 1900,
+          "scrap": 90
+        },
+        "mods": {
+          "wheel_grip_bonus": 0.3
+        }
+      }
     ]
   },
   "battery": {
-    "max_level": 5,
+    "max_level": 8,
     "levels": [
-      {"cost": {"gold": 80, "scrap": 3}, "mods": {"battery_capacity_bonus": 15.0}},
-      {"cost": {"gold": 160, "scrap": 7}, "mods": {"battery_capacity_bonus": 15.0}},
-      {"cost": {"gold": 300, "scrap": 14}, "mods": {"battery_capacity_bonus": 15.0}},
-      {"cost": {"gold": 480, "scrap": 22}, "mods": {"battery_capacity_bonus": 15.0}},
-      {"cost": {"gold": 700, "scrap": 32}, "mods": {"battery_capacity_bonus": 15.0}}
+      {
+        "cost": {
+          "gold": 80,
+          "scrap": 3
+        },
+        "mods": {
+          "battery_capacity_bonus": 15.0
+        }
+      },
+      {
+        "cost": {
+          "gold": 160,
+          "scrap": 7
+        },
+        "mods": {
+          "battery_capacity_bonus": 15.0
+        }
+      },
+      {
+        "cost": {
+          "gold": 300,
+          "scrap": 14
+        },
+        "mods": {
+          "battery_capacity_bonus": 15.0
+        }
+      },
+      {
+        "cost": {
+          "gold": 480,
+          "scrap": 22
+        },
+        "mods": {
+          "battery_capacity_bonus": 15.0
+        }
+      },
+      {
+        "cost": {
+          "gold": 700,
+          "scrap": 32
+        },
+        "mods": {
+          "battery_capacity_bonus": 15.0
+        }
+      },
+      {
+        "cost": {
+          "gold": 1000,
+          "scrap": 46
+        },
+        "mods": {
+          "battery_capacity_bonus": 10.0
+        }
+      },
+      {
+        "cost": {
+          "gold": 1400,
+          "scrap": 62
+        },
+        "mods": {
+          "battery_capacity_bonus": 10.0
+        }
+      },
+      {
+        "cost": {
+          "gold": 1900,
+          "scrap": 82
+        },
+        "mods": {
+          "battery_capacity_bonus": 10.0
+        }
+      }
     ]
   },
   "shock_gel": {
-    "max_level": 1,
+    "max_level": 2,
     "levels": [
-      {"cost": {"gold": 400, "scrap": 20}, "mods": {"jelly_charges": 1}}
+      {
+        "cost": {
+          "gold": 400,
+          "scrap": 20
+        },
+        "mods": {
+          "jelly_charges": 1
+        }
+      },
+      {
+        "cost": {
+          "gold": 1200,
+          "scrap": 60
+        },
+        "mods": {
+          "jelly_charges": 1
+        }
+      }
+    ]
+  },
+  "insurance": {
+    "max_level": 5,
+    "levels": [
+      {
+        "cost": {
+          "gold": 300,
+          "scrap": 15
+        },
+        "mods": {
+          "break_payout_bonus": 0.06
+        }
+      },
+      {
+        "cost": {
+          "gold": 600,
+          "scrap": 30
+        },
+        "mods": {
+          "break_payout_bonus": 0.06
+        }
+      },
+      {
+        "cost": {
+          "gold": 1000,
+          "scrap": 50
+        },
+        "mods": {
+          "break_payout_bonus": 0.06
+        }
+      },
+      {
+        "cost": {
+          "gold": 1500,
+          "scrap": 75
+        },
+        "mods": {
+          "break_payout_bonus": 0.06
+        }
+      },
+      {
+        "cost": {
+          "gold": 2200,
+          "scrap": 110
+        },
+        "mods": {
+          "break_payout_bonus": 0.06
+        }
+      }
+    ]
+  },
+  "contract": {
+    "max_level": 5,
+    "levels": [
+      {
+        "cost": {
+          "gold": 250,
+          "scrap": 10
+        },
+        "mods": {
+          "gold_bonus_pct": 0.05
+        }
+      },
+      {
+        "cost": {
+          "gold": 500,
+          "scrap": 20
+        },
+        "mods": {
+          "gold_bonus_pct": 0.05
+        }
+      },
+      {
+        "cost": {
+          "gold": 900,
+          "scrap": 35
+        },
+        "mods": {
+          "gold_bonus_pct": 0.05
+        }
+      },
+      {
+        "cost": {
+          "gold": 1400,
+          "scrap": 55
+        },
+        "mods": {
+          "gold_bonus_pct": 0.05
+        }
+      },
+      {
+        "cost": {
+          "gold": 2000,
+          "scrap": 80
+        },
+        "mods": {
+          "gold_bonus_pct": 0.05
+        }
+      }
     ]
   }
 }

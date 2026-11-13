@@ -108,8 +108,11 @@ func _show_endless(gold: int, scrap: int) -> void:
 		int(_result.get("level", 1)), int(float(_result.get("distance", 0.0))), int(_result.get("score", 0))]]
 	var banked: int = int(_result.get("banked_gold", 0))
 	if banked > 0:
-		var pay_format: String = UiStrings.ENDLESS_HALF_PAY_FORMAT if broken else UiStrings.ENDLESS_FULL_PAY_FORMAT
-		lines.append(pay_format % banked)
+		if broken:
+			var percent: int = int(round(float(_result.get("payout_fraction", 0.5)) * 100.0))
+			lines.append(UiStrings.ENDLESS_PART_PAY_FORMAT % [banked, percent])
+		else:
+			lines.append(UiStrings.ENDLESS_FULL_PAY_FORMAT % banked)
 	var flags: Dictionary = _result.get("new_records", {}) as Dictionary
 	var broken_records: Array[String] = []
 	if bool(flags.get("new_level", false)):

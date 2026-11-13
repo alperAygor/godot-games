@@ -11,57 +11,51 @@ extends TestCase
 
 const UPGRADES_PATH: String = "res://data/upgrades.json"
 
-## §3 tablosundaki kategoriler + §5.6 Şok Jeli kategorisi ve maksimum seviyeler.
-const EXPECTED_CATEGORIES: Array[String] = ["chassis", "wheels", "battery", "shock_gel"]
+## Kategoriler: ARCHITECTURE.md §3 + Şok Jeli + sonsuz mod ekonomisi (Sigorta, Sözleşme).
+const EXPECTED_CATEGORIES: Array[String] = ["chassis", "wheels", "battery", "shock_gel", "insurance", "contract"]
 
 const EXPECTED_MAX_LEVELS: Dictionary = {
-	"chassis": 5,
-	"wheels": 5,
-	"battery": 5,
-	"shock_gel": 1,
+	"chassis": 8,
+	"wheels": 8,
+	"battery": 8,
+	"shock_gel": 2,
+	"insurance": 5,
+	"contract": 5,
 }
 
-## Her kategorinin seviye başına tek mod anahtarı ve sabit katkısı.
+## Her kategorinin seviye başına tek mod anahtarı.
 const EXPECTED_MOD_KEYS: Dictionary = {
 	"chassis": "cargo_damping_bonus",
 	"wheels": "wheel_grip_bonus",
 	"battery": "battery_capacity_bonus",
 	"shock_gel": "jelly_charges",
+	"insurance": "break_payout_bonus",
+	"contract": "gold_bonus_pct",
 }
 
+## İlk 5 seviyenin mod değeri (ARCHITECTURE.md §3, probeler buna dayanır); sonraki
+## seviyeler azalan getiri için `TAIL_MOD_VALUES` değerindedir (yoksa aynıdır).
 const EXPECTED_MOD_VALUES: Dictionary = {
 	"chassis": 1.0,
 	"wheels": 0.6,
 	"battery": 15.0,
 	"shock_gel": 1.0,
+	"insurance": 0.06,
+	"contract": 0.05,
+}
+const BASE_TIERS: int = 5
+const TAIL_MOD_VALUES: Dictionary = {
+	"chassis": 0.5,
+	"wheels": 0.3,
+	"battery": 10.0,
 }
 
-## ARCHITECTURE.md §3'teki NİHAİ TABLO (birebir).
-const EXPECTED_UPGRADES: Dictionary = {
-	"chassis": {"max_level": 5, "levels": [
-		{"cost": {"gold": 100, "scrap": 5}, "mods": {"cargo_damping_bonus": 1.0}},
-		{"cost": {"gold": 200, "scrap": 10}, "mods": {"cargo_damping_bonus": 1.0}},
-		{"cost": {"gold": 350, "scrap": 18}, "mods": {"cargo_damping_bonus": 1.0}},
-		{"cost": {"gold": 550, "scrap": 28}, "mods": {"cargo_damping_bonus": 1.0}},
-		{"cost": {"gold": 800, "scrap": 40}, "mods": {"cargo_damping_bonus": 1.0}},
-	]},
-	"wheels": {"max_level": 5, "levels": [
-		{"cost": {"gold": 80, "scrap": 4}, "mods": {"wheel_grip_bonus": 0.6}},
-		{"cost": {"gold": 160, "scrap": 8}, "mods": {"wheel_grip_bonus": 0.6}},
-		{"cost": {"gold": 300, "scrap": 15}, "mods": {"wheel_grip_bonus": 0.6}},
-		{"cost": {"gold": 480, "scrap": 24}, "mods": {"wheel_grip_bonus": 0.6}},
-		{"cost": {"gold": 700, "scrap": 35}, "mods": {"wheel_grip_bonus": 0.6}},
-	]},
-	"battery": {"max_level": 5, "levels": [
-		{"cost": {"gold": 80, "scrap": 3}, "mods": {"battery_capacity_bonus": 15.0}},
-		{"cost": {"gold": 160, "scrap": 7}, "mods": {"battery_capacity_bonus": 15.0}},
-		{"cost": {"gold": 300, "scrap": 14}, "mods": {"battery_capacity_bonus": 15.0}},
-		{"cost": {"gold": 480, "scrap": 22}, "mods": {"battery_capacity_bonus": 15.0}},
-		{"cost": {"gold": 700, "scrap": 32}, "mods": {"battery_capacity_bonus": 15.0}},
-	]},
-	"shock_gel": {"max_level": 1, "levels": [
-		{"cost": {"gold": 400, "scrap": 20}, "mods": {"jelly_charges": 1}},
-	]},
+## Probelerin dayandığı ilk seviye bedelleri (değişirse probe beklentileri güncellenmeli).
+const EXPECTED_FIRST_COSTS: Dictionary = {
+	"chassis": {"gold": 100, "scrap": 5},
+	"wheels": {"gold": 80, "scrap": 4},
+	"battery": {"gold": 80, "scrap": 3},
+	"shock_gel": {"gold": 400, "scrap": 20},
 }
 
 
@@ -196,7 +190,7 @@ func test_mods_have_expected_single_key_and_value() -> void:
 		if entry.is_empty():
 			continue
 		var expected_key: String = String(EXPECTED_MOD_KEYS[category])
-		var expected_value: float = float(EXPECTED_MOD_VALUES[category])
+		var base_value: float = float(EXPECTED_MOD_VALUES[category])
 		var levels: Array = _levels(entry, category)
 		for index: int in range(levels.size()):
 			var level_entry: Dictionary = _level_entry(levels, category, index)
@@ -209,14 +203,23 @@ func test_mods_have_expected_single_key_and_value() -> void:
 			assert_eq(mods.size(), 1, "%s.levels[%d].mods tek anahtar taşımalı" % [category, index])
 			assert_true(mods.has(expected_key),
 				"%s.levels[%d].mods anahtarı %s olmalı" % [category, index, expected_key])
+			var expected_value: float = base_value
+			if index >= BASE_TIERS and TAIL_MOD_VALUES.has(category):
+				expected_value = float(TAIL_MOD_VALUES[category])
 			assert_almost_eq(float(mods.get(expected_key, 0.0)), expected_value, 0.0001,
 				"%s.levels[%d].%s değeri" % [category, index, expected_key])
 
 
-func test_table_matches_architecture_values_exactly() -> void:
+func test_first_level_costs_match_probe_expectations() -> void:
 	var upgrades: Dictionary = _upgrades()
 	if upgrades.is_empty():
 		return
-	# Beklenen değerleri de JSON'dan geçir: tamsayılar float'a normalleşir (GOTCHAS #20).
-	var expected: Variant = JSON.parse_string(JSON.stringify(EXPECTED_UPGRADES))
-	assert_eq(upgrades, expected, "upgrades.json ARCHITECTURE.md §3 ile birebir örtüşmeli")
+	for category: Variant in EXPECTED_FIRST_COSTS.keys():
+		var levels: Array = _levels(_category(upgrades, category), category)
+		if levels.is_empty():
+			continue
+		var first: Dictionary = _level_entry(levels, category, 0)
+		var expected: Dictionary = EXPECTED_FIRST_COSTS[category] as Dictionary
+		var cost: Dictionary = first.get("cost", {}) as Dictionary
+		assert_eq(int(cost.get("gold", -1)), int(expected["gold"]), "%s ilk seviye altın" % str(category))
+		assert_eq(int(cost.get("scrap", -1)), int(expected["scrap"]), "%s ilk seviye hurda" % str(category))

@@ -71,3 +71,25 @@ func test_score_scales_with_cargo_difficulty_and_rejects_bad_input() -> void:
 	assert_eq(EndlessReward.score(100.0, 3), 200)
 	assert_eq(EndlessReward.score(-5.0, 3), 0)
 	assert_eq(EndlessReward.score(NAN, 3), 0)
+
+
+func test_insurance_raises_break_payout_but_is_capped() -> void:
+	var paid: Dictionary = EndlessReward.payout(100, 10, EndlessReward.REASON_BROKEN, 0.3)
+	assert_eq(int(paid["gold"]), 80)
+	assert_almost_eq(float(paid["fraction"]), 0.8, 0.0001)
+	var capped: Dictionary = EndlessReward.payout(100, 10, EndlessReward.REASON_BROKEN, 5.0)
+	assert_almost_eq(float(capped["fraction"]), EndlessReward.MAX_BREAK_PAYOUT_FRACTION, 0.0001)
+	var negative: Dictionary = EndlessReward.payout(100, 10, EndlessReward.REASON_BROKEN, -1.0)
+	assert_almost_eq(float(negative["fraction"]), 0.5, 0.0001)
+
+
+func test_insurance_does_not_change_non_break_payout() -> void:
+	var paid: Dictionary = EndlessReward.payout(100, 10, "quit", 0.3)
+	assert_eq(int(paid["gold"]), 100)
+
+
+func test_contract_bonus_raises_level_gold() -> void:
+	var profile: Dictionary = {"reward_gold": 40, "reward_scrap": 2, "difficulty": 1}
+	var plain: Dictionary = EndlessReward.level_reward(1, 0.0, profile)
+	var boosted: Dictionary = EndlessReward.level_reward(1, 0.0, profile, {"gold_pct": 0.25})
+	assert_true(int(boosted["gold"]) > int(plain["gold"]), "sözleşme altını artırmalı")

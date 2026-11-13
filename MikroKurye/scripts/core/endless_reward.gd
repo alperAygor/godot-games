@@ -9,6 +9,8 @@ const CARGO_DIFFICULTY_STEP: float = 0.5
 ## Kargo kırılınca koşunun kasası bu oranda ödenir (kullanıcı kararı: yarısı).
 const BREAK_PAYOUT_FRACTION: float = 0.5
 const REASON_BROKEN: String = "broken"
+## Sigorta yükseltmesiyle bile kırılma tam ödenmez; ödünleşme korunur.
+const MAX_BREAK_PAYOUT_FRACTION: float = 0.9
 
 
 ## Zor kargo çarpanı: zorluk 1 -> 1.0, 2 -> 1.5, 3 -> 2.0.
@@ -32,15 +34,20 @@ static func level_reward(level: int, damage: float, profile: Dictionary, bonus: 
 	return result
 
 
-## Koşu kasasının ödemesi. `broken` -> yarısı (aşağı yuvarlanır); diğerleri tam.
-static func payout(banked_gold: int, banked_scrap: int, reason: String) -> Dictionary:
+## Koşu kasasının ödemesi. `broken` -> yarısı + sigorta bonusu (en çok 0.9, aşağı
+## yuvarlanır); diğerleri tam.
+static func payout(banked_gold: int, banked_scrap: int, reason: String,
+		break_bonus: float = 0.0) -> Dictionary:
 	var gold: int = maxi(banked_gold, 0)
 	var scrap: int = maxi(banked_scrap, 0)
 	if reason == REASON_BROKEN:
+		var bonus: float = break_bonus if is_finite(break_bonus) else 0.0
+		var fraction: float = clampf(BREAK_PAYOUT_FRACTION + bonus, BREAK_PAYOUT_FRACTION,
+			MAX_BREAK_PAYOUT_FRACTION)
 		return {
-			"gold": int(floor(float(gold) * BREAK_PAYOUT_FRACTION)),
-			"scrap": int(floor(float(scrap) * BREAK_PAYOUT_FRACTION)),
-			"fraction": BREAK_PAYOUT_FRACTION,
+			"gold": int(floor(float(gold) * fraction)),
+			"scrap": int(floor(float(scrap) * fraction)),
+			"fraction": fraction,
 		}
 	return {"gold": gold, "scrap": scrap, "fraction": 1.0}
 

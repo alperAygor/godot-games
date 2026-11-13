@@ -12,7 +12,7 @@ const VERSION: int = 1
 
 ## Bilinen yükseltme kategorileri. Kayıt yalnız bunları taşır; tabloya yeni
 ## kategori eklenirse burası da güncellenmelidir.
-const CATEGORIES: Array[String] = ["chassis", "wheels", "battery", "shock_gel"]
+const CATEGORIES: Array[String] = ["chassis", "wheels", "battery", "shock_gel", "insurance", "contract"]
 
 ## Ayarlar yalnız bilinen anahtarları taşır; eksik/yanlış tip varsayılana döner.
 const DEFAULT_SETTINGS: Dictionary = {"sound_on": true, "tutorial_done": false}

@@ -108,7 +108,7 @@ func test_missing_file_loads_default_profile() -> void:
 	var profile: ProfileData = save.call("profile") as ProfileData
 	assert_not_null(profile)
 	assert_eq(_wallet(save), {"gold": 0, "scrap": 0})
-	assert_eq(profile.levels(), {"chassis": 0, "wheels": 0, "battery": 0, "shock_gel": 0})
+	assert_eq(profile.levels(), {"chassis": 0, "wheels": 0, "battery": 0, "shock_gel": 0, "insurance": 0, "contract": 0})
 	assert_false(FileAccess.file_exists(_corrupt_path()), "eksik dosya bozuk sayılmamalı")
 
 
@@ -194,11 +194,11 @@ func test_purchase_unknown_and_max_level_rejected() -> void:
 		return
 	assert_false(bool(save.call("purchase", "yok_boyle_kategori")))
 	var profile: ProfileData = save.call("profile") as ProfileData
-	profile.set_level("battery", 5)
+	profile.set_level("battery", 8)
 	save.call("save_profile")
 	assert_eq(save.call("upgrade_cost", "battery"), {}, "maksimumda bedel boş olmalı")
 	assert_false(bool(save.call("purchase", "battery")), "maksimumda satın alma reddedilmeli")
-	assert_eq(_level(save, "battery"), 5, "maksimum seviye değişmemeli")
+	assert_eq(_level(save, "battery"), 8, "maksimum seviye değişmemeli")
 	assert_eq(_wallet(save), {"gold": 0, "scrap": 0}, "maksimumda cüzdan değişmemeli")
 
 

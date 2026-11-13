@@ -59,7 +59,7 @@ const HUD_LEVEL_UP_FORMAT: String = "Level %d  ·  +%d altın"
 const ENDLESS_BROKEN: String = "Kargo Kırıldı"
 const ENDLESS_DONE: String = "Koşu Bitti"
 const ENDLESS_STATS_FORMAT: String = "Level %d  ·  %d m  ·  %d puan"
-const ENDLESS_HALF_PAY_FORMAT: String = "Kasa %d altın. Kargo kırıldığı için yarısı ödendi."
+const ENDLESS_PART_PAY_FORMAT: String = "Kasa %d altın. Kargo kırıldığı için %%%d ödendi."
 const ENDLESS_FULL_PAY_FORMAT: String = "Kasa %d altın, tamamı ödendi."
 const NEW_RECORD_FORMAT: String = "Yeni rekor: %s!"
 const RECORD_LEVEL: String = "level"
@@ -101,6 +101,10 @@ static func category_name(category: String) -> String:
 			return "Batarya"
 		"shock_gel":
 			return "Şok Jeli"
+		"insurance":
+			return "Sigorta"
+		"contract":
+			return "Sözleşme"
 		_:
 			return category
 
@@ -117,6 +121,10 @@ static func category_effect(category: String) -> String:
 			return "Batarya kapasitesi artar"
 		"shock_gel":
 			return "Kırılmaya karşı 1 kez korur"
+		"insurance":
+			return "Kırılınca daha çok ödenir"
+		"contract":
+			return "Teslimat altını artar"
 		_:
 			return ""
 

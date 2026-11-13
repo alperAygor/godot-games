@@ -205,6 +205,10 @@ func _category_icon(category: String) -> String:
 			return "lucide/zap"
 		"shock_gel":
 			return "lucide/shield"
+		"insurance":
+			return "lucide/heart"
+		"contract":
+			return "lucide/trophy"
 		_:
 			return "lucide/package"
 

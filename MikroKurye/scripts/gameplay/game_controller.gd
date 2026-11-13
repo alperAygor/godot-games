@@ -31,8 +31,10 @@ const MOD_CARGO_DAMPING: String = "cargo_damping_bonus"
 const MOD_WHEEL_GRIP: String = "wheel_grip_bonus"
 const MOD_BATTERY_CAPACITY: String = "battery_capacity_bonus"
 const MOD_JELLY_CHARGES: String = "jelly_charges"
+const MOD_BREAK_PAYOUT: String = "break_payout_bonus"
+const MOD_GOLD_BONUS: String = "gold_bonus_pct"
 const MOD_KEYS: Array[String] = [MOD_CARGO_DAMPING, MOD_WHEEL_GRIP,
-	MOD_BATTERY_CAPACITY, MOD_JELLY_CHARGES]
+	MOD_BATTERY_CAPACITY, MOD_JELLY_CHARGES, MOD_BREAK_PAYOUT, MOD_GOLD_BONUS]
 
 const PERCENT_SCALE: float = 100.0
 
@@ -426,7 +428,8 @@ func _on_zone_changed(zone_name: String, _zone_index: int) -> void:
 func _complete_level() -> void:
 	if absf(_robot.global_position.z - _endless.level_end_z()) > PAD_TOLERANCE:
 		return
-	var reward: Dictionary = EndlessReward.level_reward(_level_number, _health.damage(), _profile)
+	var reward: Dictionary = EndlessReward.level_reward(_level_number, _health.damage(), _profile,
+		{"gold_pct": float(_mods.get(MOD_GOLD_BONUS, 0.0))})
 	_banked_gold += int(reward.get("gold", 0))
 	_banked_scrap += int(reward.get("scrap", 0))
 	_levels_delivered += 1
@@ -448,7 +451,8 @@ func _complete_level() -> void:
 func _finish_endless(reason: String) -> void:
 	if _finished:
 		return
-	var payout: Dictionary = EndlessReward.payout(_banked_gold, _banked_scrap, reason)
+	var payout: Dictionary = EndlessReward.payout(_banked_gold, _banked_scrap, reason,
+		float(_mods.get(MOD_BREAK_PAYOUT, 0.0)))
 	var difficulty: int = int(_profile.get("difficulty", 1))
 	var result: Dictionary = {
 		"endless": true,
