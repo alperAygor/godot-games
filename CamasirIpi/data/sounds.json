@@ -1,4 +1,12 @@
 {
+  "cloth": "res://assets/audio/sfx/cloth.wav",
+  "fold_puff": "res://assets/audio/sfx/fold_puff.wav",
+  "note": "res://assets/audio/sfx/note.wav",
+  "pin_click": "res://assets/audio/sfx/pin_click.wav",
   "success": "res://assets/audio/sfx/success.wav",
-  "ui_tap": "res://assets/audio/sfx/ui_tap.wav"
+  "ui_tap": "res://assets/audio/sfx/ui_tap.wav",
+  "unlock": "res://assets/audio/sfx/unlock.wav",
+  "win": "res://assets/audio/sfx/win.wav",
+  "wind": "res://assets/audio/sfx/wind.wav",
+  "wring": "res://assets/audio/sfx/wring.wav"
 }

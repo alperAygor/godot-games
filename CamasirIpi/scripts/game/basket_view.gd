@@ -44,8 +44,13 @@ func set_filled(count: int) -> void:
 
 
 ## Sepetteki `index`. parçanın duracağı yer (global).
+## Katlanmış parçalar üst üste yığılır: her kat ayrı seçilir (aralarında boşluk/gölge kalır).
 func slot_position(index: int) -> Vector2:
-	return global_position + Vector2((float(index) - 1.0) * size * 0.2, -size * 0.2)
+	return global_position + Vector2(0.0, -size * 0.17 - float(index) * size * 0.19)
+
+
+func folded_width() -> float:
+	return size * 0.5
 
 
 func _make_sprite(path: String) -> Sprite2D:

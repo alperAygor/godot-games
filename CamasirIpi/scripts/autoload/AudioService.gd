@@ -43,6 +43,21 @@ func play(sound_name: String, pitch_variance: float = 0.0) -> void:
 	player.play()
 
 
+## Belirli bir perdeyle çalar (art arda sepetlerde yükselen nota için).
+func play_pitched(sound_name: String, pitch: float, volume_db: float = 0.0) -> void:
+	if _silent or _pool.is_empty():
+		return
+	var stream: AudioStream = _stream(sound_name)
+	if stream == null:
+		return
+	var player: AudioStreamPlayer = _pool[_next]
+	_next = (_next + 1) % _pool.size()
+	player.stream = stream
+	player.pitch_scale = maxf(pitch, 0.1)
+	player.volume_db = volume_db
+	player.play()
+
+
 func has_sound(sound_name: String) -> bool:
 	return _table.has(sound_name)
 
