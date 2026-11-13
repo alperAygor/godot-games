@@ -32,3 +32,4 @@
 - [x] **P4a** Engeller: ıslak (sv 8), gizemli (sv 14), kilitli mandal (sv 20); ASMR ses seti; bahçe arka planı; havada katlanma, sepet yığını, parıltı
 - [ ] **P4b** Çarşaf, çorap çifti, boya akıtan; güçlendiriciler; renk körlüğü desenleri
 - [ ] **P5** Ana ekran (çamaşırhane), ekonomi, reklam yerleşimi
+- [x] **P6** Premium geçiş (2.5D): Blender render bahçe katmanları + askı, yeniden yapılan çamaşır/sepet/mandal modelleri (Cycles), yavaş ve yumuşak animasyonlar (`Motion`, kumaş sallanma shader'ı), ElevenLabs ses seti (`tools/make_el_sfx.py`)

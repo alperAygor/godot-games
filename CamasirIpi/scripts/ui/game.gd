@@ -28,6 +28,11 @@ const MAX_GARMENT_SIZE: float = 205.0
 const LAYER_DROP: float = 16.0
 const RACK_Y: float = 1320.0
 const RACK_SPACING: float = 175.0
+## Askı görselinde 5 kanca vardır; ortadaki ekranın ortasındadır. 4 slotlu seviyede soldaki
+## dört kanca kullanılır, "+1 askı" beşinci (en sağdaki) kancayı açar.
+const RACK_CENTER_HOOK: float = 2.0
+## İpler direklerin iç halkalarına bağlanır.
+const ROPE_INSET: float = 100.0
 const RACK_GARMENT_SCALE: float = 0.62
 const BASKET_Y: float = 1590.0
 const BASKET_SIZE: float = 250.0
@@ -36,11 +41,26 @@ const BASKET_GARMENT_SCALE: float = 0.42
 const QUEUE_Y: float = 1800.0
 const QUEUE_DOT: float = 20.0
 const QUEUE_SHOWN: int = 6
-const FLIGHT_SECONDS: float = 0.28
-const FLIGHT_ARC: float = 110.0
-const FLIGHT_STAGGER: float = 0.1
-const FOLD_SECONDS: float = 0.45
-const BASKET_SLIDE: float = 320.0
+## Yığın basarken/içine çökerken parçaların sepet içindeki hedef sapmaları.
+const ABSORB_DROP_RATIO: float = 0.1
+const ABSORB_SCALE: Vector2 = Vector2(0.8, 0.5)
+const MS_PER_SECOND: float = 1000.0
+const PUFF_COLOR: Color = Color(1.0, 1.0, 1.0, 0.55)
+const PUFF_SPEED_MIN: float = 30.0
+const PUFF_SPEED_MAX: float = 95.0
+const PUFF_DAMPING: float = 90.0
+const PUFF_SCALE_MIN: float = 0.07
+const PUFF_SCALE_MAX: float = 0.15
+const SPARKLE_SPEED_MIN: float = 110.0
+const SPARKLE_SPEED_MAX: float = 300.0
+const SPARKLE_GRAVITY: float = 160.0
+const SPARKLE_DAMPING: float = 60.0
+const SPARKLE_SCALE_MIN: float = 0.05
+const SPARKLE_SCALE_MAX: float = 0.13
+const PARTICLE_Z: int = 90
+## Parçacık boyunca küçülme eğrisinin bitiş değeri (yumuşakça yok olsun, aniden kaybolmasın).
+const PARTICLE_END_SCALE: float = 0.25
+const LAND_SOUND_DB: float = -10.0
 const WIN_COINS: int = 20
 const HARD_WIN_COINS: int = 40
 const MIN_TOUCH: float = 126.0
@@ -49,8 +69,6 @@ const COMBO_SEMITONE: float = 1.0594631
 const COMBO_RESET_SECONDS: float = 4.0
 const COMBO_MAX_STEPS: int = 12
 const SPARKLE_COLOR: Color = Color(1.0, 0.96, 0.7)
-const STACK_TILT_DEGREES: float = 4.0
-const STACK_SHADE: float = 0.07
 
 var _level_number: int = 1
 var _coins: int = 0
@@ -77,6 +95,18 @@ var _backdrop: GardenBackdrop = null
 var _combo: int = 0
 var _last_fold_msec: int = 0
 var _wind_played: bool = false
+## Seviye yeniden başlayınca eski olay korutinleri kendiliğinden çıksın diye sayaç.
+var _generation: int = 0
+var _line_views: Array[GarmentView] = []
+var _flights_end_msec: int = 0
+var _applied_sway: float = Motion.SWAY_CALM
+var _danger_blend: float = 0.0
+var _puffs: Array[CPUParticles2D] = []
+var _puff_next: int = 0
+var _sparkles: Array[CPUParticles2D] = []
+var _sparkle_next: int = 0
+var _fade_ramp: Gradient = null
+var _shrink_curve: Curve = null
 ## Prob/geliştirme çalıştırmaları oyuncunun kaydını ezmesin diye kapatılabilir.
 var _persist: bool = true
 
@@ -107,11 +137,26 @@ func _process(delta: float) -> void:
 	_sky_gradient.set_color(1, SKY_SUNNY_BOTTOM.lerp(SKY_STORM_BOTTOM, _sky_weight))
 	if _backdrop != null:
 		_backdrop.storm = _sky_weight
-	# Tehlike: askıda tek boş slot kalınca askı kırmızı nabız atar.
+		_backdrop.danger = _danger
+	_update_sway()
+	# Tehlike: askıda tek boş slot kalınca askı kırmızı nabız atar. Nabzın şiddeti
+	# yumuşakça açılıp kapanır (ani kırmızı parlama rahatsız eder).
 	var near_full: bool = _board != null and not _board.is_over() \
 		and _board.rack_count() >= _board.rack_slots() - 1
-	_danger = (0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.008)) if near_full else 0.0
+	_danger_blend = lerpf(_danger_blend, 1.0 if near_full else 0.0, 1.0 - exp(-Motion.DANGER_BLEND_RATE * delta))
+	_danger = _danger_blend * (0.5 + 0.5 * sin(Time.get_ticks_msec() * Motion.DANGER_PULSE_SPEED))
 	queue_redraw()
+
+
+## Fırtına arttıkça ipteki çamaşırların sallanma çarpanı yükselir. Neden eşikli: her karede
+## onlarca materyal parametresi yazmak yerine yalnız anlamlı değişimde yazılır.
+func _update_sway() -> void:
+	var sway: float = lerpf(Motion.SWAY_CALM, Motion.SWAY_STORM, _sky_weight)
+	if absf(sway - _applied_sway) < Motion.SWAY_UPDATE_STEP:
+		return
+	_applied_sway = sway
+	for view: GarmentView in _line_views:
+		view.set_sway_strength(sway)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -171,10 +216,29 @@ func _run_events() -> void:
 	if _playing:
 		return
 	_playing = true
+	var generation: int = _generation
 	while not _events.is_empty():
 		var event: Dictionary = _events.pop_front()
 		await _play_event(event)
+		# Seviye yeniden başladıysa bu korutin eskidir: kuyruğa/duruma dokunmadan çık.
+		if generation != _generation:
+			return
 	_playing = false
+
+
+## Zamanlayıcı bekler; seviye bu arada yenilendiyse false döner (çağıran çıkmalı).
+func _wait(seconds: float) -> bool:
+	var generation: int = _generation
+	await get_tree().create_timer(seconds).timeout
+	return generation == _generation
+
+
+## Havadaki son çamaşır oturana kadar bekler (sepet kapanışı/kazanma bundan sonra başlar).
+func _wait_flights() -> bool:
+	var remaining: float = float(_flights_end_msec - Time.get_ticks_msec()) / MS_PER_SECOND
+	if remaining <= 0.0:
+		return true
+	return await _wait(remaining)
 
 
 func _play_event(event: Dictionary) -> void:
@@ -185,12 +249,10 @@ func _play_event(event: Dictionary) -> void:
 				_views[int(blocker)].flash()
 		LaundryBoard.EVENT_LOCKED:
 			_views[int(event["id"])].wobble()
-			# Hangi sepetin beklendiğini göster: o renkteki aktif sepet zıplar.
+			# Hangi sepetin beklendiğini göster: o renkteki aktif sepet yumuşakça şişer.
 			for basket: BasketView in _baskets:
 				if basket.visible and basket.color.is_equal_approx(COLORS[int(event["color"]) % COLORS.size()]):
-					var hop: Tween = basket.create_tween()
-					hop.tween_property(basket, "scale", Vector2.ONE * 1.12, 0.1)
-					hop.tween_property(basket, "scale", Vector2.ONE, 0.14)
+					basket.hop()
 		LaundryBoard.EVENT_WRING:
 			_views[int(event["id"])].wring()
 			AudioService.play_pitched("wring", randf_range(0.95, 1.05))
@@ -199,122 +261,219 @@ func _play_event(event: Dictionary) -> void:
 			AudioService.play_pitched("unlock", 1.0, -4.0)
 		LaundryBoard.EVENT_TO_RACK:
 			var view: GarmentView = _views[int(event["id"])]
-			AudioService.play_pitched("cloth", randf_range(0.9, 1.1), -6.0)
-			_fly(view, _rack_points[int(event["slot"])], RACK_GARMENT_SCALE)
-			await get_tree().create_timer(FLIGHT_STAGGER).timeout
+			_leave_line(view)
+			_fly(view, _rack_points[int(event["slot"])], RACK_GARMENT_SCALE, 0.0, 0.0)
+			view.landed.connect(_on_rack_landed.bind(view), CONNECT_ONE_SHOT)
+			await _wait(Motion.stagger(_events.size()))
 		LaundryBoard.EVENT_TO_BASKET, LaundryBoard.EVENT_RACK_TO_BASKET:
 			var index: int = int(event["basket"])
-			var flying: GarmentView = _views[int(event["id"])]
-			_basket_items[index].append(flying)
-			AudioService.play_pitched("cloth", randf_range(0.9, 1.1), -6.0)
-			# Sepete giderken havada katlanır; sepette katlar üst üste ayrı ayrı durur.
-			flying.z_index = 60 + int(event["index"])
-			_fly(flying, _baskets[index].slot_position(int(event["index"])), 1.0)
-			flying.fold(FLIGHT_SECONDS, _baskets[index].folded_width())
-			# Katlar birbirinden ayrışsın: her kat hafif döner ve biraz farklı tonda durur.
 			var stack_index: int = int(event["index"])
-			flying.create_tween().tween_property(flying, "rotation_degrees",
-				STACK_TILT_DEGREES * (1.0 if stack_index % 2 == 0 else -1.0), FLIGHT_SECONDS)
-			flying.modulate = Color.WHITE.darkened(STACK_SHADE * float(2 - stack_index))
-			_baskets[index].set_filled(int(event["index"]) + 1)
-			await get_tree().create_timer(FLIGHT_STAGGER).timeout
+			var flying: GarmentView = _views[int(event["id"])]
+			_leave_line(flying)
+			_basket_items[index].append(flying)
+			# Sepete giderken havada katlanır; sepette katlar üst üste ayrı ayrı durur:
+			# her kat hafif döner ve biraz farklı tonda durur.
+			flying.z_index = 60 + stack_index
+			flying.modulate = Color.WHITE.darkened(Motion.STACK_SHADE * float(2 - stack_index))
+			var tilt: float = Motion.STACK_TILT_DEGREES * (1.0 if stack_index % 2 == 0 else -1.0)
+			_fly(flying, _baskets[index].slot_position(stack_index), 1.0, _baskets[index].folded_width(), tilt)
+			flying.landed.connect(_on_basket_landed.bind(index, stack_index, flying), CONNECT_ONE_SHOT)
+			await _wait(Motion.stagger(_events.size()))
 		LaundryBoard.EVENT_BASKET_DONE:
-			await _fold_basket(int(event["basket"]))
+			await _complete_basket(int(event["basket"]))
 		LaundryBoard.EVENT_BASKET_NEW:
-			_bring_basket(int(event["basket"]), int(event["color"]))
+			_baskets[int(event["basket"])].enter(COLORS[int(event["color"]) % COLORS.size()])
 		LaundryBoard.EVENT_WIN:
-			await get_tree().create_timer(FLIGHT_SECONDS).timeout
-			_show_win()
+			if await _wait_flights():
+				await _wait(Motion.WIN_DELAY_SECONDS)
+				_show_win()
 		LaundryBoard.EVENT_LOSE:
 			Input.vibrate_handheld(300)
 			AudioService.play_pitched("wind", 1.0, -3.0)
-			await get_tree().create_timer(FLIGHT_SECONDS + 0.2).timeout
-			_show_lose(int(event.get("remaining", 0)))
+			if await _wait_flights():
+				await _wait(Motion.LOSE_DELAY_SECONDS)
+				_show_lose(int(event.get("remaining", 0)))
 
 
-## Yay çizerek uçuş (0,28 sn). Mandallar ipte kalır gibi kaybolur.
-func _fly(view: GarmentView, target: Vector2, target_scale: float) -> void:
-	view.detach_pins()
+## Çamaşır ipten ayrılır: sallanma listesinden çıkar, aynı ipteki komşular yumuşakça sallanır.
+func _leave_line(view: GarmentView) -> void:
+	var at: int = _line_views.find(view)
+	if at < 0:
+		return
+	_line_views.remove_at(at)
+	for other: GarmentView in _line_views:
+		if other.line != view.line:
+			continue
+		var offset: float = other.position.x - view.position.x
+		var reach: float = 1.0 - absf(offset) / Motion.NEIGHBOUR_RADIUS
+		if reach > 0.0:
+			other.nudge(signf(offset) * Motion.NEIGHBOUR_KICK * reach)
+
+
+## Zarif yay uçuşu (hazırlık + uçuş + iniş). Ses, kalkış anına hizalanır (mandal fırlayınca).
+func _fly(view: GarmentView, target: Vector2, target_scale: float, folded_width: float, tilt: float) -> void:
 	view.set_open(true)
 	view.z_index = maxi(view.z_index, 50)
-	var start: Vector2 = view.global_position
-	var tween: Tween = view.create_tween().set_parallel(true)
-	tween.tween_method(func(weight: float) -> void:
-		view.global_position = start.lerp(target, weight) \
-			+ Vector2(0.0, -FLIGHT_ARC * sin(PI * weight)), 0.0, 1.0, FLIGHT_SECONDS)\
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(view, "scale", Vector2.ONE * target_scale, FLIGHT_SECONDS)
+	view.fly_to(target, target_scale, folded_width, tilt)
+	_flights_end_msec = maxi(_flights_end_msec,
+		Time.get_ticks_msec() + int(Motion.total_fly_seconds() * MS_PER_SECOND))
+	get_tree().create_timer(Motion.ANTICIPATE_SECONDS).timeout.connect(
+		AudioService.play_pitched.bind("cloth", randf_range(0.9, 1.1), -6.0))
 
 
-## Sepet doldu: çamaşırlar katlanıp kaybolur, sepet aşağı kayar.
-func _fold_basket(index: int) -> void:
-	await get_tree().create_timer(FLIGHT_SECONDS).timeout
+func _on_rack_landed(view: GarmentView) -> void:
+	if is_instance_valid(view):
+		AudioService.play_pitched("cloth", randf_range(0.7, 0.8), LAND_SOUND_DB)
+
+
+func _on_basket_landed(index: int, stack_index: int, view: GarmentView) -> void:
+	if index >= _baskets.size():
+		return
+	var basket: BasketView = _baskets[index]
+	basket.receive(1.0 - 0.2 * float(stack_index))
+	basket.set_filled(stack_index + 1)
+	if is_instance_valid(view):
+		_puff(view.global_position)
+	AudioService.play_pitched("fold_puff", randf_range(1.0, 1.12), LAND_SOUND_DB)
+
+
+## Sepet doldu: yığın aşağı basılır, parıltı patlar, bant nabız atar, parçalar sepete
+## karışır; sonra sepet kayıp gider ve yenisi gelir (kayma beklenmez, kuyruk akmaya devam eder).
+func _complete_basket(index: int) -> void:
+	if not await _wait_flights():
+		return
+	var basket: BasketView = _baskets[index]
+	var pieces: Array = _basket_items[index]
+	# 1) Yığın basar: parçalar birbirine yaklaşır, sepet çöker.
+	basket.press(Motion.COMPLETE_PRESS_SECONDS)
+	for position_in_stack: int in range(pieces.size()):
+		var piece: GarmentView = pieces[position_in_stack] as GarmentView
+		var squeezed: Vector2 = basket.slot_position(0) + Vector2(0.0,
+			-float(position_in_stack) * basket.size * 0.19 * Motion.COMPLETE_PRESS_RATIO)
+		var press: Tween = piece.create_tween().set_parallel(true)
+		press.tween_property(piece, "global_position", squeezed, Motion.COMPLETE_PRESS_SECONDS)\
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		press.tween_property(piece, "scale", Vector2(1.04, 0.88), Motion.COMPLETE_PRESS_SECONDS)\
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	if not await _wait(Motion.COMPLETE_PRESS_SECONDS + Motion.COMPLETE_HOLD_SECONDS):
+		return
+	# 2) Parıltı + bant nabzı + sesler.
 	Input.vibrate_handheld(40)
 	var now: int = Time.get_ticks_msec()
-	_combo = _combo + 1 if now - _last_fold_msec < int(COMBO_RESET_SECONDS * 1000.0) else 0
+	_combo = _combo + 1 if now - _last_fold_msec < int(COMBO_RESET_SECONDS * MS_PER_SECOND) else 0
 	_last_fold_msec = now
 	AudioService.play_pitched("fold_puff", randf_range(0.96, 1.04))
 	AudioService.play_pitched("note", pow(COMBO_SEMITONE, float(mini(_combo, COMBO_MAX_STEPS)) * 2.0), -5.0)
-	var basket: BasketView = _baskets[index]
-	_sparkle(basket.global_position + Vector2(0.0, -BASKET_SIZE * 0.3), basket.color)
-	var tween: Tween = create_tween().set_parallel(true)
-	for garment: Variant in _basket_items[index]:
-		var view: GarmentView = garment as GarmentView
-		# Yığın sepetin içine çöker.
-		tween.tween_property(view, "global_position", basket.global_position + Vector2(0.0, -BASKET_SIZE * 0.08), FOLD_SECONDS * 0.5)\
-			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-		tween.tween_property(view, "scale", Vector2(0.75, 0.3), FOLD_SECONDS * 0.5)
-		tween.tween_property(view, "modulate:a", 0.0, FOLD_SECONDS * 0.2).set_delay(FOLD_SECONDS * 0.35)
-	tween.tween_property(basket, "scale", Vector2(1.12, 0.9), FOLD_SECONDS * 0.3)
-	tween.chain().tween_property(basket, "scale", Vector2.ONE, FOLD_SECONDS * 0.2)
-	tween.chain().tween_property(basket, "position:y", BASKET_Y + BASKET_SLIDE, FOLD_SECONDS * 0.4)\
-		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-	await tween.finished
-	for garment: Variant in _basket_items[index]:
+	_sparkle(basket.rest_position + Vector2(0.0, -BASKET_SIZE * 0.3), basket.color)
+	basket.pulse_band()
+	# 3) Parçalar sepetin içine karışıp solar.
+	for garment: Variant in pieces:
+		var piece: GarmentView = garment as GarmentView
+		var absorb: Tween = piece.create_tween().set_parallel(true)
+		absorb.tween_property(piece, "global_position",
+			basket.rest_position + Vector2(0.0, -BASKET_SIZE * ABSORB_DROP_RATIO), Motion.COMPLETE_ABSORB_SECONDS)\
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+		absorb.tween_property(piece, "scale", ABSORB_SCALE, Motion.COMPLETE_ABSORB_SECONDS)\
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		absorb.tween_property(piece, "modulate:a", 0.0, Motion.COMPLETE_ABSORB_SECONDS * 0.7)\
+			.set_delay(Motion.COMPLETE_ABSORB_SECONDS * 0.3)
+	if not await _wait(Motion.COMPLETE_ABSORB_SECONDS):
+		return
+	for garment: Variant in pieces:
 		(garment as GarmentView).queue_free()
-	_basket_items[index].clear()
-	basket.visible = false
-	basket.set_filled(0)
-	queue_redraw()
+	pieces.clear()
+	# 4) Sepet yavaşça kayıp gider; yenisi (BASKET_NEW) kayma bitince gelir.
+	basket.leave()
 
 
-## Sepet tamamlanınca yumuşak parıltı patlaması (sepet renginde + sıcak beyaz).
+## Yumuşak parıltı patlaması (sepet renginde + sıcak beyaz). Havuzdan; her seferinde yeni düğüm yok.
 func _sparkle(at: Vector2, tint: Color) -> void:
+	if _sparkles.is_empty():
+		return
 	for layer_color: Color in [SPARKLE_COLOR, tint.lightened(0.35)]:
-		var burst: CPUParticles2D = CPUParticles2D.new()
-		burst.one_shot = true
-		burst.explosiveness = 0.92
-		burst.amount = 16
-		burst.lifetime = 0.75
-		burst.texture = GarmentView.circle_texture()
+		var burst: CPUParticles2D = _sparkles[_sparkle_next]
+		_sparkle_next = (_sparkle_next + 1) % _sparkles.size()
+		burst.color = layer_color
+		burst.global_position = at
+		burst.restart()
+		burst.emitting = true
+
+
+## İniş tozu: birkaç yumuşak, solan daire.
+func _puff(at: Vector2) -> void:
+	if _puffs.is_empty():
+		return
+	var puff: CPUParticles2D = _puffs[_puff_next]
+	_puff_next = (_puff_next + 1) % _puffs.size()
+	puff.global_position = at
+	puff.restart()
+	puff.emitting = true
+
+
+func _make_emitter(count: int, lifetime: float) -> CPUParticles2D:
+	var emitter: CPUParticles2D = CPUParticles2D.new()
+	emitter.one_shot = true
+	emitter.emitting = false
+	emitter.explosiveness = 0.92
+	emitter.amount = count
+	emitter.lifetime = lifetime
+	emitter.texture = GarmentView.circle_texture()
+	emitter.color_ramp = _fade_ramp
+	emitter.scale_amount_curve = _shrink_curve
+	emitter.z_index = PARTICLE_Z
+	_world.add_child(emitter)
+	return emitter
+
+
+## Havuz: seviye başında bir kez kurulur (kare içinde Node üretimi/serbest bırakma yok).
+func _build_particles() -> void:
+	if _fade_ramp == null:
+		_fade_ramp = Gradient.new()
+		_fade_ramp.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
+		_fade_ramp.colors = PackedColorArray([Color.WHITE, Color(1.0, 1.0, 1.0, 0.7), Color(1.0, 1.0, 1.0, 0.0)])
+		_shrink_curve = Curve.new()
+		_shrink_curve.add_point(Vector2(0.0, 1.0))
+		_shrink_curve.add_point(Vector2(1.0, PARTICLE_END_SCALE))
+	_puffs.clear()
+	_sparkles.clear()
+	_puff_next = 0
+	_sparkle_next = 0
+	for i: int in range(Motion.PUFF_POOL):
+		var puff: CPUParticles2D = _make_emitter(Motion.PUFF_COUNT, Motion.PUFF_LIFETIME)
+		puff.direction = Vector2.UP
+		puff.spread = 180.0
+		puff.gravity = Vector2.ZERO
+		puff.damping_min = PUFF_DAMPING
+		puff.damping_max = PUFF_DAMPING
+		puff.initial_velocity_min = PUFF_SPEED_MIN
+		puff.initial_velocity_max = PUFF_SPEED_MAX
+		puff.scale_amount_min = PUFF_SCALE_MIN
+		puff.scale_amount_max = PUFF_SCALE_MAX
+		puff.color = PUFF_COLOR
+		_puffs.append(puff)
+	for i: int in range(Motion.SPARKLE_POOL * 2):
+		var burst: CPUParticles2D = _make_emitter(Motion.SPARKLE_COUNT, Motion.SPARKLE_LIFETIME)
 		burst.direction = Vector2.UP
 		burst.spread = 75.0
-		burst.gravity = Vector2(0.0, 260.0)
-		burst.initial_velocity_min = 160.0
-		burst.initial_velocity_max = 380.0
-		burst.scale_amount_min = 0.06
-		burst.scale_amount_max = 0.16
-		burst.color = layer_color
-		burst.z_index = 90
-		burst.global_position = at
-		_world.add_child(burst)
-		burst.emitting = true
-		get_tree().create_timer(1.2).timeout.connect(burst.queue_free)
-
-
-func _bring_basket(index: int, color_index: int) -> void:
-	var basket: BasketView = _baskets[index]
-	basket.set_color(COLORS[color_index % COLORS.size()])
-	basket.position.y = BASKET_Y + BASKET_SLIDE
-	var tween: Tween = create_tween()
-	tween.tween_property(basket, "position:y", BASKET_Y, FOLD_SECONDS * 0.6)\
-		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		burst.gravity = Vector2(0.0, SPARKLE_GRAVITY)
+		burst.damping_min = SPARKLE_DAMPING
+		burst.damping_max = SPARKLE_DAMPING
+		burst.initial_velocity_min = SPARKLE_SPEED_MIN
+		burst.initial_velocity_max = SPARKLE_SPEED_MAX
+		burst.scale_amount_min = SPARKLE_SCALE_MIN
+		burst.scale_amount_max = SPARKLE_SCALE_MAX
+		_sparkles.append(burst)
 
 
 func _start_level() -> void:
 	if _world != null:
 		_world.queue_free()
 	_hide_overlay()
+	_generation += 1
+	_playing = false
+	_flights_end_msec = 0
+	_applied_sway = Motion.SWAY_CALM
+	_line_views.clear()
 	_events.clear()
 	_views.clear()
 	_baskets.clear()
@@ -328,6 +487,7 @@ func _start_level() -> void:
 	_level_label.text = "Seviye %d" % _level_number
 	_world = Node2D.new()
 	add_child(_world)
+	_build_particles()
 	_build_lines()
 	_build_rack()
 	_build_baskets()
@@ -358,7 +518,9 @@ func _build_lines() -> void:
 		view.position = Vector2(
 			_center_x + (float(item["slot"]) - float(columns - 1) * 0.5) * spacing_x,
 			_line_ys[int(item["line"])] + LAYER_DROP * float(layer))
+		view.line = int(item["line"])
 		_world.add_child(view)
+		_line_views.append(view)
 		_views[int(item["id"])] = view
 		if bool(item.get("wet", false)):
 			view.set_wet(true)
@@ -372,7 +534,7 @@ func _build_rack() -> void:
 	var slots: int = _board.rack_slots()
 	for slot: int in range(slots):
 		_rack_points.append(Vector2(
-			_center_x + (float(slot) - float(slots - 1) * 0.5) * RACK_SPACING, RACK_Y))
+			_center_x + (float(slot) - RACK_CENTER_HOOK) * RACK_SPACING, RACK_Y))
 
 
 func _build_baskets() -> void:
@@ -382,6 +544,7 @@ func _build_baskets() -> void:
 		basket.setup(BASKET_SIZE)
 		basket.position = Vector2(
 			_center_x + (float(index) - float(states.size() - 1) * 0.5) * BASKET_SPACING, BASKET_Y)
+		basket.rest_position = basket.position
 		_world.add_child(basket)
 		_baskets.append(basket)
 		_basket_items.append([])
@@ -400,18 +563,8 @@ func _draw() -> void:
 		var points: PackedVector2Array = PackedVector2Array()
 		for step: int in range(25):
 			var t: float = float(step) / 24.0
-			points.append(Vector2(lerpf(34.0, width - 34.0, t), y - 6.0 + 10.0 * sin(PI * t)))
+			points.append(Vector2(lerpf(ROPE_INSET, width - ROPE_INSET, t), y - 6.0 + 10.0 * sin(PI * t)))
 		draw_polyline(points, ROPE_COLOR, 5.0, true)
-	# Bekleme askısı: çubuk + slot işaretleri.
-	if not _rack_points.is_empty():
-		var bar_color: Color = RACK_COLOR.lerp(DANGER_COLOR, _danger)
-		var left: Vector2 = _rack_points[0] + Vector2(-RACK_SPACING * 0.5, -14.0)
-		var right: Vector2 = _rack_points[_rack_points.size() - 1] + Vector2(RACK_SPACING * 0.5, -14.0)
-		draw_line(left, right, bar_color, 12.0, true)
-		draw_circle(left, 6.0, bar_color, true, -1.0, true)
-		draw_circle(right, 6.0, bar_color, true, -1.0, true)
-		for point: Vector2 in _rack_points:
-			draw_circle(point + Vector2(0.0, 44.0), 46.0, Color(0.0, 0.0, 0.0, 0.07), true, -1.0, true)
 	# Sıradaki sepetler: küçük renk noktaları (soldan sağa sıra).
 	var queue: Array[int] = _board.queue()
 	var shown: int = mini(queue.size(), QUEUE_SHOWN)
@@ -443,7 +596,7 @@ func _build_sky() -> void:
 	add_child(garden_layer)
 	_backdrop = GardenBackdrop.new()
 	garden_layer.add_child(_backdrop)
-	_backdrop.setup(get_viewport_rect().size)
+	_backdrop.setup(get_viewport_rect().size, RACK_Y)
 
 
 func _build_ui() -> void:
@@ -490,6 +643,7 @@ func _show_overlay(title: String, subtitle: String, buttons: Array[Button]) -> v
 	_overlay = Control.new()
 	_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_ui.add_child(_overlay)
+	_overlay.modulate.a = 0.0
 	var dim: ColorRect = ColorRect.new()
 	dim.color = Color(0.1, 0.12, 0.18, 0.45)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -504,7 +658,13 @@ func _show_overlay(title: String, subtitle: String, buttons: Array[Button]) -> v
 	panel.set_anchors_preset(Control.PRESET_CENTER)
 	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
-	_overlay.add_child(panel)
+	# Panel kapsayıcı içinde durur: kapsayıcının konumunu oynatmak, çapa/yerleşimi bozmadan
+	# panelin aşağıdan yumuşakça yükselmesini sağlar.
+	var rise: Control = Control.new()
+	rise.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rise.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_overlay.add_child(rise)
+	rise.add_child(panel)
 	var column: VBoxContainer = VBoxContainer.new()
 	column.add_theme_constant_override("separation", 22)
 	panel.add_child(column)
@@ -524,8 +684,12 @@ func _show_overlay(title: String, subtitle: String, buttons: Array[Button]) -> v
 	for button: Button in buttons:
 		button.custom_minimum_size = Vector2(0.0, 96.0)
 		column.add_child(button)
-	panel.pivot_offset = panel.size * 0.5
-	Juice.pop_in(panel)
+	rise.position.y = Motion.OVERLAY_RISE_DISTANCE
+	var intro: Tween = _overlay.create_tween().set_parallel(true)
+	intro.tween_property(_overlay, "modulate:a", 1.0, Motion.OVERLAY_FADE_SECONDS)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	intro.tween_property(rise, "position:y", 0.0, Motion.OVERLAY_RISE_SECONDS)\
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 
 func _hide_overlay() -> void:
