@@ -206,3 +206,13 @@ MACHINE_MOVES_ONE,%d hamle,%d move,%d movimiento
 MACHINE_MOVES_OTHER,%d hamle,%d moves,%d movimientos
 MACHINE_MAX,En üst seviye,Maxed,Al máximo
 MACHINE_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d
+TUT_DUAL_TITLE,Çift renkli çamaşır,Two-colour garment,Prenda bicolor
+TUT_DUAL_LINE,"İki rengin sepetine de gider; ikizi ise kalan rengi alır.","It fits either colour's basket; its twin then takes the other colour.","Va a la cesta de cualquiera de sus colores; su gemela toma el otro color."
+TUT_SUN_FADE_TITLE,Güneşte solma,Sun fade,Decolorado al sol
+TUT_SUN_FADE_LINE,"Sayaç bitmeden al; solarsa almadan önce bir kez silkelemen gerekir.","Take it before the count ends; if it fades, shake it out once first.","Recógela antes de que acabe la cuenta; si se decolora, sacúdela una vez antes."
+TUT_LEAVES_TITLE,Düşen yapraklar,Falling leaves,Hojas que caen
+TUT_LEAVES_LINE,"Yapraklı çamaşıra bir dokun, yaprak süpürülür; hamle sayılmaz.","Tap a leafy item once to brush the leaf off; it costs no move.","Toca una vez la prenda con hoja para quitarla; no cuesta movimiento."
+TUT_FROST_TITLE,Don,Frost,Escarcha
+TUT_FROST_LINE,"Donmuş çamaşır önce askıda bir hamle ısınır, sonra sepete geçer.","A frozen item warms on the rack for one move, then goes to its basket.","Una prenda helada se templa un movimiento en el tendedero y luego va a su cesta."
+TUT_POLLEN_TITLE,Polen,Pollen,Polen
+TUT_POLLEN_LINE,"Polen bir ipin renklerini birkaç hamle örter; çamaşırlar yine de alınır.","Pollen hides one line's colours for a few moves; you can still take them.","El polen oculta los colores de una cuerda unos movimientos; aún puedes recogerlas."

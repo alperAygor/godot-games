@@ -76,7 +76,7 @@ static func _search(board: LaundryBoard, path: Array[int], seen: Dictionary, bud
 			budget[0] -= 1
 			continue
 		path.append(id)
-		var helped: int = _help_critters(board, path) if help_critters else 0
+		var helped: int = _help_critters(board, path) if help_critters else _brush_leaves(board, path)
 		if _search(board, path, seen, budget, help_critters):
 			return true
 		path.resize(path.size() - 1 - helped)
@@ -88,7 +88,7 @@ static func _search(board: LaundryBoard, path: Array[int], seen: Dictionary, bud
 ## zarar verir, kedi yalnız sepet kapatır). Yola eklenen ücretsiz eylem sayısını döndürür. Geri al
 ## son HAMLEYİ bunlarla birlikte geri sardığından ayrıca geri alınmaz.
 static func _help_critters(board: LaundryBoard, path: Array[int]) -> int:
-	var helped: int = 0
+	var helped: int = _brush_leaves(board, path)
 	if board.is_over():
 		return helped
 	if board.bird_on() != LaundryBoard.EMPTY:
@@ -100,6 +100,39 @@ static func _help_critters(board: LaundryBoard, path: Array[int]) -> int:
 		path.append(LaundryBoard.TAP_CAT)
 		helped += 1
 	return helped
+
+
+## Açık yapraklı parçaların yaprağı süpürülür (ücretsiz; yapraklı parça süpürülmeden alınamaz, yaprağı
+## bırakmanın hiçbir yararı yok -> hep süpürmek en iyisidir ve aramayı büyütmez). Yardımsız (kuş/kedi)
+## doğrulamada da yapılır: yaprak bir "misafir" değil, yalnız ek dokunuştur. Yol, oyunda aynen
+## oynanabilsin diye süpürme dokunuşları (parça kimliği) yola yazılır.
+static func _brush_leaves(board: LaundryBoard, path: Array[int]) -> int:
+	if not board.has_season() or board.is_over():
+		return 0
+	var brushed: int = 0
+	for id: int in board.leafy_ids():
+		if board.is_open(id):
+			board.tap(id)
+			path.append(id)
+			brushed += 1
+	return brushed
+
+
+## Tanık yolu: daha önce bulunmuş bir çözüm yolu verilen seviyede aynen oynanınca kazandırıyor mu.
+## Neden: üretici bir engel ekleyip yeniden doğrularken çoğu zaman eski yol hâlâ geçerlidir; yolu
+## oynamak (~yol uzunluğu kadar dokunuş) aramadan yüzlerce kat ucuzdur ve yol kendisi kanıttır
+## (sağlam). `help_critters` false ise kuş/kedi dokunuşları atlanır (yardımsız oyun).
+static func replays(level: Dictionary, path: Array[int], help_critters: bool = true) -> bool:
+	if path.is_empty() or not counts_fit(level):
+		return false
+	var board: LaundryBoard = LaundryBoard.new(level)
+	for id: int in path:
+		if board.is_over():
+			break
+		if not help_critters and (id == LaundryBoard.TAP_BIRD or id == LaundryBoard.TAP_CAT):
+			continue
+		board.tap(id)
+	return board.is_won()
 
 
 ## Durum anahtarı tahtadadır (iç alanlara kopyasız erişir); burada geriye uyum için durur.

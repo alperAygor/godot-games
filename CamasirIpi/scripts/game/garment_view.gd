@@ -5,7 +5,8 @@ extends Node2D
 ## nötr beyaz sprite (assets/sprites/garment_*.png) oyun rengiyle çarpılır; sprite yoksa
 ## yumuşak köşeli basit bir şekil çizilir (yedek).
 ## Durumlar: kapalı (soluk), ıslak (koyu + damla), gizemli (renk gizli, "?"),
-## kilitli (anahtar renginde rozet). İpteyken kumaş gibi sallanır (cloth_sway shader'ı);
+## kilitli (anahtar renginde rozet). Derinleşme 4 (dosya sonu): çift renk (çapraz bölünmüş iki renk),
+## güneş rozeti/solma, yaprak, don, polen tozu. İpteyken kumaş gibi sallanır (cloth_sway shader'ı);
 ## tüm uçuş/katlama/iniş hareketi `fly_to` içinde tek bir Tween ile sürülür.
 
 const KINDS: Array[String] = ["tshirt", "pants", "dress", "towel", "shorts", "sweater", "sock"]
@@ -375,6 +376,7 @@ func _spawn_falling_pin(host: Node, pin: Sprite2D) -> void:
 ## Tek Tween tek `tween_method` sürer: kare başına yeni nesne yok, çamaşır silinince Tween de ölür.
 func fly_to(target: Vector2, target_scale: float, folded_width: float, final_rotation_deg: float) -> void:
 	release_pins()
+	_leave_season_state()
 	if _tween != null:
 		_tween.kill()
 	if _flight_tween != null:
@@ -462,7 +464,7 @@ func _prepare_fold(width: float) -> void:
 
 ## Katlanmış sprite çamaşırın üstünde, rozet/soru işareti ise onun da üstünde kalsın.
 func _pin_children_on_top() -> void:
-	for extra: Node in [_question, _badge]:
+	for extra: Node in [_dual_mask, _question, _badge]:
 		if extra != null:
 			move_child(extra, get_child_count() - 1)
 
@@ -542,7 +544,19 @@ func _restart_tween() -> void:
 
 
 func _shown_color() -> Color:
-	var shown: Color = MYSTERY_COLOR if _mystery else color
+	return _shade(color)
+
+
+## Taban renge durum gölgesi (gizem/toz, ıslaklık, solma, don, kapalılık). Çift rengin ikinci yarısı da
+## aynı gölgeyle boyanır: iki yarı her durumda birlikte okunur.
+func _shade(base: Color) -> Color:
+	var shown: Color = MYSTERY_COLOR if _mystery else base
+	if _dusty:
+		shown = DUST_COLOR
+	if _faded:
+		shown = shown.lerp(FADED_TINT, FADED_MIX)
+	if _frozen:
+		shown = shown.lerp(FROST_TINT, FROST_MIX)
 	if _wet:
 		shown = shown.darkened(WET_DARKEN)
 	if _open:
@@ -553,6 +567,8 @@ func _shown_color() -> Color:
 func _apply_color() -> void:
 	if _sprite != null:
 		_sprite.modulate = _shown_color()
+	if _dual_sprite != null:
+		_dual_sprite.modulate = _shade(_dual_color)
 	queue_redraw()
 
 
@@ -1044,3 +1060,441 @@ func wash_clean() -> void:
 	if _mess != null:
 		_mess.visible = false
 	set_wet(false)
+
+
+# --- Derinleşme 4: çift renk ve mevsim olayları ---------------------------------------------------
+# Kurallar `LaundryBoard` son bölümündedir; burada yalnız görünüm. Hepsi yumuşak geçişlidir (Motion)
+# ve kurulumda bir kez üretilen düğümlerle çalışır (kare başına üretim yok). Rozetler çakışmasın diye
+# farklı köşelerdedir: güneş sağ üstte, yaprak gövde ortasında, don tüm gövdede (kaplama).
+
+const SEASON_FX_PATH: String = "res://assets/sprites/seasons_fx/%s.png"
+## Çift renk: çapraz ayrım (sağ alt yarı ikinci renk); kenar yumuşaklığı (gradyan payı).
+const DUAL_EDGE_SOFTNESS: float = 0.012
+const DUAL_MASK_TEXTURE_SIZE: int = 128
+const DUAL_SETTLE_SECONDS: float = 0.42
+## Güneş rozeti: sağ üst köşe; aciliyette (son hamle) nabız.
+const SUN_BADGE_RATIO: float = 0.42
+const SUN_BADGE_POS: Vector2 = Vector2(0.3, 0.16)
+const SUN_TEXT_COLOR: Color = Color("6b4a10")
+const SUN_URGENT_LEFT: int = 1
+const FADED_TINT: Color = Color(0.97, 0.95, 0.9)
+const FADED_MIX: float = 0.55
+const SHAKE_SECONDS: float = 0.08
+const SHAKE_DEGREES: float = 9.0
+## Yaprak: gövdenin üst-ortasına konar; düşüş ve süpürme süreleri.
+const LEAF_RATIO: float = 0.62
+const LEAF_POS: Vector2 = Vector2(0.06, 0.4)
+const LEAF_FALL_HEIGHT: float = 220.0
+const LEAF_FALL_SECONDS: float = 0.75
+const LEAF_BRUSH_SECONDS: float = 0.4
+const LEAF_BRUSH_DISTANCE: float = 140.0
+const LEAF_HINT_ALPHA: float = 0.45
+const LEAF_HINT_LIFT: float = 70.0
+const LEAF_HINT_BOB_SECONDS: float = 0.9
+## Don: buzlu kaplama + soğuk renk; askıda ısınırken nabız.
+const FROST_TINT: Color = Color(0.82, 0.91, 1.0)
+const FROST_MIX: float = 0.12
+## Don tülü (beyaz, yarı saydam) ve kar taneleri; polen tülü ve benekleri.
+const FROST_VEIL: Color = Color(0.92, 0.97, 1.0, 0.3)
+const FROST_MARK: Color = Color(1.0, 1.0, 1.0, 0.95)
+const DUST_VEIL: Color = Color(1.0, 0.95, 0.8, 0.35)
+const DUST_MARK: Color = Color(1.0, 0.86, 0.38, 0.95)
+## İşaretlerin gövde çapasına göre yerleri (boy oranı) ve büyüklüğü.
+const OVERLAY_MARKS: Array[Vector2] = [Vector2(-0.16, -0.12), Vector2(0.15, 0.02), Vector2(-0.05, 0.16)]
+const OVERLAY_MARK_RATIO: float = 0.2
+const FROST_WARM_TINT: Color = Color(1.0, 0.86, 0.7, 0.85)
+const FROST_THAW_SECONDS: float = 0.6
+## Polen tozu: renk gizlenir (sıcak bej), üstünde benekli toz.
+const DUST_COLOR: Color = Color(0.86, 0.8, 0.66)
+const DUST_ALPHA: float = 0.85
+const DUST_FADE_SECONDS: float = 0.35
+
+var _dual_color: Color = Color.WHITE
+var _dual_mask: Sprite2D = null
+var _dual_sprite: Sprite2D = null
+var _sun_badge: SunBadge = null
+var _faded: bool = false
+var _leaf: Sprite2D = null
+var _leaf_hint: Sprite2D = null
+var _frozen: bool = false
+var _frost: Node2D = null
+var _frost_pulse: Tween = null
+var _dusty: bool = false
+var _dust: Node2D = null
+static var _fx_cache: Dictionary = {}
+static var _dual_masks: Array[Texture2D] = []
+
+
+static func season_texture(name: String) -> Texture2D:
+	if not _fx_cache.has(name):
+		var path: String = SEASON_FX_PATH % name
+		_fx_cache[name] = load(path) as Texture2D if ResourceLoader.exists(path) else null
+	return _fx_cache[name] as Texture2D
+
+
+## Çapraz maske dokusu (ikinci rengin yarısı: köşegenin sağ altı); bir kez üretilir.
+static func _dual_mask_texture() -> Texture2D:
+	if _dual_masks.is_empty():
+		var gradient: Gradient = Gradient.new()
+		gradient.offsets = PackedFloat32Array([0.0, 0.5 - DUAL_EDGE_SOFTNESS, 0.5 + DUAL_EDGE_SOFTNESS, 1.0])
+		gradient.colors = PackedColorArray([Color(1, 1, 1, 0), Color(1, 1, 1, 0), Color.WHITE, Color.WHITE])
+		var texture: GradientTexture2D = GradientTexture2D.new()
+		texture.gradient = gradient
+		texture.fill = GradientTexture2D.FILL_LINEAR
+		texture.fill_from = Vector2(0.0, 0.0)
+		texture.fill_to = Vector2(1.0, 1.0)
+		texture.width = DUAL_MASK_TEXTURE_SIZE
+		texture.height = DUAL_MASK_TEXTURE_SIZE
+		_dual_masks.append(texture)
+	return _dual_masks[0]
+
+
+## Çift renk: aynı sprite'ın ikinci kopyası, çapraz bir maskenin (clip_children) içinde ikinci renkle
+## boyanır. Aynı materyali paylaştığı için kumaşla birlikte birebir sallanır.
+func set_dual(second: Color) -> void:
+	_dual_color = second
+	if _sprite == null or _dual_mask != null:
+		_apply_color()
+		return
+	var area: Vector2 = _sprite.texture.get_size() * _sprite.scale
+	_dual_mask = _make_dual_layer(area)
+	_dual_sprite = _dual_mask.get_child(0) as Sprite2D
+	_pin_children_on_top()
+	_apply_color()
+
+
+## Maske (gradyan, sprite alanını kaplar) + içinde sprite kopyası (aynı doku, ölçek, materyal).
+func _make_dual_layer(area: Vector2) -> Sprite2D:
+	var mask: Sprite2D = Sprite2D.new()
+	mask.texture = _dual_mask_texture()
+	mask.centered = false
+	mask.clip_children = CanvasItem.CLIP_CHILDREN_ONLY
+	mask.position = _sprite.position
+	mask.scale = area / float(DUAL_MASK_TEXTURE_SIZE)
+	add_child(mask)
+	var copy: Sprite2D = Sprite2D.new()
+	copy.texture = _sprite.texture
+	copy.centered = false
+	copy.material = _material
+	# Maskenin ölçeği geri alınır: kopya ana sprite ile aynı piksellerde durur.
+	copy.scale = _sprite.scale / mask.scale
+	mask.add_child(copy)
+	return mask
+
+
+func is_dual() -> bool:
+	return _dual_mask != null
+
+
+## Çift yerleşti: parça tek renge döner (ikinci yarı yumuşakça erir). `tint`: kalan/seçilen renk.
+func settle_dual(tint: Color, animate: bool = true) -> void:
+	if _dual_mask == null:
+		recolor(tint, animate)
+		return
+	var mask: Sprite2D = _dual_mask
+	_dual_mask = null
+	_dual_sprite = null
+	color = tint
+	_apply_color()
+	if not animate:
+		mask.queue_free()
+		return
+	var melt: Tween = mask.create_tween()
+	melt.tween_property(mask, "modulate:a", 0.0, DUAL_SETTLE_SECONDS).set_trans(Tween.TRANS_SINE)
+	melt.tween_callback(mask.queue_free)
+	_restart_tween()
+	_tween.tween_property(self, "scale", Vector2(1.06, 0.95), DUAL_SETTLE_SECONDS * 0.4)
+	_tween.tween_property(self, "scale", Vector2.ONE, DUAL_SETTLE_SECONDS * 0.6)\
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+# --- Güneşte solma ---
+
+func set_sun(left: int) -> void:
+	if _sun_badge == null:
+		_sun_badge = SunBadge.new()
+		_sun_badge.radius = size * SUN_BADGE_RATIO * 0.5
+		_sun_badge.position = Vector2(size * SUN_BADGE_POS.x, size * SUN_BADGE_POS.y)
+		_sun_badge.z_index = 2
+		add_child(_sun_badge)
+		_sun_badge.build()
+	set_sun_left(left)
+
+
+func set_sun_left(left: int) -> void:
+	if _sun_badge == null:
+		return
+	if left <= 0:
+		_drop_sun_badge()
+		return
+	var changed: bool = _sun_badge.left != left
+	_sun_badge.left = left
+	_sun_badge.urgent = left <= SUN_URGENT_LEFT
+	_sun_badge.refresh()
+	if changed:
+		_pop(_sun_badge)
+
+
+func _drop_sun_badge() -> void:
+	if _sun_badge == null:
+		return
+	var badge: SunBadge = _sun_badge
+	_sun_badge = null
+	var gone: Tween = badge.create_tween().set_parallel(true)
+	gone.tween_property(badge, "scale", Vector2.ONE * 1.4, BADGE_GONE_SECONDS)
+	gone.tween_property(badge, "modulate:a", 0.0, BADGE_GONE_SECONDS)
+	gone.chain().tween_callback(badge.queue_free)
+
+
+## Soldu: renk açılır (ağarmış kumaş), güneş rozeti parlayıp söner.
+func set_faded(faded: bool, animate: bool = true) -> void:
+	_faded = faded
+	if faded:
+		_drop_sun_badge()
+	if _sprite == null or not animate:
+		_apply_color()
+		return
+	var shift: Tween = _sprite.create_tween()
+	shift.tween_property(_sprite, "modulate", _shown_color(), RECOLOR_SECONDS).set_trans(Tween.TRANS_SINE)
+	if _dual_sprite != null:
+		_apply_color()
+
+
+## Solmuş parça silkelendi: iki yana çırpılır, rengi geri gelir.
+func shake_out() -> void:
+	_faded = false
+	_restart_tween()
+	for angle: float in [SHAKE_DEGREES, -SHAKE_DEGREES, SHAKE_DEGREES * 0.6, -SHAKE_DEGREES * 0.4, 0.0]:
+		_tween.tween_property(self, "rotation_degrees", angle, SHAKE_SECONDS).set_trans(Tween.TRANS_SINE)
+	nudge(1.0)
+	if _sprite != null:
+		var shift: Tween = _sprite.create_tween()
+		shift.tween_property(_sprite, "modulate", _shown_color(), RECOLOR_SECONDS)
+	if _dual_sprite != null:
+		_dual_sprite.modulate = _shade(_dual_color)
+
+
+# --- Düşen yaprak ---
+
+## Yaprak konar: yukarıdan salınarak süzülür (animate) ya da doğrudan yerinde (yeniden kurulum).
+func land_leaf(animate: bool = true) -> void:
+	hide_leaf_hint()
+	if _leaf != null:
+		return
+	var texture: Texture2D = season_texture("leaf")
+	if texture == null:
+		return
+	_leaf = Sprite2D.new()
+	_leaf.texture = texture
+	_leaf.z_index = 3
+	var factor: float = size * LEAF_RATIO / texture.get_size().x
+	_leaf.scale = Vector2.ONE * factor
+	var rest: Vector2 = Vector2(size * LEAF_POS.x, size * LEAF_POS.y)
+	add_child(_leaf)
+	if not animate:
+		_leaf.position = rest
+		return
+	_leaf.position = rest + Vector2(-size * 0.25, -LEAF_FALL_HEIGHT)
+	_leaf.modulate.a = 0.0
+	_leaf.rotation_degrees = -40.0
+	var fall: Tween = _leaf.create_tween().set_parallel(true)
+	fall.tween_property(_leaf, "modulate:a", 1.0, LEAF_FALL_SECONDS * 0.3)
+	fall.tween_property(_leaf, "position:y", rest.y, LEAF_FALL_SECONDS).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	fall.tween_property(_leaf, "position:x", rest.x, LEAF_FALL_SECONDS).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	fall.tween_property(_leaf, "rotation_degrees", 12.0, LEAF_FALL_SECONDS).set_trans(Tween.TRANS_SINE)
+	fall.chain().tween_callback(nudge.bind(0.5))
+
+
+## Süpürüldü: yaprak yana savrulup döner ve söner.
+func brush_leaf() -> void:
+	if _leaf == null:
+		return
+	var leaf: Sprite2D = _leaf
+	_leaf = null
+	var away: Tween = leaf.create_tween().set_parallel(true)
+	away.tween_property(leaf, "position", leaf.position + Vector2(LEAF_BRUSH_DISTANCE, -LEAF_BRUSH_DISTANCE * 0.35),
+		LEAF_BRUSH_SECONDS).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	away.tween_property(leaf, "rotation_degrees", leaf.rotation_degrees + 160.0, LEAF_BRUSH_SECONDS)
+	away.tween_property(leaf, "modulate:a", 0.0, LEAF_BRUSH_SECONDS)
+	away.chain().tween_callback(leaf.queue_free)
+	nudge(-0.6)
+
+
+func has_leaf() -> bool:
+	return _leaf != null
+
+
+## Bir hamle önceden: hedefin üstünde soluk, hafifçe salınan yaprak (yazısız uyarı).
+func show_leaf_hint() -> void:
+	if _leaf_hint != null or _leaf != null:
+		return
+	var texture: Texture2D = season_texture("leaf")
+	if texture == null:
+		return
+	_leaf_hint = Sprite2D.new()
+	_leaf_hint.texture = texture
+	_leaf_hint.z_index = 3
+	_leaf_hint.scale = Vector2.ONE * (size * LEAF_RATIO * 0.8 / texture.get_size().x)
+	_leaf_hint.position = Vector2(size * LEAF_POS.x, size * LEAF_POS.y - LEAF_HINT_LIFT)
+	_leaf_hint.modulate.a = LEAF_HINT_ALPHA
+	add_child(_leaf_hint)
+	var bob: Tween = _leaf_hint.create_tween().set_loops()
+	bob.tween_property(_leaf_hint, "rotation_degrees", 14.0, LEAF_HINT_BOB_SECONDS).set_trans(Tween.TRANS_SINE)
+	bob.tween_property(_leaf_hint, "rotation_degrees", -14.0, LEAF_HINT_BOB_SECONDS).set_trans(Tween.TRANS_SINE)
+
+
+func hide_leaf_hint() -> void:
+	if _leaf_hint == null:
+		return
+	_leaf_hint.queue_free()
+	_leaf_hint = null
+
+
+# --- Don ---
+
+func set_frost(frozen: bool) -> void:
+	_frozen = frozen
+	if frozen and _frost == null:
+		_frost = _season_overlay(FROST_VEIL, "icon_frost", FROST_MARK)
+	elif not frozen and _frost != null:
+		_frost.queue_free()
+		_frost = null
+	_apply_color()
+
+
+## Askıda ısınıyor: kırağı sıcak tona döner ve yumuşakça nabız atar (bir hamle sonra çözülür).
+func set_warming(warming: bool) -> void:
+	if _frost == null:
+		return
+	if _frost_pulse != null:
+		_frost_pulse.kill()
+		_frost_pulse = null
+	if not warming:
+		_frost.modulate = Color.WHITE
+		return
+	_frost.modulate = FROST_WARM_TINT
+	_frost_pulse = _frost.create_tween().set_loops()
+	_frost_pulse.tween_property(_frost, "modulate:a", 0.45, 0.6).set_trans(Tween.TRANS_SINE)
+	_frost_pulse.tween_property(_frost, "modulate:a", FROST_WARM_TINT.a, 0.6).set_trans(Tween.TRANS_SINE)
+
+
+## Çözüldü: kırağı söner, renk ısınır.
+func thaw() -> void:
+	_frozen = false
+	if _frost_pulse != null:
+		_frost_pulse.kill()
+		_frost_pulse = null
+	if _frost != null:
+		var frost: Node2D = _frost
+		_frost = null
+		var gone: Tween = frost.create_tween()
+		gone.tween_property(frost, "modulate:a", 0.0, FROST_THAW_SECONDS).set_trans(Tween.TRANS_SINE)
+		gone.tween_callback(frost.queue_free)
+	if _sprite != null:
+		var shift: Tween = _sprite.create_tween()
+		shift.tween_property(_sprite, "modulate", _shown_color(), FROST_THAW_SECONDS)
+	if _dual_sprite != null:
+		_dual_sprite.modulate = _shade(_dual_color)
+
+
+# --- Polen tozu ---
+
+func set_dusty(dusty: bool, animate: bool = true) -> void:
+	if dusty == _dusty:
+		return
+	_dusty = dusty
+	if dusty and _dust == null:
+		_dust = _season_overlay(DUST_VEIL, "icon_pollen", DUST_MARK)
+		if _dust != null:
+			_dust.modulate.a = 0.0
+	if _dust != null:
+		var target: float = DUST_ALPHA if dusty else 0.0
+		if animate:
+			var fade: Tween = _dust.create_tween()
+			fade.tween_property(_dust, "modulate:a", target, DUST_FADE_SECONDS)
+		else:
+			_dust.modulate.a = target
+	if _sprite != null and animate:
+		var shift: Tween = _sprite.create_tween()
+		shift.tween_property(_sprite, "modulate", _shown_color(), DUST_FADE_SECONDS)
+		if _dual_sprite != null:
+			_dual_sprite.modulate = _shade(_dual_color)
+	else:
+		_apply_color()
+
+
+## Mevsim kaplaması: gövdenin silüetini izleyen beyaz bir "tül" (aynı doku ve materyal: kumaşla
+## birlikte sallanır, rengin üstüne yarı saydam biner) + gövdeye serpilmiş birkaç küçük işaret
+## (kar tanesi / polen beneği). Neden kırpma değil: clip_children bu materyalle kaplamayı düz bir
+## beyaza çeviriyordu; tül + seçik işaretler rengi okunur bırakır.
+func _season_overlay(veil_tint: Color, mark: String, mark_tint: Color) -> Node2D:
+	if _sprite == null:
+		return null
+	var holder: Node2D = Node2D.new()
+	holder.z_index = 1
+	var veil: Sprite2D = Sprite2D.new()
+	veil.texture = _sprite.texture
+	veil.centered = false
+	veil.position = _sprite.position
+	veil.scale = _sprite.scale
+	veil.material = _material
+	veil.modulate = veil_tint
+	holder.add_child(veil)
+	var texture: Texture2D = season_texture(mark)
+	if texture != null:
+		var anchor: Vector2 = MESS_ANCHORS[_kind % MESS_ANCHORS.size()]
+		for offset: Vector2 in OVERLAY_MARKS:
+			var dot: Sprite2D = Sprite2D.new()
+			dot.texture = texture
+			dot.modulate = mark_tint
+			dot.scale = Vector2.ONE * (size * OVERLAY_MARK_RATIO * (1.0 - absf(offset.x)) / texture.get_size().x)
+			dot.position = Vector2((anchor.x + offset.x) * size, (anchor.y + offset.y) * size)
+			dot.rotation = offset.x * 3.0
+			holder.add_child(dot)
+	add_child(holder)
+	_pin_children_on_top()
+	return holder
+
+
+## Uçuş başlarken mevsim durumu çözülür: toz kalkar (renk alınınca belli olur), ipucu yaprağı silinir.
+func _leave_season_state() -> void:
+	hide_leaf_hint()
+	if _dusty:
+		set_dusty(false)
+	if _sun_badge != null:
+		_drop_sun_badge()
+
+
+## Güneş rozeti: sıcak güneş dokusu + koyu kahve sayı; son hamlede beyaz halka nabız.
+class SunBadge extends Node2D:
+	var radius: float = 24.0
+	var left: int = 0
+	var urgent: bool = false
+	var _label: Label = null
+	var _disc: Sprite2D = null
+
+	func build() -> void:
+		var texture: Texture2D = GarmentView.season_texture("sun_badge")
+		if texture != null:
+			_disc = Sprite2D.new()
+			_disc.texture = texture
+			_disc.scale = Vector2.ONE * (radius * 2.0 / texture.get_size().x) * 1.3
+			add_child(_disc)
+		_label = Label.new()
+		_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_label.size = Vector2(radius * 2.0, radius * 2.0)
+		_label.position = Vector2(-radius, -radius * 1.02)
+		_label.add_theme_font_size_override("font_size", int(radius * 1.15))
+		_label.add_theme_color_override("font_color", GarmentView.SUN_TEXT_COLOR)
+		add_child(_label)
+
+	func refresh() -> void:
+		if _label != null:
+			_label.text = str(left)
+		queue_redraw()
+
+	func _draw() -> void:
+		if urgent:
+			draw_circle(Vector2.ZERO, radius * 1.32, Color(1.0, 1.0, 1.0, 0.9), true, -1.0, true)
+			draw_circle(Vector2.ZERO, radius * 1.32, Color("e5484d"), false, maxf(2.0, radius * 0.12), true)

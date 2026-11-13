@@ -12,6 +12,8 @@ extends Node2D
 ##  - Rüzgâr (sağda): rüzgâr ikonu + kalan hamle; rüzgâr bitince gizlenir.
 ##  - Kuş / yağmur / kedi (sağda, alt alta): sıradakine kalan hamle; kuş/kedi oradayken kalkmasına
 ##    kalan hamle (kırmızı). Görünen haplar sağ sütunda boşluksuz dizilir.
+##  - Mevsim (sağda): yaprak (sıradaki yaprağa kalan hamle), polen (sıradaki buluta kalan hamle; ip
+##    tozluyken açılmasına kalan hamle, kırmızı). Üretici bir seviyede en fazla iki sayaç hapı verir.
 
 const PILL_Y: float = 182.0
 const PILL_HEIGHT: float = 76.0
@@ -77,6 +79,15 @@ func setup(screen_width: float, palette: Array[Color]) -> void:
 		pill.visible = false
 		_guest_pills.append(pill)
 	_right_x = screen_width - PILL_MARGIN_X
+	_season_pills.clear()
+	for path: String in [ICON_LEAF, ICON_POLLEN]:
+		var season_pill: Pill = Pill.new()
+		season_pill.align_right = true
+		season_pill.position = Vector2(_right_x, PILL_Y)
+		add_child(season_pill)
+		season_pill.set_icon(load(path) as Texture2D if ResourceLoader.exists(path) else null)
+		season_pill.visible = false
+		_season_pills.append(season_pill)
 
 
 ## Yeni seviye: kipe göre sol hap kurulur, sayaçlar sıfırlanır.
@@ -87,6 +98,7 @@ func start(board: LaundryBoard) -> void:
 	_shown_orders = Vector2i(-1, -1)
 	_shown_screen = -1
 	_shown_guests = [-2, -2, -2]
+	_shown_season = [-2, -2]
 	_mode_pill.visible = board.mode() != LaundryBoard.MODE_NONE
 	_mode_pill.set_dots([] as Array[Color], 0, false)
 	_mode_pill.set_urgent(false)
@@ -284,6 +296,7 @@ func _refresh_guests(board: LaundryBoard) -> void:
 	_show_guest(0, board.bird_sit_left() if bird_here else board.bird_left(), bird_here)
 	_show_guest(1, board.rain_left(), false)
 	_show_guest(2, board.cat_stay_left() if cat_here else board.cat_left(), cat_here)
+	_refresh_season(board)
 	_stack()
 
 
@@ -304,7 +317,7 @@ func _show_guest(index: int, left: int, present: bool) -> void:
 ## Sağ sütun: görünen haplar yukarıdan aşağı boşluksuz (rüzgâr, sürgü, kuş, yağmur, kedi).
 func _stack() -> void:
 	var row: int = 0
-	for pill: Pill in [_wind_pill, _slide_pill] + _guest_pills:
+	for pill: Pill in [_wind_pill, _slide_pill] + _guest_pills + _season_pills:
 		if not pill.visible:
 			continue
 		pill.position = Vector2(_right_x, PILL_Y + SLIDE_PILL_OFFSET_Y * float(row))
@@ -313,3 +326,38 @@ func _stack() -> void:
 
 func guest_pill(index: int) -> Node2D:
 	return _guest_pills[index] if index >= 0 and index < _guest_pills.size() else null
+
+
+# --- Mevsim sayaçları (yaprak, polen) -----------------------------------------------------------
+
+const ICON_LEAF: String = "res://assets/sprites/seasons_fx/icon_leaf.png"
+const ICON_POLLEN: String = "res://assets/sprites/seasons_fx/icon_pollen.png"
+var _season_pills: Array[Pill] = []
+var _shown_season: Array[int] = [-2, -2]
+
+
+## Yaprak: sıradakine kalan hamle. Polen: ip tozluyken açılmasına kalan hamle (kırmızı), değilse
+## sıradaki buluta kalan hamle. Yalnız değişince yazılır.
+func _refresh_season(board: LaundryBoard) -> void:
+	if _season_pills.is_empty():
+		return
+	_show_season(0, board.leaf_left(), false)
+	var dusted: bool = board.dust_line() != LaundryBoard.EMPTY
+	_show_season(1, board.dust_left() if dusted else board.pollen_left(), dusted)
+
+
+func _show_season(index: int, left: int, present: bool) -> void:
+	var code: int = left + (GUEST_PRESENT_CODE if present else 0)
+	if code == _shown_season[index]:
+		return
+	var pill: Pill = _season_pills[index]
+	pill.visible = left > 0
+	pill.set_text(str(left))
+	pill.set_urgent(present or left == 1)
+	if _shown_season[index] != -2 and pill.visible:
+		pill.pulse()
+	_shown_season[index] = code
+
+
+func season_pill(index: int) -> Node2D:
+	return _season_pills[index] if index >= 0 and index < _season_pills.size() else null

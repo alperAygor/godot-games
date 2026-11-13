@@ -26,7 +26,12 @@
     "typed_basket",
     "birds",
     "rain",
-    "cat"
+    "cat",
+    "dual",
+    "sun_fade",
+    "leaves",
+    "frost",
+    "pollen"
   ],
   "cards": {
     "wet": {
@@ -159,6 +164,31 @@
       "level_key": "cat",
       "demo": "icon",
       "icon": "lucide/heart"
+    },
+    "dual": {
+      "item_key": "twin",
+      "demo": "icon",
+      "icon": "lucide/shirt"
+    },
+    "sun_fade": {
+      "item_key": "sun",
+      "demo": "icon",
+      "icon": "lucide/flame"
+    },
+    "leaves": {
+      "level_key": "leaves",
+      "demo": "icon",
+      "icon": "lucide/wind"
+    },
+    "frost": {
+      "item_key": "frost",
+      "demo": "icon",
+      "icon": "lucide/star"
+    },
+    "pollen": {
+      "level_key": "pollen",
+      "demo": "icon",
+      "icon": "lucide/zap"
     }
   },
   "levels": {

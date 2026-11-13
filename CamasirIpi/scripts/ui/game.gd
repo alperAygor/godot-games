@@ -584,6 +584,7 @@ func _build_lines() -> void:
 	var spacing_x: float = minf(MAX_COLUMN_SPACING, BOARD_WIDTH / float(columns))
 	_slide_spacing_x = spacing_x
 	var garment_size: float = minf(MAX_GARMENT_SIZE, minf(spacing_x * 0.94, spacing_y * 1.02))
+	garment_size = _q_fit_garment(garment_size, spacing_y)  # [q-rules kancası] sık tahtada daha az örtüşme
 	for line: int in range(lines):
 		_line_ys.append(LINES_TOP + spacing_y * float(line))
 	for entry: Variant in items:
@@ -622,9 +623,9 @@ func _build_baskets() -> void:
 	var states: Array[Dictionary] = _board.baskets()
 	for index: int in range(states.size()):
 		var basket: BasketView = BasketView.new()
-		basket.setup(BASKET_SIZE)
+		basket.setup(_q_basket_size())  # [q-rules kancası] makineli seviyede yer açılır
 		basket.position = Vector2(
-			_center_x + (float(index) - float(states.size() - 1) * 0.5) * BASKET_SPACING, BASKET_Y)
+			_center_x + (float(index) - float(states.size() - 1) * 0.5) * _q_basket_spacing(), BASKET_Y)
 		basket.rest_position = basket.position
 		_world.add_child(basket)
 		_baskets.append(basket)
@@ -921,6 +922,7 @@ func _decorate_view(view: GarmentView, item: Dictionary, spacing_x: float, spaci
 		view.set_dye(int(item["dye"]), COLORS[int(item["color"]) % COLORS.size()])
 	_decorate_rules_view(view, item)
 	_decorate_extras_view(view, item)
+	_decorate_season_view(view, item)  # [q-rules kancası]
 
 
 ## `_refresh_open` kancası: tahtadan okunan sayaçlar ve güçlendirici çubuğu.
@@ -933,10 +935,13 @@ func _refresh_obstacle_views() -> void:
 	_refresh_booster_bar()
 	_refresh_rules_views()
 	_refresh_extras()
+	_refresh_season_views()  # [q-rules kancası]
 
 
 ## `_play_event` kancası: yeni olay türleri.
 func _play_obstacle_event(event: Dictionary) -> void:
+	if await _play_season_event(event):  # [q-rules kancası]
+		return
 	if await _play_extras_event(event):
 		return
 	if await _play_rules_event(event):
@@ -1272,7 +1277,7 @@ func _place_rules_state() -> void:
 				and _board.is_on_line(steps[step].x):
 			_views[steps[step].x].blow_over(_views[steps[step].y].position, _views[steps[step].y].z_index, false)
 	for id: int in _board.drying_ids():
-		if _views.has(id):
+		if _views.has(id) and not _board.is_frozen(id):  # [q-rules kancası] don kendi görünümünde
 			_views[id].set_stain(true)
 			_views[id].set_drying(true)
 
@@ -1507,10 +1512,10 @@ func _build_extras() -> void:
 		var view: MachineView = MachineView.new()
 		view.z_index = MACHINE_Z
 		_world.add_child(view)
-		view.setup(machine, MACHINE_HEIGHT, _board.machine_capacity(machine))
+		view.setup(machine, _q_machine_height(), _board.machine_capacity(machine))  # [q-rules kancası]
 		var half: float = view.width * 0.5
-		view.position = Vector2(MACHINE_MARGIN_X + half if machine == LaundryBoard.MACHINE_WASHER
-			else width - MACHINE_MARGIN_X - half, MACHINE_BASE_Y)
+		view.position = Vector2(_q_machine_margin() + half if machine == LaundryBoard.MACHINE_WASHER
+			else width - _q_machine_margin() - half, MACHINE_BASE_Y)
 		_slot_left[machine].resize(_board.machine_capacity(machine))
 		for slot: int in range(_board.machine_capacity(machine)):
 			var entry: Vector2i = _board.machine_slot(machine, slot)
@@ -1772,3 +1777,207 @@ func _machine_out(id: int, machine: int, slot: int) -> void:
 		garment.global_position = view.door_global()
 	garment.scale = Vector2.ONE * MACHINE_GARMENT_SCALE
 	AudioService.play_pitched("fold_puff", 1.25, -6.0)
+
+
+# --- q-rules: çift renk, mevsim olayları, makine yerleşimi, sık tahta ----------------------------
+# Neden ayrı blok: kurallar `LaundryBoard` son bölümünde; burada yalnız görünüm bağlantısı. Mevcut
+# akışa kısa kancalar ([q-rules kancası]) eklendi: _build_lines, _build_baskets, _build_extras,
+# _decorate_view, _refresh_obstacle_views, _play_obstacle_event, _place_rules_state.
+
+## Makineli seviyede sepet sırası biraz sıkışır ve küçülür: köşelerde büyük makineye (ve üstündeki
+## sayaç hapına) yer açılır; askı, sepetler, kuyruk noktaları ve güçlendirici çubuğuyla çakışmaz.
+const Q_MACHINE_HEIGHT: float = 256.0
+const Q_MACHINE_MARGIN_X: float = -8.0
+const Q_MACHINE_BASKET_SIZE: float = 228.0
+const Q_MACHINE_BASKET_SPACING: float = 252.0
+## Sık tahta (5 ip): çamaşır boyu ip aralığının bu oranını aşmaz (alt ipe binme azalır).
+const Q_DENSE_GARMENT_RATIO: float = 0.93
+const Q_POLLEN_PUFF_SECONDS: float = 0.9
+const Q_POLLEN_PUFF_SCALE: float = 1.6
+const Q_SEASON_SOUND_DB: float = -9.0
+
+var _q_leaf_hint: int = LaundryBoard.EMPTY
+var _q_pollen_hint: Sprite2D = null
+
+
+func _q_has_machines() -> bool:
+	return _board != null and (_board.has_machine(LaundryBoard.MACHINE_WASHER) or _board.has_machine(LaundryBoard.MACHINE_DRYER))
+
+
+func _q_basket_size() -> float:
+	return Q_MACHINE_BASKET_SIZE if _q_has_machines() else BASKET_SIZE
+
+
+func _q_basket_spacing() -> float:
+	return Q_MACHINE_BASKET_SPACING if _q_has_machines() else BASKET_SPACING
+
+
+func _q_machine_height() -> float:
+	return Q_MACHINE_HEIGHT
+
+
+func _q_machine_margin() -> float:
+	return Q_MACHINE_MARGIN_X
+
+
+func _q_fit_garment(garment_size: float, spacing_y: float) -> float:
+	return minf(garment_size, spacing_y * Q_DENSE_GARMENT_RATIO)
+
+
+## `_decorate_view` kancası: tahtanın o anki durumundan (seviye başı ve geri al sonrası).
+func _decorate_season_view(view: GarmentView, item: Dictionary) -> void:
+	var id: int = int(item["id"])
+	# Görünüm yeniden kuruldu (geri al): yaprak ipucu yeni görünümde yeniden gösterilsin.
+	if id == _q_leaf_hint:
+		_q_leaf_hint = LaundryBoard.EMPTY
+	if _board.is_dual(id):
+		var split: Array[int] = _board.split_colors(id)
+		view.recolor(COLORS[split[0] % COLORS.size()], false)
+		view.set_dual(COLORS[split[1] % COLORS.size()])
+	if not _board.has_season() or not _board.is_on_line(id) and not _board.is_drying(id):
+		return
+	if _board.is_sunny(id) and _board.sun_left(id) > 0 and _board.is_on_line(id):
+		view.set_sun(_board.sun_left(id))
+	if _board.is_faded(id):
+		view.set_faded(true, false)
+	if _board.is_frozen(id):
+		view.set_frost(true)
+		view.set_warming(_board.is_drying(id))
+	if _board.is_leafy(id):
+		view.land_leaf(false)
+	if _board.is_dusty(id):
+		view.set_dusty(true, false)
+
+
+## `_refresh_obstacle_views` kancası: bir hamle önceden gelen haberler (yaprak gölgesi, polen bulutu)
+## ve geri al sonrası çift rengin görünen sırası.
+func _refresh_season_views() -> void:
+	if _board == null:
+		return
+	for id: int in _board.dual_ids():
+		if _board.is_dual(id) and _live(id):
+			var split: Array[int] = _board.split_colors(id)
+			_views[id].color = COLORS[split[0] % COLORS.size()]
+			_views[id].set_dual(COLORS[split[1] % COLORS.size()])
+	if not _board.has_season():
+		return
+	var target: int = _board.leaf_next() if _board.leaf_left() == 1 else LaundryBoard.EMPTY
+	if target != LaundryBoard.EMPTY and not _board.is_on_line(target):
+		target = LaundryBoard.EMPTY
+	if target != _q_leaf_hint:
+		if _live(_q_leaf_hint):
+			_views[_q_leaf_hint].hide_leaf_hint()
+		if _live(target):
+			_views[target].show_leaf_hint()
+		_q_leaf_hint = target
+	_q_show_pollen_hint(_board.pollen_next_line() if _board.pollen_left() == 1 else LaundryBoard.EMPTY)
+
+
+## Polen: sıradaki ipin solunda soluk, nefes alan bir polen bulutu (bir hamle önceden).
+func _q_show_pollen_hint(line: int) -> void:
+	if line == LaundryBoard.EMPTY or line >= _line_ys.size():
+		if _q_pollen_hint != null and is_instance_valid(_q_pollen_hint):
+			_q_pollen_hint.queue_free()
+		_q_pollen_hint = null
+		return
+	if _q_pollen_hint != null and is_instance_valid(_q_pollen_hint):
+		return
+	var texture: Texture2D = GarmentView.season_texture("pollen_puff")
+	if texture == null:
+		return
+	_q_pollen_hint = Sprite2D.new()
+	_q_pollen_hint.texture = texture
+	_q_pollen_hint.z_index = PARTICLE_Z
+	_q_pollen_hint.position = Vector2(ROPE_INSET * 0.9, _line_ys[line] + 30.0)
+	_q_pollen_hint.modulate.a = 0.0
+	_world.add_child(_q_pollen_hint)
+	var breathe: Tween = _q_pollen_hint.create_tween()
+	breathe.tween_property(_q_pollen_hint, "modulate:a", 0.75, Motion.OVERLAY_FADE_SECONDS)
+	breathe.tween_callback(func() -> void:
+		if is_instance_valid(_q_pollen_hint):
+			var loop: Tween = _q_pollen_hint.create_tween().set_loops()
+			loop.tween_property(_q_pollen_hint, "scale", Vector2.ONE * 1.12, 1.0).set_trans(Tween.TRANS_SINE)
+			loop.tween_property(_q_pollen_hint, "scale", Vector2.ONE, 1.0).set_trans(Tween.TRANS_SINE))
+
+
+## `_play_obstacle_event` kancası. Döndürür: olay burada işlendi mi.
+func _play_season_event(event: Dictionary) -> bool:
+	var id: int = int(event.get("id", LaundryBoard.EMPTY))
+	match String(event["type"]):
+		LaundryBoard.EVENT_DUAL_SETTLE:
+			if _live(id):
+				_views[id].settle_dual(COLORS[int(event["color"]) % COLORS.size()])
+			var partner: int = int(event.get("partner", LaundryBoard.EMPTY))
+			if _live(partner) and int(event.get("partner_color", LaundryBoard.EMPTY)) != LaundryBoard.EMPTY:
+				_views[partner].settle_dual(COLORS[int(event["partner_color"]) % COLORS.size()])
+			AudioService.play_pitched("unlock", 1.25, -7.0)
+		LaundryBoard.EVENT_SUN_TICK:
+			if _live(id):
+				_views[id].set_sun_left(int(event["left"]))
+		LaundryBoard.EVENT_SUN_FADE:
+			if _live(id):
+				_views[id].set_faded(true)
+			AudioService.play_pitched("fold_puff", 0.8, Q_SEASON_SOUND_DB)
+		LaundryBoard.EVENT_SHAKE:
+			if _live(id):
+				_views[id].shake_out()
+			AudioService.play_pitched("cloth", 1.15, -5.0)
+		LaundryBoard.EVENT_LEAF_LAND:
+			if _live(id):
+				_views[id].land_leaf()
+			_q_leaf_hint = LaundryBoard.EMPTY
+			AudioService.play_pitched("cloth", 1.35, Q_SEASON_SOUND_DB)
+		LaundryBoard.EVENT_LEAF_BRUSH:
+			if _live(id):
+				_views[id].brush_leaf()
+			AudioService.play_pitched("wind", 1.5, -12.0)
+		LaundryBoard.EVENT_LEAF_PASS:
+			if _live(_q_leaf_hint):
+				_views[_q_leaf_hint].hide_leaf_hint()
+			_q_leaf_hint = LaundryBoard.EMPTY
+		LaundryBoard.EVENT_FROST_WAIT:
+			if _live(id):
+				_views[id].set_warming(true)
+		LaundryBoard.EVENT_FROST_THAW:
+			if _live(id):
+				_views[id].thaw()
+			AudioService.play_pitched("fold_puff", 1.3, Q_SEASON_SOUND_DB)
+		LaundryBoard.EVENT_POLLEN:
+			_q_pollen_puff(int(event["line"]))
+		LaundryBoard.EVENT_POLLEN_CLEAR:
+			for view_id: int in _views.keys():
+				if _live(view_id):
+					_views[view_id].set_dusty(false)
+		LaundryBoard.EVENT_LEAF_TICK, LaundryBoard.EVENT_POLLEN_TICK:
+			pass
+		_:
+			return false
+	return true
+
+
+## Polen bulutu ip boyunca yumuşakça açılıp söner; ipteki çamaşırların rengi tozla örtülür.
+func _q_pollen_puff(line: int) -> void:
+	_q_show_pollen_hint(LaundryBoard.EMPTY)
+	if line < 0 or line >= _line_ys.size():
+		return
+	AudioService.play_pitched("wind", 1.2, -10.0)
+	var texture: Texture2D = GarmentView.season_texture("pollen_puff")
+	if texture != null:
+		var width: float = get_viewport_rect().size.x - ROPE_INSET * 2.0
+		for step: int in range(3):
+			var puff: Sprite2D = Sprite2D.new()
+			puff.texture = texture
+			puff.z_index = PARTICLE_Z
+			puff.position = Vector2(ROPE_INSET + width * (float(step) + 0.5) / 3.0, _line_ys[line] + 60.0)
+			puff.scale = Vector2.ONE * 0.6
+			puff.modulate.a = 0.0
+			_world.add_child(puff)
+			var bloom: Tween = puff.create_tween().set_parallel(true)
+			bloom.tween_property(puff, "scale", Vector2.ONE * Q_POLLEN_PUFF_SCALE, Q_POLLEN_PUFF_SECONDS)\
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+			bloom.tween_property(puff, "modulate:a", 0.85, Q_POLLEN_PUFF_SECONDS * 0.35)
+			bloom.chain().tween_property(puff, "modulate:a", 0.0, Q_POLLEN_PUFF_SECONDS * 0.8)
+			bloom.chain().tween_callback(puff.queue_free)
+	for view_id: int in _views.keys():
+		if _board.is_dusty(view_id) and _live(view_id):
+			_views[view_id].set_dusty(true)
