@@ -139,9 +139,11 @@ func _process(delta: float) -> void:
 		if _board.is_lost():
 			target = 1.0
 	_sky_weight = lerpf(_sky_weight, target * target, 1.0 - exp(-3.0 * delta))
-	_sky_gradient.set_color(0, SKY_SUNNY_TOP.lerp(SKY_STORM_TOP, _sky_weight))
-	_sky_gradient.set_color(1, SKY_SUNNY_BOTTOM.lerp(SKY_STORM_BOTTOM, _sky_weight))
 	if _backdrop != null:
+		_sky_gradient.set_color(0, _backdrop.sky_top(SKY_STORM_TOP, _sky_weight))
+		_sky_gradient.set_color(1, _backdrop.sky_bottom(SKY_STORM_BOTTOM, _sky_weight))
+		if _world != null:
+			_world.modulate = _backdrop.garment_tint
 		_backdrop.storm = _sky_weight
 		_backdrop.danger = 1.0 if Time.get_ticks_msec() < _rack_refuse_until_msec else _danger
 	_update_sway()
@@ -500,6 +502,8 @@ func _start_level() -> void:
 	_level = debug_level if not debug_level.is_empty() else LevelGenerator.generate(_level_number)
 	_board = LaundryBoard.new(_level)
 	_level_label.text = "Seviye %d" % _level_number
+	_backdrop.set_level(_level_number)
+	_level_label.add_theme_color_override("font_color", _backdrop.hud_text_color(TEXT_COLOR))
 	AudioService.play_pitched("level_start", 1.0, -6.0)
 	_world = Node2D.new()
 	add_child(_world)
