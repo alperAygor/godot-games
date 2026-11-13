@@ -116,6 +116,8 @@ var _persist: bool = true:
 		_persist = value
 		Progress.persist = value
 var _eco: EcoFlow = null
+## [DAILY] Günlük bulmaca kipi: doluysa seviye dışarıdan gelir; ilerleme/seri/seviye no değişmez.
+var _daily_level: Dictionary = {}
 ## Öğretici (el imleci, tanıtım kartları, boşta ipucu): mantığı tutorial_director.gd'de.
 var _tutorial: TutorialDirector = null
 
@@ -131,6 +133,7 @@ func _ready() -> void:
 		if arg.begins_with("--level="):
 			_level_number = maxi(int(arg.split("=")[1]), 1)
 			_persist = false
+	_daily_level = DailyPuzzle.take_pending()  # [DAILY] tek seferlik devir
 	_center_x = get_viewport_rect().size.x * 0.5
 	_build_sky()
 	_build_ui()
@@ -509,7 +512,8 @@ func _start_level() -> void:
 	_revived = false
 	_combo = 0
 	# Prob, belirli bir durumu (ör. kesin kayıp) sınamak için elle kurulmuş seviye verebilir.
-	_level = debug_level if not debug_level.is_empty() else LevelGenerator.generate(_level_number)
+	_level = _daily_level if not _daily_level.is_empty() \
+		else (debug_level if not debug_level.is_empty() else LevelGenerator.generate(_level_number))  # [DAILY]
 	_board = LaundryBoard.new(_level)
 	_eco.on_level_start(_level_number, _board)
 	_hud.set_level(_level_number)
@@ -725,6 +729,9 @@ func _hide_overlay() -> void:
 
 
 func _show_win() -> void:
+	if not _daily_level.is_empty():  # [DAILY] normal ilerleme/ekonomi atlanır
+		_show_daily_end(true)
+		return
 	var result: Dictionary = _eco.on_win(_level_number, _board, bool(_level.get("hard", false)))
 	var reward: int = int(result["coins"])
 	_level_number += 1
@@ -742,6 +749,9 @@ func _show_win() -> void:
 
 
 func _show_lose(remaining: int) -> void:
+	if not _daily_level.is_empty():  # [DAILY]
+		_show_daily_end(false)
+		return
 	_eco.on_lose(_level_number, _board, remaining)
 	AudioService.play_pitched("lose", 1.0, -3.0)
 	_hide_overlay()
@@ -752,6 +762,12 @@ func _show_lose(remaining: int) -> void:
 		_eco.watch(AdManager.Placement.REVIVE_EXTRA_SLOT, _revive, func() -> void: pass))
 	sheet.retry_pressed.connect(_start_level)
 	_track_overlay(sheet)
+
+
+## [DAILY] Günlük bulmaca sonu: sonucu DailyFlow gösterir, Progress seviyesi/serisi değişmez.
+func _show_daily_end(won: bool) -> void:
+	_hide_overlay()
+	_track_overlay(DailyFlow.show_end(_ui, _level, won, _win_tints(), _start_level))
 
 
 ## Seviyenin sepet renkleri (kazanma yığını bunlarla boyanır).
