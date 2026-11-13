@@ -128,3 +128,82 @@ func test_json_floats_become_ints() -> void:
 	var data: ProgressData = ProgressData.from_dict({"level": 12.0, "coins": 90.0})
 	assert_eq(data.level, 12)
 	assert_eq(data.coins, 90)
+
+
+# --- Derecelendirmeli kazanç / en iyi yıldız -----------------------------------
+
+func test_rated_win_pays_base_plus_bonus_and_stars() -> void:
+	var data: ProgressData = ProgressData.new()
+	var result: Dictionary = data.complete_level_rated(false, 3, 21, _balance)
+	assert_eq(int(result["coins"]), 20 + 21)
+	assert_eq(int(result["base_coins"]), 20)
+	assert_eq(int(result["stars"]), 3)
+	assert_eq(int(result["rating"]), 3)
+	assert_eq(data.coins, 41)
+	assert_eq(data.stars, 3)
+	assert_eq(data.level, 2)
+	assert_eq(data.streak, 1)
+	assert_eq(data.best_stars_of(1), 3)
+
+
+func test_rated_win_hard_level_uses_hard_reward() -> void:
+	var data: ProgressData = ProgressData.new()
+	data.complete_level_rated(true, 1, 0, _balance)
+	assert_eq(data.coins, 40)
+	assert_eq(data.stars, 1)
+
+
+func test_replay_grants_only_the_star_difference() -> void:
+	var data: ProgressData = ProgressData.new()
+	data.complete_level_rated(false, 1, 0, _balance)
+	data.complete_level_rated(false, 2, 0, _balance)
+	assert_eq(data.level, 3)
+	assert_eq(data.stars, 3)
+	# 1. seviyeyi 3 yıldızla tekrar oyna: yalnız 3-1 = 2 yıldız, ilerleme/seri değişmez.
+	var coins_before: int = data.coins
+	var streak_before: int = data.streak
+	var replay: Dictionary = data.complete_level_rated(false, 3, 15, _balance, 1)
+	assert_eq(int(replay["stars"]), 2)
+	assert_true(bool(replay["replay"]))
+	assert_eq(data.stars, 5)
+	assert_eq(data.best_stars_of(1), 3)
+	assert_eq(data.level, 3, "tekrar oynama ilerletmez")
+	assert_eq(data.streak, streak_before)
+	assert_eq(data.coins, coins_before + 15, "temel ödül yok, yalnız artışın bonusu")
+	# Aynı ya da düşük dereceyle tekrar: hiçbir şey vermez.
+	var again: Dictionary = data.complete_level_rated(false, 2, 15, _balance, 1)
+	assert_eq(int(again["stars"]), 0)
+	assert_eq(int(again["coins"]), 0)
+	assert_eq(data.stars, 5)
+	assert_eq(data.best_stars_of(1), 3)
+
+
+func test_best_stars_round_trip_and_tolerance() -> void:
+	var data: ProgressData = ProgressData.new()
+	data.complete_level_rated(false, 3, 0, _balance)
+	data.complete_level_rated(false, 1, 0, _balance)
+	data.complete_level_rated(false, 2, 0, _balance)
+	var copy: ProgressData = ProgressData.from_dict(JSON.parse_string(JSON.stringify(data.to_dict())))
+	assert_eq([copy.best_stars_of(1), copy.best_stars_of(2), copy.best_stars_of(3)], [3, 1, 2])
+	assert_eq(copy.best_stars_of(4), 0)
+	assert_eq(copy.best_stars_of(0), 0)
+	var broken: ProgressData = ProgressData.from_dict({"best_stars": "3x9 2"})
+	assert_eq([broken.best_stars_of(1), broken.best_stars_of(2), broken.best_stars_of(3),
+		broken.best_stars_of(4), broken.best_stars_of(5)], [3, 0, 3, 0, 2])
+	assert_eq(ProgressData.from_dict({"best_stars": 12}).best_stars.size(), 0)
+	assert_eq(ProgressData.from_dict({}).best_stars.size(), 0, "eski kayıtta alan yok")
+
+
+func test_rated_win_clamps_bad_input() -> void:
+	var data: ProgressData = ProgressData.new()
+	var result: Dictionary = data.complete_level_rated(false, 99, -5, _balance)
+	assert_eq(int(result["rating"]), 3)
+	assert_eq(int(result["bonus_coins"]), 0)
+	assert_eq(data.coins, 20)
+
+
+func test_balance_file_has_mastery_section() -> void:
+	var mastery: Dictionary = ProgressData.load_balance()["mastery"] as Dictionary
+	assert_eq(int(mastery["chain_window_taps"]), 4)
+	assert_eq(int(mastery["perfect_bonus_coins"]), 15)
+	assert_eq(int(mastery["chain_bonus_cap"]), 12)
