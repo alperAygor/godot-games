@@ -1,0 +1,51 @@
+; Çamaşır İpi — studio-kit iskeleti.
+; Yeni oyun: new_game.sh bu dosyadaki adı/sürümü değiştirir.
+
+config_version=5
+
+[application]
+
+config/name="Çamaşır İpi"
+config/version="0.1.0"
+run/main_scene="res://scenes/Boot.tscn"
+config/features=PackedStringArray("4.7", "Mobile")
+
+[autoload]
+
+GameManager="*res://scripts/autoload/GameManager.gd"
+AudioService="*res://scripts/autoload/AudioService.gd"
+AdManager="*res://scripts/autoload/AdManager.gd"
+GameData="*res://scripts/autoload/GameData.gd"
+
+[debug]
+
+; Tipsiz değişken = hata (GOTCHAS.md yok; CLAUDE.md §2)
+gdscript/warnings/untyped_declaration=2
+gdscript/warnings/unused_parameter=1
+
+[display]
+
+window/size/viewport_width=1080
+window/size/viewport_height=1920
+window/size/window_width_override=540
+window/size/window_height_override=960
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=1
+
+[gui]
+
+theme/custom="res://assets/theme/ui_theme.tres"
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=true
+
+[physics]
+
+common/physics_ticks_per_second=60
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

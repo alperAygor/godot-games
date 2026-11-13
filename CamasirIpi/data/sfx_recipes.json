@@ -1,0 +1,14 @@
+{
+  "ui_tap": {
+    "prompt": "soft gentle UI tap click for a cozy mobile game, very short, clean, no reverb",
+    "seconds": 0.5,
+    "synth": "blip",
+    "freq": 880
+  },
+  "success": {
+    "prompt": "short cheerful success jingle for a mobile game, bright marimba arpeggio with a soft glockenspiel shimmer, uplifting",
+    "seconds": 1.8,
+    "synth": "chime",
+    "freq": 523
+  }
+}

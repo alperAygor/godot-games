@@ -1,0 +1,32 @@
+# Godot önbelleği ve üretilen dosyalar
+.godot/
+*.translation
+.import/
+export_credentials.cfg
+
+# Build çıktıları
+build/
+android/build/
+*.apk
+*.aab
+*.pck
+*.zip
+
+# Sırlar — asla commit edilmez
+.env
+*.keystore
+*.jks
+google-services.json
+service-account.json
+
+# Blender kaynak yedeği (repoda yalnızca .glb tutulur)
+*.blend1
+*.blend2
+
+# İşletim sistemi / editör
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+tests/results/
