@@ -16,6 +16,20 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/), sürümleme [Se
 ### Eklenecek
 - Oyun mekaniği
 
+### Son başarım turu (orch/r-perf) — ölçümler `docs/perf/final_baseline.md` / `docs/perf/final_after.md`
+- Ölçüm aracı `tools/perf_probe2.gd`: açılış (Boot emülasyonu), ana ekran, harita (boşta + kaydırma),
+  mağaza/koleksiyon (soğuk + ılık), oyun L5/L70/L88/L100, Devam, zen; kare/CPU süresi, takılma kareleri,
+  işlenen düğümler, kaplama (overdraw vekili); `--leak` kipinde 12 Devam + 12 tam sahne döngüsü.
+- `LevelPrefetch`: hiç alınmayan istek (tekrar oynanan seviyenin sonrakisi, yarım zen tahtası) önbellek
+  sınırını kilitliyordu; biten görevler artık toplanır, sınır gerçekten 4 (12 döngüde 25 -> 4 sonuç).
+- `GardenBackdrop`: sahneler arası doku önbelleği budanır (canlı arka planlar + kayıtlı seviyenin mekânı);
+  önceki sahnenin mekân/mevsim dokuları artık kalıcı kalmıyor.
+- `GameManager.preload_scene`: Boot beklemesinde ana ekran ve oyun sahnesi (betik derlemesiyle) iş
+  parçacığında yüklenir; `goto_scene` hazır kaynağı alır (`change_scene_to_packed`).
+- Boşta işleme: gizli öğretici eli (`TutorialHand`) ve ipucu verilmeyen seviyelerde `TutorialDirector`
+  artık her kare işlenmiyor.
+- `season_grade.gdshader`: tam saydam pikselde HSV/gürültü/kar hesabı atlanır (görüntü bit bit aynı).
+
 ### Başarım (orch/ci-perf) — ölçümler `docs/perf/baseline.md` / `docs/perf/after.md`
 - `LevelPrefetch` (scripts/core): seviye üretimi WorkerThreadPool'da; sonraki seviye oynarken
   üretilir, Boot/ana ekran oyuncunun seviyesini önceden ister, günlük bulmaca kart açıkken kurulur.

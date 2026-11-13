@@ -54,7 +54,7 @@ geliştirme girişi; mekâna göre ortam sesi; AdMob/Billing eklentilerinin indi
 Dalga 3 — sırayla (tek yazıcı)
 - [ ] **L2** Yeni metinlerin TR/EN/ES denetimi ve taşma kontrolü
 - [ ] **Z1** Paket boyutu küçültme
-- [ ] **F1** Son performans turu + Android derlemesi
+- [ ] **F1** Son performans turu + Android derlemesi — performans kısmı yapıldı (`docs/perf/final_after.md`, `tools/perf_probe2.gd`); Android derlemesi ve gerçek cihaz ölçümü kaldı
 
 ## Aşama 4 — kuyruk (kullanıcı kararı 2026-11-13)
 SIRA: dalga 1-2 bitince ÖNCE bu aşama, SONRA dalga 3 (L2 çeviri denetimi, Z1 boyut, F1 performans + Android).

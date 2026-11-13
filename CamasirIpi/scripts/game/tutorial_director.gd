@@ -104,7 +104,9 @@ func on_level_started(level: Dictionary, board: LaundryBoard, views: Dictionary,
 	_idle_spec = table.get("idle", {}) as Dictionary
 	_script = (table.get("levels", {}) as Dictionary).get(str(_level_number), {}) as Dictionary
 	_read_game_layout(baskets)
-	set_process(true)
+	# `_process` yalnız boşta ipucunu sayar; ipucu verilmeyen seviyelerde (below_level ve üstü)
+	# her kare boşuna işlenmesin.
+	set_process(float(_level_number) < float(_idle_spec.get("below_level", 0)))
 	_start(_generation)
 
 

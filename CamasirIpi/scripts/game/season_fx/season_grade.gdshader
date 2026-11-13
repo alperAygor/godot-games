@@ -81,34 +81,38 @@ vec3 toward(vec3 rgb, vec4 target) {
 void fragment() {
 	vec4 tex = texture(TEXTURE, UV);
 	vec3 rgb = tex.rgb;
-	vec3 hsv = rgb2hsv(rgb);
-	vec2 px = UV / TEXTURE_PIXEL_SIZE;
-	float n = smoothstep(0.25, 0.75, vnoise(px * noise_scale));
-	float ma = hue_mask(hsv, a_mask);
-	if (ma > 0.0) {
-		float k = smoothstep(a_split.x - 0.1, a_split.x + 0.1, n);
-		// İkinci varyant istenirse yalnız aydınlık (üstten ışık alan) yüzeylere düşer: tomurcuk/çiçek
-		// lekeleri tombul kümelerin tepesinde durur, gölgeye yayılmaz.
-		k *= mix(1.0, smoothstep(0.62, 0.86, hsv.z), a_split.y);
-		vec3 graded = mix(shifted(hsv, a_one), shifted(hsv, a_two), k);
-		rgb = mix(rgb, toward(graded, a_mix), ma);
-	}
-	float mb = hue_mask(hsv, b_mask);
-	if (mb > 0.0) {
-		rgb = mix(rgb, toward(shifted(hsv, b_one), b_mix), mb);
-	}
-	float luma = dot(rgb, LUMA);
-	rgb = mix(vec3(luma), rgb, g_sat) * g_tint;
-	rgb = mix(rgb, g_lift.rgb, g_lift.a);
-	if (edge_snow > 0.0) {
-		// Silüet üstü kar: bu piksel dolu, birkaç piksel yukarısı boşsa (çatı, tepe, çit ucu) beyaz.
-		// Üç örnek yumuşak bir kalınlık geçişi verir; x boyunca gürültü kalınlığı dalgalandırır.
-		float wobble = 0.75 + 0.5 * vnoise(vec2(px.x * 0.05, 3.0));
-		float step_px = edge_px * wobble * TEXTURE_PIXEL_SIZE.y;
-		float cap = 0.35 * (1.0 - texture(TEXTURE, UV - vec2(0.0, step_px * 0.35)).a)
-			+ 0.35 * (1.0 - texture(TEXTURE, UV - vec2(0.0, step_px * 0.7)).a)
-			+ 0.3 * (1.0 - texture(TEXTURE, UV - vec2(0.0, step_px)).a);
-		rgb = mix(rgb, snow_color, clamp(cap, 0.0, 1.0) * edge_snow);
+	// Tam saydam piksel (katmanların gökyüzü/boş bölgeleri): karışım (blend_mix) alfa 0'da rengi hiç
+	// kullanmaz, sonuç bit bit aynıdır; HSV/gürültü/kar örneklemesi boşuna yapılmasın.
+	if (tex.a > 0.0) {
+		vec3 hsv = rgb2hsv(rgb);
+		vec2 px = UV / TEXTURE_PIXEL_SIZE;
+		float n = smoothstep(0.25, 0.75, vnoise(px * noise_scale));
+		float ma = hue_mask(hsv, a_mask);
+		if (ma > 0.0) {
+			float k = smoothstep(a_split.x - 0.1, a_split.x + 0.1, n);
+			// İkinci varyant istenirse yalnız aydınlık (üstten ışık alan) yüzeylere düşer: tomurcuk/çiçek
+			// lekeleri tombul kümelerin tepesinde durur, gölgeye yayılmaz.
+			k *= mix(1.0, smoothstep(0.62, 0.86, hsv.z), a_split.y);
+			vec3 graded = mix(shifted(hsv, a_one), shifted(hsv, a_two), k);
+			rgb = mix(rgb, toward(graded, a_mix), ma);
+		}
+		float mb = hue_mask(hsv, b_mask);
+		if (mb > 0.0) {
+			rgb = mix(rgb, toward(shifted(hsv, b_one), b_mix), mb);
+		}
+		float luma = dot(rgb, LUMA);
+		rgb = mix(vec3(luma), rgb, g_sat) * g_tint;
+		rgb = mix(rgb, g_lift.rgb, g_lift.a);
+		if (edge_snow > 0.0) {
+			// Silüet üstü kar: bu piksel dolu, birkaç piksel yukarısı boşsa (çatı, tepe, çit ucu) beyaz.
+			// Üç örnek yumuşak bir kalınlık geçişi verir; x boyunca gürültü kalınlığı dalgalandırır.
+			float wobble = 0.75 + 0.5 * vnoise(vec2(px.x * 0.05, 3.0));
+			float step_px = edge_px * wobble * TEXTURE_PIXEL_SIZE.y;
+			float cap = 0.35 * (1.0 - texture(TEXTURE, UV - vec2(0.0, step_px * 0.35)).a)
+				+ 0.35 * (1.0 - texture(TEXTURE, UV - vec2(0.0, step_px * 0.7)).a)
+				+ 0.3 * (1.0 - texture(TEXTURE, UV - vec2(0.0, step_px)).a);
+			rgb = mix(rgb, snow_color, clamp(cap, 0.0, 1.0) * edge_snow);
+		}
 	}
 	COLOR = vec4(rgb, tex.a) * v_tint;
 }

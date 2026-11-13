@@ -59,3 +59,15 @@ func test_daily_background_equals_sync() -> void:
 	LevelPrefetch.request(key, job)
 	var background: Dictionary = LevelPrefetch.take(key, job)
 	assert_eq(background, DailyPuzzle.build_level(DAILY_DATE, DAILY_PLAYER_LEVEL), "günlük: arka plan == eşzamanlı")
+
+
+func test_untaken_request_does_not_block_eviction() -> void:
+	# Hiç alınmayan bir istek (tekrar oynanan seviyenin "sonraki"si gibi) önbelleği kilitlememeli.
+	LevelPrefetch.request("orphan", func() -> Dictionary: return {"orphan": true})
+	while not LevelPrefetch.is_ready("orphan"):
+		OS.delay_msec(1)
+	for index: int in range(LevelPrefetch.MAX_CACHED + 3):
+		LevelPrefetch.take("key:%d" % index, func() -> Dictionary: return {"index": index})
+	assert_true(LevelPrefetch._results.size() <= LevelPrefetch.MAX_CACHED, "önbellek sınırı aşılmamalı")
+	assert_eq(LevelPrefetch._tasks.size(), 0, "biten görevler havuzdan bırakılmalı")
+	assert_true(LevelPrefetch.is_ready("key:%d" % (LevelPrefetch.MAX_CACHED + 2)), "en yeni sonuç kalmalı")
