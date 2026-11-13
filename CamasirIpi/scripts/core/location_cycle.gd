@@ -27,7 +27,7 @@ const KEY_SCENERY_MUL: String = "scenery_mul"
 const NAME_KEYS: Array[String] = ["PLACE_GARDEN", "PLACE_BEACH", "PLACE_ROOFTOP"]
 
 static var _locations: Array[Dictionary] = []
-## "mekân:aşama" -> mekâna göre ayarlanmış paylaşılan görünüm (değiştirilmemeli).
+## "mekân:mevsim:aşama" -> mekâna ve mevsime göre ayarlanmış paylaşılan görünüm (değiştirilmemeli).
 static var _looks: Dictionary[String, DayLook] = {}
 
 
@@ -101,30 +101,34 @@ static func ambience_for(level: int) -> String:
 	return String(data_for(location_for(level)).get(KEY_AMBIENCE, ""))
 
 
-## Seviyenin mekâna göre ayarlanmış gün görünümü. `forced_phase` >= 0 ise o aşama (QA çekimleri).
-## Aşamalar arası karışım (DayCycle.LEVELS_PER_PHASE > 1) varsa yeni nesne döner; yoksa paylaşılan.
-static func look_for_level(level: int, id: String, forced_phase: int = -1) -> DayLook:
+## Seviyenin mekâna (ve verilirse mevsime) göre ayarlanmış gün görünümü. `forced_phase` >= 0 ise o
+## aşama (QA çekimleri). Aşamalar arası karışım (DayCycle.LEVELS_PER_PHASE > 1) varsa yeni nesne döner.
+## `season` boşsa mevsim ayarı yok (geriye uyum: mekân testleri ve eski çağıranlar).
+static func look_for_level(level: int, id: String, forced_phase: int = -1, season: String = "") -> DayLook:
 	if forced_phase >= 0:
-		return look_for(forced_phase, id)
+		return look_for(forced_phase, id, season)
 	var phase: int = DayCycle.phase_for(level)
 	var blend: float = DayCycle.blend_for(level)
-	var current: DayLook = look_for(phase, id)
+	var current: DayLook = look_for(phase, id, season)
 	if blend <= 0.0:
 		return current
 	var mixed: DayLook = DayLook.new()
-	mixed.blend(current, look_for(phase + 1, id), blend)
+	mixed.blend(current, look_for(phase + 1, id, season), blend)
 	return mixed
 
 
-## Aşamanın mekâna göre ayarlanmış paylaşılan görünümü (DayCycle'ın paylaşılan nesnesi bozulmaz).
-static func look_for(phase: int, id: String) -> DayLook:
+## Aşamanın mekâna (+ mevsime) göre ayarlanmış paylaşılan görünümü (DayCycle'ın nesnesi bozulmaz).
+## Sıra: gün paleti -> mekân paleti -> mevsim ayarı (SeasonLook, data/seasons.json "sky").
+static func look_for(phase: int, id: String, season: String = "") -> DayLook:
 	var wrapped: int = posmod(phase, DayCycle.PHASE_COUNT)
-	var key: String = "%s:%d" % [id, wrapped]
+	var key: String = "%s:%s:%d" % [id, season, wrapped]
 	if _looks.has(key):
 		return _looks[key]
 	var look: DayLook = DayLook.new()
 	look.copy_from(DayCycle.look_for_phase(wrapped))
 	_apply_palette(look, data_for(id).get(KEY_PALETTE, {}) as Dictionary)
+	if not season.is_empty():
+		SeasonLook.apply_sky(look, season)
 	_looks[key] = look
 	return look
 

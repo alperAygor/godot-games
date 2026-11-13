@@ -229,3 +229,7 @@ PATTERN_SETTING_HINT,Her rengin kendi deseni olur (renk körlüğü için),Each 
 UI_SETTING_NOTIFICATIONS,Bildirimler,Notifications,Notificaciones
 UI_SETTING_PATTERNS,Desenler,Patterns,Patrones
 UI_PRIVACY_OPTIONS,Gizlilik seçenekleri,Privacy options,Opciones de privacidad
+SEASON_ARRIVE_SUMMER,Yaz geldi,Summer is here,Llegó el verano
+SEASON_ARRIVE_AUTUMN,Sonbahar geldi,Autumn is here,Llegó el otoño
+SEASON_ARRIVE_WINTER,Kış geldi,Winter is here,Llegó el invierno
+SEASON_ARRIVE_SPRING,İlkbahar geldi,Spring is here,Llegó la primavera
