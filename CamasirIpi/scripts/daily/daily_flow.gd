@@ -8,10 +8,10 @@ extends Sheet
 signal home_pressed
 signal retry_pressed
 
-const TITLE_SIZE: int = 52
-const BODY_SIZE: int = 32
-const GAP: float = 24.0
-const MAIN_HEIGHT: float = 132.0
+const TITLE_SIZE: int = UiKit.TITLE_SIZE
+const BODY_SIZE: int = UiKit.TYPE_BODY
+const GAP: float = UiKit.SPACE_LG
+const MAIN_HEIGHT: float = UiKit.HEIGHT_PRIMARY
 const COUNT_DELAY: float = 0.5
 const COUNT_SECONDS: float = 0.9
 const WIN_VOLUME_DB: float = -3.0
@@ -54,7 +54,7 @@ func _fill_win(outcome: Dictionary, tints: Array[Color]) -> void:
 	pile.play(Motion.OVERLAY_FADE_SECONDS)
 	column.add_child(UiKit.spacer(GAP))
 	column.add_child(UiKit.label(DailyStrings.win_title(), TITLE_SIZE))
-	column.add_child(UiKit.spacer(GAP * 0.6))
+	column.add_child(UiKit.spacer(UiKit.SPACE_SM))
 	if bool(outcome["first"]):
 		var row: HBoxContainer = DailyUi.reward_row(0, String(outcome["booster"]), int(outcome["booster_count"]))
 		_coin_label = row.get_child(1) as Label
@@ -64,7 +64,7 @@ func _fill_win(outcome: Dictionary, tints: Array[Color]) -> void:
 		column.add_child(DailyUi.streak_row(int(outcome["streak"]), int(outcome["best"])))
 	else:
 		column.add_child(UiKit.label(DailyStrings.win_again(), BODY_SIZE, UiKit.TEXT_MUTED))
-	column.add_child(UiKit.spacer(GAP * 1.8))
+	column.add_child(UiKit.spacer(UiKit.SPACE_XXL))
 	var next: Button = UiKit.button(DailyStrings.continue_text(), &"", "", MAIN_HEIGHT)
 	next.pressed.connect(home_pressed.emit)
 	column.add_child(next)
@@ -75,7 +75,7 @@ func _fill_lose() -> void:
 	column.add_child(DailyUi.icon_disc(STORM_ICON, UiKit.ACCENT_SOFT, UiKit.TEXT_MUTED))
 	column.add_child(UiKit.spacer(GAP))
 	column.add_child(UiKit.label(DailyStrings.lose_title(), TITLE_SIZE))
-	column.add_child(UiKit.spacer(GAP * 2.0))
+	column.add_child(UiKit.spacer(UiKit.SPACE_XXL))
 	var row: HBoxContainer = HBoxContainer.new()
 	row.add_theme_constant_override("separation", int(GAP))
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE

@@ -14,6 +14,14 @@ const SETTING_SOUND: String = "sound"
 const SETTING_MUSIC: String = "music"
 const SETTING_VIBRATION: String = "vibration"
 const MAX_STREAK: int = 3
+## Ayar modülü (Progress.module_value): bildirim ve desen tercihleri burada durur.
+## `notifications` anahtarını Notifier ileride okur (varsayılan açık); `patterns` renk desenleridir.
+const SETTINGS_MODULE: String = "settings"
+const SETTING_NOTIFICATIONS: String = "notifications"
+const SETTING_PATTERNS: String = "patterns"
+const COLOR_PATTERNS_PATH: String = "res://scripts/game/color_patterns.gd"
+const ADS_PRIVACY_METHOD: String = "show_privacy_options"
+const ADS_PATH: NodePath = ^"/root/AdManager"
 ## Progress yokken ayarların bellekteki yedeği (oturum boyunca korunur).
 static var _fallback_settings: Dictionary = {}
 
@@ -75,6 +83,62 @@ static func set_setting(key: String, value: bool) -> void:
 	if node != null and node.has_method("set_setting"):
 		node.call("set_setting", key, value)
 	apply_audio_settings()
+
+
+## Ayar modülündeki mantıksal tercih (Progress yoksa yedek bellek). Gelecekteki işçiler için tek kapı.
+static func module_flag(key: String, default_value: bool) -> bool:
+	var node: Node = progress()
+	if node != null and node.has_method("module_value"):
+		return bool(node.call("module_value", SETTINGS_MODULE, key, default_value))
+	return bool(_fallback_settings.get("module_" + key, default_value))
+
+
+static func set_module_flag(key: String, value: bool) -> void:
+	_fallback_settings["module_" + key] = value
+	var node: Node = progress()
+	if node != null and node.has_method("set_module_value"):
+		node.call("set_module_value", SETTINGS_MODULE, key, value)
+
+
+## Renk desenleri sınıfı (başka işçi ekliyor) çalışma anında var mı? Yoksa satır hiç çizilmez.
+static func patterns_available() -> bool:
+	return ResourceLoader.exists(COLOR_PATTERNS_PATH)
+
+
+## Deseni açar/kapar: sınıf yoksa yalnız tercih kaydedilir; varsa statik `set_enabled` çağrılır.
+static func apply_patterns(on: bool) -> void:
+	set_module_flag(SETTING_PATTERNS, on)
+	if patterns_available():
+		var script: Script = load(COLOR_PATTERNS_PATH) as Script
+		if script != null and script.has_method("set_enabled"):
+			script.call("set_enabled", on)
+
+
+## Desen durumu: sınıf `is_enabled` sunuyorsa onu, yoksa kayıtlı tercihi okur (varsayılan kapalı).
+static func patterns_on() -> bool:
+	if patterns_available():
+		var script: Script = load(COLOR_PATTERNS_PATH) as Script
+		if script != null and script.has_method("is_enabled"):
+			return bool(script.call("is_enabled"))
+	return module_flag(SETTING_PATTERNS, false)
+
+
+## Reklam katmanında gizlilik seçenekleri formu varsa true (SDK işi başka yerde; burada yalnız kanca).
+static func privacy_options_available() -> bool:
+	var loop: SceneTree = Engine.get_main_loop() as SceneTree
+	if loop == null:
+		return false
+	var ads: Node = loop.root.get_node_or_null(ADS_PATH)
+	return ads != null and ads.has_method(ADS_PRIVACY_METHOD)
+
+
+static func show_privacy_options() -> void:
+	var loop: SceneTree = Engine.get_main_loop() as SceneTree
+	if loop == null:
+		return
+	var ads: Node = loop.root.get_node_or_null(ADS_PATH)
+	if ads != null and ads.has_method(ADS_PRIVACY_METHOD):
+		ads.call(ADS_PRIVACY_METHOD)
 
 
 ## Kayıtlı ses/müzik ayarını AudioService'e uygular (açılışta ve her değişimde).

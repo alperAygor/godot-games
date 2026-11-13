@@ -10,19 +10,16 @@ extends Sheet
 signal upgraded(machine: String, track: String, level: int)
 
 const MODULE: String = "machines"
-const TITLE_SIZE: int = 48
-const NAME_SIZE: int = 38
-const ROW_SIZE: int = 32
-const COIN_SIZE: int = 36
+const NAME_SIZE: int = UiKit.TYPE_HEADING - 4
+const ROW_SIZE: int = UiKit.TYPE_BODY
+const CAPTION_SIZE: int = UiKit.TYPE_CAPTION
+const COIN_SIZE: int = UiTokens.TYPE_NUMERIC_SM
 const THUMB: float = 168.0
-const ROW_GAP: float = 18.0
-const CARD_GAP: float = 26.0
-const CARD_PAD: float = 26.0
-const CARD_RADIUS: int = 34
-const CARD_FILL: Color = Color(1.0, 1.0, 1.0, 0.7)
-const BUY_HEIGHT: float = 126.0
+const ROW_GAP: float = UiKit.SPACE_MD
+const CARD_GAP: float = UiKit.SPACE_LG
+const CARD_PAD: int = UiTokens.SPACE_LG
+const BUY_HEIGHT: float = UiKit.HEIGHT_COMPACT
 const BUY_WIDTH: float = 230.0
-const OK_HEIGHT: float = 126.0
 const LOCKED_ALPHA: float = 0.4
 const ARROW: String = "  →  "
 const COIN_ICON: String = "lucide/coins"
@@ -107,36 +104,34 @@ static func buy(machine: String, track: String) -> bool:
 
 func _fill() -> void:
 	var column: VBoxContainer = content()
-	var header: HBoxContainer = HBoxContainer.new()
-	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	column.add_child(header)
-	var title: Label = UiKit.label(Loc.t("MACHINES_TITLE"), TITLE_SIZE)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(title)
-	header.add_child(UiKit.tinted_icon(COIN_ICON, COIN_SIZE + 8.0, UiKit.GOLD))
-	_coins = UiKit.label("", COIN_SIZE)
-	header.add_child(_coins)
-	column.add_child(UiKit.spacer(ROW_GAP * 0.4))
-	var sub: Label = UiKit.label(Loc.t("MACHINES_SUB"), ROW_SIZE - 4, UiKit.TEXT_MUTED)
-	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	column.add_child(sub)
+	add_title(Loc.t("MACHINES_TITLE"))
+	# Bakiye başlığın altında ortada, sakin: ikon + sayı; altında tek satır sönük açıklama.
+	var balance: HBoxContainer = HBoxContainer.new()
+	balance.alignment = BoxContainer.ALIGNMENT_CENTER
+	balance.add_theme_constant_override("separation", UiTokens.SPACE_SM)
+	balance.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(balance)
+	var coin_icon: TextureRect = UiKit.tinted_icon(COIN_ICON, UiKit.ICON_MD, UiKit.GOLD)
+	coin_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	balance.add_child(coin_icon)
+	_coins = UiKit.numeric_label("", COIN_SIZE)
+	balance.add_child(_coins)
+	column.add_child(UiKit.spacer(UiKit.SPACE_XS))
+	column.add_child(UiKit.wrap_label(Loc.t("MACHINES_SUB"), CAPTION_SIZE, UiKit.TEXT_MUTED))
 	column.add_child(UiKit.spacer(CARD_GAP))
 	_rows = VBoxContainer.new()
 	_rows.add_theme_constant_override("separation", int(CARD_GAP))
 	_rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(_rows)
-	column.add_child(UiKit.spacer(CARD_GAP * 1.2))
-	var ok: Button = UiKit.button(Loc.t("OK"), &"SecondaryButton", "", OK_HEIGHT)
+	column.add_child(UiKit.spacer(UiKit.SPACE_XL))
+	var ok: Button = add_action(Loc.t("OK"), false)
 	ok.pressed.connect(close)
-	column.add_child(ok)
 	_refresh()
 
 
 ## Kartlar baştan kurulur (satın almadan sonra da): az düğüm, kare başına iş yok.
 func _refresh() -> void:
-	_coins.text = str(_coins_now())
+	_coins.text = UiKit.fmt_int(_coins_now())
 	for child: Node in _rows.get_children():
 		child.queue_free()
 	for machine: String in MachineRules.MACHINES:
@@ -144,14 +139,7 @@ func _refresh() -> void:
 
 
 func _machine_card(machine: String) -> PanelContainer:
-	var card: PanelContainer = PanelContainer.new()
-	var box: StyleBoxFlat = StyleBoxFlat.new()
-	box.bg_color = CARD_FILL
-	box.set_corner_radius_all(CARD_RADIUS)
-	box.set_content_margin_all(CARD_PAD)
-	box.anti_aliasing = true
-	card.add_theme_stylebox_override("panel", box)
-	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var card: PanelContainer = UiKit.card(UiKit.SURFACE_SOFT, UiKit.RADIUS_CARD, CARD_PAD, CARD_PAD)
 	var row: HBoxContainer = HBoxContainer.new()
 	row.add_theme_constant_override("separation", int(CARD_PAD))
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -169,7 +157,7 @@ func _machine_card(machine: String) -> PanelContainer:
 	row.add_child(thumb)
 	var column: VBoxContainer = VBoxContainer.new()
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	column.add_theme_constant_override("separation", int(ROW_GAP * 0.5))
+	column.add_theme_constant_override("separation", int(UiKit.SPACE_SM))
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(column)
 	var name: Label = UiKit.label(Loc.t(String(NAME_KEYS[machine])), NAME_SIZE)
@@ -198,7 +186,7 @@ func _track_row(machine: String, track: String) -> HBoxContainer:
 	text.add_theme_constant_override("separation", 0)
 	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(text)
-	var caption: Label = UiKit.label(Loc.t(String(TRACK_KEYS[track])), ROW_SIZE - 4, UiKit.TEXT_MUTED)
+	var caption: Label = UiKit.label(Loc.t(String(TRACK_KEYS[track])), CAPTION_SIZE, UiKit.TEXT_MUTED)
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	text.add_child(caption)
 	var shown: String = _value_text(track, MachineRules.value(machine, track, level))
@@ -208,7 +196,7 @@ func _track_row(machine: String, track: String) -> HBoxContainer:
 	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	text.add_child(value)
 	if price == MachineRules.MAXED:
-		var done: Label = UiKit.label(Loc.t("MACHINE_MAX"), ROW_SIZE - 2, UiKit.ACCENT)
+		var done: Label = UiKit.label(Loc.t("MACHINE_MAX"), CAPTION_SIZE, UiKit.ACCENT)
 		done.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(done)
 		return row
@@ -216,7 +204,7 @@ func _track_row(machine: String, track: String) -> HBoxContainer:
 		COIN_ICON, BUY_HEIGHT)
 	buy_button.custom_minimum_size.x = BUY_WIDTH
 	buy_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	buy_button.disabled = price > _coins_now()
+	UiKit.set_enabled(buy_button, price <= _coins_now())
 	buy_button.pressed.connect(_on_buy.bind(machine, track))
 	row.add_child(buy_button)
 	return row

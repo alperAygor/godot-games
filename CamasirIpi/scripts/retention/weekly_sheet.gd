@@ -4,8 +4,8 @@ extends RetentionSheet
 ## Haftalık çamaşır etkinliği: haftanın teması, kalan gün (yalnız burada), 5 kademeli yol.
 ## Mantık `WeeklyEvent`te; olaylar `RetentionEvents` ile beslenir.
 
-const BIG_SIZE: int = 84
-const CLAIM_HEIGHT: float = 132.0
+const BIG_SIZE: int = UiKit.TYPE_DISPLAY
+const CLAIM_HEIGHT: float = UiKit.HEIGHT_PRIMARY
 const THEME_DISC: float = 112.0
 
 var _body: VBoxContainer = null
@@ -51,21 +51,21 @@ func _rebuild() -> void:
 	_body.add_child(holder)
 	_body.add_child(UiKit.spacer(RetentionUi.GAP))
 	_body.add_child(UiKit.label(RetentionStrings.theme_title(String(theme["id"])), RetentionUi.TITLE_SIZE))
-	_body.add_child(UiKit.spacer(RetentionUi.GAP * 0.4))
+	_body.add_child(UiKit.spacer(UiKit.SPACE_XS))
 	_body.add_child(UiKit.label(RetentionStrings.theme_goal(String(theme["id"])), RetentionUi.BODY_SIZE, UiKit.TEXT_MUTED))
-	_body.add_child(UiKit.spacer(RetentionUi.GAP * 0.7))
+	_body.add_child(UiKit.spacer(UiKit.SPACE_MD))
 	_body.add_child(_days_row())
 	var note: Dictionary = RetentionStore.get_dict(RetentionFlow.KEY_WEEKLY_NOTE)
 	if int(note.get("coins", 0)) > 0:
-		_body.add_child(UiKit.spacer(RetentionUi.GAP * 0.5))
+		_body.add_child(UiKit.spacer(UiKit.SPACE_SM))
 		_body.add_child(UiKit.label(RetentionStrings.week_note(int(note["coins"])), RetentionUi.SMALL_SIZE, UiKit.TEXT_MUTED))
 		RetentionStore.put(RetentionFlow.KEY_WEEKLY_NOTE, {})
-	_body.add_child(UiKit.spacer(RetentionUi.GAP * 1.2))
+	_body.add_child(UiKit.spacer(UiKit.SPACE_XL))
 	_body.add_child(_progress_line(state, theme))
-	_body.add_child(UiKit.spacer(RetentionUi.GAP * 0.8))
+	_body.add_child(UiKit.spacer(UiKit.SPACE_MD))
 	_track = _make_track(state, theme, tint)
 	_body.add_child(_track)
-	_body.add_child(UiKit.spacer(RetentionUi.GAP * 1.0))
+	_body.add_child(UiKit.spacer(UiKit.SPACE_LG))
 	var ready: Array[int] = WeeklyEvent.claimable_tiers(state, theme)
 	if ready.is_empty():
 		var ok: Button = UiKit.button(UiStrings.ok(), &"SecondaryButton", "", OK_HEIGHT)

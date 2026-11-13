@@ -8,10 +8,9 @@ signal resume_pressed
 signal restart_pressed
 signal home_pressed
 
-const TITLE_SIZE: int = 44
-const ROW_GAP: float = 28.0
-const ROW_SEPARATION: int = 24
-const RESUME_HEIGHT: float = 132.0
+const SECTION_GAP: float = UiKit.SPACE_XL
+const ROW_SEPARATION: int = UiTokens.SPACE_LG
+const RESUME_HEIGHT: float = UiKit.HEIGHT_PRIMARY
 
 
 static func open(parent: Node) -> PauseSheet:
@@ -25,10 +24,9 @@ static func open(parent: Node) -> PauseSheet:
 
 func _fill() -> void:
 	var column: VBoxContainer = content()
-	column.add_child(UiKit.label(UiStrings.paused(), TITLE_SIZE))
-	column.add_child(UiKit.spacer(ROW_GAP))
+	add_title(UiStrings.paused())
 	column.add_child(UiSettingsRow.new())
-	column.add_child(UiKit.spacer(ROW_GAP + 12.0))
+	column.add_child(UiKit.spacer(SECTION_GAP))
 	var row: HBoxContainer = HBoxContainer.new()
 	row.add_theme_constant_override("separation", ROW_SEPARATION)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE

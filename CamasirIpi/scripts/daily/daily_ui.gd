@@ -7,12 +7,12 @@ extends RefCounted
 const DISC: float = 112.0
 const DISC_ICON: float = 52.0
 const REWARD_ICON: float = 44.0
-const REWARD_FONT: int = 56
+const REWARD_FONT: int = UiKit.TYPE_NUMERIC
 const ROW_SEPARATION: int = 14
 const GROUP_GAP: float = 36.0
 const STREAK_ICON: float = 40.0
 const STREAK_FONT: int = 40
-const WARM_SOFT: Color = Color("fbebc6")
+const WARM_SOFT: Color = UiKit.COIN_SOFT
 
 
 static func icon_disc(icon_name: String, disc_color: Color, icon_color: Color) -> Control:

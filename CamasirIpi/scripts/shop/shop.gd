@@ -16,27 +16,27 @@ const SCENE_PATH: String = "res://scenes/shop/Shop.tscn"
 const BACKGROUND_TOP: Color = Color("f7f3ea")
 const BACKGROUND_BOTTOM: Color = Color("eef4ea")
 const CARD_COLOR: Color = Color("fffdf8")
-const TILE_FILL: Color = Color("f4f1e8")
-const ACCENT_FILL: Color = Color("38a276")
-const ACCENT_SOFT_FILL: Color = Color("dcefe3")
-const CARD_RADIUS: int = 48
-const TILE_RADIUS: int = 34
-const PILL_RADIUS: int = 48
-const CARD_PAD_X: int = 40
-const CARD_PAD_Y: int = 36
-const CARD_GAP: int = 28
-const LIST_SIDE: float = 40.0
-const TITLE_SIZE: int = 44
-const NAME_SIZE: int = 38
-const SMALL_SIZE: int = 28
-const TINY_SIZE: int = 22
+const TILE_FILL: Color = UiKit.SURFACE_SOFT
+const ACCENT_FILL: Color = UiKit.ACCENT
+const ACCENT_SOFT_FILL: Color = UiKit.ACCENT_SOFT
+const CARD_RADIUS: int = UiTokens.RADIUS_SHEET
+const TILE_RADIUS: int = UiKit.RADIUS_TILE
+const PILL_RADIUS: int = UiTokens.RADIUS_CHIP + 8
+const CARD_PAD_X: int = UiTokens.SPACE_XL + 8
+const CARD_PAD_Y: int = UiTokens.SPACE_XL
+const CARD_GAP: int = UiTokens.SPACE_LG
+const LIST_SIDE: float = UiKit.SPACE_XL + 8.0
+const TITLE_SIZE: int = UiKit.TYPE_HEADING
+const NAME_SIZE: int = UiKit.TYPE_BODY + 4
+const SMALL_SIZE: int = UiKit.TYPE_CAPTION
+const TINY_SIZE: int = UiKit.TYPE_MICRO
 const HEADER_GAP: float = 36.0
 const EDGE_FADE: float = 40.0
 const SCROLL_BOTTOM_PAD: float = 80.0
 const GLYPH_DISC: float = 112.0
 const BADGE_DISC: float = 44.0
-const BADGE_COLOR: Color = Color("e5484d")
-const BADGE_EMPTY_COLOR: Color = Color("9aa3af")
+const BADGE_COLOR: Color = BoosterBar.BADGE_COLOR
+const BADGE_EMPTY_COLOR: Color = BoosterBar.BADGE_EMPTY_COLOR
 const ROW_GAP: int = 22
 const BLOCK_GAP: int = 40
 const PACK_HEIGHT: float = 132.0
@@ -700,6 +700,8 @@ func _flat_button(color: Color, radius: int, min_height: float) -> Button:
 		button.add_theme_stylebox_override(state, _box(color, radius))
 	button.add_theme_stylebox_override("pressed", _box(color.darkened(0.06), radius))
 	button.pressed.connect(UiKit.tap_sound)
+	# Her dokunma hedefi aynı yumuşak basma hissini verir (kit ortak davranışı).
+	UiKit.attach_press_scale(button)
 	return button
 
 

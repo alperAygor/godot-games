@@ -5,10 +5,10 @@ extends Sheet
 ## Oyna: seviye `DailyPuzzle.pending_level`a konur ve oyun sahnesine geçilir (normal ilerleme
 ## akışından bağımsız; sonucu `DailyFlow` gösterir).
 
-const TITLE_SIZE: int = 48
-const SUBTITLE_SIZE: int = 32
-const GAP: float = 24.0
-const PLAY_HEIGHT: float = 132.0
+const TITLE_SIZE: int = UiKit.TITLE_SIZE
+const SUBTITLE_SIZE: int = UiKit.TYPE_BODY
+const GAP: float = UiKit.SPACE_LG
+const PLAY_HEIGHT: float = UiKit.HEIGHT_PRIMARY
 const READY_DISC: Color = DailyUi.WARM_SOFT
 const SOLVED_ICON: String = "lucide/check"
 const READY_ICON: String = "lucide/star"
@@ -37,21 +37,21 @@ func _fill() -> void:
 		UiKit.ACCENT_SOFT if solved else READY_DISC, UiKit.ACCENT if solved else UiKit.GOLD))
 	column.add_child(UiKit.spacer(GAP))
 	column.add_child(UiKit.label(DailyStrings.puzzle_title(), TITLE_SIZE))
-	column.add_child(UiKit.spacer(GAP * 0.4))
+	column.add_child(UiKit.spacer(UiKit.SPACE_XS))
 	var subtitle: String = DailyStrings.puzzle_ready()
 	if solved:
 		subtitle = DailyStrings.puzzle_tomorrow()
 	elif locked:
 		subtitle = DailyStrings.puzzle_locked(DailyPuzzle.unlock_level())
 	column.add_child(UiKit.label(subtitle, SUBTITLE_SIZE, UiKit.TEXT_MUTED))
-	column.add_child(UiKit.spacer(GAP * 1.4))
+	column.add_child(UiKit.spacer(UiKit.SPACE_XL))
 	column.add_child(DailyUi.streak_row(DailyPuzzle.display_streak(state, _today), int(state["best"])))
 	if not solved:
 		var preview: Dictionary = DailyPuzzle.reward_for(DailyPuzzle.streak_after_win(state, _today), level)
 		column.add_child(UiKit.spacer(GAP))
 		column.add_child(DailyUi.reward_row(int(preview["coins"]), String(preview["booster"]),
 			int(preview["booster_count"])))
-	column.add_child(UiKit.spacer(GAP * 1.6))
+	column.add_child(UiKit.spacer(UiKit.SPACE_XL))
 	if solved or locked:
 		var close_button: Button = UiKit.button(DailyStrings.close(), &"SecondaryButton", "lucide/x", PLAY_HEIGHT)
 		close_button.pressed.connect(close)

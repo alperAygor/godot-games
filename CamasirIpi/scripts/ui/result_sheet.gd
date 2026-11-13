@@ -12,24 +12,24 @@ signal double_pressed
 signal revive_pressed
 signal retry_pressed
 
-const TITLE_SIZE: int = 56
-const REWARD_SIZE: int = 84
-const REWARD_ICON: float = 56.0
-const REMAINING_SIZE: int = 36
-const REMAINING_BIG_SIZE: int = 92
-const MAIN_HEIGHT: float = 132.0
+const TITLE_SIZE: int = UiKit.TITLE_SIZE
+const REWARD_SIZE: int = UiKit.TYPE_DISPLAY
+const REWARD_ICON: float = UiKit.ICON_LG
+const REMAINING_SIZE: int = UiKit.TYPE_BODY + 2
+const REMAINING_BIG_SIZE: int = UiKit.TYPE_DISPLAY + 8
+const MAIN_HEIGHT: float = UiKit.HEIGHT_PRIMARY
 const DOUBLE_WIDTH: float = 300.0
-const BLOCK_GAP: float = 24.0
+const BLOCK_GAP: float = UiKit.SPACE_LG
 const COUNT_DELAY: float = 0.5
 const COUNT_SECONDS: float = 0.9
 ## "Sadece N çamaşır kaldı" vurgusu bu sayıya ve altına inince açılır.
 const FEW_REMAINING: int = 6
-const STORM_DISC: float = 112.0
-const STORM_ICON: float = 56.0
+const STORM_DISC: float = UiKit.DISC_LG
+const STORM_ICON: float = UiKit.ICON_LG
 ## Ustalık (yıldız) bölümü.
-const PERFECT_COLOR: Color = Color("e0a526")
+const PERFECT_COLOR: Color = UiKit.STAR
 const STAR_SIZE: float = 92.0
-const STAR_GAP: float = 30.0
+const STAR_GAP: float = UiKit.SPACE_XL
 const STAR_TIP_ROUND: float = 7.0
 const STAR_INNER_RATIO: float = 0.5
 const STAR_FIRST_DELAY: float = 0.7
@@ -42,9 +42,9 @@ const STAR_SOUND: String = "sparkle"
 const STAR_SOUND_PITCH: float = 0.92
 const STAR_SOUND_PITCH_STEP: float = 0.1
 const STAR_SOUND_DB: float = -7.0
-const BREAKDOWN_SIZE: int = 36
-const BREAKDOWN_ICON: float = 36.0
-const BREAKDOWN_GAP: int = 28
+const BREAKDOWN_SIZE: int = UiKit.TYPE_CAPTION + 4
+const BREAKDOWN_ICON: float = UiKit.ICON_SM + 4.0
+const BREAKDOWN_GAP: int = UiTokens.SPACE_LG
 ## Kusursuzda yumuşak "katlanmış kumaş" konfetisi.
 const CONFETTI_COUNT: int = 30
 const CONFETTI_LIFETIME: float = 3.4
@@ -142,13 +142,13 @@ func _fill_win(reward: int, tints: Array[Color], can_double: bool, mastery: Dict
 	column.add_child(pile)
 	pile.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	pile.play(Motion.OVERLAY_FADE_SECONDS)
-	column.add_child(UiKit.spacer(BLOCK_GAP * 1.6))
+	column.add_child(UiKit.spacer(UiKit.SPACE_XL))
 	if rating > 0:
 		column.add_child(_star_row(rating))
-		column.add_child(UiKit.spacer(BLOCK_GAP * 0.5))
+		column.add_child(UiKit.spacer(UiKit.SPACE_SM))
 	column.add_child(UiKit.label(UiStrings.perfect_title() if perfect else UiStrings.win_title(), TITLE_SIZE,
 		PERFECT_COLOR if perfect else UiKit.TEXT))
-	column.add_child(UiKit.spacer(BLOCK_GAP * 0.5))
+	column.add_child(UiKit.spacer(UiKit.SPACE_SM))
 	var reward_row: HBoxContainer = HBoxContainer.new()
 	reward_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	reward_row.add_theme_constant_override("separation", 16)
@@ -157,16 +157,17 @@ func _fill_win(reward: int, tints: Array[Color], can_double: bool, mastery: Dict
 	var coin: TextureRect = UiKit.tinted_icon("lucide/coins", REWARD_ICON, UiKit.GOLD)
 	coin.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	reward_row.add_child(coin)
-	_reward_label = UiKit.label(UiStrings.REWARD_FORMAT % 0, REWARD_SIZE)
+	# Sayarken basamaklar oynamasın diye sabit genişlikli rakamlar.
+	_reward_label = UiKit.numeric_label(UiStrings.REWARD_FORMAT % 0, REWARD_SIZE)
 	reward_row.add_child(_reward_label)
 	_count_reward(reward, COUNT_DELAY)
 	# Yalnız temel ödül varsa döküm toplamı tekrarlardı: ek kalem yoksa satır hiç çizilmez.
 	if int(mastery.get("perfect_bonus", 0)) + int(mastery.get("chain_bonus", 0)) > 0:
 		_breakdown = _breakdown_row(int(mastery.get("base_coins", reward)),
 			int(mastery.get("perfect_bonus", 0)), int(mastery.get("chain_bonus", 0)))
-		column.add_child(UiKit.spacer(BLOCK_GAP * 0.5))
+		column.add_child(UiKit.spacer(UiKit.SPACE_SM))
 		column.add_child(_breakdown)
-	column.add_child(UiKit.spacer(BLOCK_GAP + 8.0))
+	column.add_child(UiKit.spacer(UiKit.SPACE_XL))
 	if can_double:
 		_double_button = UiKit.button(UiStrings.WIN_DOUBLE, &"SecondaryButton", "lucide/video", UiKit.MIN_TOUCH)
 		_double_button.custom_minimum_size.x = DOUBLE_WIDTH
@@ -296,27 +297,13 @@ func _start_confetti() -> void:
 
 func _fill_lose(remaining: int, can_revive: bool, moves_out: bool = false) -> void:
 	var column: VBoxContainer = content()
-	var storm: CenterContainer = CenterContainer.new()
-	storm.custom_minimum_size = Vector2(0.0, STORM_DISC)
-	storm.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var disc: Panel = Panel.new()
-	var disc_box: StyleBoxFlat = StyleBoxFlat.new()
-	disc_box.bg_color = UiKit.ACCENT_SOFT
-	disc_box.set_corner_radius_all(int(STORM_DISC * 0.5))
-	disc_box.anti_aliasing = true
-	disc.add_theme_stylebox_override("panel", disc_box)
-	disc.custom_minimum_size = Vector2(STORM_DISC, STORM_DISC)
-	disc.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	storm.add_child(disc)
-	var wind: TextureRect = UiKit.tinted_icon("lucide/wind", STORM_ICON, UiKit.TEXT_MUTED)
-	wind.position = Vector2((STORM_DISC - STORM_ICON) * 0.5, (STORM_DISC - STORM_ICON) * 0.5)
-	disc.add_child(wind)
+	var storm: Control = UiKit.centered_disc("lucide/wind", UiKit.ACCENT_SOFT, UiKit.TEXT_MUTED)
 	column.add_child(storm)
 	column.add_child(UiKit.spacer(BLOCK_GAP))
 	column.add_child(UiKit.label(UiStrings.lose_title_moves() if moves_out else UiStrings.lose_title(), TITLE_SIZE))
-	column.add_child(UiKit.spacer(BLOCK_GAP * 0.5))
+	column.add_child(UiKit.spacer(UiKit.SPACE_SM))
 	column.add_child(_remaining_label(remaining))
-	column.add_child(UiKit.spacer(BLOCK_GAP * 2.0))
+	column.add_child(UiKit.spacer(UiKit.SPACE_XXL))
 	if can_revive:
 		var revive: Button = UiKit.button(UiStrings.lose_revive_moves() if moves_out else UiStrings.lose_revive(),
 			&"", "lucide/video", MAIN_HEIGHT)

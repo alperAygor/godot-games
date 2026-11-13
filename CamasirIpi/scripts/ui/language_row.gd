@@ -6,22 +6,18 @@ extends VBoxContainer
 
 signal language_changed
 
-const CAPTION_SIZE: int = 28
-const PILL_FONT_SIZE: int = 32
+const PILL_FONT_SIZE: int = UiKit.TYPE_CAPTION + 4
 const PILL_WIDTH: float = 132.0
 const PILL_HEIGHT: float = 84.0
-const PILL_GAP: int = 16
-const CAPTION_GAP: int = 12
+const PILL_GAP: int = UiTokens.SPACE_MD
 const PILL_STATES: Array[String] = ["normal", "hover", "pressed", "focus", "disabled"]
-## Seçili dil tıklanamaz (disabled) ama okunur kalsın diye yazı rengi elle verilir.
-const FONT_KEYS: Array[String] = ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color"]
 const PILL_OFF_FILL: Color = Color(0.0, 0.0, 0.0, 0.06)
 
 
+
 func _init() -> void:
-	add_theme_constant_override("separation", CAPTION_GAP)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(UiKit.label(UiStrings.language_caption(), CAPTION_SIZE, UiKit.TEXT_MUTED))
+	# Altyazı yok: TR/EN/ES hapları kendini açıklar (az metin kuralı).
 	var row: HBoxContainer = HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", PILL_GAP)
@@ -31,24 +27,35 @@ func _init() -> void:
 		row.add_child(_pill(code))
 
 
+## Dokunma alanı 126 px, görsel hap 84 px: düğme boş stillidir, hap ve yazı çocuk olarak çizilir
+## (UiIconButton ile aynı ilke: küçük görsel, büyük dokunma hedefi).
 func _pill(code: String) -> Button:
 	var selected: bool = code == Loc.language()
 	var button: Button = Button.new()
-	button.text = code.to_upper()
 	button.focus_mode = Control.FOCUS_NONE
-	button.custom_minimum_size = Vector2(PILL_WIDTH, PILL_HEIGHT)
+	button.custom_minimum_size = Vector2(PILL_WIDTH, UiKit.MIN_TOUCH)
 	button.disabled = selected
-	var fill: Color = UiKit.ACCENT if selected else PILL_OFF_FILL
+	button.flat = true
+	var none: StyleBoxEmpty = StyleBoxEmpty.new()
 	for state: String in PILL_STATES:
-		var box: StyleBoxFlat = StyleBoxFlat.new()
-		box.bg_color = fill.darkened(0.08) if state == "pressed" else fill
-		box.set_corner_radius_all(int(PILL_HEIGHT * 0.5))
-		box.anti_aliasing = true
-		button.add_theme_stylebox_override(state, box)
-	var tint: Color = Color.WHITE if selected else UiKit.TEXT
-	for key: String in FONT_KEYS:
-		button.add_theme_color_override(key, tint)
-	button.add_theme_font_size_override("font_size", PILL_FONT_SIZE)
+		button.add_theme_stylebox_override(state, none)
+	var plate: Panel = Panel.new()
+	var box: StyleBoxFlat = StyleBoxFlat.new()
+	box.bg_color = UiKit.ACCENT if selected else PILL_OFF_FILL
+	box.set_corner_radius_all(int(PILL_HEIGHT * 0.5))
+	box.anti_aliasing = true
+	plate.add_theme_stylebox_override("panel", box)
+	plate.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var inset: float = (UiKit.MIN_TOUCH - PILL_HEIGHT) * 0.5
+	plate.offset_top = inset
+	plate.offset_bottom = -inset
+	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(plate)
+	var caption: Label = UiKit.label(code.to_upper(), PILL_FONT_SIZE, Color.WHITE if selected else UiKit.TEXT)
+	caption.set_anchors_preset(Control.PRESET_FULL_RECT)
+	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	plate.add_child(caption)
+	UiKit.attach_press_scale(button)
 	button.pressed.connect(_on_pressed.bind(code))
 	return button
 

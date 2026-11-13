@@ -3,7 +3,7 @@ extends Node2D
 
 ## Bir bölgeyi (askı, sepet kuyruğu) yumuşakça aydınlatan nabız. Girdi tutmaz.
 
-const GLOW_COLOR: Color = Color("2ec4a6")
+const GLOW_COLOR: Color = UiKit.ACCENT
 const LAYERS: int = 3
 const GROW_STEP: float = 14.0
 const PEAK_ALPHA: float = 0.38

@@ -3,20 +3,20 @@ extends RefCounted
 
 ## Üç sayfanın ortak küçük parçaları. Düz, çizgisiz, küçük ikonlu; renkler UiKit'ten.
 
-const ROW_BG: Color = Color("f3efe3")
-const WARM_SOFT: Color = Color("fbebc6")
-const STAR_COLOR: Color = Color("f0a53a")
-const TITLE_SIZE: int = 48
-const BODY_SIZE: int = 30
-const SMALL_SIZE: int = 28
-const GAP: float = 24.0
+const ROW_BG: Color = UiKit.SURFACE_SOFT
+const WARM_SOFT: Color = UiKit.COIN_SOFT
+const STAR_COLOR: Color = UiKit.STAR
+const TITLE_SIZE: int = UiKit.TITLE_SIZE
+const BODY_SIZE: int = UiKit.TYPE_BODY
+const SMALL_SIZE: int = UiKit.TYPE_CAPTION
+const GAP: float = UiKit.SPACE_LG
 const DISC_DIAMETER: float = 92.0
-const DISC_ICON: float = 44.0
-const ROW_RADIUS: int = 40
-const REWARD_ICON: float = 34.0
+const DISC_ICON: float = UiKit.ICON_MD
+const ROW_RADIUS: int = UiKit.RADIUS_CARD
+const REWARD_ICON: float = UiKit.ICON_SM + 2.0
 const FLOAT_RISE: float = 90.0
 const FLOAT_SECONDS: float = 1.0
-const FLOAT_FONT: int = 52
+const FLOAT_FONT: int = UiKit.TITLE_SIZE
 const CHEST_ICON: String = "lucide/package"
 const COIN_ICON: String = "lucide/coins"
 const STAR_ICON: String = "lucide/star"
@@ -34,37 +34,15 @@ static func booster_icon(id: String) -> String:
 	return String(BOOSTER_ICONS.get(id, CHEST_ICON))
 
 
+## Ortak kit dairesine yönlenir (tek çizim, tek stil).
 static func disc(icon_name: String, bg: Color, fg: Color, diameter: float = DISC_DIAMETER,
 		icon_pixels: float = DISC_ICON) -> Panel:
-	var node: Panel = Panel.new()
-	var box: StyleBoxFlat = StyleBoxFlat.new()
-	box.bg_color = bg
-	box.set_corner_radius_all(int(diameter * 0.5))
-	box.anti_aliasing = true
-	node.add_theme_stylebox_override("panel", box)
-	node.custom_minimum_size = Vector2(diameter, diameter)
-	node.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	node.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var icon: TextureRect = UiKit.tinted_icon(icon_name, icon_pixels, fg)
-	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
-	node.add_child(icon)
-	return node
+	return UiKit.disc(icon_name, bg, fg, diameter, icon_pixels)
 
 
 ## Yuvarlak köşeli düz satır kartı; içine `inner` konur.
 static func row_card(margin_x: int = 28, margin_y: int = 22) -> PanelContainer:
-	var card: PanelContainer = PanelContainer.new()
-	var box: StyleBoxFlat = StyleBoxFlat.new()
-	box.bg_color = ROW_BG
-	box.set_corner_radius_all(ROW_RADIUS)
-	box.anti_aliasing = true
-	box.content_margin_left = margin_x
-	box.content_margin_right = margin_x
-	box.content_margin_top = margin_y
-	box.content_margin_bottom = margin_y
-	card.add_theme_stylebox_override("panel", box)
-	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return card
+	return UiKit.card(ROW_BG, ROW_RADIUS, margin_x, margin_y)
 
 
 static func left_label(text: String, font_size: int, color: Color = UiKit.TEXT) -> Label:

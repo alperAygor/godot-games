@@ -29,7 +29,7 @@ const HAND_Z: int = 200
 const HAND_COLOR: Color = Color("fffdf8")
 const SHADOW_COLOR: Color = Color(0.1, 0.15, 0.25, 0.22)
 const SHADOW_OFFSET: Vector2 = Vector2(9.0, 13.0)
-const RING_COLOR: Color = Color("2ec4a6")
+const RING_COLOR: Color = UiKit.ACCENT
 const ANTI_ALIAS: float = 1.5
 ## Elin parçaları (parmak ucu orijin): işaret parmağı, avuç, iki kıvrık parmak, başparmak.
 const FINGER: Rect2 = Rect2(-19.0, 0.0, 38.0, 118.0)
