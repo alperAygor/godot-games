@@ -1,0 +1,65 @@
+{
+  "levels_per_piece": 10,
+  "sets": [
+    {
+      "id": "turkiye",
+      "reward": "pin_tulip",
+      "pieces": [
+        {"kind": "towel", "pattern": "stripes", "colors": ["#E5484D", "#FFF7EE", "#F2B63D"], "scale": 7.0, "angle": 90.0},
+        {"kind": "dress", "pattern": "floral", "colors": ["#FFF7EE", "#E5484D", "#3DBB6E"], "scale": 5.0, "angle": 0.0},
+        {"kind": "sock", "pattern": "diamonds", "colors": ["#C8463F", "#F6E3C5", "#2F6FB0"], "scale": 4.0, "angle": 0.0},
+        {"kind": "tshirt", "pattern": "dots", "colors": ["#E5484D", "#FFF7EE", "#FFF7EE"], "scale": 6.0, "angle": 0.0}
+      ]
+    },
+    {
+      "id": "japonya",
+      "reward": "rope_sakura",
+      "pieces": [
+        {"kind": "sweater", "pattern": "waves", "colors": ["#2F4E8C", "#EAF0FA", "#2F4E8C"], "scale": 6.0, "angle": 0.0},
+        {"kind": "towel", "pattern": "diamonds", "colors": ["#EAF0FA", "#3A5BA0", "#3A5BA0"], "scale": 7.0, "angle": 0.0},
+        {"kind": "shorts", "pattern": "checks", "colors": ["#2E7D5B", "#1F2A2E", "#1F2A2E"], "scale": 5.0, "angle": 0.0},
+        {"kind": "dress", "pattern": "floral", "colors": ["#F7C6D3", "#FFFFFF", "#E07A9A"], "scale": 4.5, "angle": 0.0}
+      ]
+    },
+    {
+      "id": "meksika",
+      "reward": "pin_cactus",
+      "pieces": [
+        {"kind": "towel", "pattern": "serape", "colors": ["#E5484D", "#F2B63D", "#2BB3A6"], "scale": 5.0, "angle": 90.0},
+        {"kind": "dress", "pattern": "floral", "colors": ["#FFFFFF", "#F06292", "#F2B63D"], "scale": 4.0, "angle": 0.0},
+        {"kind": "sock", "pattern": "zigzag", "colors": ["#2BB3A6", "#F2B63D", "#E5484D"], "scale": 5.0, "angle": 0.0},
+        {"kind": "tshirt", "pattern": "stripes", "colors": ["#F28C38", "#FFF2D6", "#E5484D"], "scale": 6.0, "angle": 0.0}
+      ]
+    },
+    {
+      "id": "iskocya",
+      "reward": "rope_tartan",
+      "pieces": [
+        {"kind": "pants", "pattern": "tartan", "colors": ["#C0392B", "#1F3A5F", "#F2C94C"], "scale": 3.5, "angle": 0.0},
+        {"kind": "sweater", "pattern": "diamonds", "colors": ["#2E6B4F", "#D9C8A0", "#8E3B46"], "scale": 4.0, "angle": 0.0},
+        {"kind": "towel", "pattern": "tartan", "colors": ["#2E6B4F", "#1F3A5F", "#E8D9A8"], "scale": 3.0, "angle": 0.0},
+        {"kind": "sock", "pattern": "tartan", "colors": ["#8E3B46", "#2E2E3A", "#E8D9A8"], "scale": 3.0, "angle": 0.0}
+      ]
+    },
+    {
+      "id": "hindistan",
+      "reward": "pin_lotus",
+      "pieces": [
+        {"kind": "dress", "pattern": "floral", "colors": ["#F28C38", "#C2185B", "#F2C94C"], "scale": 5.0, "angle": 0.0},
+        {"kind": "towel", "pattern": "stripes", "colors": ["#C2185B", "#F2C94C", "#2BB3A6"], "scale": 9.0, "angle": 0.0},
+        {"kind": "shorts", "pattern": "dots", "colors": ["#2BB3A6", "#FFF2D6", "#FFF2D6"], "scale": 7.0, "angle": 0.0},
+        {"kind": "tshirt", "pattern": "diamonds", "colors": ["#F2C94C", "#C2185B", "#C2185B"], "scale": 5.0, "angle": 0.0}
+      ]
+    },
+    {
+      "id": "hollanda",
+      "reward": "rope_tulip",
+      "pieces": [
+        {"kind": "tshirt", "pattern": "stripes", "colors": ["#FFFFFF", "#F28C38", "#F28C38"], "scale": 7.0, "angle": 0.0},
+        {"kind": "sweater", "pattern": "floral", "colors": ["#F4F7FB", "#2F5DA8", "#2F5DA8"], "scale": 4.0, "angle": 0.0},
+        {"kind": "sock", "pattern": "checks", "colors": ["#F28C38", "#FFFFFF", "#FFFFFF"], "scale": 4.0, "angle": 0.0},
+        {"kind": "dress", "pattern": "dots", "colors": ["#E5484D", "#FFFFFF", "#FFFFFF"], "scale": 6.0, "angle": 0.0}
+      ]
+    }
+  ]
+}
