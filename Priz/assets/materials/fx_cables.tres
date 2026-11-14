@@ -1,0 +1,8 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/cable_lines.gdshader" id="1"]
+
+[resource]
+resource_name = "fx_cables"
+shader = ExtResource("1")
+shader_parameter/line_colors = PackedColorArray(0.878, 0.341, 0.29, 1, 0.247, 0.561, 0.847, 1, 0.91, 0.698, 0.227, 1, 0.604, 0.416, 0.839, 1)

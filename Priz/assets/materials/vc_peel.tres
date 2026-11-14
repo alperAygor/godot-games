@@ -1,0 +1,16 @@
+[gd_resource type="ORMMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/peel_normal.png" id="1"]
+[ext_resource type="Texture2D" path="res://assets/textures/peel_orm.png" id="2"]
+
+[resource]
+resource_name = "vc_peel"
+vertex_color_use_as_albedo = true
+albedo_color = Color(1.0000, 1.0000, 1.0000, 1.0000)
+orm_texture = ExtResource("2")
+roughness = 1.0
+metallic = 0.0
+normal_enabled = true
+normal_scale = 0.25
+normal_texture = ExtResource("1")
+uv1_scale = Vector3(5.0000, 5.0000, 5.0000)

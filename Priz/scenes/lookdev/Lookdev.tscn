@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/lookdev/lookdev.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/lookdev/room_view.gd" id="2"]
+
+[node name="Lookdev" type="Node"]
+script = ExtResource("1")
+
+[node name="RoomView" type="Node3D" parent="."]
+script = ExtResource("2")

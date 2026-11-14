@@ -1,0 +1,23 @@
+[gd_resource type="ORMMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/linen_albedo.png" id="1"]
+[ext_resource type="Texture2D" path="res://assets/textures/linen_normal.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/textures/linen_orm.png" id="3"]
+
+[resource]
+resource_name = "fx_lamp_shade"
+cull_mode = 2
+albedo_color = Color(0.9529, 0.8863, 0.7529, 1.0000)
+albedo_texture = ExtResource("1")
+orm_texture = ExtResource("3")
+roughness = 1.0
+metallic = 0.0
+normal_enabled = true
+normal_scale = 0.4
+normal_texture = ExtResource("2")
+backlight_enabled = true
+backlight = Color(0.3529, 0.2510, 0.1569, 1.0000)
+emission_enabled = true
+emission = Color(1.0000, 0.8118, 0.5412, 1.0000)
+emission_energy_multiplier = 0.0
+uv1_scale = Vector3(8.3333, 8.3333, 8.3333)

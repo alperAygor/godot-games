@@ -1,0 +1,13 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/brushed_normal.png" id="1"]
+
+[resource]
+resource_name = "fx_drum"
+albedo_color = Color(0.7882, 0.8000, 0.8157, 1.0000)
+roughness = 0.25
+metallic = 1.0
+normal_enabled = true
+normal_scale = 1.0
+normal_texture = ExtResource("1")
+uv1_scale = Vector3(12.5000, 12.5000, 12.5000)

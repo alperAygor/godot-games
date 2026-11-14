@@ -1,0 +1,18 @@
+[gd_resource type="ORMMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/tiles_albedo.png" id="1"]
+[ext_resource type="Texture2D" path="res://assets/textures/tiles_normal.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/textures/tiles_orm.png" id="3"]
+
+[resource]
+resource_name = "tiles_cream"
+vertex_color_use_as_albedo = true
+albedo_color = Color(0.9490, 0.9255, 0.8784, 1.0000)
+albedo_texture = ExtResource("1")
+orm_texture = ExtResource("3")
+roughness = 1.0
+metallic = 0.0
+normal_enabled = true
+normal_scale = 1.0
+normal_texture = ExtResource("2")
+uv1_scale = Vector3(1.6667, 1.6667, 1.6667)
