@@ -17,3 +17,11 @@ Her aşama çalışan bir yapı bırakır. Durum: [ ] bekliyor, [~] sürüyor, [
 ## Aşama 4 — içerik öğeleri ve 60 seviye
 ## Aşama 5 — mahalle, yenileme, koleksiyon, günlük seviye
 ## Aşama 6 — reklam/analitik, performans, Android paketi
+
+## Yeniden başlatıldı (kullanıcı, 2026-11-15)
+Proje 2026-11-14'te iptal edilmişti; kullanıcı "kaldığımız yerden komple bitirelim, Google Play'e hazır hâle
+getirelim" dedi. Ana dalda: aşama 1 (çekirdek, 60 seviye), kabuk, sesler, görsel hat. Yarım kalan dikey kesit
+`_work/p2-slice` çalışma kopyasında commit edilmemiş duruyor (19 dosya) — oradan devam edilecek.
+Sıra: dikey kesit (aşama 2) → kullanıcıya göster → aşama 3-6 → Google Play hazırlığı.
+Not: sesler ElevenLabs'in ücretsiz planında üretilmişti; yayın öncesi ücretli planla yeniden üretilecek.
+
