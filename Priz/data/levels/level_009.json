@@ -1,0 +1,145 @@
+{
+  "band": [
+    3,
+    24
+  ],
+  "devices": [
+    {
+      "id": "d0",
+      "load": 2,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "morning",
+        "noon",
+        "evening",
+        "night"
+      ],
+      "type": "fan"
+    },
+    {
+      "id": "d1",
+      "load": 2,
+      "props": {},
+      "room": "kitchen",
+      "slices": [
+        "morning",
+        "noon",
+        "evening",
+        "night"
+      ],
+      "type": "kettle"
+    },
+    {
+      "id": "d2",
+      "load": 5,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "morning",
+        "noon",
+        "evening",
+        "night"
+      ],
+      "type": "heater"
+    },
+    {
+      "id": "d3",
+      "load": 1,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "morning",
+        "noon",
+        "evening",
+        "night"
+      ],
+      "type": "phone_charger"
+    }
+  ],
+  "difficulty": "normal",
+  "elements": [
+    "room_restriction"
+  ],
+  "format": 1,
+  "fuse_rights": 0,
+  "id": "level_009",
+  "lines": [
+    {
+      "capacity": 10,
+      "color": "red",
+      "id": "L0",
+      "props": {},
+      "shape": "circle"
+    },
+    {
+      "capacity": 4,
+      "color": "blue",
+      "id": "L1",
+      "props": {},
+      "shape": "square"
+    }
+  ],
+  "meta": {
+    "attempt": 1,
+    "nodes": 8,
+    "solutions": 3
+  },
+  "mode": "flat",
+  "number": 9,
+  "rooms": [
+    "living",
+    "kitchen"
+  ],
+  "seed": 1347641281,
+  "sockets": [
+    {
+      "anchor": "living_0",
+      "id": "s0",
+      "line": "L0",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "living_1",
+      "id": "s1",
+      "line": "L0",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "living_2",
+      "id": "s2",
+      "line": "L0",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "living_3",
+      "id": "s3",
+      "line": "L1",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "living_4",
+      "id": "s4",
+      "line": "L0",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "kitchen_0",
+      "id": "s5",
+      "line": "L1",
+      "props": {},
+      "room": "kitchen",
+      "seats": 1
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "devices": [
+    {"type": "lamp", "load": [1, 1], "rooms": ["living", "bedroom"], "slices": [["evening", "night"], ["evening"]], "ground": false},
+    {"type": "tv", "load": [2, 2], "rooms": ["living", "bedroom"], "slices": [["evening", "night"], ["evening"]], "ground": false},
+    {"type": "fan", "load": [1, 2], "rooms": ["living", "bedroom"], "slices": [["noon"], ["noon", "night"]], "ground": false},
+    {"type": "heater", "load": [4, 5], "rooms": ["living", "bedroom", "bath"], "slices": [["morning", "night"], ["night"]], "ground": true},
+    {"type": "vacuum", "load": [3, 3], "rooms": ["living", "bedroom"], "slices": [["noon"], ["morning"]], "ground": false},
+    {"type": "computer", "load": [2, 2], "rooms": ["living", "bedroom"], "slices": [["noon", "evening"], ["morning", "noon"]], "ground": true},
+    {"type": "iron", "load": [3, 4], "rooms": ["living", "bedroom"], "slices": [["evening"], ["morning"]], "ground": true},
+    {"type": "phone_charger", "load": [1, 1], "rooms": ["living", "bedroom", "kitchen"], "slices": [["night"], ["morning", "night"]], "ground": false},
+    {"type": "kettle", "load": [2, 3], "rooms": ["kitchen"], "slices": [["morning"], ["morning", "evening"]], "ground": false},
+    {"type": "fridge", "load": [2, 2], "rooms": ["kitchen"], "slices": [["morning", "noon", "evening", "night"]], "ground": true},
+    {"type": "oven", "load": [4, 5], "rooms": ["kitchen"], "slices": [["noon", "evening"], ["evening"]], "ground": true},
+    {"type": "toaster", "load": [2, 2], "rooms": ["kitchen"], "slices": [["morning"]], "ground": false},
+    {"type": "microwave", "load": [3, 3], "rooms": ["kitchen"], "slices": [["noon"], ["evening"]], "ground": true},
+    {"type": "dishwasher", "load": [3, 4], "rooms": ["kitchen"], "slices": [["night"], ["evening", "night"]], "ground": true},
+    {"type": "washing_machine", "load": [3, 4], "rooms": ["bath"], "slices": [["morning"], ["noon"]], "ground": true},
+    {"type": "hair_dryer", "load": [3, 3], "rooms": ["bath", "bedroom"], "slices": [["morning"], ["evening"]], "ground": false},
+    {"type": "water_heater", "load": [4, 5], "rooms": ["bath"], "slices": [["morning", "evening"], ["night"]], "ground": true},
+    {"type": "electric_toothbrush", "load": [1, 1], "rooms": ["bath"], "slices": [["morning", "night"], ["night"]], "ground": false}
+  ]
+}

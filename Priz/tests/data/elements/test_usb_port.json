@@ -1,0 +1,11 @@
+{
+  "id": "test_usb_port",
+  "unlock_level": 102,
+  "intro": {"art": "intro_test_usb", "title": "element_test_usb_title", "body": "element_test_usb_body"},
+  "rules": [
+    {"kind": "flag_match",
+     "params": {"device_flag": "needs_usb", "socket_flag": "usb", "reason": "needs_usb"},
+     "gen": {"devices": [1, 1], "extra_sockets": [1, 1]}}
+  ],
+  "generator": {"always": false, "chance": 0.0}
+}

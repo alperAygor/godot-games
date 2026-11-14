@@ -1,0 +1,211 @@
+{
+  "band": [
+    2,
+    16
+  ],
+  "devices": [
+    {
+      "id": "d0",
+      "load": 2,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "morning",
+        "noon"
+      ],
+      "type": "computer"
+    },
+    {
+      "id": "d1",
+      "load": 1,
+      "props": {},
+      "room": "kitchen",
+      "slices": [
+        "morning",
+        "night"
+      ],
+      "type": "phone_charger"
+    },
+    {
+      "id": "d2",
+      "load": 2,
+      "props": {},
+      "room": "bedroom",
+      "slices": [
+        "noon",
+        "evening"
+      ],
+      "type": "computer"
+    },
+    {
+      "id": "d3",
+      "load": 1,
+      "props": {},
+      "room": "kitchen",
+      "slices": [
+        "morning",
+        "night"
+      ],
+      "type": "phone_charger"
+    },
+    {
+      "id": "d4",
+      "load": 4,
+      "props": {},
+      "room": "bedroom",
+      "slices": [
+        "evening"
+      ],
+      "type": "iron"
+    },
+    {
+      "id": "d5",
+      "load": 1,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "noon",
+        "night"
+      ],
+      "type": "fan"
+    },
+    {
+      "id": "d6",
+      "load": 2,
+      "props": {},
+      "room": "bedroom",
+      "slices": [
+        "noon"
+      ],
+      "type": "fan"
+    },
+    {
+      "id": "d7",
+      "load": 4,
+      "props": {},
+      "room": "bedroom",
+      "slices": [
+        "morning"
+      ],
+      "type": "iron"
+    }
+  ],
+  "difficulty": "normal",
+  "elements": [
+    "room_restriction",
+    "multi_socket",
+    "day_cycle"
+  ],
+  "format": 1,
+  "fuse_rights": 3,
+  "id": "level_037",
+  "lines": [
+    {
+      "capacity": 3,
+      "color": "red",
+      "id": "L0",
+      "props": {},
+      "shape": "circle"
+    },
+    {
+      "capacity": 2,
+      "color": "blue",
+      "id": "L1",
+      "props": {},
+      "shape": "square"
+    },
+    {
+      "capacity": 7,
+      "color": "yellow",
+      "id": "L2",
+      "props": {},
+      "shape": "triangle"
+    },
+    {
+      "capacity": 7,
+      "color": "green",
+      "id": "L3",
+      "props": {},
+      "shape": "star"
+    }
+  ],
+  "meta": {
+    "attempt": 1,
+    "nodes": 25,
+    "solutions": 6
+  },
+  "mode": "day",
+  "number": 37,
+  "rooms": [
+    "living",
+    "kitchen",
+    "bedroom"
+  ],
+  "seed": 1347863013,
+  "sockets": [
+    {
+      "anchor": "living_0",
+      "id": "s0",
+      "line": "L2",
+      "props": {},
+      "room": "living",
+      "seats": 3
+    },
+    {
+      "anchor": "kitchen_0",
+      "id": "s1",
+      "line": "L1",
+      "props": {},
+      "room": "kitchen",
+      "seats": 1
+    },
+    {
+      "anchor": "kitchen_1",
+      "id": "s2",
+      "line": "L3",
+      "props": {},
+      "room": "kitchen",
+      "seats": 1
+    },
+    {
+      "anchor": "bedroom_0",
+      "id": "s3",
+      "line": "L0",
+      "props": {},
+      "room": "bedroom",
+      "seats": 1
+    },
+    {
+      "anchor": "bedroom_1",
+      "id": "s4",
+      "line": "L2",
+      "props": {},
+      "room": "bedroom",
+      "seats": 1
+    },
+    {
+      "anchor": "bedroom_2",
+      "id": "s5",
+      "line": "L3",
+      "props": {},
+      "room": "bedroom",
+      "seats": 1
+    },
+    {
+      "anchor": "bedroom_3",
+      "id": "s6",
+      "line": "L0",
+      "props": {},
+      "room": "bedroom",
+      "seats": 1
+    },
+    {
+      "anchor": "bedroom_4",
+      "id": "s7",
+      "line": "L3",
+      "props": {},
+      "room": "bedroom",
+      "seats": 1
+    }
+  ]
+}

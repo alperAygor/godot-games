@@ -1,0 +1,12 @@
+{
+  "id": "test_surge",
+  "unlock_level": 101,
+  "intro": {"art": "intro_test_surge", "title": "element_test_surge_title", "body": "element_test_surge_body"},
+  "requires": ["day_cycle"],
+  "rules": [
+    {"script": "../rules/rule_test_surge.gd",
+     "params": {"prop": "surge", "slice": "night", "extra": 1},
+     "gen": {"devices": [1, 2]}}
+  ],
+  "generator": {"always": false, "chance": 0.0}
+}

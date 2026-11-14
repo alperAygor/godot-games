@@ -1,0 +1,9 @@
+{
+  "id": "old_cable",
+  "unlock_level": 25,
+  "intro": {"art": "intro_old_cable", "title": "element_old_cable_title", "body": "element_old_cable_body"},
+  "rules": [
+    {"kind": "capacity_offset", "params": {"prop": "old_cable"}, "gen": {"lines": [1, 1], "amount": [1, 2]}}
+  ],
+  "generator": {"always": false, "chance": 0.45}
+}

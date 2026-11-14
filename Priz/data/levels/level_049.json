@@ -1,0 +1,281 @@
+{
+  "band": [
+    2,
+    16
+  ],
+  "devices": [
+    {
+      "id": "d0",
+      "load": 1,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "night"
+      ],
+      "type": "phone_charger"
+    },
+    {
+      "id": "d1",
+      "load": 3,
+      "props": {
+        "needs_ground": true
+      },
+      "room": "kitchen",
+      "slices": [
+        "evening"
+      ],
+      "type": "microwave"
+    },
+    {
+      "id": "d2",
+      "load": 3,
+      "props": {},
+      "room": "bedroom",
+      "slices": [
+        "morning"
+      ],
+      "type": "vacuum"
+    },
+    {
+      "id": "d3",
+      "load": 3,
+      "props": {},
+      "room": "bath",
+      "slices": [
+        "evening"
+      ],
+      "type": "hair_dryer"
+    },
+    {
+      "id": "d4",
+      "load": 4,
+      "props": {
+        "needs_ground": true
+      },
+      "room": "bedroom",
+      "slices": [
+        "night"
+      ],
+      "type": "heater"
+    },
+    {
+      "id": "d5",
+      "load": 1,
+      "props": {},
+      "room": "bath",
+      "slices": [
+        "morning",
+        "night"
+      ],
+      "type": "electric_toothbrush"
+    },
+    {
+      "id": "d6",
+      "load": 2,
+      "props": {},
+      "room": "kitchen",
+      "slices": [
+        "morning"
+      ],
+      "type": "toaster"
+    },
+    {
+      "id": "d7",
+      "load": 3,
+      "props": {},
+      "room": "bath",
+      "slices": [
+        "noon"
+      ],
+      "type": "washing_machine"
+    },
+    {
+      "id": "d8",
+      "load": 4,
+      "props": {
+        "needs_ground": true
+      },
+      "room": "bedroom",
+      "slices": [
+        "night"
+      ],
+      "type": "heater"
+    },
+    {
+      "id": "d9",
+      "load": 4,
+      "props": {},
+      "room": "kitchen",
+      "slices": [
+        "noon",
+        "evening"
+      ],
+      "type": "oven"
+    }
+  ],
+  "difficulty": "normal",
+  "elements": [
+    "room_restriction",
+    "day_cycle",
+    "grounded_socket"
+  ],
+  "format": 1,
+  "fuse_rights": 3,
+  "id": "level_049",
+  "lines": [
+    {
+      "capacity": 5,
+      "color": "red",
+      "id": "L0",
+      "props": {},
+      "shape": "circle"
+    },
+    {
+      "capacity": 7,
+      "color": "blue",
+      "id": "L1",
+      "props": {},
+      "shape": "square"
+    },
+    {
+      "capacity": 5,
+      "color": "yellow",
+      "id": "L2",
+      "props": {},
+      "shape": "triangle"
+    },
+    {
+      "capacity": 4,
+      "color": "green",
+      "id": "L3",
+      "props": {},
+      "shape": "star"
+    }
+  ],
+  "meta": {
+    "attempt": 1,
+    "nodes": 33,
+    "solutions": 12
+  },
+  "mode": "day",
+  "number": 49,
+  "rooms": [
+    "living",
+    "kitchen",
+    "bedroom",
+    "bath"
+  ],
+  "seed": 1347958041,
+  "sockets": [
+    {
+      "anchor": "living_0",
+      "id": "s0",
+      "line": "L3",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "living_1",
+      "id": "s1",
+      "line": "L0",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "kitchen_0",
+      "id": "s2",
+      "line": "L2",
+      "props": {},
+      "room": "kitchen",
+      "seats": 1
+    },
+    {
+      "anchor": "kitchen_1",
+      "id": "s3",
+      "line": "L1",
+      "props": {
+        "grounded": true
+      },
+      "room": "kitchen",
+      "seats": 1
+    },
+    {
+      "anchor": "kitchen_2",
+      "id": "s4",
+      "line": "L2",
+      "props": {},
+      "room": "kitchen",
+      "seats": 1
+    },
+    {
+      "anchor": "bedroom_0",
+      "id": "s5",
+      "line": "L1",
+      "props": {
+        "grounded": true
+      },
+      "room": "bedroom",
+      "seats": 1
+    },
+    {
+      "anchor": "bedroom_1",
+      "id": "s6",
+      "line": "L3",
+      "props": {},
+      "room": "bedroom",
+      "seats": 1
+    },
+    {
+      "anchor": "bedroom_2",
+      "id": "s7",
+      "line": "L2",
+      "props": {},
+      "room": "bedroom",
+      "seats": 1
+    },
+    {
+      "anchor": "bedroom_3",
+      "id": "s8",
+      "line": "L1",
+      "props": {},
+      "room": "bedroom",
+      "seats": 1
+    },
+    {
+      "anchor": "bedroom_4",
+      "id": "s9",
+      "line": "L0",
+      "props": {
+        "grounded": true
+      },
+      "room": "bedroom",
+      "seats": 1
+    },
+    {
+      "anchor": "bath_0",
+      "id": "s10",
+      "line": "L0",
+      "props": {},
+      "room": "bath",
+      "seats": 1
+    },
+    {
+      "anchor": "bath_1",
+      "id": "s11",
+      "line": "L0",
+      "props": {},
+      "room": "bath",
+      "seats": 1
+    },
+    {
+      "anchor": "bath_2",
+      "id": "s12",
+      "line": "L1",
+      "props": {},
+      "room": "bath",
+      "seats": 1
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "id": "neighbour_line",
+  "unlock_level": 65,
+  "intro": {"art": "intro_neighbour_line", "title": "element_neighbour_line_title", "body": "element_neighbour_line_body"},
+  "requires": ["day_cycle"],
+  "rules": [
+    {"kind": "external_load", "params": {"prop": "neighbour"}, "gen": {"slices": [1, 2], "max": [1, 2]}}
+  ],
+  "generator": {"always": false, "chance": 0.4}
+}

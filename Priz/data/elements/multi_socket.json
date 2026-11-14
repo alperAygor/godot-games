@@ -1,0 +1,9 @@
+{
+  "id": "multi_socket",
+  "unlock_level": 10,
+  "intro": {"art": "intro_multi_socket", "title": "element_multi_socket_title", "body": "element_multi_socket_body"},
+  "rules": [
+    {"kind": "strip", "params": {}, "gen": {"strips": [1, 2], "seats": [2, 3]}}
+  ],
+  "generator": {"always": false, "chance": 0.6}
+}

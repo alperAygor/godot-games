@@ -1,0 +1,10 @@
+{
+  "id": "line_off",
+  "unlock_level": 95,
+  "intro": {"art": "intro_line_off", "title": "element_line_off_title", "body": "element_line_off_body"},
+  "requires": ["day_cycle"],
+  "rules": [
+    {"kind": "slice_off", "params": {"prop": "off_slice"}, "gen": {"lines": [1, 1]}}
+  ],
+  "generator": {"always": false, "chance": 0.4}
+}

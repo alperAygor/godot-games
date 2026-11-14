@@ -1,0 +1,186 @@
+{
+  "band": [
+    2,
+    16
+  ],
+  "devices": [
+    {
+      "id": "d0",
+      "load": 4,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "night"
+      ],
+      "type": "heater"
+    },
+    {
+      "id": "d1",
+      "load": 3,
+      "props": {},
+      "room": "kitchen",
+      "slices": [
+        "evening"
+      ],
+      "type": "microwave"
+    },
+    {
+      "id": "d2",
+      "load": 5,
+      "props": {},
+      "room": "bedroom",
+      "slices": [
+        "night"
+      ],
+      "type": "heater"
+    },
+    {
+      "id": "d3",
+      "load": 1,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "noon",
+        "night"
+      ],
+      "type": "fan"
+    },
+    {
+      "id": "d4",
+      "load": 4,
+      "props": {},
+      "room": "kitchen",
+      "slices": [
+        "noon",
+        "evening"
+      ],
+      "type": "oven"
+    },
+    {
+      "id": "d5",
+      "load": 4,
+      "props": {},
+      "room": "bedroom",
+      "slices": [
+        "morning"
+      ],
+      "type": "iron"
+    },
+    {
+      "id": "d6",
+      "load": 1,
+      "props": {},
+      "room": "kitchen",
+      "slices": [
+        "night"
+      ],
+      "type": "phone_charger"
+    }
+  ],
+  "difficulty": "normal",
+  "elements": [
+    "room_restriction",
+    "multi_socket",
+    "day_cycle",
+    "old_cable"
+  ],
+  "format": 1,
+  "fuse_rights": 3,
+  "id": "level_028",
+  "lines": [
+    {
+      "capacity": 8,
+      "color": "red",
+      "id": "L0",
+      "props": {},
+      "shape": "circle"
+    },
+    {
+      "capacity": 3,
+      "color": "blue",
+      "id": "L1",
+      "props": {},
+      "shape": "square"
+    },
+    {
+      "capacity": 8,
+      "color": "yellow",
+      "id": "L2",
+      "props": {
+        "old_cable": 2
+      },
+      "shape": "triangle"
+    }
+  ],
+  "meta": {
+    "attempt": 1,
+    "nodes": 10,
+    "solutions": 2
+  },
+  "mode": "day",
+  "number": 28,
+  "rooms": [
+    "living",
+    "kitchen",
+    "bedroom"
+  ],
+  "seed": 1347791742,
+  "sockets": [
+    {
+      "anchor": "living_0",
+      "id": "s0",
+      "line": "L0",
+      "props": {},
+      "room": "living",
+      "seats": 3
+    },
+    {
+      "anchor": "kitchen_0",
+      "id": "s1",
+      "line": "L1",
+      "props": {},
+      "room": "kitchen",
+      "seats": 1
+    },
+    {
+      "anchor": "kitchen_1",
+      "id": "s2",
+      "line": "L0",
+      "props": {},
+      "room": "kitchen",
+      "seats": 1
+    },
+    {
+      "anchor": "kitchen_2",
+      "id": "s3",
+      "line": "L0",
+      "props": {},
+      "room": "kitchen",
+      "seats": 1
+    },
+    {
+      "anchor": "bedroom_0",
+      "id": "s4",
+      "line": "L2",
+      "props": {},
+      "room": "bedroom",
+      "seats": 1
+    },
+    {
+      "anchor": "bedroom_1",
+      "id": "s5",
+      "line": "L0",
+      "props": {},
+      "room": "bedroom",
+      "seats": 1
+    },
+    {
+      "anchor": "bedroom_2",
+      "id": "s6",
+      "line": "L0",
+      "props": {},
+      "room": "bedroom",
+      "seats": 1
+    }
+  ]
+}

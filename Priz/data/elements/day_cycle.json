@@ -1,0 +1,9 @@
+{
+  "id": "day_cycle",
+  "unlock_level": 15,
+  "intro": {"art": "intro_day_cycle", "title": "element_day_cycle_title", "body": "element_day_cycle_body"},
+  "rules": [
+    {"kind": "day_cycle", "params": {"fuse_rights": 3}, "gen": {"intro_simple": true}}
+  ],
+  "generator": {"always": true}
+}
