@@ -1,0 +1,275 @@
+{
+  "band": [
+    2,
+    16
+  ],
+  "devices": [
+    {
+      "id": "d0",
+      "load": 1,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "evening"
+      ],
+      "type": "lamp"
+    },
+    {
+      "id": "d1",
+      "load": 1,
+      "props": {},
+      "room": "kitchen",
+      "slices": [
+        "morning",
+        "night"
+      ],
+      "type": "phone_charger"
+    },
+    {
+      "id": "d2",
+      "load": 3,
+      "props": {},
+      "room": "bedroom",
+      "slices": [
+        "noon"
+      ],
+      "type": "vacuum"
+    },
+    {
+      "id": "d3",
+      "load": 5,
+      "props": {},
+      "room": "bath",
+      "slices": [
+        "morning",
+        "evening"
+      ],
+      "type": "water_heater"
+    },
+    {
+      "id": "d4",
+      "load": 3,
+      "props": {},
+      "room": "bath",
+      "slices": [
+        "morning"
+      ],
+      "type": "hair_dryer"
+    },
+    {
+      "id": "d5",
+      "load": 1,
+      "props": {},
+      "room": "kitchen",
+      "slices": [
+        "morning",
+        "night"
+      ],
+      "type": "phone_charger"
+    },
+    {
+      "id": "d6",
+      "load": 2,
+      "props": {},
+      "room": "kitchen",
+      "slices": [
+        "morning",
+        "noon",
+        "evening",
+        "night"
+      ],
+      "type": "fridge"
+    },
+    {
+      "id": "d7",
+      "load": 1,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "morning",
+        "night"
+      ],
+      "type": "phone_charger"
+    },
+    {
+      "id": "d8",
+      "load": 1,
+      "props": {},
+      "room": "kitchen",
+      "slices": [
+        "night"
+      ],
+      "type": "phone_charger"
+    },
+    {
+      "id": "d9",
+      "load": 2,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "morning",
+        "noon"
+      ],
+      "type": "computer"
+    },
+    {
+      "id": "d10",
+      "load": 2,
+      "props": {},
+      "room": "kitchen",
+      "slices": [
+        "morning",
+        "noon",
+        "evening",
+        "night"
+      ],
+      "type": "fridge"
+    }
+  ],
+  "difficulty": "normal",
+  "elements": [
+    "room_restriction",
+    "multi_socket",
+    "day_cycle",
+    "solar_panel"
+  ],
+  "format": 1,
+  "fuse_rights": 3,
+  "id": "level_057",
+  "lines": [
+    {
+      "capacity": 3,
+      "color": "red",
+      "id": "L0",
+      "props": {},
+      "shape": "circle"
+    },
+    {
+      "capacity": 10,
+      "color": "blue",
+      "id": "L1",
+      "props": {
+        "solar": 1
+      },
+      "shape": "square"
+    },
+    {
+      "capacity": 4,
+      "color": "yellow",
+      "id": "L2",
+      "props": {},
+      "shape": "triangle"
+    },
+    {
+      "capacity": 3,
+      "color": "green",
+      "id": "L3",
+      "props": {},
+      "shape": "star"
+    }
+  ],
+  "meta": {
+    "attempt": 7,
+    "nodes": 74,
+    "solutions": 9
+  },
+  "mode": "day",
+  "number": 57,
+  "rooms": [
+    "living",
+    "kitchen",
+    "bedroom",
+    "bath"
+  ],
+  "seed": 1348021393,
+  "sockets": [
+    {
+      "anchor": "living_0",
+      "id": "s0",
+      "line": "L0",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "living_1",
+      "id": "s1",
+      "line": "L2",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "living_2",
+      "id": "s2",
+      "line": "L3",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "living_3",
+      "id": "s3",
+      "line": "L3",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "kitchen_0",
+      "id": "s4",
+      "line": "L1",
+      "props": {},
+      "room": "kitchen",
+      "seats": 1
+    },
+    {
+      "anchor": "kitchen_1",
+      "id": "s5",
+      "line": "L2",
+      "props": {},
+      "room": "kitchen",
+      "seats": 1
+    },
+    {
+      "anchor": "kitchen_2",
+      "id": "s6",
+      "line": "L0",
+      "props": {},
+      "room": "kitchen",
+      "seats": 1
+    },
+    {
+      "anchor": "kitchen_3",
+      "id": "s7",
+      "line": "L1",
+      "props": {},
+      "room": "kitchen",
+      "seats": 3
+    },
+    {
+      "anchor": "bedroom_0",
+      "id": "s8",
+      "line": "L1",
+      "props": {},
+      "room": "bedroom",
+      "seats": 1
+    },
+    {
+      "anchor": "bath_0",
+      "id": "s9",
+      "line": "L1",
+      "props": {},
+      "room": "bath",
+      "seats": 1
+    },
+    {
+      "anchor": "bath_1",
+      "id": "s10",
+      "line": "L1",
+      "props": {},
+      "room": "bath",
+      "seats": 2
+    }
+  ]
+}

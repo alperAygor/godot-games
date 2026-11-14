@@ -1,0 +1,9 @@
+{
+  "id": "room_restriction",
+  "unlock_level": 6,
+  "intro": {"art": "intro_room_restriction", "title": "element_room_restriction_title", "body": "element_room_restriction_body"},
+  "rules": [
+    {"kind": "same_room", "params": {"reason": "wrong_room"}}
+  ],
+  "generator": {"always": true}
+}

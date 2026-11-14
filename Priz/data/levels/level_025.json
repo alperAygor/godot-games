@@ -1,0 +1,193 @@
+{
+  "band": [
+    2,
+    8
+  ],
+  "devices": [
+    {
+      "id": "d0",
+      "load": 2,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "noon",
+        "evening"
+      ],
+      "type": "computer"
+    },
+    {
+      "id": "d1",
+      "load": 5,
+      "props": {},
+      "room": "kitchen",
+      "slices": [
+        "evening"
+      ],
+      "type": "oven"
+    },
+    {
+      "id": "d2",
+      "load": 1,
+      "props": {},
+      "room": "bedroom",
+      "slices": [
+        "night"
+      ],
+      "type": "phone_charger"
+    },
+    {
+      "id": "d3",
+      "load": 3,
+      "props": {},
+      "room": "kitchen",
+      "slices": [
+        "evening"
+      ],
+      "type": "microwave"
+    },
+    {
+      "id": "d4",
+      "load": 1,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "evening"
+      ],
+      "type": "lamp"
+    },
+    {
+      "id": "d5",
+      "load": 2,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "noon",
+        "evening"
+      ],
+      "type": "computer"
+    },
+    {
+      "id": "d6",
+      "load": 4,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "morning"
+      ],
+      "type": "iron"
+    }
+  ],
+  "difficulty": "hard",
+  "elements": [
+    "room_restriction",
+    "day_cycle",
+    "old_cable"
+  ],
+  "format": 1,
+  "fuse_rights": 3,
+  "id": "level_025",
+  "lines": [
+    {
+      "capacity": 7,
+      "color": "red",
+      "id": "L0",
+      "props": {},
+      "shape": "circle"
+    },
+    {
+      "capacity": 6,
+      "color": "blue",
+      "id": "L1",
+      "props": {},
+      "shape": "square"
+    },
+    {
+      "capacity": 5,
+      "color": "yellow",
+      "id": "L2",
+      "props": {
+        "old_cable": 1
+      },
+      "shape": "triangle"
+    }
+  ],
+  "meta": {
+    "attempt": 2,
+    "nodes": 32,
+    "solutions": 7
+  },
+  "mode": "day",
+  "number": 25,
+  "rooms": [
+    "living",
+    "kitchen",
+    "bedroom"
+  ],
+  "seed": 1347767985,
+  "sockets": [
+    {
+      "anchor": "living_0",
+      "id": "s0",
+      "line": "L1",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "living_1",
+      "id": "s1",
+      "line": "L0",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "living_2",
+      "id": "s2",
+      "line": "L0",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "living_3",
+      "id": "s3",
+      "line": "L2",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "kitchen_0",
+      "id": "s4",
+      "line": "L0",
+      "props": {},
+      "room": "kitchen",
+      "seats": 1
+    },
+    {
+      "anchor": "kitchen_1",
+      "id": "s5",
+      "line": "L1",
+      "props": {},
+      "room": "kitchen",
+      "seats": 1
+    },
+    {
+      "anchor": "bedroom_0",
+      "id": "s6",
+      "line": "L2",
+      "props": {},
+      "room": "bedroom",
+      "seats": 1
+    },
+    {
+      "anchor": "bedroom_1",
+      "id": "s7",
+      "line": "L2",
+      "props": {},
+      "room": "bedroom",
+      "seats": 1
+    }
+  ]
+}

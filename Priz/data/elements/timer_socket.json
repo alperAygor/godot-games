@@ -1,0 +1,10 @@
+{
+  "id": "timer_socket",
+  "unlock_level": 80,
+  "intro": {"art": "intro_timer_socket", "title": "element_timer_socket_title", "body": "element_timer_socket_body"},
+  "requires": ["day_cycle"],
+  "rules": [
+    {"kind": "slice_shift", "params": {"prop": "timer"}, "gen": {"sockets": [1, 2], "shift": [1, 2]}}
+  ],
+  "generator": {"always": false, "chance": 0.4}
+}

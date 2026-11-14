@@ -1,0 +1,10 @@
+{
+  "id": "solar_panel",
+  "unlock_level": 50,
+  "intro": {"art": "intro_solar_panel", "title": "element_solar_panel_title", "body": "element_solar_panel_body"},
+  "requires": ["day_cycle"],
+  "rules": [
+    {"kind": "slice_bonus", "params": {"prop": "solar", "slices": ["noon"]}, "gen": {"amount": [1, 2]}}
+  ],
+  "generator": {"always": false, "chance": 0.4}
+}

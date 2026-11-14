@@ -1,0 +1,113 @@
+{
+  "band": [
+    1,
+    1000
+  ],
+  "devices": [
+    {
+      "id": "d0",
+      "load": 1,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "morning",
+        "noon",
+        "evening",
+        "night"
+      ],
+      "type": "phone_charger"
+    },
+    {
+      "id": "d1",
+      "load": 2,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "morning",
+        "noon",
+        "evening",
+        "night"
+      ],
+      "type": "tv"
+    },
+    {
+      "id": "d2",
+      "load": 2,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "morning",
+        "noon",
+        "evening",
+        "night"
+      ],
+      "type": "tv"
+    }
+  ],
+  "difficulty": "normal",
+  "elements": [],
+  "format": 1,
+  "fuse_rights": 0,
+  "id": "level_003",
+  "lines": [
+    {
+      "capacity": 4,
+      "color": "red",
+      "id": "L0",
+      "props": {},
+      "shape": "circle"
+    },
+    {
+      "capacity": 3,
+      "color": "blue",
+      "id": "L1",
+      "props": {},
+      "shape": "square"
+    }
+  ],
+  "meta": {
+    "attempt": 1,
+    "nodes": 8,
+    "solutions": 3
+  },
+  "mode": "flat",
+  "number": 3,
+  "rooms": [
+    "living"
+  ],
+  "seed": 1347593767,
+  "sockets": [
+    {
+      "anchor": "living_0",
+      "id": "s0",
+      "line": "L0",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "living_1",
+      "id": "s1",
+      "line": "L1",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "living_2",
+      "id": "s2",
+      "line": "L0",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "living_3",
+      "id": "s3",
+      "line": "L1",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    }
+  ]
+}

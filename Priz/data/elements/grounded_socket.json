@@ -1,0 +1,11 @@
+{
+  "id": "grounded_socket",
+  "unlock_level": 35,
+  "intro": {"art": "intro_grounded_socket", "title": "element_grounded_socket_title", "body": "element_grounded_socket_body"},
+  "rules": [
+    {"kind": "flag_match",
+     "params": {"device_flag": "needs_ground", "socket_flag": "grounded", "reason": "needs_ground", "catalog_flag": "ground"},
+     "gen": {"devices": [1, 3], "extra_sockets": [0, 1]}}
+  ],
+  "generator": {"always": false, "chance": 0.5}
+}
