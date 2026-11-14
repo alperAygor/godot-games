@@ -1,0 +1,25 @@
+{
+	"_comment": "Oyun modları. daily: Günün Kuru (herkes aynı tarihte aynı müşterileri görür); endless: Sonsuz. unlock_after_day: hikayede bu günü GEÇİNCE açılır; -1 = baştan açık (şimdi ikisi de baştan açık). rules_day: kuralların ve para birimlerinin geçerli olduğu hikaye günü. till_multiplier: kasa stoğu çarpanı (önceden üretilmiş müşteriler kasa durumuna bağlı kalmasın diye).",
+	"daily": {
+		"unlock_after_day": -1,
+		"rules_day": 10,
+		"customers": 12,
+		"shift_seconds": 180,
+		"points_per_correct": 100,
+		"points_per_second": 2,
+		"points_per_mistake": -150,
+		"official_attempts": 1,
+		"till_multiplier": 6,
+		"keep_dates": 60
+	},
+	"endless": {
+		"unlock_after_day": -1,
+		"rules_day": 13,
+		"start_rules": ["R_EXCHANGE", "R_CATALOG", "R_UV"],
+		"rule_pool": ["R_SELL_FOREIGN", "R_ID_LIMIT", "R_SERIES", "R_STOLEN", "R_TORN", "R_WATERMARK", "R_SOURCE", "R_WANTED", "R_MICROTEXT"],
+		"customers_per_rule": 5,
+		"lives": 3,
+		"continue_lives": 1,
+		"till_multiplier": 6
+	}
+}

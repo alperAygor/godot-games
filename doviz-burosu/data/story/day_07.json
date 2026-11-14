@@ -1,0 +1,61 @@
+{
+	"day": 7,
+	"beats": [
+		{
+			"id": "d07_riza",
+			"after": 0,
+			"character": "riza",
+			"lines": [
+				"S_D07_RIZA_1",
+				"S_D07_RIZA_2"
+			]
+		},
+		{
+			"id": "d07_baris",
+			"after": 1,
+			"character": "baris",
+			"lines": [
+				"S_D07_BARIS_1",
+				"S_D07_BARIS_2"
+			],
+			"customer": {
+				"scenario": "clean"
+			},
+			"choice": {
+				"options": [
+					{
+						"id": "go",
+						"tag": "escape",
+						"text": "S_D07_BARIS_OPT_GO",
+						"effects": {
+							"flags": {
+								"baris_go": true
+							}
+						}
+					},
+					{
+						"id": "stay",
+						"tag": "kind",
+						"text": "S_D07_BARIS_OPT_STAY",
+						"effects": {
+							"flags": {
+								"baris_stay": true
+							}
+						}
+					},
+					{
+						"id": "silent",
+						"tag": "honest",
+						"text": "S_D07_BARIS_OPT_SILENT",
+						"effects": {}
+					}
+				]
+			}
+		}
+	],
+	"letters": [
+		{
+			"key": "L_07_A"
+		}
+	]
+}

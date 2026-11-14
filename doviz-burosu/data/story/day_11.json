@@ -1,0 +1,92 @@
+{
+	"day": 11,
+	"beats": [
+		{
+			"id": "d11_riza_lend",
+			"after": 0,
+			"character": "riza",
+			"lines": [
+				"S_D11_RIZA_1",
+				"S_D11_RIZA_2"
+			],
+			"choice": {
+				"options": [
+					{
+						"id": "lend",
+						"tag": "kind",
+						"text": "S_D11_RIZA_OPT_LEND",
+						"effects": {
+							"cash_pl": -100,
+							"counters": {
+								"kind": 1
+							},
+							"flags": {
+								"riza_loan": true
+							}
+						}
+					},
+					{
+						"id": "decline",
+						"tag": "honest",
+						"text": "S_D11_RIZA_OPT_DECLINE",
+						"effects": {
+							"flags": {
+								"riza_declined": true
+							}
+						}
+					}
+				]
+			}
+		},
+		{
+			"id": "d11_hayri_thanks",
+			"after": 1,
+			"character": "hayri",
+			"requires": {
+				"counters_min": {
+					"hayri_helped": 1
+				}
+			},
+			"lines": [
+				"S_D11_HAYRI_THANKS_1",
+				"S_D11_HAYRI_THANKS_2"
+			],
+			"customer": {
+				"scenario": "clean"
+			},
+			"effects": {
+				"cash_pl": 60
+			}
+		},
+		{
+			"id": "d11_hayri_cold",
+			"after": 1,
+			"character": "hayri",
+			"requires": {
+				"counters_max": {
+					"hayri_helped": 0
+				}
+			},
+			"lines": [
+				"S_D11_HAYRI_COLD_1",
+				"S_D11_HAYRI_COLD_2"
+			],
+			"customer": {
+				"scenario": "clean"
+			}
+		}
+	],
+	"letters": [
+		{
+			"key": "L_11_THANKS",
+			"requires": {
+				"counters_min": {
+					"hayri_helped": 1
+				}
+			}
+		},
+		{
+			"key": "L_11_A"
+		}
+	]
+}

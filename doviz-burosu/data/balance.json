@@ -1,0 +1,75 @@
+{
+	"_comment": "Denge sayıları. Kodda sabit sayı yerine GameData.get_value('balance', ...) kullan. Para birimi kuruştur (500 = 5 PL); *_pl alanları tam PL'dir. shift: vardiya süresi (gerçek sn; oyun saati open_minute..close_minute), maaş/prim/ceza, ilk free_mistakes hatalı işlem cezasız, fire_mistakes hatalı işlemde kovulursun, skim_pl: patronun işlem başı kesinti önerisi. story: hikaye eşikleri (müfettiş yakalama olasılığı = min(max, kesinti sayısı x per_skim). till.start_counts: gün başı kasa (kupür -> adet); yabancı para stoğu bilerek az.",
+	"shift": {
+		"shift_seconds": 270,
+		"free_mistakes": 2,
+		"open_minute": 540,
+		"close_minute": 1020,
+		"arrival_gap_seconds": 2,
+		"base_salary_pl": 305,
+		"bonus_pl": 15,
+		"fine_pl": 30,
+		"fire_mistakes": 8,
+		"skim_pl": 5,
+		"overtime_seconds": 45
+	},
+	"money": {
+		"payout_round_to": 500
+	},
+	"rates": {
+		"daily_drift_bp": 120,
+		"drift_noise_bp": 80,
+		"midday_jump_bp": 150
+	},
+	"notes": {
+		"color_shift_min": 20,
+		"color_shift_max": 40,
+		"size_diff_min_mm": 3,
+		"size_diff_max_mm": 6,
+		"torn_remaining_min": 20,
+		"torn_remaining_max": 45,
+		"min_remaining_percent": 50
+	},
+	"till": {
+		"start_counts": {
+			"PL": {
+				"5": 100,
+				"10": 100,
+				"20": 100,
+				"50": 100,
+				"100": 100,
+				"200": 200
+			},
+			"FED": {
+				"1": 3,
+				"5": 2,
+				"10": 1
+			},
+			"AVR": {
+				"5": 2,
+				"10": 2
+			},
+			"STR": {
+				"5": 2,
+				"10": 1
+			},
+			"DNR": {
+				"1": 3,
+				"5": 1
+			},
+			"KRN": {
+				"50": 3,
+				"100": 2
+			}
+		}
+	},
+	"story": {
+		"mother_sick_day": 6,
+		"skim_offer_day": 8,
+		"inspector_day": 14,
+		"inspector_catch_per_skim_percent": 2,
+		"inspector_max_percent": 90,
+		"inspector_tilki_helped_percent": 40,
+		"inspector_tilki_money_percent": 20
+	}
+}

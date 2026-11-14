@@ -1,0 +1,38 @@
+{
+	"_comment": "Araçlar (plan 2.4). price_pl: akşam dükkanı fiyatı (0 = ücretsiz), unlock_day: görünür olduğu gün, free_on_day: o gün patron verir (varsa).",
+	"tools": [
+		{
+			"id": "calculator",
+			"price_pl": 0,
+			"unlock_day": 1,
+			"start": true
+		},
+		{
+			"id": "catalog",
+			"price_pl": 0,
+			"unlock_day": 1,
+			"start": true
+		},
+		{
+			"id": "uv",
+			"price_pl": 0,
+			"unlock_day": 3,
+			"free_on_day": 3
+		},
+		{
+			"id": "magnifier",
+			"price_pl": 60,
+			"unlock_day": 7
+		},
+		{
+			"id": "counter",
+			"price_pl": 120,
+			"unlock_day": 4
+		},
+		{
+			"id": "rate_calc",
+			"price_pl": 200,
+			"unlock_day": 4
+		}
+	]
+}

@@ -1,0 +1,115 @@
+{
+	"day": 8,
+	"beats": [
+		{
+			"id": "d08_radio",
+			"after": 0,
+			"character": "radio",
+			"lines": [
+				"S_D08_RADIO_1",
+				"S_D08_RADIO_2"
+			]
+		},
+		{
+			"id": "d08_riza",
+			"after": 0,
+			"character": "riza",
+			"requires": {
+				"flags": {
+					"skim_accepted": false
+				}
+			},
+			"lines": [
+				"S_D08_RIZA_1",
+				"S_D08_RIZA_2"
+			],
+			"choice": {
+				"options": [
+					{
+						"id": "accept",
+						"tag": "skim",
+						"text": "S_D08_RIZA_OPT_ACCEPT",
+						"effects": {
+							"flags": {
+								"skim_accepted": true
+							}
+						}
+					},
+					{
+						"id": "refuse",
+						"tag": "honest",
+						"text": "S_D08_RIZA_OPT_REFUSE",
+						"effects": {
+							"flags": {
+								"skim_refused": true
+							}
+						}
+					}
+				]
+			}
+		},
+		{
+			"id": "d08_nurten",
+			"after": 3,
+			"character": "nurten",
+			"lines": [
+				"S_D08_NURTEN_1",
+				"S_D08_NURTEN_2",
+				"S_D08_NURTEN_3"
+			],
+			"customer": {
+				"scenario": "id_other",
+				"expect": "reject"
+			},
+			"choice": {
+				"options": [
+					{
+						"id": "flowers",
+						"tag": "kind",
+						"text": "S_D08_NURTEN_OPT_FLOWERS",
+						"effects": {
+							"cash_pl": -120,
+							"counters": {
+								"kind": 2
+							},
+							"flags": {
+								"nurten_helped": true
+							}
+						}
+					},
+					{
+						"id": "rule",
+						"tag": "honest",
+						"text": "S_D08_NURTEN_OPT_RULE",
+						"effects": {
+							"counters": {
+								"nurten_refused": 1
+							}
+						}
+					}
+				]
+			}
+		}
+	],
+	"letters": [
+		{
+			"key": "L_08_NURTEN",
+			"requires": {
+				"flags": {
+					"nurten_helped": true
+				}
+			}
+		},
+		{
+			"key": "L_08_SKIM",
+			"requires": {
+				"flags": {
+					"skim_accepted": true
+				}
+			}
+		},
+		{
+			"key": "L_08_A"
+		}
+	]
+}

@@ -1,0 +1,112 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/main_screen.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/ui/safe_area_container.gd" id="2_safe"]
+[ext_resource type="Script" path="res://scripts/ui/icon_button.gd" id="3_icon"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main")
+
+[node name="Background" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_safe")
+
+[node name="Content" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="Title" type="Label" parent="SafeArea/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"BoothTitle"
+text = "APP_TITLE"
+horizontal_alignment = 1
+
+[node name="Tagline" type="Label" parent="SafeArea/Content"]
+layout_mode = 2
+theme_type_variation = &"BoothMuted"
+text = "APP_TAGLINE"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="SafeArea/Content"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+
+[node name="ContinueButton" type="Button" parent="SafeArea/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_type_variation = &"InkButton"
+text = "MENU_CONTINUE"
+
+[node name="NewGameButton" type="Button" parent="SafeArea/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_type_variation = &"WarnButton"
+text = "MENU_NEW_GAME"
+
+[node name="Shortcuts" type="HBoxContainer" parent="SafeArea/Content"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 6
+
+[node name="DailyButton" type="Button" parent="SafeArea/Content/Shortcuts"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(104, 112)
+layout_mode = 2
+script = ExtResource("3_icon")
+glyph = "calendar"
+light_on_dark = true
+accent = Color(0.78, 0.54, 0.17, 1)
+
+[node name="MarketButton" type="Button" parent="SafeArea/Content/Shortcuts"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(104, 112)
+layout_mode = 2
+script = ExtResource("3_icon")
+glyph = "market"
+light_on_dark = true
+accent = Color(0.78, 0.54, 0.17, 1)
+
+[node name="SettingsButton" type="Button" parent="SafeArea/Content/Shortcuts"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(104, 112)
+layout_mode = 2
+script = ExtResource("3_icon")
+glyph = "settings"
+light_on_dark = true
+accent = Color(0.78, 0.54, 0.17, 1)
+
+[node name="HelpButton" type="Button" parent="SafeArea/Content/Shortcuts"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(104, 112)
+layout_mode = 2
+script = ExtResource("3_icon")
+glyph = "help"
+light_on_dark = true
+accent = Color(0.78, 0.54, 0.17, 1)
+

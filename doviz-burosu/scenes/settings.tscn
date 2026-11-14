@@ -1,0 +1,96 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/settings_screen.gd" id="1_settings"]
+[ext_resource type="Script" path="res://scripts/ui/safe_area_container.gd" id="2_safe"]
+
+[node name="Settings" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_settings")
+
+[node name="Background" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_safe")
+
+[node name="Content" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="SafeArea/Content"]
+layout_mode = 2
+theme_type_variation = &"BoothTitle"
+text = "SETTINGS_TITLE"
+horizontal_alignment = 1
+
+[node name="MusicLabel" type="Label" parent="SafeArea/Content"]
+layout_mode = 2
+theme_type_variation = &"BoothBody"
+text = "SETTINGS_MUSIC"
+
+[node name="MusicSlider" type="HSlider" parent="SafeArea/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+max_value = 1.0
+step = 0.05
+
+[node name="SfxLabel" type="Label" parent="SafeArea/Content"]
+layout_mode = 2
+theme_type_variation = &"BoothBody"
+text = "SETTINGS_SFX"
+
+[node name="SfxSlider" type="HSlider" parent="SafeArea/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+max_value = 1.0
+step = 0.05
+
+[node name="VibrationToggle" type="CheckButton" parent="SafeArea/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 88)
+layout_mode = 2
+text = "SETTINGS_VIBRATION"
+
+[node name="PixelToggle" type="CheckButton" parent="SafeArea/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 88)
+layout_mode = 2
+text = "SETTINGS_PIXEL"
+
+[node name="LanguageLabel" type="Label" parent="SafeArea/Content"]
+layout_mode = 2
+theme_type_variation = &"BoothBody"
+text = "SETTINGS_LANGUAGE"
+
+[node name="LanguageOption" type="OptionButton" parent="SafeArea/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 88)
+layout_mode = 2
+
+[node name="Spacer" type="Control" parent="SafeArea/Content"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BackButton" type="Button" parent="SafeArea/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "COMMON_BACK"

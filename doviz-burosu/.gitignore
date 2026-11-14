@@ -1,0 +1,22 @@
+# Godot 4+ cache ve import çıktısı
+.godot/
+# Gradle build kullanılırsa oluşan Android kaynak klasörü
+/android/
+
+# Export ve araç çıktıları
+/build/*
+!/build/.gitkeep
+/tools/screenshots/
+/tests/results/
+
+# İmza anahtarları ve gizli bilgiler (asla commit etme)
+*.keystore
+*.jks
+*.p12
+.env
+.env.*
+
+# İşletim sistemi / editör
+.DS_Store
+*.tmp
+*.translation

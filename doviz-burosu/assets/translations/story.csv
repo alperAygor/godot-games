@@ -1,0 +1,164 @@
+keys,en,tr
+CHAR_DENIZ,Deniz (journalist),Deniz (gazeteci)
+CHAR_HAYRI,Uncle Hayri,Hayri Amca
+CHAR_RIZA,Mr. Rıza (boss),Rıza Bey (patron)
+CHAR_STRANGER,Customer in a hat,Şapkalı müşteri
+CHAR_TILKI,The Fox,Tilki
+ENDING_ARRESTED_BODY,"The customer in the hat was the inspector. Ms. Nalan counted the till, opened the ledger and said: ""These do not add up."" Selma took Ece to her grandmother's village. It was a very polite arrest.","Şapkalı müşteri müfettişti. Nalan Hanım kasayı saydı, defteri açtı ve ""Bunlar tutmuyor"" dedi. Selma, Ece'yi anneannesinin köyüne götürdü. Çok nazik bir tutuklamaydı."
+ENDING_ARRESTED_TITLE,Arrested,Tutuklandın
+ENDING_ESCAPE_BODY,"Passport in the pocket, foreign cash in the bag. First flight tomorrow, to a city with no queue at all. The Fox waves from the corner. The office stays open without you.","Pasaport cepte, döviz çantada. Yarın ilk uçak, hiç kuyruğu olmayan bir şehre. Tilki köşeden el sallıyor. Büro sensiz de açık kalacak."
+ENDING_ESCAPE_TITLE,The Escape,Kaçış
+ENDING_FIRED_BODY,"The numbers never added up. Mr. Rıza meant well, but a till is a till.",Rakamlar hiç tutmadı. Rıza Bey iyi niyetliydi ama kasa kasadır.
+ENDING_FIRED_TITLE,Fired,Kovuldun
+ENDING_HONEST_BODY,"For fifteen days you looked at every note and followed every rule. The money is thin, the conscience is clear. Ece tells her class: 'My dad counts twice.' Inflation continues. So do you.","On beş gün boyunca her banknota baktın, her kurala uydun. Para az, vicdan rahat. Ece sınıfında 'Babam iki kez sayar' diyor. Enflasyon sürüyor. Sen de."
+ENDING_HONEST_TITLE,The Honest Clerk,Dürüst Memur
+ENDING_INFORMANT_BODY,Deniz's story ran on page one: 'The Fox Network Collapses'. Reporters now wait outside your window. You're a hero. The rent is still due every five days.,Deniz'in yazısı birinci sayfada çıktı: 'Tilki Ağı Çöktü'. Gişenin önünde artık gazeteciler bekliyor. Kahramansın. Kira yine beş günde bir.
+ENDING_INFORMANT_TITLE,The Informant,Muhbir
+ENDING_MUDDLE_BODY,"Nobody saw anything, and neither did you. The ledger held, the numbers behaved, and no one asked. Some nights sleep comes slowly. Still, every morning the till opens.","Kimse bir şey görmedi, sen de. Defter tuttu, rakamlar uslu durdu, kimse sormadı. Bazı geceler uyku geç gelir. Yine de her sabah kasa açılır."
+ENDING_MUDDLE_TITLE,The Gray Clerk,Gri Memur
+L_01_A,"Selma: ""How was the first day? Ece told the whole class: 'My dad runs the till.' Come home early, soup's on.""","Selma: ""İlk gün nasıldı? Ece bütün sınıfa 'Babam kasayı yönetiyor' demiş. Erken gel, çorba var."""
+L_02_A,Ece drew you behind a huge window. The window has a smiley face. You have no face yet.,Ece seni kocaman bir pencerenin arkasında çizmiş. Pencerenin gülen bir yüzü var. Senin henüz yok.
+L_03_A,"Selma: ""The heating bill came. I wore two sweaters. Ece wore three and calls it fashion.""","Selma: ""Isınma faturası geldi. Ben iki kazak giydim. Ece üç giydi, ona moda diyor."""
+L_04_A,Your mother coughed all night. Selma says it's just the weather. Your mother says it's just Selma.,Annen bütün gece öksürdü. Selma hava durumu diyor. Annen Selma diyor.
+L_05_A,"Selma: ""Rent day. The landlord smiled at us. That's never good. Tell me you have it.""","Selma: ""Kira günü. Ev sahibi bize gülümsedi. Bu hiç iyi değil. Bende var de bana."""
+L_05_TAKEN,"Selma: ""Rent day. You looked calm. Calm people scare me a little. What's in your pocket?""","Selma: ""Kira günü. Çok sakin görünüyordun. Sakin insanlar beni biraz korkutur. Cebinde ne var?"""
+L_06_A,Your mother is sick. The doctor wrote a prescription as long as a bus ticket. Medicine will be a daily cost now.,Annen hastalandı. Doktor otobüs bileti kadar uzun bir reçete yazdı. İlaç artık her günün gideri.
+L_07_A,"Selma: ""The pharmacist knows our names now. He gave Ece a lollipop for 'being brave'. She wasn't even sick.""","Selma: ""Eczacı artık adımızı biliyor. Ece'ye 'cesur olduğu için' lolipop verdi. Hasta olan Ece bile değildi."""
+L_08_A,"Selma: ""Ece asked why a till can't be fair AND rich. I told her to ask the till.""","Selma: ""Ece bir kasa neden hem adil hem zengin olamaz diye sordu. Ona kasaya sor dedim."""
+L_08_SKIM,"Selma: ""You came home with a smile and a small coin purse. I'm not asking. I'm not asking loudly.""","Selma: ""Gülümseyerek ve küçük bir bozuk para kesesiyle geldin. Sormuyorum. Yüksek sesle sormuyorum."""
+L_09_A,"Selma: ""Ece got a star at school for counting to 1000. Her teacher asked where she learned it. 'Dad's pocket,' she said.""","Selma: ""Ece okulda 1000'e kadar saydığı için yıldız aldı. Öğretmeni nerede öğrendiğini sormuş. 'Babamın cebinde' demiş."""
+L_09_ALLY,"Selma: ""You're writing numbers on napkins at dinner. Is that the till or a secret?""","Selma: ""Yemekte peçetelere rakam yazıyorsun. Bu kasa mı, yoksa sır mı?"""
+L_10_A,"Selma: ""Mother says the medicine tastes of coins. I told her that's the price tag.""","Selma: ""Annen ilacın madeni para tadı olduğunu söylüyor. Ona etiket fiyatı dedim."""
+L_10_TAKEN,"Selma: ""We paid everything on time. Why do I feel I should be paying something else?""","Selma: ""Her şeyi zamanında ödedik. Neden başka bir şey ödemem gerekiyormuş gibi hissediyorum?"""
+L_11_A,"Selma: ""Your mother is better. She argues with the radio again. That's a good sign.""","Selma: ""Annen daha iyi. Yine radyoyla tartışıyor. Bu iyi bir işaret."""
+L_11_THANKS,"Selma: ""Uncle Hayri's neighbor stopped me at the market: 'Your husband has a good heart.' I kept it.""","Selma: ""Hayri Amca'nın komşusu pazarda beni durdurdu: 'Kocanın yüreği iyi.' Aklımda tuttum."""
+L_12_A,"Selma: ""A man phoned asking for 'the clerk with the careful hands'. He didn't leave a name. Only a laugh.""","Selma: ""Biri telefon edip 'özenli elli memuru' sordu. İsim bırakmadı. Sadece bir kahkaha."""
+L_13_A,"Selma: ""Ece wants to know what an inspector is. I told her: someone who counts the counters.""","Selma: ""Ece müfettişin ne olduğunu sordu. Sayanları sayan biri dedim."""
+L_13_TILKI,"Selma: ""You keep checking the window. Are we moving? Please say we're not moving without telling me.""","Selma: ""Sürekli pencereye bakıyorsun. Taşınıyor muyuz? Lütfen bana söylemeden taşınmıyoruz de."""
+L_14_A,"Selma: ""Tomorrow is the last day of the month. I made your favorite soup. Come home before it gets cold, or before anyone else asks for it.""","Selma: ""Yarın ayın son günü. En sevdiğin çorbayı yaptım. Soğumadan gel, ya da başkası istemeden."""
+L_15_A,"Selma: ""Fifteen days. We're still here. The soup, the heating, even the radio. That's a small miracle.""","Selma: ""On beş gün. Hâlâ buradayız. Çorba, kalorifer, hatta radyo. Küçük bir mucize bu."""
+L_15_EVIDENCE,"Selma: ""Deniz's article is on every doorstep. The neighbor says you're a hero. I say you're late for dinner.""","Selma: ""Deniz'in yazısı her kapının önünde. Komşu sana kahraman diyor. Ben akşam yemeğine geç kaldın diyorum."""
+L_15_PASSPORT,"Selma: ""You said 'pack a small bag'. I packed two. Ece packed the cat. We'll talk about the cat later.""","Selma: ""'Küçük bir çanta hazırla' dedin. İki tane hazırladım. Ece kediyi hazırlamış. Kediyi sonra konuşuruz."""
+L_15_PLEASED,"A note from the inspector: ""Clerk, you handled the taped notes by the book. Nalan Kaya.""","Müfettişten bir not: ""Memur, bantlı banknotları kurala göre işlediniz. Nalan Kaya."""
+S_D01_RIZA_1,"Morning! I'm Rıza. This office is mine, that window is yours.","Günaydın! Ben Rıza. Bu büro benim, o gişe senin."
+S_D01_RIZA_2,"Simple rules: a customer comes, you look, you decide.","Kural basit: müşteri gelir, sen bakarsın, karar verirsin."
+S_D01_RIZA_3,The first two mistakes a day are warnings. After that it comes out of your pocket.,Günde ilk iki hata uyarı. Sonrası cebinden çıkar.
+S_D02_HAYRI_1,"Son, I came to change my pension. Every week it buys a little less.","Evladım, emekli maaşımı bozdurmaya geldim. Her hafta biraz daha az alıyor."
+S_D02_HAYRI_2,"Money melts, my boy. Only the queue stays the same.",Para eriyor evladım. Bir tek kuyruk eriyen yok.
+S_D03_RIZA_1,"I bought a UV lamp! It was expensive, so don't break it.","UV lamba aldım! Pahalıydı, sakın bozma."
+S_D03_RIZA_2,Hold a note under it: a genuine strip glows in the right color.,Banknotu altına tut: gerçek şerit doğru renkte parlar.
+S_D04_DENIZ_1,"Hi. Deniz, newspaper. Don't worry, I only ask questions.","Merhaba. Deniz, gazeteden. Merak etme, yalnızca soru soruyorum."
+S_D04_DENIZ_2,Fake money is flowing through this city and somebody organizes it. I'm looking for the somebody.,Bu şehirde sahte para dolaşıyor ve biri bunu örgütlüyor. O biriyi arıyorum.
+S_D04_DENIZ_3,One day I might need your help.,Bir gün yardımına ihtiyacım olabilir.
+S_D05_TILKI_1,"They call me the Fox. My ID? Left it at home. My money? Spotless, I swear.","Bana Tilki derler. Kimlik mi? Evde unuttum. Param mı? Tertemiz, yemin ederim."
+S_D05_TILKI_2,"Here's an envelope. A 'thank you', 200 PL. Nobody sees it, nobody remembers it.","Bak şu zarf: bir 'teşekkür', 200 PL. Kimse görmez, kimse hatırlamaz."
+S_D05_TILKI_OPT_REFUSE,"Push it back: ""Rules are rules.""","Geri çevir: ""Kural kuraldır."""
+S_D05_TILKI_OPT_TAKE,Take the envelope (+200 PL),Zarfı al (+200 PL)
+S_D06_HAYRI_1,"Son, this note has been with me for years. They say the old series is gone now. Nobody told me.","Evladım, bu banknot yıllardır bende. Eski seri geçmezmiş artık. Bana kimse söylemedi."
+S_D06_HAYRI_2,"The medicine money was in this. Could you take a look at it, just this once?","İlaç parası da buradaydı. Bir bakar mısın, sadece bu seferlik?"
+S_D07_RIZA_1,"The bulletin came: stolen serials. If one lands on your desk, confiscate it and call the police.",Bülten geldi: çalıntı seriler. Birisi tezgâhına düşerse el koy ve polisi ara.
+S_D07_RIZA_2,"A magnifier would help with the fine print. Evenings, the shop. Not my money, yours.","İnce yazı için büyüteç iyi olur. Akşamları dükkân var. Benim param değil, seninki."
+S_D08_RIZA_1,"Son, I have an idea. Pay 5 PL less on every deal. Customers never notice.","Evladım, bir fikrim var. Her işlemde 5 PL eksik öde. Müşteri fark etmez."
+S_D08_RIZA_2,Anyone who notices comes to me. We split the difference. You and me.,Fark eden bana gelir. Farkı bölüşürüz. Sen ve ben.
+S_D08_RIZA_OPT_ACCEPT,Accept: pay 5 PL less each time,Kabul et: her işlemde 5 PL eksik öde
+S_D08_RIZA_OPT_REFUSE,"Refuse: ""I'll pay what is owed.""","Reddet: ""Ne ödenecekse onu öderim."""
+S_D09_DENIZ_1,"It's me again. The Fox. You've heard the name, haven't you?",Yine ben. Tilki. Adını duymuşsundur.
+S_D09_DENIZ_2,Write down the serial numbers of the notes he brings. Then I have something to print.,Getirdiği banknotların seri numaralarını not al. O zaman basacak bir şeyim olur.
+S_D09_DENIZ_3,It's risky. But somebody has to be the 'somebody'.,Riskli. Ama birinin o 'biri' olması gerek.
+S_D09_DENIZ_OPT_ALLY,I'll help you,Sana yardım ederim
+S_D09_DENIZ_OPT_DECLINE,Stay out of it,Ben karışmam
+S_D10_TILKI_1,Again me. Last time you were polite. Today's deal is bigger.,Yine ben. Geçen sefer naziktin. Bugünün işi daha büyük.
+S_D10_TILKI_2,A signature on a form is a small thing. The envelope is not: 350 PL.,Formdaki imza küçük bir ayrıntı. Zarf küçük değil: 350 PL.
+S_D10_TILKI_OPT_REFUSE,Refuse the envelope,Zarfı kabul etme
+S_D10_TILKI_OPT_TAKE,Take the envelope (+350 PL),Zarfı al (+350 PL)
+S_D11_HAYRI_COLD_1,"Son, you hid your kindness behind a rule. That's allowed. It's just... cold.","Evladım, iyiliğini bir kuralın arkasına saklamışsın. Yasak değil. Yalnızca... soğuk."
+S_D11_HAYRI_COLD_2,Money melts anyway. Nobody minds.,Para zaten eriyor. Kimse umursamıyor.
+S_D11_HAYRI_THANKS_1,"Son, last week you didn't leave me ashamed. Take these 60 PL for your mother's medicine.","Evladım, geçen hafta beni mahcup etmedin. Şu 60 lirayı annenin ilacına ver."
+S_D11_HAYRI_THANKS_2,And I heard something: a person in a hat will visit this week. An inspector.,Bir şey de duydum: bu hafta şapkalı biri gelecekmiş. Müfettiş.
+S_D12_DENIZ_ALONE_1,You said you'd stay out of it. I understand. I'm not.,Karışmam demiştin. Anlıyorum. Ben karışıyorum.
+S_D12_DENIZ_ALONE_2,"If you change your mind, I'm the one who writes with the red pen.","Fikrini değiştirirsen, kırmızı kalemle yazan benim."
+S_D12_DENIZ_PROOF_1,The Fox's notes: how many serials did you write down?,Tilki'nin banknotları: kaç seri not aldın?
+S_D12_DENIZ_PROOF_2,"If you give me the notebook, my editor prints it on page one. You'd be a witness, not a suspect.","Defteri bana verirsen editörüm birinci sayfaya basar. Şüpheli değil, tanık olursun."
+S_D12_DENIZ_PROOF_OPT_GIVE,Give Deniz the notebook,Defteri Deniz'e ver
+S_D12_DENIZ_PROOF_OPT_LATER,Not yet,Henüz değil
+S_D13_RIZA_1,"Tomorrow an inspector may come. If anything in this till is off, tell me now... no, don't. I don't want to know.","Yarın bir müfettiş gelebilir. Kasada oynanmış bir şey varsa şimdi söyle... yok, söyleme. Bilmek istemiyorum."
+S_D13_TILKI_1,"Day after tomorrow, last deal. I'll bring a gift: a passport, a new name, a new city.","Öbür gün son iş. Bir hediye getireceğim: pasaport, yeni bir ad, yeni bir şehir."
+S_D13_TILKI_2,"It costs 10 FED. Hard currency, not paper. Think about it.","Bedeli 10 FED. Kâğıt değil, sağlam döviz. Düşün."
+S_D14_RIZA_1,"Today everyone is a suspect, including me. Stay by the book, count twice.","Bugün herkes şüpheli, ben de dahil. Kurala uy, iki kez say."
+S_D14_RIZA_SKIM_1,"Son, about that 5 PL business... let's say it never happened. I don't remember a thing.","Evladım, o 5 liralık iş var ya... hiç olmadı diyelim. Ben hiçbir şey hatırlamıyorum."
+S_D14_STRANGER_1,Good day. Selin Yazar. My notes are a bit worn.,İyi günler. Selin Yazar. Banknotlarım biraz yıpranmış.
+S_D14_STRANGER_2,"Taped but whole, aren't they? I do like a clerk who reads the rules.","Bantlı ama bütün, değil mi? Kuralları okuyan memuru severim."
+S_D15_DENIZ_LAST_1,"Last chance. Tomorrow the Fox leaves town, and so does my story.","Son fırsat. Yarın Tilki şehri terk edecek, benim haberim de."
+S_D15_DENIZ_LAST_2,Give me the notebook now and it runs on page one.,"Defteri şimdi ver, birinci sayfada çıksın."
+S_D15_DENIZ_LAST_OPT_GIVE,Give Deniz the notebook,Defteri Deniz'e ver
+S_D15_DENIZ_LAST_OPT_KEEP,Keep it,Sende kalsın
+S_D15_DENIZ_THANKS_1,Your notebook is at the printer's. The headline is: 'The Fox Network Collapses'.,Defterin matbaada. Manşet şu: 'Tilki Ağı Çöktü'.
+S_D15_DENIZ_THANKS_2,I'll leave your name out. Mostly.,Adını yazmayacağım. Çoğunlukla.
+S_D15_RIZA_1,"The bureau is being sold today. Count the till one last time, son.",Büro bugün satılıyor. Kasayı son kez say evladım.
+S_D15_RIZA_2,The lira lost its hat overnight. Everything we count is worth less. Except the counting.,Lira bir gecede şapkasını kaybetti. Saydığımız her şey değer kaybetti. Sayma işi hariç.
+S_D15_RIZA_PLEASED_1,The inspector praised you! Her name is Nalan Kaya. She wrote 'exemplary clerk' in my ledger.,Müfettiş seni övdü! Adı Nalan Kaya. Defterime 'örnek memur' yazdı.
+S_D15_RIZA_PLEASED_2,"The bureau is being sold today. Count the till one last time, son.",Büro bugün satılıyor. Kasayı son kez say evladım.
+S_D15_TILKI_1,"Last deal. The passport is ready: 10 FED, new name, new life.","Son iş. Pasaport hazır: 10 FED, yeni ad, yeni hayat."
+S_D15_TILKI_2,"This bag has something unusual in it. Be a good clerk, or a good friend.","Bu çantadaki şey biraz alışılmadık. İyi bir memur ol, ya da iyi bir arkadaş."
+S_D15_TILKI_OPT_PASSPORT,Buy the passport (10 FED),Pasaportu al (10 FED)
+S_D15_TILKI_OPT_REFUSE,No passport,Pasaport istemiyorum
+CHAR_KEREM,Little Kerem,Küçük Kerem
+CHAR_NURTEN,Mrs. Nurten,Nurten Hanım
+CHAR_BARIS,Barış (young man),Barış (genç)
+CHAR_ANNE,Your mother,Annen
+CHAR_ECE,Ece (your daughter),Ece (kızın)
+CHAR_RADIO,The radio,Radyo
+S_D01_RADIO_1,"...good morning, Pahalistan. The lira closed yesterday at its lowest level. Experts say the lowest level is not yet the lowest.",...günaydın Pahalistan. Lira dün en düşük seviyesinde kapandı. Uzmanlara göre en düşük seviye henüz en düşük değil.
+S_D01_RADIO_2,"In other news, bread now costs what it will cost tomorrow. Tomorrow is not available for comment.",Diğer haberler: ekmek artık yarınki fiyatına satılıyor. Yarın yorum yapmaya müsait değil.
+S_D04_RADIO_1,The heating ration has been announced: enough for two sweaters per household. A third sweater is considered luxury.,Isınma payı açıklandı: hane başına iki kazaklık. Üçüncü kazak lüks sayılır.
+S_D04_RADIO_2,The Ministry reminds citizens that prices are not rising. Money is simply getting shy.,Bakanlık vatandaşlara hatırlatır: fiyatlar yükselmiyor. Para sadece utangaçlaşıyor.
+S_D08_RADIO_1,"Dear listeners, the Ministry declares: inflation is a feeling, and feelings are private.","Sevgili dinleyiciler, Bakanlık açıklıyor: enflasyon bir histir, hisler de özeldir."
+S_D08_RADIO_2,Meanwhile the old lira series is being withdrawn. Please do not cry on your banknotes; it damages the ink.,Bu arada eski lira serisi toplatılıyor. Lütfen banknotların üstüne ağlamayın; mürekkebe zarar verir.
+S_D12_RADIO_1,"Border crossings are closed for ""maintenance"". The maintenance is expected to last as long as necessary.","Sınır kapıları ""bakım"" nedeniyle kapalı. Bakımın gerektiği kadar süreceği tahmin ediliyor."
+S_D12_RADIO_2,"Citizens are reminded: leaving is not forbidden, it is merely very, very difficult.","Vatandaşlara hatırlatılır: gitmek yasak değil, yalnızca çok ama çok zor."
+S_D15_RADIO_1,Breaking news: the lira has lost a zero overnight. New banknotes will be printed. Old zeros will be recycled.,Son dakika: lira bir gecede bir sıfır kaybetti. Yeni banknotlar basılacak. Eski sıfırlar geri dönüştürülecek.
+S_D15_RADIO_2,The weather: cloudy with a chance of numbers.,"Hava durumu: parçalı bulutlu, yer yer rakam yağışlı."
+S_D03_KEREM_1,"Hello. I'm Kerem. I'm seven. This is my piggy bank. I broke it myself, Dad doesn't know yet.","Merhaba. Ben Kerem. Yedi yaşındayım. Bu benim kumbaram. Kendim kırdım, babam daha bilmiyor."
+S_D03_KEREM_2,It's my mom's birthday tomorrow. Can you turn my coins into a flower?,Annemin yarın doğum günü. Bozuk paralarımı bir çiçeğe çevirebilir misin?
+S_D03_KEREM_3,"I counted twice. If it's too little, the flower will be small. I know.",İki kere saydım. Az çıkarsa çiçek küçük olur. Biliyorum.
+S_D03_KEREM_OPT_ROUND,Round it up from your own pocket (-10 PL),Kendi cebinden yuvarla (-10 PL)
+S_D03_KEREM_OPT_RATE,"Pay the rate, with a big smile","Kuru ödersin, kocaman gülümseyerek"
+L_04_KEREM,"Selma: ""Your coat pocket had a drawing of a pig in a bow tie. I decided not to ask. I decided to keep it.""","Selma: ""Paltonun cebinden papyonlu bir domuz çizimi çıktı. Sormamaya karar verdim. Saklamaya da."""
+S_D09_KEREM_1,It's me again! Mom cried when she saw the flower. Then she laughed. Then she cried again.,Yine ben! Annem çiçeği görünce ağladı. Sonra güldü. Sonra yine ağladı.
+S_D09_KEREM_2,"I drew you. Here. You have very big hands, for counting.",Seni çizdim. Al. Saymak için çok büyük ellerin var.
+S_D07_BARIS_1,Hi. I'm closing my savings account. Everything into FED. I leave on the first of the month.,Merhaba. Birikim hesabımı kapatıyorum. Hepsi FED olacak. Ayın birinde gidiyorum.
+S_D07_BARIS_2,"My mother cries every night, but she says go. Do you ever think about going?",Annem her gece ağlıyor ama git diyor. Sen hiç gitmeyi düşünüyor musun?
+S_D07_BARIS_OPT_GO,"""Go. Some doors don't open twice.""","""Git. Bazı kapılar iki kez açılmaz."""
+S_D07_BARIS_OPT_STAY,"""Stay. This place needs people who count.""","""Kal. Bu şehir sayan insanlara muhtaç."""
+S_D07_BARIS_OPT_SILENT,Say nothing and count his money,"Bir şey söyleme, parasını say"
+S_D14_BARIS_GO_1,"I leave at dawn. I wanted to say thank you. You told me to go, and I'm a little scared of that.","Şafakta gidiyorum. Teşekkür etmek istedim. Bana git dedin, bu biraz korkutuyor beni."
+S_D14_BARIS_GO_2,"Here is my new address, in case you ever decide. Don't tell anyone. Tell Ece, maybe.","İşte yeni adresim, bir gün karar verirsen diye. Kimseye söyleme. Belki Ece'ye söylersin."
+S_D14_BARIS_STAY_1,"I cancelled the ticket. I opened a little stall: tea and simit. The rent is a joke, but nobody says my tea is unfair.",Bileti iptal ettim. Küçük bir tezgâh açtım: çay ve simit. Kira bir şaka ama kimse çayımın haksız olduğunu söylemiyor.
+S_D14_BARIS_STAY_2,You said this place needs people who count. I count the glasses every night. Come by for a free one.,"Bu şehir sayan insanlara muhtaç dedin. Her gece bardakları sayıyorum. Bir gün gel, bedava ikram."
+S_D08_NURTEN_1,"My husband used to do this. He's been gone since spring, but his ID is still in my bag.",Bunu hep eşim yapardı. İlkbahardan beri yok ama kimliği hâlâ çantamda.
+S_D08_NURTEN_2,"These are his savings. I'm no good with numbers. He always said, ""Nurten, never tell anyone the amount.""","Bunlar onun birikimi. Rakamdan anlamam. Hep ""Nurten, tutarı kimseye söyleme"" derdi."
+S_D08_NURTEN_3,Please. The flowers for his grave cost more every week.,Lütfen. Mezarına götürdüğüm çiçek her hafta daha pahalı.
+S_D08_NURTEN_OPT_FLOWERS,"Refuse the trade, but quietly give her flower money from your pocket (-120 PL)",İşlemi reddet ama çiçek parasını kendi cebinden sessizce ver (-120 PL)
+S_D08_NURTEN_OPT_RULE,Explain gently: the ID must belong to the person at the window,"Nazikçe anlat: kimlik, gişedeki kişinin kendisine ait olmalı"
+L_08_NURTEN,"Selma: ""You came home with empty pockets and a full face. Someone somewhere is lucky today. I'm not asking who.""","Selma: ""Boş cebin ve dolu bir yüzle geldin. Birisi bir yerde bugün şanslı. Kim olduğunu sormuyorum."""
+L_10_NURTEN,"Ece: ""Dad, why was there a rose in your coat? Mom says roses are for people who forgot something. I think roses are for people who remember.""","Ece: ""Baba, paltonda neden gül vardı? Annem gül unutanlar içinmiş diyor. Bence gül hatırlayanlar için."""
+S_D11_RIZA_1,"Son, can I tell you something I haven't told anyone? The landlord is raising the bureau's rent. Again.","Evladım, kimseye söylemediğim bir şeyi sana söyleyebilir miyim? Ev sahibi büronun kirasını yine artırıyor."
+S_D11_RIZA_2,I'm not going to ask you for money. I'm... going to ask you for a little money. Just until the first.,Senden para istemeyeceğim. Ben... biraz para isteyeceğim. Ayın birine kadar.
+S_D11_RIZA_OPT_LEND,Lend him 100 PL,Ona 100 PL borç ver
+S_D11_RIZA_OPT_DECLINE,"""I can't, Mr. Rıza. Our rent is due too.""","""Edemem Rıza Bey. Bizim de kirası var."""
+L_13_RIZA,"Selma: ""A tray of baklava came from Mr. Rıza's wife. No note. Ece ate four and wrote a thank-you card with a lot of glue.""","Selma: ""Rıza Bey'in eşinden bir tepsi baklava geldi. Not yok. Ece dördünü yedi ve bol yapıştırıcılı bir teşekkür kartı yazdı."""
+S_D12_ANNE_1,"Son, it's me. Don't be angry, I took the bus. Four stops, I counted them.","Oğlum, benim. Kızma, otobüse bindim. Dört durak, saydım."
+S_D12_ANNE_2,Your father left these for Ece's schooling. I didn't know they had stopped being money.,Babanın Ece'nin okulu için bıraktığı paralar bunlar. Para olmaktan çıktıklarını bilmiyordum.
+S_D12_ANNE_3,It's all right if you can't. I just wanted to see you at work. You stand like him.,Yapamazsan olsun. Seni iş başında görmek istedim. Onun gibi duruyorsun.
+S_D12_ANNE_OPT_POCKET,"Refuse the old notes, but give your mother a ""schooling fund"" from your pocket (-150 PL)","Eski banknotları reddet ama annene cebinden ""okul parası"" ver (-150 PL)"
+S_D12_ANNE_OPT_RULE,"""Mother, I can't. But come, let me buy you tea.""","""Anne, yapamam. Ama gel, sana çay ısmarlayayım."""
+L_12_ANNE,"Selma: ""Your mother asked where her old notes went. I said you took them to the bank. She smiled as if she knew.""","Selma: ""Annen eski paralarının nereye gittiğini sordu. Bankaya götürdün dedim. Biliyormuş gibi gülümsedi."""
+L_12_ANNE_RULE,"Selma: ""Your mother is quiet tonight. She says you did right. She said it twice. Then she asked for the tea you bought.""","Selma: ""Annen bu akşam sessiz. Doğru yaptığını söylüyor. İki kez söyledi. Sonra ısmarladığın çayı sordu."""
+L_14_ECE,"Ece drew you again. This time you have a face, a big smile, and hands bigger than the window. Under it: ""Dad is the till and the heart.""","Ece seni yine çizmiş. Bu sefer bir yüzün, kocaman bir gülüşün ve pencereden büyük ellerin var. Altında: ""Babam kasa ve yürek."""
+S_D15_ECE_1,Dad! Mom said I could come. Which one is your stamp?,Baba! Annem gelebilirim dedi. Hangisi senin damgan?
+S_D15_ECE_2,Can I press it? Just once? I'll press very softly.,Basabilir miyim? Bir kere? Çok yavaş basacağım.
+S_D15_ECE_OPT_STAMP,"Let Ece press the stamp, softly",Ece damgaya yavaşça bassın
+S_D15_ECE_OPT_LATER,"""Not now, sweetheart. Tonight, I promise.""","""Şimdi olmaz kızım. Bu akşam, söz."""
+L_15_ECE,"Selma: ""Ece stamped her homework 'ACCEPTED' tonight. The teacher gave it a star anyway. I think the star was for her father.""","Selma: ""Ece bu akşam ödevine 'KABUL' damgası basmış. Öğretmen yine de yıldız vermiş. Bence yıldız babası içindi."""
+ENDING_MERCY_TITLE,The Kind Clerk,Merhametli Memur
+ENDING_MERCY_BODY,"You broke no law, yet you paid more than your share: flowers for a widow, a coin purse for a child, a schooling fund for your own mother. The till is thin, but Ece's drawings have a face now, and hands bigger than the window. Prices keep rising. So does the kindness you leave behind.","Hiçbir yasayı çiğnemedin ama payından fazlasını ödedin: bir dul için çiçek, bir çocuk için bozuk para, kendi annen için okul parası. Kasa ince, ama Ece'nin çizimlerinde artık bir yüz var ve pencereden büyük eller. Fiyatlar yükselmeye devam ediyor. Arkanda bıraktığın iyilik de."

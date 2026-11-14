@@ -1,0 +1,78 @@
+{
+	"_comment": "Sonlar, ilk eşleşen kazanır. game_over: oyun bitti nedeni; requires: hikaye bayrakları/sayaçları.",
+	"endings": [
+		{
+			"id": "fired",
+			"game_over": [
+				"fired",
+				"evicted",
+				"family_left"
+			],
+			"title_key": "ENDING_FIRED_TITLE",
+			"body_key": "ENDING_FIRED_BODY"
+		},
+		{
+			"id": "arrested",
+			"game_over": [
+				"arrested"
+			],
+			"title_key": "ENDING_ARRESTED_TITLE",
+			"body_key": "ENDING_ARRESTED_BODY"
+		},
+		{
+			"id": "informant",
+			"requires": {
+				"flags": {
+					"deniz_evidence": true
+				}
+			},
+			"title_key": "ENDING_INFORMANT_TITLE",
+			"body_key": "ENDING_INFORMANT_BODY"
+		},
+		{
+			"id": "escape",
+			"requires": {
+				"flags": {
+					"passport": true
+				}
+			},
+			"title_key": "ENDING_ESCAPE_TITLE",
+			"body_key": "ENDING_ESCAPE_BODY"
+		},
+		{
+			"id": "mercy",
+			"requires": {
+				"flags": {
+					"skim_accepted": false
+				},
+				"counters_min": {
+					"kind": 3
+				},
+				"counters_max": {
+					"tilki_money": 0
+				}
+			},
+			"title_key": "ENDING_MERCY_TITLE",
+			"body_key": "ENDING_MERCY_BODY"
+		},
+		{
+			"id": "honest",
+			"requires": {
+				"flags": {
+					"skim_accepted": false
+				},
+				"counters_max": {
+					"tilki_money": 0,
+					"tilki_helped": 0
+				}
+			},
+			"title_key": "ENDING_HONEST_TITLE",
+			"body_key": "ENDING_HONEST_BODY"
+		},
+		{
+			"id": "muddle",
+			"title_key": "ENDING_MUDDLE_TITLE",
+			"body_key": "ENDING_MUDDLE_BODY"
+		}
+	]
+}

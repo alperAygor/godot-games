@@ -1,0 +1,18 @@
+{
+	"_comment": "Reklam ayarları. interstitial: geçiş reklamının TÜM koşulları sağlanmalı. units = tamamlanan oyun birimi sayısı (biten her hikaye günü ve biten her Günün Kuru/Sonsuz koşusu). rewarded: yer başına sınır (limit 0 = sınırsız; scope: day = hikaye günü, date = takvim tarihi, run = Sonsuz koşusu).",
+	"interstitial": {
+		"min_story_day": 3,
+		"min_units_between": 2,
+		"min_seconds_since_any_ad": 180,
+		"min_session_play_seconds": 120,
+		"min_session_index": 2
+	},
+	"rewarded": {
+		"rate_tip": {"limit": 1, "scope": "day"},
+		"double_pay": {"limit": 1, "scope": "day"},
+		"overtime": {"limit": 1, "scope": "day", "last_seconds": 60},
+		"retry_day": {"limit": 0, "scope": "day"},
+		"daily_retry": {"limit": 1, "scope": "date"},
+		"endless_continue": {"limit": 1, "scope": "run"}
+	}
+}

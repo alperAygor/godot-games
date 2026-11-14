@@ -1,0 +1,76 @@
+{
+	"day": 10,
+	"beats": [
+		{
+			"id": "d10_tilki",
+			"after": 3,
+			"character": "tilki",
+			"lines": [
+				"S_D10_TILKI_1",
+				"S_D10_TILKI_2"
+			],
+			"customer": {
+				"scenario": "decl_signature",
+				"expect": "police"
+			},
+			"choice": {
+				"options": [
+					{
+						"id": "take",
+						"tag": "bribe",
+						"text": "S_D10_TILKI_OPT_TAKE",
+						"effects": {
+							"cash_pl": 350,
+							"counters": {
+								"tilki_money": 1
+							}
+						}
+					},
+					{
+						"id": "refuse",
+						"tag": "honest",
+						"text": "S_D10_TILKI_OPT_REFUSE",
+						"effects": {
+							"counters": {
+								"tilki_refused": 1
+							}
+						}
+					}
+				]
+			},
+			"on_decision": {
+				"complete": {
+					"counters": {
+						"tilki_helped": 1
+					}
+				},
+				"police": {
+					"counters": {
+						"tilki_reported": 1
+					}
+				}
+			}
+		}
+	],
+	"letters": [
+		{
+			"key": "L_10_NURTEN",
+			"requires": {
+				"flags": {
+					"nurten_helped": true
+				}
+			}
+		},
+		{
+			"key": "L_10_TAKEN",
+			"requires": {
+				"counters_min": {
+					"tilki_money": 1
+				}
+			}
+		},
+		{
+			"key": "L_10_A"
+		}
+	]
+}

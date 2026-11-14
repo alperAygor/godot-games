@@ -1,0 +1,44 @@
+{
+	"_comment": "Ev ekonomisi. Tutarlar tam PL (1. gün fiyatı); gün ilerledikçe cost_inflation_bp (günlük baz puan) ile bileşik artar. every_days/first_day: tekrar aralığı; requires_flag: hikaye bayrağı yoksa gider çıkmaz; mood_penalty: ödenmezse aile ruh hali kaybı; priority: bot ve varsayılan ödeme sırası (büyük önce).",
+	"start_cash_pl": 300,
+	"cost_inflation_bp": 150,
+	"mood_start": 100,
+	"mood_recovery": 5,
+	"evict_after_missed_rents": 2,
+	"expenses": [
+		{
+			"id": "rent",
+			"every_days": 5,
+			"first_day": 5,
+			"base_pl": 1100,
+			"mood_penalty": 0,
+			"priority": 4,
+			"counts_as_rent": true
+		},
+		{
+			"id": "medicine",
+			"every_days": 1,
+			"first_day": 1,
+			"base_pl": 70,
+			"mood_penalty": 20,
+			"priority": 3,
+			"requires_flag": "mother_sick"
+		},
+		{
+			"id": "food",
+			"every_days": 1,
+			"first_day": 1,
+			"base_pl": 110,
+			"mood_penalty": 15,
+			"priority": 2
+		},
+		{
+			"id": "heating",
+			"every_days": 1,
+			"first_day": 3,
+			"base_pl": 50,
+			"mood_penalty": 10,
+			"priority": 1
+		}
+	]
+}

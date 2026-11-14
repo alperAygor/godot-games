@@ -1,0 +1,40 @@
+{
+	"day": 4,
+	"beats": [
+		{
+			"id": "d04_radio",
+			"after": 0,
+			"character": "radio",
+			"lines": [
+				"S_D04_RADIO_1",
+				"S_D04_RADIO_2"
+			]
+		},
+		{
+			"id": "d04_deniz",
+			"after": 2,
+			"character": "deniz",
+			"lines": [
+				"S_D04_DENIZ_1",
+				"S_D04_DENIZ_2",
+				"S_D04_DENIZ_3"
+			],
+			"customer": {
+				"scenario": "clean"
+			}
+		}
+	],
+	"letters": [
+		{
+			"key": "L_04_KEREM",
+			"requires": {
+				"flags": {
+					"kerem_gift": true
+				}
+			}
+		},
+		{
+			"key": "L_04_A"
+		}
+	]
+}

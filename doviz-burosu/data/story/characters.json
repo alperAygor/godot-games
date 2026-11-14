@@ -1,0 +1,61 @@
+{
+	"_comment": "Hikaye karakterleri. face_id 400 havuzunun dışındadır (bültende aranan yüz olamaz). holder_name kimlik belgesindeki addır.",
+	"characters": {
+		"riza": {
+			"name_key": "CHAR_RIZA",
+			"holder_name": "Rıza Karaca",
+			"face_id": 901
+		},
+		"tilki": {
+			"name_key": "CHAR_TILKI",
+			"holder_name": "Kemal Tilki",
+			"face_id": 902
+		},
+		"deniz": {
+			"name_key": "CHAR_DENIZ",
+			"holder_name": "Deniz Aksoy",
+			"face_id": 903
+		},
+		"hayri": {
+			"name_key": "CHAR_HAYRI",
+			"holder_name": "Hayri Demir",
+			"face_id": 904
+		},
+		"stranger": {
+			"name_key": "CHAR_STRANGER",
+			"holder_name": "Selin Yazar",
+			"face_id": 905
+		},
+		"kerem": {
+			"name_key": "CHAR_KEREM",
+			"holder_name": "Kerem Yıldız",
+			"face_id": 906
+		},
+		"nurten": {
+			"name_key": "CHAR_NURTEN",
+			"holder_name": "Nurten Aydın",
+			"face_id": 907
+		},
+		"baris": {
+			"name_key": "CHAR_BARIS",
+			"holder_name": "Barış Kaya",
+			"face_id": 908
+		},
+		"anne": {
+			"name_key": "CHAR_ANNE",
+			"holder_name": "Fatma Er",
+			"face_id": 909
+		},
+		"ece": {
+			"name_key": "CHAR_ECE",
+			"holder_name": "Ece Er",
+			"face_id": 910
+		},
+		"radio": {
+			"name_key": "CHAR_RADIO",
+			"holder_name": "Radyo",
+			"face_id": 911,
+			"icon": "radio"
+		}
+	}
+}

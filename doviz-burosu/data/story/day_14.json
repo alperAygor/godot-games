@@ -1,0 +1,114 @@
+{
+	"day": 14,
+	"beats": [
+		{
+			"id": "d14_riza_skim",
+			"after": 0,
+			"character": "riza",
+			"requires": {
+				"flags": {
+					"skim_accepted": true
+				}
+			},
+			"lines": [
+				"S_D14_RIZA_SKIM_1"
+			]
+		},
+		{
+			"id": "d14_riza",
+			"after": 0,
+			"character": "riza",
+			"requires": {
+				"flags": {
+					"skim_accepted": false
+				}
+			},
+			"lines": [
+				"S_D14_RIZA_1"
+			]
+		},
+		{
+			"id": "d14_stranger",
+			"after": 3,
+			"character": "stranger",
+			"lines": [
+				"S_D14_STRANGER_1",
+				"S_D14_STRANGER_2"
+			],
+			"customer": {
+				"scenario": "taped",
+				"expect": "complete"
+			},
+			"on_decision": {
+				"complete": {
+					"flags": {
+						"inspector_pleased": true
+					}
+				},
+				"reject": {
+					"flags": {
+						"inspector_annoyed": true
+					}
+				},
+				"police": {
+					"flags": {
+						"inspector_annoyed": true
+					}
+				}
+			}
+		},
+		{
+			"id": "d14_baris_go",
+			"after": 1,
+			"character": "baris",
+			"requires": {
+				"flags": {
+					"baris_go": true
+				}
+			},
+			"lines": [
+				"S_D14_BARIS_GO_1",
+				"S_D14_BARIS_GO_2"
+			],
+			"customer": {
+				"scenario": "clean"
+			},
+			"effects": {
+				"mood": 4
+			}
+		},
+		{
+			"id": "d14_baris_stay",
+			"after": 1,
+			"character": "baris",
+			"requires": {
+				"flags": {
+					"baris_stay": true
+				}
+			},
+			"lines": [
+				"S_D14_BARIS_STAY_1",
+				"S_D14_BARIS_STAY_2"
+			],
+			"customer": {
+				"scenario": "clean"
+			},
+			"effects": {
+				"mood": 8
+			}
+		}
+	],
+	"letters": [
+		{
+			"key": "L_14_ECE",
+			"requires": {
+				"counters_min": {
+					"kind": 3
+				}
+			}
+		},
+		{
+			"key": "L_14_A"
+		}
+	]
+}

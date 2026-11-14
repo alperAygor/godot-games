@@ -1,0 +1,48 @@
+{
+	"day": 13,
+	"beats": [
+		{
+			"id": "d13_riza",
+			"after": 0,
+			"character": "riza",
+			"lines": [
+				"S_D13_RIZA_1"
+			]
+		},
+		{
+			"id": "d13_tilki",
+			"after": 3,
+			"character": "tilki",
+			"requires": {
+				"counters_min": {
+					"tilki_money": 1
+				}
+			},
+			"lines": [
+				"S_D13_TILKI_1",
+				"S_D13_TILKI_2"
+			]
+		}
+	],
+	"letters": [
+		{
+			"key": "L_13_RIZA",
+			"requires": {
+				"flags": {
+					"riza_loan": true
+				}
+			}
+		},
+		{
+			"key": "L_13_TILKI",
+			"requires": {
+				"counters_min": {
+					"tilki_money": 1
+				}
+			}
+		},
+		{
+			"key": "L_13_A"
+		}
+	]
+}

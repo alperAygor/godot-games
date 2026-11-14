@@ -1,0 +1,427 @@
+keys,en,tr
+MENU_SETTINGS,Settings,Ayarlar
+SETTINGS_TITLE,Settings,Ayarlar
+SETTINGS_MUSIC,Music,Müzik
+SETTINGS_SFX,Sound effects,Ses efektleri
+SETTINGS_VIBRATION,Vibration,Titreşim
+SETTINGS_LANGUAGE,Language,Dil
+COMMON_BACK,Back,Geri
+COMMON_CLOSE,Close,Kapat
+APP_TITLE,Exchange Desk,Döviz Bürosu
+APP_TAGLINE,Spot the fakes. Pay the right rate.,Sahteyi bul. Doğru kuru öde.
+MENU_STORY,Story,Hikaye
+MENU_DAILY,Daily Rate,Günün Kuru
+MENU_ENDLESS,Endless,Sonsuz
+MENU_MARKET,Shop,Market
+MENU_COMING_SOON,Coming soon,Yakında
+CUR_PL,Pahalistan Lira,Pahalistan Lirası
+CUR_FED,Federal Dollar,Federal Dolar
+CUR_AVR,Avrin,Avrin
+CUR_STR,Kingdom Sterling,Kral Sterlini
+CUR_DNR,Golden Dinar,Altın Dinar
+CUR_KRN,Ice Krone,Buz Kronu
+COUNTRY_PL,Pahalistan,Pahalistan
+COUNTRY_FED,United Federation,Birleşik Federasyon
+COUNTRY_AVR,Eurasian Union,Avrasya Birliği
+COUNTRY_STR,Northern Kingdom,Kuzey Krallığı
+COUNTRY_DNR,Desert Emirate,Çöl Emirliği
+COUNTRY_KRN,Iceisle,Buzadası
+RULE_R_EXCHANGE,Exchange at the BUY rate,ALIŞ kuruyla boz
+RULE_R_EXCHANGE_DESC,Pay for the foreign notes you accept at today's BUY rate. Round the payout down to the nearest 5 PL.,Kabul ettiğin yabancı banknotlara bugünün ALIŞ kuruyla öde. Ödemeyi 5 PL'ye aşağı yuvarla.
+RULE_R_CATALOG,Match the catalog,Kataloğa uysun
+RULE_R_CATALOG_DESC,"Color, size and portrait must match the catalog. A note that does not is counterfeit: confiscate it and call the police.","Renk, boyut ve portre kataloğa uymalı. Uymayan banknot sahtedir: el koy ve polisi ara."
+RULE_R_UV,UV strip,UV şerit
+RULE_R_UV_DESC,A genuine note shows the right UV strip color. Missing or wrong color means counterfeit.,Gerçek banknotta doğru renkte UV şerit görünür. Eksik ya da yanlış renk sahtedir.
+RULE_R_SELL_FOREIGN,Selling foreign currency,Döviz satışı
+RULE_R_SELL_FOREIGN_DESC,"Customers may also buy foreign currency at the SELL rate. If the till cannot pay the exact amount, reject.",Müşteri SATIŞ kuruyla döviz de alabilir. Kasa tutarı tam ödeyemiyorsa reddet.
+RULE_R_ID_LIMIT,"ID above 1,000 PL",1.000 PL üzeri kimlik
+RULE_R_ID_LIMIT_DESC,"Above 1,000 PL a valid ID is required. Missing, expired or someone else's ID: reject. Forged ID: call the police. A real ID number's last digit equals the last digit of the sum of its first ten digits.","İşlem 1.000 PL'yi aşarsa geçerli kimlik şart. Kimlik yoksa, süresi geçmişse ya da başkasınınsa reddet. Sahte kimlikte polisi ara. Gerçek kimlik numarasının son hanesi, ilk on hanenin toplamının son hanesine eşittir."
+RULE_R_SERIES,Old series,Eski seri
+RULE_R_SERIES_DESC,Notes of a series that is no longer valid today are handed back to the customer.,Bugün geçerli olmayan seriye ait banknotlar müşteriye iade edilir.
+RULE_R_STOLEN,Stolen serials,Çalıntı seriler
+RULE_R_STOLEN_DESC,Confiscate notes whose serial number is on the bulletin's stolen list and call the police.,Bültendeki çalıntı seri numaralı banknotlara el koy ve polisi ara.
+RULE_R_TORN,Torn notes,Yırtık banknot
+RULE_R_TORN_DESC,Notes with less than half left are handed back. Taped but complete notes are valid.,Yarısından azı kalan banknot iade edilir. Bantlı ama tam banknot geçerlidir.
+RULE_R_WATERMARK,Watermark,Filigran
+RULE_R_WATERMARK_DESC,Hold the note against the backlight: the watermark shape must match the catalog. Missing or wrong means counterfeit.,Banknotu arkadan ışığa tut: filigran şekli kataloğa uymalı. Eksik ya da yanlış olan sahtedir.
+RULE_R_SOURCE,"Source of funds above 5,000 PL",5.000 PL üzeri kaynak beyanı
+RULE_R_SOURCE_DESC,"Above 5,000 PL a source declaration is required. Missing: reject. Amount or signature mismatch: call the police.",İşlem 5.000 PL'yi aşarsa kaynak beyanı şart. Yoksa reddet. Tutar ya da imza uyuşmazsa polisi ara.
+RULE_R_MIDDAY_RATE,Midday rate update,Gün ortası kur
+RULE_R_MIDDAY_RATE_DESC,Rates update at 13:00. Always use the rate valid at the time of the transaction.,Kurlar 13:00'te güncellenir. Her zaman işlem saatindeki kuru kullan.
+RULE_R_WANTED,Wanted persons,Aranan kişiler
+RULE_R_WANTED_DESC,"If a customer matches a face on the wanted list, call the police.",Müşteri aranan kişiler listesindeki yüzlerden biriyse polisi ara.
+RULE_R_MICROTEXT,Microtext,Mikro yazı
+RULE_R_MICROTEXT_DESC,Read the microtext with the magnifier. A single wrong letter means counterfeit.,Mikro yazıyı büyüteçle oku. Tek bir yanlış harf bile sahtedir.
+DESK_DAY,Day %d,Gün %d
+DESK_MISTAKES,Mistakes %d/%d,Hata %d/%d
+DESK_WAITING,Waiting for the next customer...,Sıradaki müşteri bekleniyor...
+DESK_SELL_SAY,I'd like to exchange %s %s.,%s %s bozdurmak istiyorum.
+DESK_BUY_SAY,I'd like to buy %s %s.,%s %s satın almak istiyorum.
+DESK_COUNTER_HINT,"Tap a note to inspect it, or drag it to a zone",İncelemek için banknota dokun ya da bir bölgeye sürükle
+DESK_PAYMENT,Pay: %s,Öde: %s
+DESK_OK,OK,Tamam
+DESK_FREE_LEFT,Free warnings left today: %d,Bugün kalan cezasız uyarı: %d
+DESK_INSPECT_TITLE,Note,Banknot
+DESK_NUMPAD_TITLE,Payment in %s,%s ödemesi
+DESK_REASON_TITLE,Reason for rejecting,Reddetme nedeni
+DESK_RATES,Rates,Kurlar
+DESK_RULES,Rules,Kurallar
+DESK_BUY_RATE,BUY,ALIŞ
+DESK_SELL_RATE,SELL,SATIŞ
+DESK_INFO_SERIAL,Serial: %s,Seri no: %s
+DESK_INFO_SIZE,Size: %d × %d mm,Boyut: %d × %d mm
+DESK_INFO_PORTRAIT,Portrait: %s,Portre: %s
+DESK_INFO_SERIES,Series: %s,Seri: %s
+DESK_CATALOG_ROW,%d × %d mm · portrait %s · UV %s,%d × %d mm · portre %s · UV %s
+DESK_UV_AT_LEFT,left,sol
+DESK_UV_AT_CENTER,center,orta
+DESK_UV_AT_RIGHT,right,sağ
+TOOL_BOOK,Rates & rules,Kurlar & kurallar
+TOOL_CALC,Calculator,Hesap
+TOOL_CATALOG,Catalog,Katalog
+TOOL_UV,UV lamp,UV lamba
+DECISION_COMPLETE,Complete,Tamamla
+DECISION_REJECT,Reject,Reddet
+DECISION_POLICE,Police,Polis
+FATE_ACCEPT,Accept,Kabul
+FATE_RETURN,Return,İade
+FATE_CONFISCATE,Confiscate,El koy
+SLIP_TITLE_OK,Correct! +%s,Doğru! +%s
+SLIP_TITLE_WARNING,WARNING,UYARI
+SLIP_TITLE_FINE,FINE: -%s,CEZA: -%s
+SLIP_WRONG_DECISION,Wrong decision. It should be: %s.,Yanlış karar. Doğrusu: %s.
+SLIP_WRONG_NOTE,Note %d: it should be '%s'.,%d. banknot: doğrusu '%s'.
+SLIP_WRONG_REASON,Wrong reason.,Yanlış neden.
+SLIP_OVERPAID,You overpaid by %s.,%s fazla ödedin.
+SLIP_UNDERPAID,You underpaid by %s.,%s eksik ödedin.
+SLIP_TILL_SHORT,The till cannot pay that.,Kasa bu tutarı ödeyemiyor.
+SLIP_RULE,Rule: %s,Kural: %s
+END_TITLE,Day %d is over,Gün %d bitti
+END_SERVED,Customers: %d (correct: %d),Müşteri: %d (doğru: %d)
+END_MISTAKES,Mistaken transactions: %d,Hatalı işlem: %d
+END_SALARY,Salary: %s,Maaş: %s
+END_BONUS,Bonus: %s,Prim: %s
+END_FINES,Fines: -%s,Ceza: -%s
+END_NET,Pay: %s,Ödenen: %s
+END_NEXT,Next day,Sonraki gün
+END_MENU,Main menu,Ana menü
+END_OVER_FIRED,You were fired.,Kovuldun.
+END_OVER_EVICTED,You were evicted: the rent was not paid twice.,Evden atıldın: kira iki kez ödenmedi.
+END_OVER_FAMILY_LEFT,Your family left for the village.,Ailen köye gitti.
+END_OVER_ARRESTED,The inspector caught you.,Müfettiş seni yakaladı.
+NEWS_01_HEAD,Prices rise again; officials call it 'seasonal',"Fiyatlar yine arttı; yetkililer ""mevsimsel"" dedi"
+NEWS_01_BODY,The lira opens another week at the exchange desks. Experts advise: count your change twice.,Lira yeni haftaya döviz bürolarında başlıyor. Uzmanlar tavsiye ediyor: üstünü iki kez say.
+NEWS_02_HEAD,Eurasian Avrin hits the counters,Avrasya'nın Avrini tezgâhlarda
+NEWS_02_BODY,The new notes are lovely. Counterfeiters think so too: check the catalog.,Yeni banknotlar çok güzel. Sahteciler de öyle düşünüyor: kataloğa bak.
+NEWS_03_HEAD,The boss finally bought a UV lamp,Patron sonunda UV lamba aldı
+NEWS_03_BODY,It was on sale. Hold notes under it: a genuine strip glows in the right color.,İndirimdeymiş. Banknotu altına tut: gerçek şerit doğru renkte parlar.
+NEWS_04_HEAD,"Customers now want foreign cash, too",Müşteriler artık döviz de almak istiyor
+NEWS_04_BODY,Selling currency is allowed. Make sure the till can pay the exact amount.,Döviz satışı serbest. Kasanın tutarı tam ödeyebildiğinden emin ol.
+NEWS_05_HEAD,Ministry: big deals need an ID,Bakanlık: büyük işlemde kimlik şart
+NEWS_05_BODY,"Over 1,000 PL, look at the card and then at the face. Then at the card again.","1.000 PL üzerinde önce karta, sonra yüze bak. Sonra yine karta."
+NEWS_06_HEAD,Old Avrin series pulled overnight,Eski Avrin serisi bir gecede toplatıldı
+NEWS_06_BODY,"Nobody was told, except the newspaper. Return old-series notes politely.",Gazete dışında kimseye haber verilmedi. Eski seriyi nazikçe iade et.
+NEWS_07_HEAD,Bulletin: stolen serials in circulation,Bülten: çalıntı seriler dolaşımda
+NEWS_07_BODY,Check the list in this paper. Confiscate and call the police.,Gazetedeki listeye bak. El koy ve polisi ara.
+NEWS_08_HEAD,Torn notes: tape is not a crime,Yırtık banknot: bant suç değil
+NEWS_08_BODY,Less than half left means return it. Taped but whole is perfectly valid.,Yarısından azı kaldıysa iade et. Bantlı ama tam banknot geçerli.
+NEWS_09_HEAD,Dinar arrives; watermarks under scrutiny,Dinar geliyor; filigranlar mercek altında
+NEWS_09_BODY,Hold the note to the light. The shape must match the catalog.,Banknotu ışığa tut. Şekil kataloğa uymalı.
+NEWS_10_HEAD,Source-of-funds forms now mandatory,Kaynak beyanı artık zorunlu
+NEWS_10_BODY,"Above 5,000 PL, amount and signature must match the ID. Fox says: relax.",5.000 PL üzerinde tutar ve imza kimlikle uyuşmalı. Tilki diyor ki: rahat ol.
+NEWS_11_HEAD,Rates now change at noon; blame the markets,Kurlar artık öğlen de değişiyor
+NEWS_11_BODY,At 13:00 the board changes. Use the rate valid at the moment of the deal.,13:00'te tabela değişiyor. İşlem anındaki kuru kullan.
+NEWS_12_HEAD,Wanted list posted at every window,Aranan listesi her gişede asılı
+NEWS_12_BODY,"If a face on the list shows up at your window, do not smile back.",Listedeki bir yüz gişene gelirse sakın gülümseme.
+NEWS_13_HEAD,Ice Krone joins the board,Buz Kronu tabelaya katıldı
+NEWS_13_BODY,Magnifier sales boom. One wrong letter in the microtext is enough.,Büyüteç satışları patladı. Mikro yazıda tek bir yanlış harf yeter.
+NEWS_14_HEAD,Inspector rumors: someone in a hat?,Müfettiş söylentileri: şapkalı biri mi?
+NEWS_14_BODY,Everyone is suspicious of everyone. Stay by the book today.,Herkes herkesten şüpheli. Bugün kurallara tam uy.
+NEWS_15_HEAD,Devaluation day: the lira loses its hat,Devalüasyon günü: lira şapkasını kaybetti
+NEWS_15_BODY,"Whatever happens, count twice and breathe once.","Ne olursa olsun iki kez say, bir kez nefes al."
+NEWS_FAMILY_GOOD,Your family is doing fine.,Ailen iyi durumda.
+NEWS_FAMILY_WORRIED,Your family is worried.,Ailen endişeli.
+NEWS_FAMILY_BAD,Your family is in a bad way!,Ailen çok kötü durumda!
+NEWS_LAST_UNPAID,Yesterday you did not pay: %s.,Dün ödenmeyen: %s.
+NEWS_RENT_TODAY,Rent is due today: %s,Bugün kira günü: %s
+NEWS_CASH,Cash: %s,Nakit: %s
+MORNING_MASTHEAD,THE PAHALISTAN DAILY,PAHALİSTAN GAZETESİ
+MORNING_DAY,Day %d,Gün %d
+MORNING_RATES,Today's rates,Bugünün kurları
+MORNING_NEW_RULE,New rule,Yeni kural
+MORNING_NO_NEW_RULE,No new rule today. Everything you learned still counts.,Bugün yeni kural yok. Öğrendiğin her şey geçerli.
+MORNING_BULLETIN,Bulletin,Bülten
+MORNING_STOLEN,Stolen serial numbers,Çalıntı seri numaraları
+MORNING_WANTED,Wanted persons,Aranan kişiler
+MORNING_NEW_TOOL,New tool: %s,Yeni araç: %s
+MORNING_START,Start the shift,Mesaiye başla
+MORNING_LEAVE_TITLE,Back to the main menu?,Ana menüye dönülsün mü?
+MORNING_LEAVE_TEXT,Your progress is saved every morning.,İlerlemen her sabah kaydedilir.
+COMMON_YES,Yes,Evet
+COMMON_NO,No,Hayır
+PAUSE_TITLE,Paused,Duraklatıldı
+PAUSE_RESUME,Resume,Devam et
+PAUSE_MENU,Main menu (you will restart this morning),Ana menü (bu sabaha dönersin)
+DESK_SHIFT_OVER,The shift is over,Mesai bitti
+DESK_TO_EVENING,Go to the evening,Akşama geç
+EVENING_TITLE,Evening of day %d,Gün %d akşamı
+EVENING_SUMMARY,Today,Bugün
+EVENING_SKIM,Boss's cut: +%s,Patronun kesintisi: +%s
+EVENING_CASH,Cash: %s,Nakit: %s
+EVENING_AFTER,Cash after expenses: %s,Giderlerden sonra nakit: %s
+EVENING_EXPENSES,Household expenses,Ev giderleri
+EVENING_EXPENSE_NONE,No expenses today.,Bugün gider yok.
+EXPENSE_RENT,Rent,Kira
+EXPENSE_FOOD,Food,Yemek
+EXPENSE_HEATING,Heating,Isınma
+EXPENSE_MEDICINE,Medicine,İlaç
+EVENING_SAVINGS,Savings,Birikim
+EVENING_SAVINGS_LINE,%s savings: %s (worth %s),%s birikimi: %s (değeri %s)
+EVENING_SAVINGS_RATES,"Rate: buy %s, sell %s","Kur: alış %s, satış %s"
+EVENING_TO_FOREIGN,%s → %s,%s → %s
+EVENING_SELL_ALL,Cash in all %s,Hepsini bozdur (%s)
+EVENING_MOOD,Family mood: %d%%,Aile ruh hali: %d%%
+EVENING_WARN,Unpaid expenses hurt your family.,Ödenmeyen giderler ailene zarar verir.
+EVENING_GO_HOME,Go home,Eve git
+GAMEOVER_TITLE,Game over,Oyun bitti
+GAMEOVER_RETRY,Replay the day,Günü tekrar oyna
+MENU_CONTINUE,Continue (day %d),Devam (Gün %d)
+MENU_NEW_GAME,New game,Yeni oyun
+MENU_NEW_CONFIRM_TITLE,Start a new game?,Yeni oyun başlatılsın mı?
+MENU_NEW_CONFIRM_TEXT,Your saved progress will be deleted.,Kayıtlı ilerlemen silinecek.
+EVENING_WILL_PAY,will be paid,ödenecek
+EVENING_WONT_PAY,skipped,ödenmeyecek
+EVENING_CANT_AFFORD,not enough cash,nakit yetmiyor
+END_NO_FINES,Fines: none,Ceza: yok
+DESK_MIDDAY_UPDATE,13:00 — the rates have been updated!,13:00 — Kurlar güncellendi!
+DESK_COUNTER_TOTAL,Counted: %s,Sayılan: %s
+DESK_INFO_MICROTEXT,Microtext: %s,Mikro yazı: %s
+DESK_TILL_EMPTY,empty,boş
+DESK_RATE_BUY_RESULT,We pay (BUY): %s,Ödenecek (ALIŞ): %s
+DESK_RATE_SELL_RESULT,Customer pays (SELL): %s,Müşteri öder (SATIŞ): %s
+DESK_CATALOG_WATERMARK,Watermark: %s,Filigran: %s
+DESK_CATALOG_MICROTEXT,Microtext: %s,Mikro yazı: %s
+DESK_CATALOG_SERIES,Series %s (prefix %s),Seri %s (önek %s)
+DESK_CATALOG_SERIES_SPAN,valid days %d–%d,geçerli: gün %d–%d
+DESK_CATALOG_SERIES_OPEN,valid from day %d,geçerli: gün %d ve sonrası
+TOOL_MAGNIFIER,Magnifier,Büyüteç
+TOOL_TILL,Till,Kasa
+TOOL_RATE_CALC,Rate calculator,Kur hesaplayıcı
+TOOL_COUNTER,Counting machine,Para sayma makinesi
+TOOL_BACKLIGHT,Hold to the light,Işığa tut (basılı tut)
+WM_SHAPE_STAR,star,yıldız
+WM_SHAPE_CIRCLE,circle,daire
+WM_SHAPE_DIAMOND,diamond,elmas
+WM_SHAPE_MOON,moon,ay
+WM_SHAPE_CROWN,crown,taç
+WM_SHAPE_LEAF,leaf,yaprak
+DOC_ID,ID card,Kimlik
+DOC_DECLARATION,Source declaration,Kaynak beyanı
+DOC_PHOTO,Photo #%d,Fotoğraf #%d
+DOC_NUMBER,No: %s,No: %s
+DOC_SIGNATURE,Signature: %s,İmza: %s
+DOC_VALID_UNTIL,Valid through day %d,Geçerlilik: Gün %d'e kadar
+DOC_AMOUNT,Declared amount: %s,Beyan edilen tutar: %s
+EVENING_TOOLS,Tools,Araçlar
+EVENING_BUY_TOOL,Buy: %s (%s),Satın al: %s (%s)
+EVENING_NO_TOOLS,Nothing new in the shop.,Dükkânda yeni bir şey yok.
+STORY_OK,Continue,Devam
+STORY_LOCKED,(not possible),(olanaksız)
+EVENING_LETTER,Letter from home,Evden mektup
+EVENING_STORY_MONEY,Envelope: +%s,Zarf: +%s
+ENDING_COUNT,Endings found: %d / %d,Bulunan sonlar: %d / %d
+ENDING_DAY_REACHED,Day %d,Gün %d
+STAMP_COMPLETE,APPROVED,ONAYLANDI
+STAMP_REJECT,REJECTED,RED
+STAMP_POLICE,POLICE,POLİS
+MODE_DAILY_TITLE,Daily Rate,Günün Kuru
+MODE_ENDLESS_TITLE,Endless,Sonsuz
+MODE_DAILY_STATUS,Left: %d,Kalan: %d
+MODE_ENDLESS_STATUS,Lives: %d,Can: %d
+MODE_SCORE,Score: %d,Puan: %d
+MODE_NEW_RULE,New rule: %s,Yeni kural: %s
+MODE_SEE_RESULT,See result,Sonucu gör
+MODE_RUN_OVER,Run over,Koşu bitti
+MODE_NEW_BEST,New record!,Yeni rekor!
+MODE_BEST,Best: %d,En iyi: %d
+MODE_DAILY_DETAIL,Correct: %d · Mistakes: %d · Time left: %d s,Doğru: %d · Hatalı: %d · Kalan süre: %d sn
+MODE_PRACTICE,Practice run: this score is not recorded.,Alıştırma: bu puan kaydedilmez.
+MODE_ENDLESS_DETAIL,Customers served: %d,Hizmet verilen müşteri: %d
+MODE_RULES_ADDED,New rules: %s,Eklenen kurallar: %s
+MODE_SHARE,Share,Paylaş
+MODE_COPIED,Copied to clipboard,Panoya kopyalandı
+MODE_REPLAY,Play again,Tekrar oyna
+MODE_PRACTICE_BUTTON,Practice (no score),Alıştırma (puansız)
+MODE_NEW_RUN,New run,Yeni koşu
+MENU_DAILY_BEST,Daily Rate · best %d,Günün Kuru · en iyi %d
+MENU_DAILY_PLAY,Daily Rate,Günün Kuru
+MENU_DAILY_PRACTICE,Daily Rate (practice),Günün Kuru (alıştırma)
+MENU_DAILY_LOCKED,Daily Rate (after day 5),Günün Kuru (5. günden sonra)
+MENU_ENDLESS_BEST,Endless · best %d,Sonsuz · en iyi %d
+MENU_ENDLESS_PLAY,Endless,Sonsuz
+MENU_ENDLESS_LOCKED,Endless (after day 10),Sonsuz (10. günden sonra)
+AD_UNAVAILABLE,No ad right now,Reklam şu an yok
+AD_DOUBLE_PAY,Watch an ad: double pay and bonus (+%s),Reklam izle: maaş ve prim 2 katı (+%s)
+AD_BONUS,Ad bonus: +%s,Reklam bonusu: +%s
+AD_RATE_TIP,Watch an ad: call your banker friend,Reklam izle: bankadaki tanıdığı ara
+AD_TIP_UP,"Your banker friend: %s will rise tomorrow, about %s%%.","Bankadaki tanıdık: %s yarın yükselecek, yaklaşık %%%s."
+AD_TIP_DOWN,"Your banker friend: %s will fall tomorrow, about %s%%.","Bankadaki tanıdık: %s yarın düşecek, yaklaşık %%%s."
+AD_TIP_FLAT,Your banker friend: %s will barely move tomorrow.,Bankadaki tanıdık: %s yarın neredeyse hiç oynamayacak.
+AD_OVERTIME,Watch an ad: +45 s overtime,Reklam izle: +45 sn mesai
+AD_RETRY_DAY,Watch an ad: replay the day,Reklam izle: günü tekrar oyna
+AD_DAILY_RETRY,Watch an ad: one more official try,Reklam izle: bir resmi deneme daha
+AD_ENDLESS_CONTINUE,Watch an ad: +1 life,Reklam izle: +1 can
+MARKET_TITLE,Shop,Market
+MARKET_NO_ADS_TITLE,Remove ads,Reklamları Kaldır
+MARKET_NO_ADS_TEXT,One-time purchase. Turns off the ads between days for good and puts a supporter plant on your desk. Optional rewarded ads stay available.,Tek seferlik satın alma. Günler arasındaki reklamları kalıcı olarak kapatır ve masana bir destekçi saksısı koyar. İsteğe bağlı ödüllü reklamlar kalır.
+MARKET_BUY,Buy · %s,Satın al · %s
+MARKET_OWNED,Purchased,Satın alındı
+MARKET_STORE_OFF,Store unavailable,Mağaza şu an yok
+MARKET_RESTORE,Restore purchases,Satın alımları geri yükle
+MARKET_RESTORED,Purchases restored.,Satın alımlar geri yüklendi.
+MARKET_NOTHING_RESTORED,No purchases to restore.,Geri yüklenecek satın alma yok.
+MARKET_BOUGHT,Thank you! Ads are removed.,Teşekkürler! Reklamlar kaldırıldı.
+MARKET_FAILED,The purchase did not go through.,Satın alma tamamlanamadı.
+SUPPORTER,Supporter,Destekçi
+DESK_RECEIPT,RECEIPT,FİŞ
+CONSENT_TITLE,Privacy,Gizlilik
+CONSENT_TEXT,"To improve the game we may collect anonymous usage data (for example which screens are opened) and show ads tailored to you. We never collect your name, location or contacts. You can change this any time in Settings > Privacy options.","Oyunu geliştirmek için anonim kullanım verisi (örneğin hangi ekranların açıldığı) toplayabilir ve sana uygun reklamlar gösterebiliriz. Adın, konumun ya da rehberin asla alınmaz. Bunu istediğin zaman Ayarlar > Gizlilik seçenekleri bölümünden değiştirebilirsin."
+CONSENT_ACCEPT,Accept,Kabul et
+CONSENT_DECLINE,Decline,Reddet
+SETTINGS_PRIVACY,Privacy options,Gizlilik seçenekleri
+MENU_HELP,How to play,Nasıl oynanır
+GUIDE_SKIP,Skip,Atla
+GUIDE_NEXT,Next,İleri
+GUIDE_BACK,Back,Geri
+GUIDE_START,Start,Başla
+GUIDE_PAGE,%d / %d,%d / %d
+GUIDE_CHIP_PAY,Pay bills,Giderleri öde
+GUIDE_CHIP_SAVE,Save in FED,FED biriktir
+GUIDE_CHIP_FAMILY,Family mood,Aile ruh hali
+GUIDE_T1,You work the window,Gişedesin
+GUIDE_B1,"You are a clerk at a small exchange office. Customers come to change money; you decide, you pay out. Keep your family (Selma, Ece and your mother) afloat for 15 days.","Küçük bir döviz bürosunda memursun. Müşteri gelir, parasını bozdurur; sen karar verir ve ödemeyi yaparsın. Ailenin (Selma, Ece ve annen) 15 gün boyunca ayakta kalmasını sağla."
+GUIDE_T2,"Listen, then inspect","Dinle, sonra incele"
+GUIDE_B2,"The speech bubble tells you what the customer wants. Tap a banknote to inspect it: serial, size and portrait are written there. Tools like the UV lamp and magnifier reveal fakes. Today's rules are in the morning paper and under ""Rates & rules"".","Konuşma balonu müşterinin ne istediğini söyler. Banknota dokununca incelersin: seri, boyut ve portre yazar. UV lamba ve büyüteç gibi araçlar sahteyi ortaya çıkarır. Günün kuralları sabah gazetesinde ve ""Kurlar & kurallar"" sayfasında."
+GUIDE_T3,Decide with the stamps,Damgayla karar ver
+GUIDE_B3,"Everything fine? Stamp COMPLETE. Breaks a rule? REJECT and pick why. Fake note, stolen serial or a wanted face? Call the POLICE. Drag a note to the Return or Confiscate tray; a note left in Accept is kept.","Her şey doğruysa TAMAMLA damgasını bas. Kural bozuluyorsa REDDET ve nedenini seç. Sahte banknot, çalıntı seri ya da aranan yüz varsa POLİS. Banknotu İade ya da El koy tepsisine sürükle; Kabul'de bıraktığın banknot kasada kalır."
+GUIDE_T4,Pay the right amount,Doğru parayı öde
+GUIDE_B4,"After approving, tap the receipt and type what you pay. You buy foreign cash at the BUY rate and sell at the SELL rate; payouts round down to a multiple of 5 PL. The calculator and the till view help.","Onayladıysan fişe dokun ve ödediğin tutarı yaz. Dövizi ALIŞ kuruyla alır, SATIŞ kuruyla satarsın; ödemeler 5 PL'nin katına aşağı yuvarlanır. Hesap makinesi ve kasa görünümü yardım eder."
+GUIDE_T5,Mistakes cost money,Hata para kaybettirir
+GUIDE_B5,"The first two mistakes each day are only warnings, after that every one is fined. A correct deal earns a bonus. Eight mistaken deals in a day and you are fired.","Günün ilk iki hatası yalnızca uyarıdır, sonrasında her hata ceza keser. Doğru işlem prim kazandırır. Bir günde sekiz hatalı işlem seni kovdurur."
+GUIDE_T6,Evenings are for the household,Akşam eve dönüş
+GUIDE_B6,"Pay rent, food, heating and medicine from your pay; unpaid bills upset the family, and rent missed twice means eviction. Prices rise every day, so turning cash into FED protects it.","Maaşından kira, yemek, ısınma ve ilacı öde; ödenmeyen gider ailenin moralini bozar, kira iki kez ödenmezse evden atılırsın. Fiyatlar her gün artar; nakdi FED'e çevirmek paranı korur."
+GUIDE_T7,Your choices write the story,Seçimlerin hikayeyi yazar
+GUIDE_B7,"Some visitors offer easy money to bend the rules. It pays fast, but an inspector is coming. There are six different endings.",Bazı ziyaretçiler kuralı eğmen için kolay para önerir. Hızlı kazandırır ama müfettiş yolda. Altı farklı son var.
+TOOL_BOOK_SHORT,Rules,Kurallar
+TOOL_CALC_SHORT,Calc,Hesap
+TOOL_CATALOG_SHORT,Catalog,Katalog
+TOOL_UV_SHORT,UV,UV
+TOOL_MAGNIFIER_SHORT,Zoom,Büyüteç
+TOOL_TILL_SHORT,Till,Kasa
+TOOL_RATE_SHORT,Rates,Kur
+MENU_HELP_SHORT,Guide,Rehber
+MENU_STORY_SUB,15 days · 7 endings,15 gün · 7 farklı son
+MEMO_SENDER_REGION,Regional Directorate,Bölge Müdürlüğü
+MEMO_SENDER_RIZA,Mr. Rıza,Rıza Bey
+MEMO_SENDER_ACCOUNTING,Accounting,Muhasebe
+MEMO_SENDER_CLEANING,Cleaning Staff,Temizlik
+MEMO_SENDER_CENTER,Head Office,Merkez
+MEMO_F1,Reminder: the plant by the window is not to be watered. It is a symbol of drought and should be treated with respect.,"Hatırlatma: pencerenin yanındaki bitkiye su verilmez. Kuraklığın simgesidir, saygı gösterilmelidir."
+MEMO_F2,The heating is broken. The tea is in an electric samovar. The samovar is also broken. Tea is currently an idea.,Kalorifer arızalı. Çay elektrikli semaverde. Semaver de arızalı. Çay şu an bir fikir olarak mevcut.
+MEMO_F3,"Raise requests have been collected under ""inflation difference"". The heading was approved. The raise is pending.","Zam talepleri ""enflasyon farkı"" başlığı altında toplanmıştır. Başlık onaylandı. Zam beklemede."
+MEMO_F4,The counter window will not be cleaned today. Seeing customers clearly is a privilege.,Gişe camı bugün silinmeyecek. Müşterileri net görmek bir ayrıcalıktır.
+MEMO_F5,Please smile at customers. The cost of smiling has not been added to the budget.,Lütfen müşterilere gülümseyin. Gülümseme maliyeti bütçeye eklenmemiştir.
+MEMO_F6,Lunch with family hours have been abolished. Families no longer eat lunch.,Aile ile öğle yemeği saati kaldırılmıştır. Aileler artık öğle yemeği yememektedir.
+MEMO_F7,Anonymous note: watch the smallest banknote. The big ones can look after themselves.,İsimsiz not: en küçük banknota dikkat et. Büyükler kendi başının çaresine bakar.
+MEMO_F8,The number of pencils has dropped to one. Please love the pencil.,Kalem sayısı bire düştü. Lütfen kalemi sevin.
+MEMO_F9,A kind customer left a bag of simit at the door. The bag has been counted. The simit has not.,Nazik bir müşteri kapıya bir poşet simit bıraktı. Poşet sayıldı. Simit sayılmadı.
+MEMO_F10,Remember: behind every queue there is a family waiting at home. Do not tell them that.,Unutmayın: her kuyruğun arkasında evde bekleyen bir aile vardır. Bunu onlara söylemeyin.
+MEMO_STOLEN,URGENT BULLETIN: the following series range has been STOLEN. Confiscate and call the police: %s – %s.,ACİL BÜLTEN: aşağıdaki seri aralığı ÇALINTIDIR. El koyun ve polisi arayın: %s – %s.
+MEMO_CHANGE,Revision: today's directive is cancelled. New directive: %s,Revizyon: bugünkü talimat iptal. Yeni talimat: %s
+DIR_QUOTA,Queues are growing. Serve at least %d customers today.,Kuyruklar uzuyor. Bugün en az %d müşteriye hizmet verin.
+DIR_CALM,Customer satisfaction campaign: reject no more than %d customers today.,Müşteri memnuniyeti kampanyası: bugün en çok %d müşteriyi reddedin.
+DIR_CLEAN,Ledger audit: make no more than %d mistaken transactions today.,Defter denetimi: bugün en çok %d hatalı işlem yapın.
+DIR_SALES,Sales target: complete at least %d exchanges today.,Satış hedefi: bugün en az %d işlemi tamamlayın.
+DIR_CATCH,Head Office wants fraud statistics: call the police at least %d time(s) today.,Merkez sahtecilik istatistiği istiyor: bugün en az %d kez polis çağırın.
+DIR_QUIET,Building reputation: call the police no more than %d times today.,Binanın itibarı: bugün en çok %d kez polis çağırın.
+DIR_RUSH,Rush hour: serve at least %d customers today.,Yoğun mesai: bugün en az %d müşteriye hizmet verin.
+DIR_TITLE,Directive from Head Office,Merkez talimatı
+DIR_REWARD,Fulfilled: +%s,Yerine getirilirse: +%s
+DIR_PENALTY,Otherwise: -%s,Aksi halde: -%s
+DIR_NO_PENALTY,No penalty,Cezası yok
+DIR_PROGRESS,%d / %d,%d / %d
+DIR_CHIP,Directive %d/%d,Talimat %d/%d
+DIR_MET,DIRECTIVE FULFILLED,TALİMAT YERİNE GETİRİLDİ
+DIR_FAILED,DIRECTIVE NOT FULFILLED,TALİMAT YERİNE GETİRİLMEDİ
+DIR_EVENING_MET,Directive fulfilled: +%s,Talimat yerine getirildi: +%s
+DIR_EVENING_FAILED,Directive not fulfilled: %s,Talimat yerine getirilmedi: %s
+OFFICE_TITLE,Office,Ofis
+OFFICE_INBOX,Inbox,Gelen kutusu
+OFFICE_NO_MEMOS,No memos yet. The tube is quiet.,Henüz not yok. Tüp sessiz.
+OFFICE_NEW_MEMO,New memo in the tube!,Tüpte yeni not var!
+OFFICE_READ,READ,OKUNDU
+OFFICE_FROM,From: %s,Gönderen: %s
+OFFICE_STOLEN_LINE,Stolen: %s,Çalıntı: %s
+EVENING_STORY_COST,Out of your pocket: -%s,Cebinden verdiğin: -%s
+RULEBOOK_PREV,Previous,Önceki
+RULEBOOK_NEXT,Next,Sonraki
+RULEBOOK_PAGE,Rule %d / %d,Kural %d / %d
+RULEBOOK_NEW,NEW,YENİ
+RULEBOOK_HOW,How to check,Nasıl denetlenir
+RULEBOOK_PIN,Pin to desk,Masaya iğnele
+RULEBOOK_UNPIN,Unpin from desk,Masadan kaldır
+RULEBOOK_TOOL,Tool: %s,Araç: %s
+RULEBOOK_TOOL_NONE,No tool needed: your eyes are enough,Araç gerekmez: gözlerin yeter
+RULEBOOK_TOOL_LOCKED,(not owned yet),(henüz yok)
+TOOLREF_CALCULATOR,Calculator,Hesap makinesi
+TOOLREF_CATALOG,Catalog,Katalog
+TOOLREF_UV,UV lamp,UV lamba
+TOOLREF_COUNTER,Till view,Kasa görünümü
+TOOLREF_ID,ID card,Kimlik kartı
+TOOLREF_BULLETIN,Bulletin,Bülten
+TOOLREF_BACKLIGHT,Backlight,Arka ışık
+TOOLREF_DECLARATION,Source declaration,Kaynak beyanı
+TOOLREF_MAGNIFIER,Magnifier,Büyüteç
+TOOLREF_NONE,None,Yok
+RULE_R_EXCHANGE_HOW,"1. Open the Calculator. 2. Take the BUY rate of the currency. 3. Multiply, then round DOWN to a multiple of 5 PL. 4. Type the amount on the receipt.","1. Hesap makinesini aç. 2. Para biriminin ALIŞ kurunu al. 3. Çarp, sonra 5 PL'nin katına AŞAĞI yuvarla. 4. Tutarı fişe yaz."
+RULE_R_CATALOG_HOW,"1. Tap a banknote to inspect it. 2. Compare colour, size and portrait with the Catalog. 3. Any mismatch means fake: confiscate it and call the police.","1. İncelemek için banknota dokun. 2. Renk, boyut ve portreyi Katalog ile karşılaştır. 3. Uyuşmazlık sahte demektir: el koy ve polisi ara."
+RULE_R_UV_HOW,1. Switch the UV lamp on. 2. Look at the strip on the note. 3. Check its colour and position in the Catalog. A missing or wrong colour means fake.,1. UV lambayı aç. 2. Banknottaki şeride bak. 3. Rengini ve yerini Katalog'la karşılaştır. Şerit yoksa ya da renk yanlışsa sahtedir.
+RULE_R_SELL_FOREIGN_HOW,"1. Open the Till view. 2. Check you hold enough notes to pay the exact amount. 3. If you cannot, reject: never short-change the customer.",1. Kasa görünümünü aç. 2. Tutarı tam ödemeye yetecek banknotun var mı bak. 3. Yetmiyorsa reddet: müşteriye eksik ödeme yapılmaz.
+RULE_R_ID_LIMIT_HOW,"1. Add up the PL value of the deal. 2. Over the limit? Ask for the ID card. 3. Check name, face and expiry date. Missing, expired or someone else's: reject. Forged: police.","1. İşlemin PL değerini topla. 2. Sınırı aştı mı? Kimlik iste. 3. Ad, yüz ve son kullanma tarihine bak. Yok, süresi geçmiş ya da başkasının: reddet. Sahteyse: polis."
+RULE_R_SERIES_HOW,"1. Read the series code at the start of the serial number. 2. Look it up in the Catalog under ""Series"". 3. Series not valid today: drop the note on the Return tray.","1. Seri numarasının başındaki seri kodunu oku. 2. Katalog'da ""Seri"" satırından bak. 3. Seri bugün geçerli değilse banknotu İade tepsisine bırak."
+RULE_R_STOLEN_HOW,1. Open the Bulletin tab. 2. Compare every note's serial with the stolen ranges. 3. A match: confiscate the note and call the police. New bulletins arrive through the tube.,1. Bülten sekmesini aç. 2. Her banknotun seri numarasını çalıntı aralıklarıyla karşılaştır. 3. Eşleşme varsa el koy ve polisi ara. Yeni bültenler tüple gelir.
+RULE_R_TORN_HOW,1. Inspect the note: how much is missing? 2. Less than half left: return it. 3. Taped but whole: it is valid.,1. Banknotu incele: ne kadarı eksik? 2. Yarısından azı kalmışsa iade et. 3. Bantlı ama bütünse geçerlidir.
+RULE_R_WATERMARK_HOW,1. Hold the Backlight button to look through the note. 2. Compare the watermark shape with the Catalog. 3. Missing or wrong shape: fake.,1. Arka ışık düğmesini basılı tutarak banknota karşıdan bak. 2. Filigran şeklini Katalog'la karşılaştır. 3. Yoksa ya da şekil yanlışsa sahtedir.
+RULE_R_SOURCE_HOW,1. Check the deal total. 2. Over the limit? The customer must hand in a source declaration. 3. Missing: reject. Amount or signature mismatch: police.,1. İşlem toplamına bak. 2. Sınırı aştı mı? Müşteri kaynak beyanı getirmeli. 3. Yoksa reddet. Tutar ya da imza uyuşmuyorsa polisi ara.
+RULE_R_MIDDAY_RATE_HOW,1. Watch the clock. 2. At 13:00 the rates change. 3. Always pay with the rate valid at the moment of the deal; the Rates tab shows the current one.,1. Saate bak. 2. 13:00'te kurlar değişir. 3. Her zaman işlem anındaki kurla öde; Kurlar sekmesi güncel olanı gösterir.
+RULE_R_WANTED_HOW,1. Open the Bulletin tab and study the wanted faces. 2. Compare them with the customer's face and photo number. 3. A match: call the police.,1. Bülten sekmesini aç ve aranan yüzlere bak. 2. Müşterinin yüzü ve fotoğraf numarasıyla karşılaştır. 3. Eşleşirse polisi ara.
+RULE_R_MICROTEXT_HOW,1. Switch the Magnifier on. 2. Read the tiny line printed on the note. 3. Compare it letter by letter with the Catalog. One wrong letter: fake.,1. Büyüteci aç. 2. Banknotun üstündeki minik yazıyı oku. 3. Katalog'la harf harf karşılaştır. Tek bir yanlış harf bile sahtedir.
+SETTINGS_PIXEL,Pixel look (retro screen),Piksel görünümü (retro ekran)
+CALL_SENDER_SELMA,Phone: Selma,Telefon: Selma
+CALL_SENDER_ANNE,Phone: your mother,Telefon: annen
+CALL_SENDER_ECE,Phone: Ece,Telefon: Ece
+CALL_SENDER_LANDLORD,Phone: the landlord,Telefon: ev sahibi
+CALL_SENDER_UNKNOWN,Phone: unknown number,Telefon: bilinmeyen numara
+CALL_C1,Ece's class trip fee is 40 PL and the teacher is waiting for an answer. Shall I say yes?,"Ece'nin sınıf gezisi parası 40 PL, öğretmen cevap bekliyor. Evet diyeyim mi?"
+CALL_C1_PAY,"""Say yes. I'll cover it."" (-40 PL)","""Evet de. Ben karşılarım."" (-40 PL)"
+CALL_C1_LATER,"""Tell her next week.""","""Haftaya söyle."""
+CALL_C2,It's me. Is it cold in that office? I wanted to hear your voice. Don't answer if you're busy.,Benim. O ofis soğuk mu? Sesini duymak istedim. Meşgulsen cevap verme.
+CALL_C2_TALK,Stay on the line for a minute,Bir dakika konuş
+CALL_C2_HANG,"""I'm at the window, Mother. Later.""","""Gişedeyim anne. Sonra."""
+CALL_C3,Dad! I learned to count in tens today. Will you hear me count tonight? Please?,Baba! Bugün onar onar saymayı öğrendim. Bu akşam sayışımı dinler misin? Lütfen?
+CALL_C3_PROMISE,"""I'll be home before the soup cools.""","""Çorba soğumadan evde olacağım."""
+CALL_C3_BUSY,"""Not now, sweetheart.""","""Şimdi olmaz kızım."""
+CALL_C4,"The rent goes up next month. If you pay a small advance today, I'll round it down. Think of it as friendship.",Gelecek ay kira artıyor. Bugün küçük bir avans verirsen yuvarlarım. Dostluk say.
+CALL_C4_ASK,"""Let me think about it.""","""Düşüneyim."""
+CALL_C4_PAY,Pay the advance (-60 PL),Avansı öde (-60 PL)
+CALL_C5,"Hello, clerk with the careful hands. A friend sends greetings. We'll talk soon. Do not hang up, it would be rude.","Merhaba, özenli elli memur. Bir dost selam gönderiyor. Yakında konuşuruz. Kapatma, ayıp olur."
+CALL_C5_HANG,Hang up,Telefonu kapat
+CALL_C5_LISTEN,Listen to the end,Sonuna kadar dinle
+OFFICE_CALL_MISSED,Missed call,Cevapsız arama
+OFFICE_CALL_ANSWERED,You answered.,Cevapladın.
+EVENING_CALLS_MISSED,Missed calls: %d,Cevapsız aramalar: %d
+GUIDE_CHIP_OFFICE,Office,Ofis
+GUIDE_CHIP_PHONE,Phone,Telefon
+GUIDE_CHIP_PIN,Pin,İğne
+GUIDE_T8,Orders from above,Yukarıdan emirler
+GUIDE_B8,"Each morning Head Office sends a directive: a target with a bonus or a penalty. It never changes what is right, only what pays. During the day notes drop through the tube: urgent bulletins add stolen serials, some change the directive, and the phone asks for small favours. Pin the rules you keep forgetting to your desk from the Rulebook.","Her sabah Merkez bir talimat gönderir: prim ya da kesintili bir hedef. Neyin doğru olduğunu değiştirmez, yalnızca neyin kazandırdığını. Gün içinde tüple notlar düşer: acil bültenler çalıntı seri ekler, bazıları talimatı değiştirir, telefon küçük iyilikler ister. Unuttuğun kuralları Kılavuz'dan masana iğnele."

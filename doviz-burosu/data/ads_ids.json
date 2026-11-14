@@ -1,0 +1,24 @@
+{
+	"_comment": "Reklam ve satın alma kimlikleri. AdMob uygulama/reklam birimi kimlikleri GİZLİ DEĞİLDİR (APK içinde görünür) ama yanlış kimlikle gerçek reklam açmak hesabı riske atar: gerçek kimlikler yalnızca kullanıcıdan gelir. mode=test iken Google'ın herkese açık TEST kimlikleri kullanılır (geliştirme ve debug APK). Yayın için: mode=real yap, real_* alanlarını doldur, `python3 tools/sync_ads_config.py` çalıştır (AdMob manifest kaydını üretir), sonra release export al. Gerçek kimlik boşsa mode=real sessizce test'e düşer.",
+	"mode": "test",
+	"providers": {
+		"admob": true,
+		"play_billing": false
+	},
+	"android": {
+		"test_app_id": "ca-app-pub-3940256099942544~3347511713",
+		"test_rewarded_unit": "ca-app-pub-3940256099942544/5224354917",
+		"test_interstitial_unit": "ca-app-pub-3940256099942544/1033173712",
+		"real_app_id": "",
+		"real_rewarded_unit": "",
+		"real_interstitial_unit": ""
+	},
+	"ads": {
+		"max_ad_content_rating": "PG",
+		"reload_delay_seconds": 20,
+		"reload_max_delay_seconds": 240
+	},
+	"billing": {
+		"product_ids": {"no_ads": "no_ads"}
+	}
+}

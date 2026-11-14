@@ -1,0 +1,29 @@
+{
+	"day": 1,
+	"beats": [
+		{
+			"id": "d01_radio",
+			"after": 0,
+			"character": "radio",
+			"lines": [
+				"S_D01_RADIO_1",
+				"S_D01_RADIO_2"
+			]
+		},
+		{
+			"id": "d01_riza",
+			"after": 0,
+			"character": "riza",
+			"lines": [
+				"S_D01_RIZA_1",
+				"S_D01_RIZA_2",
+				"S_D01_RIZA_3"
+			]
+		}
+	],
+	"letters": [
+		{
+			"key": "L_01_A"
+		}
+	]
+}

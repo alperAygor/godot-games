@@ -1,0 +1,40 @@
+{
+	"day": 6,
+	"beats": [
+		{
+			"id": "d06_hayri",
+			"after": 2,
+			"character": "hayri",
+			"lines": [
+				"S_D06_HAYRI_1",
+				"S_D06_HAYRI_2"
+			],
+			"customer": {
+				"scenario": "old_series",
+				"expect": "reject"
+			},
+			"on_decision": {
+				"complete": {
+					"counters": {
+						"hayri_helped": 1
+					}
+				},
+				"reject": {
+					"counters": {
+						"hayri_refused": 1
+					}
+				},
+				"police": {
+					"counters": {
+						"hayri_refused": 1
+					}
+				}
+			}
+		}
+	],
+	"letters": [
+		{
+			"key": "L_06_A"
+		}
+	]
+}

@@ -1,0 +1,8 @@
+{
+	"_comment": "Desteklenen diller ve kendi dillerindeki adları. Yeni dil: assets/translations/strings.csv'ye sütun ekle, buraya da kaydını ekle.",
+	"default": "en",
+	"languages": {
+		"en": "English",
+		"tr": "Türkçe"
+	}
+}

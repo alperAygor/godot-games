@@ -1,0 +1,82 @@
+{
+	"_comment": "Hayali para birimleri (gerçek banknot görseli yok). Tutarlar tam birimdir (kuruşa çevirme Money'de). rate = 1 birimin PL karşılığı x10000 (başlangıç kuru, 1. gün orta kur). spread_bp = alış/satış arası toplam fark (baz puan, 100 = %1). colors/denominations aynı sırada. size_mm = base + sıra*step. Seri geçerlilik günleri dahil (valid_until null = süresiz).",
+	"local": "PL",
+	"watermark_shapes": ["star", "circle", "diamond", "moon", "crown", "leaf"],
+	"currencies": {
+		"PL": {
+			"name_key": "CUR_PL", "country_key": "COUNTRY_PL", "from_day": 1, "rate": 10000, "spread_bp": 0,
+			"denominations": [5, 10, 20, 50, 100, 200],
+			"colors": ["#8FBF7A", "#6FB3A0", "#E0A458", "#D9776B", "#9B7ED0", "#5E8FD6"],
+			"size_base": [120, 60], "size_step": [4, 2],
+			"pattern": "waves",
+			"uv": {"color": "#7CF2FF", "position": "left"},
+			"watermark": "star",
+			"microtext": "PAHALISTAN MERKEZ BANKASI",
+			"serial_digits": 7,
+			"series": [{"id": "PL1", "prefix": "PA", "valid_from": 1, "valid_until": null}]
+		},
+		"FED": {
+			"name_key": "CUR_FED", "country_key": "COUNTRY_FED", "from_day": 1, "rate": 300000, "spread_bp": 200,
+			"denominations": [1, 5, 10, 20, 50, 100],
+			"colors": ["#A5C98F", "#8EC4A6", "#C9D98B", "#8FD1C4", "#B6D07A", "#6FBF8E"],
+			"size_base": [116, 58], "size_step": [3, 2],
+			"pattern": "stripes",
+			"uv": {"color": "#FFE066", "position": "right"},
+			"watermark": "circle",
+			"microtext": "UNITED FEDERATION RESERVE",
+			"serial_digits": 7,
+			"series": [{"id": "FD1", "prefix": "FA", "valid_from": 1, "valid_until": null}]
+		},
+		"AVR": {
+			"name_key": "CUR_AVR", "country_key": "COUNTRY_AVR", "from_day": 2, "rate": 330000, "spread_bp": 220,
+			"denominations": [5, 10, 20, 50, 100, 200],
+			"colors": ["#8FB8E8", "#E8B0C8", "#E8C86A", "#7FC8A9", "#B19CE0", "#E88F7A"],
+			"size_base": [110, 62], "size_step": [5, 3],
+			"pattern": "stars",
+			"uv": {"color": "#FF9AE6", "position": "center"},
+			"watermark": "diamond",
+			"microtext": "AVRASYA BIRLIGI BANKASI",
+			"serial_digits": 7,
+			"series": [
+				{"id": "AV1", "prefix": "AE", "valid_from": 2, "valid_until": 5},
+				{"id": "AV2", "prefix": "AF", "valid_from": 4, "valid_until": null}
+			]
+		},
+		"STR": {
+			"name_key": "CUR_STR", "country_key": "COUNTRY_STR", "from_day": 6, "rate": 380000, "spread_bp": 250,
+			"denominations": [5, 10, 20, 50],
+			"colors": ["#C98B8B", "#8BC9A3", "#8BA3C9", "#C9C08B"],
+			"size_base": [124, 64], "size_step": [6, 2],
+			"pattern": "crowns",
+			"uv": {"color": "#9AFFB0", "position": "left"},
+			"watermark": "crown",
+			"microtext": "KUZEY KRALLIGI HAZINESI",
+			"serial_digits": 7,
+			"series": [{"id": "ST1", "prefix": "KS", "valid_from": 6, "valid_until": null}]
+		},
+		"DNR": {
+			"name_key": "CUR_DNR", "country_key": "COUNTRY_DNR", "from_day": 9, "rate": 900000, "spread_bp": 300,
+			"denominations": [1, 5, 10, 50],
+			"colors": ["#E3C16F", "#D9A441", "#C98A2B", "#B0731F"],
+			"size_base": [130, 66], "size_step": [4, 2],
+			"pattern": "dunes",
+			"uv": {"color": "#FF8A5C", "position": "right"},
+			"watermark": "moon",
+			"microtext": "COL EMIRLIGI ALTIN KASASI",
+			"serial_digits": 7,
+			"series": [{"id": "DN1", "prefix": "CD", "valid_from": 9, "valid_until": null}]
+		},
+		"KRN": {
+			"name_key": "CUR_KRN", "country_key": "COUNTRY_KRN", "from_day": 13, "rate": 2500, "spread_bp": 400,
+			"denominations": [50, 100, 200, 500],
+			"colors": ["#A8D5E2", "#7FB8D0", "#5C9BBE", "#3F7FA6"],
+			"size_base": [112, 56], "size_step": [6, 3],
+			"pattern": "snow",
+			"uv": {"color": "#C8A6FF", "position": "center"},
+			"watermark": "leaf",
+			"microtext": "BUZADASI ULUSAL BANKASI",
+			"serial_digits": 7,
+			"series": [{"id": "KR1", "prefix": "BK", "valid_from": 13, "valid_until": null}]
+		}
+	}
+}

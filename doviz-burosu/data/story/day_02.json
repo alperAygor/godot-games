@@ -1,0 +1,22 @@
+{
+	"day": 2,
+	"beats": [
+		{
+			"id": "d02_hayri",
+			"after": 2,
+			"character": "hayri",
+			"lines": [
+				"S_D02_HAYRI_1",
+				"S_D02_HAYRI_2"
+			],
+			"customer": {
+				"scenario": "clean"
+			}
+		}
+	],
+	"letters": [
+		{
+			"key": "L_02_A"
+		}
+	]
+}

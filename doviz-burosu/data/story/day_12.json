@@ -1,0 +1,136 @@
+{
+	"day": 12,
+	"beats": [
+		{
+			"id": "d12_radio",
+			"after": 0,
+			"character": "radio",
+			"lines": [
+				"S_D12_RADIO_1",
+				"S_D12_RADIO_2"
+			]
+		},
+		{
+			"id": "d12_deniz_proof",
+			"after": 2,
+			"character": "deniz",
+			"requires": {
+				"flags": {
+					"deniz_ally": true
+				}
+			},
+			"lines": [
+				"S_D12_DENIZ_PROOF_1",
+				"S_D12_DENIZ_PROOF_2"
+			],
+			"customer": {
+				"scenario": "clean"
+			},
+			"choice": {
+				"options": [
+					{
+						"id": "give",
+						"tag": "evidence",
+						"text": "S_D12_DENIZ_PROOF_OPT_GIVE",
+						"effects": {
+							"flags": {
+								"deniz_evidence": true
+							}
+						},
+						"requires": {
+							"counters_min": {
+								"tilki_reported": 1
+							}
+						}
+					},
+					{
+						"id": "later",
+						"tag": "honest",
+						"text": "S_D12_DENIZ_PROOF_OPT_LATER",
+						"effects": {}
+					}
+				]
+			}
+		},
+		{
+			"id": "d12_deniz_alone",
+			"after": 2,
+			"character": "deniz",
+			"requires": {
+				"flags": {
+					"deniz_ally": false
+				}
+			},
+			"lines": [
+				"S_D12_DENIZ_ALONE_1",
+				"S_D12_DENIZ_ALONE_2"
+			],
+			"customer": {
+				"scenario": "clean"
+			}
+		},
+		{
+			"id": "d12_anne",
+			"after": 3,
+			"character": "anne",
+			"lines": [
+				"S_D12_ANNE_1",
+				"S_D12_ANNE_2",
+				"S_D12_ANNE_3"
+			],
+			"customer": {
+				"scenario": "old_series",
+				"expect": "reject"
+			},
+			"choice": {
+				"options": [
+					{
+						"id": "pocket",
+						"tag": "kind",
+						"text": "S_D12_ANNE_OPT_POCKET",
+						"effects": {
+							"cash_pl": -150,
+							"counters": {
+								"kind": 2
+							},
+							"flags": {
+								"anne_helped": true
+							}
+						}
+					},
+					{
+						"id": "rule",
+						"tag": "honest",
+						"text": "S_D12_ANNE_OPT_RULE",
+						"effects": {
+							"flags": {
+								"anne_rule": true
+							}
+						}
+					}
+				]
+			}
+		}
+	],
+	"letters": [
+		{
+			"key": "L_12_ANNE",
+			"requires": {
+				"flags": {
+					"anne_helped": true
+				}
+			}
+		},
+		{
+			"key": "L_12_ANNE_RULE",
+			"requires": {
+				"flags": {
+					"anne_rule": true
+				}
+			}
+		},
+		{
+			"key": "L_12_A"
+		}
+	]
+}

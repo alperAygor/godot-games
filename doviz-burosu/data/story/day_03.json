@@ -1,0 +1,56 @@
+{
+	"day": 3,
+	"beats": [
+		{
+			"id": "d03_riza",
+			"after": 0,
+			"character": "riza",
+			"lines": [
+				"S_D03_RIZA_1",
+				"S_D03_RIZA_2"
+			]
+		},
+		{
+			"id": "d03_kerem",
+			"after": 2,
+			"character": "kerem",
+			"lines": [
+				"S_D03_KEREM_1",
+				"S_D03_KEREM_2",
+				"S_D03_KEREM_3"
+			],
+			"customer": {
+				"scenario": "clean"
+			},
+			"choice": {
+				"options": [
+					{
+						"id": "round",
+						"tag": "kind",
+						"text": "S_D03_KEREM_OPT_ROUND",
+						"effects": {
+							"cash_pl": -10,
+							"counters": {
+								"kind": 1
+							},
+							"flags": {
+								"kerem_gift": true
+							}
+						}
+					},
+					{
+						"id": "rate",
+						"tag": "honest",
+						"text": "S_D03_KEREM_OPT_RATE",
+						"effects": {}
+					}
+				]
+			}
+		}
+	],
+	"letters": [
+		{
+			"key": "L_03_A"
+		}
+	]
+}

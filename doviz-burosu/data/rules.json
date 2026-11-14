@@ -1,0 +1,18 @@
+{
+	"_comment": "Kurallar (plan 2.3). from_day: kuralın açıldığı gün. check: RuleEngine'in bildiği kontrol türü. counterfeit kurallarında fakes = bu kuralın yakaladığı Banknote.FAKE_* etiketleri. limit_pl_minor: işlem değeri (PL, kuruş) bu sınırı AŞARSA kural devreye girer. Başlık/açıklama anahtarları strings.csv'de.",
+	"rules": [
+		{"id": "R_EXCHANGE", "from_day": 1, "check": "payout", "tool": "calculator"},
+		{"id": "R_CATALOG", "from_day": 2, "check": "counterfeit", "tool": "catalog", "fakes": ["wrong_color", "wrong_size", "wrong_portrait"]},
+		{"id": "R_UV", "from_day": 3, "check": "counterfeit", "tool": "uv", "fakes": ["uv_missing", "uv_wrong_color"]},
+		{"id": "R_SELL_FOREIGN", "from_day": 4, "check": "stock", "tool": "counter"},
+		{"id": "R_ID_LIMIT", "from_day": 5, "check": "id", "tool": "id", "limit_pl_minor": 100000},
+		{"id": "R_SERIES", "from_day": 6, "check": "series", "tool": "catalog"},
+		{"id": "R_STOLEN", "from_day": 7, "check": "stolen", "tool": "bulletin"},
+		{"id": "R_TORN", "from_day": 8, "check": "torn", "tool": "none"},
+		{"id": "R_WATERMARK", "from_day": 9, "check": "counterfeit", "tool": "backlight", "fakes": ["watermark_missing", "watermark_wrong_shape"]},
+		{"id": "R_SOURCE", "from_day": 10, "check": "source", "tool": "declaration", "limit_pl_minor": 500000},
+		{"id": "R_MIDDAY_RATE", "from_day": 11, "check": "midday", "tool": "calculator"},
+		{"id": "R_WANTED", "from_day": 12, "check": "wanted", "tool": "bulletin"},
+		{"id": "R_MICROTEXT", "from_day": 13, "check": "counterfeit", "tool": "magnifier", "fakes": ["microtext_error"]}
+	]
+}

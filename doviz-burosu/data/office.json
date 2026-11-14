@@ -1,0 +1,209 @@
+{
+	"_comment": "Ofis: Merkez talimatları (günün hedefi; yerine getirilirse prim, getirilmezse kesinti) ve gün içinde tüple gelen notlar. type: min_served/max_rejects/min_police/max_police/max_mistakes/min_complete (sayılan istatistik karar_türü_sayısı). from_day: ilk geçerli gün. weight: seçilme ağırlığı. Gün 1-2 eğitimdir: talimat ve not yok. memos: kind flavor (yalnızca metin), stolen_add (bülten yeni çalıntı seri ekler; R_STOLEN açıkken), directive_change (talimat değişir).",
+	"directive_from_day": 3,
+	"memo_from_day": 4,
+	"inspector_day_directive": "clean",
+	"directives": [
+		{
+			"id": "quota",
+			"type": "min_served",
+			"value": 13,
+			"from_day": 3,
+			"weight": 3,
+			"reward_pl": 60,
+			"penalty_pl": 30
+		},
+		{
+			"id": "calm",
+			"type": "max_rejects",
+			"value": 2,
+			"from_day": 3,
+			"weight": 2,
+			"reward_pl": 70,
+			"penalty_pl": 30
+		},
+		{
+			"id": "clean",
+			"type": "max_mistakes",
+			"value": 0,
+			"from_day": 4,
+			"weight": 2,
+			"reward_pl": 100,
+			"penalty_pl": 0
+		},
+		{
+			"id": "sales",
+			"type": "min_complete",
+			"value": 9,
+			"from_day": 4,
+			"weight": 2,
+			"reward_pl": 60,
+			"penalty_pl": 25
+		},
+		{
+			"id": "catch",
+			"type": "min_police",
+			"value": 1,
+			"from_day": 7,
+			"weight": 2,
+			"reward_pl": 80,
+			"penalty_pl": 20
+		},
+		{
+			"id": "quiet",
+			"type": "max_police",
+			"value": 0,
+			"from_day": 7,
+			"weight": 2,
+			"reward_pl": 90,
+			"penalty_pl": 0
+		},
+		{
+			"id": "rush",
+			"type": "min_served",
+			"value": 16,
+			"from_day": 10,
+			"weight": 2,
+			"reward_pl": 90,
+			"penalty_pl": 40
+		}
+	],
+	"memos": {
+		"flavor": [
+			"F1",
+			"F2",
+			"F3",
+			"F4",
+			"F5",
+			"F6",
+			"F7",
+			"F8",
+			"F9",
+			"F10"
+		],
+		"stolen_from_day": 7,
+		"min_served": 2,
+		"max_served": 7,
+		"second_memo_from_day": 9,
+		"second_memo_percent": 35,
+		"kind_weights": {
+			"flavor": 5,
+			"stolen_add": 3,
+			"directive_change": 2,
+			"call": 3
+		},
+		"calls_from_day": 4
+	},
+	"calls": [
+		{
+			"id": "C1",
+			"from_day": 4,
+			"sender_key": "CALL_SENDER_SELMA",
+			"text_key": "CALL_C1",
+			"options": [
+				{
+					"id": "pay",
+					"text_key": "CALL_C1_PAY",
+					"cash_pl": -40,
+					"mood": 4,
+					"kind": 1
+				},
+				{
+					"id": "later",
+					"text_key": "CALL_C1_LATER",
+					"cash_pl": 0,
+					"mood": -3,
+					"kind": 0
+				}
+			]
+		},
+		{
+			"id": "C2",
+			"from_day": 5,
+			"sender_key": "CALL_SENDER_ANNE",
+			"text_key": "CALL_C2",
+			"options": [
+				{
+					"id": "talk",
+					"text_key": "CALL_C2_TALK",
+					"cash_pl": 0,
+					"mood": 4,
+					"kind": 0
+				},
+				{
+					"id": "hang",
+					"text_key": "CALL_C2_HANG",
+					"cash_pl": 0,
+					"mood": -2,
+					"kind": 0
+				}
+			]
+		},
+		{
+			"id": "C3",
+			"from_day": 6,
+			"sender_key": "CALL_SENDER_ECE",
+			"text_key": "CALL_C3",
+			"options": [
+				{
+					"id": "promise",
+					"text_key": "CALL_C3_PROMISE",
+					"cash_pl": 0,
+					"mood": 5,
+					"kind": 0
+				},
+				{
+					"id": "busy",
+					"text_key": "CALL_C3_BUSY",
+					"cash_pl": 0,
+					"mood": -2,
+					"kind": 0
+				}
+			]
+		},
+		{
+			"id": "C4",
+			"from_day": 8,
+			"sender_key": "CALL_SENDER_LANDLORD",
+			"text_key": "CALL_C4",
+			"options": [
+				{
+					"id": "ask",
+					"text_key": "CALL_C4_ASK",
+					"cash_pl": 0,
+					"mood": 1,
+					"kind": 0
+				},
+				{
+					"id": "pay",
+					"text_key": "CALL_C4_PAY",
+					"cash_pl": -60,
+					"mood": 3,
+					"kind": 0
+				}
+			]
+		},
+		{
+			"id": "C5",
+			"from_day": 9,
+			"sender_key": "CALL_SENDER_UNKNOWN",
+			"text_key": "CALL_C5",
+			"options": [
+				{
+					"id": "hang",
+					"text_key": "CALL_C5_HANG",
+					"cash_pl": 0,
+					"mood": 0,
+					"kind": 0
+				},
+				{
+					"id": "listen",
+					"text_key": "CALL_C5_LISTEN",
+					"cash_pl": 0,
+					"mood": -3,
+					"kind": 0
+				}
+			]
+		}
+	]
+}

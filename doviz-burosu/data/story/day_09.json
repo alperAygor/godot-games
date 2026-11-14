@@ -1,0 +1,75 @@
+{
+	"day": 9,
+	"beats": [
+		{
+			"id": "d09_deniz",
+			"after": 2,
+			"character": "deniz",
+			"lines": [
+				"S_D09_DENIZ_1",
+				"S_D09_DENIZ_2",
+				"S_D09_DENIZ_3"
+			],
+			"customer": {
+				"scenario": "clean"
+			},
+			"choice": {
+				"options": [
+					{
+						"id": "ally",
+						"tag": "ally",
+						"text": "S_D09_DENIZ_OPT_ALLY",
+						"effects": {
+							"flags": {
+								"deniz_ally": true
+							}
+						}
+					},
+					{
+						"id": "decline",
+						"tag": "honest",
+						"text": "S_D09_DENIZ_OPT_DECLINE",
+						"effects": {
+							"flags": {
+								"deniz_declined": true
+							}
+						}
+					}
+				]
+			}
+		},
+		{
+			"id": "d09_kerem",
+			"after": 3,
+			"character": "kerem",
+			"requires": {
+				"flags": {
+					"kerem_gift": true
+				}
+			},
+			"lines": [
+				"S_D09_KEREM_1",
+				"S_D09_KEREM_2"
+			],
+			"customer": {
+				"scenario": "clean"
+			},
+			"effects": {
+				"mood": 8
+			}
+		}
+	],
+	"letters": [
+		{
+			"key": "L_09_ALLY",
+			"requires": {
+				"flags": {
+					"deniz_ally": true
+				}
+			}
+		},
+		{
+			"key": "L_09_A"
+		}
+	]
+}

@@ -1,0 +1,6 @@
+{
+	"_comment": "IAP ürün kataloğu. Kimlikler Google Play Console'daki ürün kimlikleriyle aynı olmalı. mock_price sadece geliştirmedeki sahte mağaza içindir; gerçek fiyat mağazadan gelir.",
+	"products": {
+		"no_ads": {"type": "non_consumable", "mock_price": "$2.99"}
+	}
+}

@@ -1,0 +1,228 @@
+{
+	"day": 15,
+	"beats": [
+		{
+			"id": "d15_radio",
+			"after": 0,
+			"character": "radio",
+			"lines": [
+				"S_D15_RADIO_1",
+				"S_D15_RADIO_2"
+			]
+		},
+		{
+			"id": "d15_riza_pleased",
+			"after": 0,
+			"character": "riza",
+			"requires": {
+				"flags": {
+					"inspector_pleased": true
+				}
+			},
+			"lines": [
+				"S_D15_RIZA_PLEASED_1",
+				"S_D15_RIZA_PLEASED_2"
+			]
+		},
+		{
+			"id": "d15_riza",
+			"after": 0,
+			"character": "riza",
+			"requires": {
+				"flags": {
+					"inspector_pleased": false
+				}
+			},
+			"lines": [
+				"S_D15_RIZA_1",
+				"S_D15_RIZA_2"
+			]
+		},
+		{
+			"id": "d15_tilki",
+			"after": 2,
+			"character": "tilki",
+			"lines": [
+				"S_D15_TILKI_1",
+				"S_D15_TILKI_2"
+			],
+			"customer": {
+				"scenario": "counterfeit",
+				"expect": "police"
+			},
+			"choice": {
+				"options": [
+					{
+						"id": "passport",
+						"tag": "escape",
+						"text": "S_D15_TILKI_OPT_PASSPORT",
+						"effects": {
+							"flags": {
+								"passport": true
+							},
+							"savings": {
+								"FED": -1000
+							}
+						},
+						"requires": {
+							"counters_min": {
+								"tilki_money": 1
+							},
+							"savings_min": {
+								"FED": 1000
+							}
+						}
+					},
+					{
+						"id": "refuse",
+						"tag": "honest",
+						"text": "S_D15_TILKI_OPT_REFUSE",
+						"effects": {}
+					}
+				]
+			},
+			"on_decision": {
+				"complete": {
+					"counters": {
+						"tilki_helped": 1
+					}
+				},
+				"police": {
+					"counters": {
+						"tilki_reported": 1
+					}
+				}
+			}
+		},
+		{
+			"id": "d15_deniz_last",
+			"after": 4,
+			"character": "deniz",
+			"requires": {
+				"flags": {
+					"deniz_ally": true,
+					"deniz_evidence": false
+				}
+			},
+			"lines": [
+				"S_D15_DENIZ_LAST_1",
+				"S_D15_DENIZ_LAST_2"
+			],
+			"customer": {
+				"scenario": "clean"
+			},
+			"choice": {
+				"options": [
+					{
+						"id": "give",
+						"tag": "evidence",
+						"text": "S_D15_DENIZ_LAST_OPT_GIVE",
+						"effects": {
+							"flags": {
+								"deniz_evidence": true
+							}
+						},
+						"requires": {
+							"counters_min": {
+								"tilki_reported": 1
+							}
+						}
+					},
+					{
+						"id": "keep",
+						"tag": "honest",
+						"text": "S_D15_DENIZ_LAST_OPT_KEEP",
+						"effects": {}
+					}
+				]
+			}
+		},
+		{
+			"id": "d15_deniz_thanks",
+			"after": 4,
+			"character": "deniz",
+			"requires": {
+				"flags": {
+					"deniz_evidence": true
+				}
+			},
+			"lines": [
+				"S_D15_DENIZ_THANKS_1",
+				"S_D15_DENIZ_THANKS_2"
+			],
+			"customer": {
+				"scenario": "clean"
+			}
+		},
+		{
+			"id": "d15_ece",
+			"after": 4,
+			"character": "ece",
+			"lines": [
+				"S_D15_ECE_1",
+				"S_D15_ECE_2"
+			],
+			"choice": {
+				"options": [
+					{
+						"id": "stamp",
+						"tag": "kind",
+						"text": "S_D15_ECE_OPT_STAMP",
+						"effects": {
+							"flags": {
+								"ece_stamped": true
+							},
+							"mood": 10,
+							"counters": {
+								"kind": 1
+							}
+						}
+					},
+					{
+						"id": "later",
+						"tag": "honest",
+						"text": "S_D15_ECE_OPT_LATER",
+						"effects": {}
+					}
+				]
+			}
+		}
+	],
+	"letters": [
+		{
+			"key": "L_15_ECE",
+			"requires": {
+				"flags": {
+					"ece_stamped": true
+				}
+			}
+		},
+		{
+			"key": "L_15_PASSPORT",
+			"requires": {
+				"flags": {
+					"passport": true
+				}
+			}
+		},
+		{
+			"key": "L_15_EVIDENCE",
+			"requires": {
+				"flags": {
+					"deniz_evidence": true
+				}
+			}
+		},
+		{
+			"key": "L_15_PLEASED",
+			"requires": {
+				"flags": {
+					"inspector_pleased": true
+				}
+			}
+		},
+		{
+			"key": "L_15_A"
+		}
+	]
+}
