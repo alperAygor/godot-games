@@ -97,3 +97,17 @@ Her aşamada buraya eklenir. Biçim: tarih, karar, neden, geri dönüş yolu.
 
 - Gerçek cihazda performans ölçümü (aşama 6; o zamana dek masaüstü ölçümleri yalnız oran verir).
 - Gerçek reklam SDK'sı (sahte servisle çalışılır; AdMob aşama 6).
+
+## Aşama 2 — ses
+
+- **Üretim:** tümü ElevenLabs (SFX v3 + Music), `tools/make_sfx.py`; ham çıktı `build/sfx_raw` önbelleğinde, istek sayacı
+  `requests.json` (üst sınır 45, bu aşamada 31 kullanıldı). `--force` yalnız ad verilerek çalışır. Kabuktan gelen `coin`, `ui_soft`,
+  `win` yeniden üretilmedi.
+- **Fiş "tık":** üç ayrı istek (`plug_seat_1..3`), `play_variant` ile dönüşümlü; PCM içe aktarma, tepe -1.5 dB (oyunun en net sesi).
+- **Döngüler:** kuyruk başa eşit-güçlü çapraz geçişle bağlanır (sarma noktası süreksizliği ölçülür, `--report`). Döngüler 32 kHz,
+  ortamlar 22.05 kHz mono (depo küçük); QOA içe aktarma. Müzik OGG.
+- **Bus'lar kodla kurulur** (`AudioService._ensure_buses`), `default_bus_layout.tres` ve `project.godot` değişmedi. Master'da
+  `AudioEffectHardLimiter` (tavan -1 dB). `duck()` Loops/Ambience/Music'i kısar, efektleri değil.
+- **Kimlikler:** `music_main` / `ambience_main` (otomatik başlayanlar) KASITLI olarak yok; sahne `play_music("music_plan")` ve
+  `play_ambience("ambience_*")` çağırır. Kazanma parçası döngüsüz: `play_jingle("music_win")`.
+- **Açık:** `hum_mains` ~105 Hz çıktı (50 Hz değil); telefon hoparlöründe daha iyi duyulduğu için tutuldu, insan kulağı onaylamalı.
