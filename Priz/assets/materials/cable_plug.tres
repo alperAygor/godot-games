@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "cable_plug"
+albedo_color = Color(0.9255, 0.9098, 0.8784, 1.0000)
+roughness = 0.45
+metallic = 0.0
+uv1_scale = Vector3(1.0000, 1.0000, 1.0000)

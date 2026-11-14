@@ -1,0 +1,10 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "hob_glass"
+vertex_color_use_as_albedo = true
+albedo_color = Color(0.0471, 0.0471, 0.0510, 1.0000)
+metallic_specular = 0.7
+roughness = 0.06
+metallic = 0.0
+uv1_scale = Vector3(1.0000, 1.0000, 1.0000)

@@ -1,0 +1,11 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "fx_glow_strip"
+albedo_color = Color(1.0000, 0.9451, 0.8392, 1.0000)
+roughness = 0.3
+metallic = 0.0
+emission_enabled = true
+emission = Color(1.0000, 0.8157, 0.5412, 1.0000)
+emission_energy_multiplier = 0.0
+uv1_scale = Vector3(1.0000, 1.0000, 1.0000)

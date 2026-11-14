@@ -1,0 +1,20 @@
+[gd_resource type="ORMMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/rug_kilim_albedo.png" id="1"]
+[ext_resource type="Texture2D" path="res://assets/textures/rug_kilim_normal.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/textures/rug_kilim_orm.png" id="3"]
+
+[resource]
+resource_name = "rug_kilim"
+vertex_color_use_as_albedo = true
+albedo_color = Color(1.0000, 1.0000, 1.0000, 1.0000)
+albedo_texture = ExtResource("1")
+orm_texture = ExtResource("3")
+roughness = 1.0
+metallic = 0.0
+normal_enabled = true
+normal_scale = 0.6
+normal_texture = ExtResource("2")
+rim_enabled = true
+rim = 0.25
+rim_tint = 0.7

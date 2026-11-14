@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/brushed_normal.png" id="1"]
+
+[resource]
+resource_name = "vc_metal"
+vertex_color_use_as_albedo = true
+albedo_color = Color(1.0000, 1.0000, 1.0000, 1.0000)
+roughness = 0.2
+metallic = 1.0
+normal_enabled = true
+normal_scale = 0.15
+normal_texture = ExtResource("1")
+uv1_scale = Vector3(3.3333, 3.3333, 3.3333)

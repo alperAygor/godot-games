@@ -1,0 +1,11 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "glass_amber"
+transparency = 1
+depth_draw_mode = 1
+albedo_color = Color(0.7882, 0.5412, 0.2353, 0.6000)
+metallic_specular = 0.7
+roughness = 0.06
+metallic = 0.0
+uv1_scale = Vector3(1.0000, 1.0000, 1.0000)

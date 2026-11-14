@@ -1,0 +1,7 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/fuse_gauge.gdshader" id="1"]
+
+[resource]
+resource_name = "fx_gauge"
+shader = ExtResource("1")

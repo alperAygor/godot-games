@@ -1,0 +1,11 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "glass_clear"
+transparency = 1
+depth_draw_mode = 1
+albedo_color = Color(0.8745, 0.9333, 0.9412, 0.1800)
+metallic_specular = 0.7
+roughness = 0.04
+metallic = 0.0
+uv1_scale = Vector3(1.0000, 1.0000, 1.0000)

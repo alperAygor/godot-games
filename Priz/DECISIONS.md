@@ -92,6 +92,36 @@ Her aşamada buraya eklenir. Biçim: tarih, karar, neden, geri dönüş yolu.
 - **Şablon varsayılanları kaldırıldı:** 4. seviyeden her geçişte geçiş reklamı, "kayıpta devam" (artık `extra_fuse`), `first_level`.
 - **Ertelenen:** AdMob banner uygulaması, kalite seçici arayüzü, `collection` ekranı (yalnız politika kimliği), arayüzün diorama dünyasına
   (sigorta kutusu/şalter) uyarlanması, `strings.csv` yeni dil/sözlük genişlemeleri.
+## Aşama 2 — görsel (2026-11-14, `p2-art`)
+
+- **Malzeme ad ile taşınır, doku GLB'ye gömülmez.** Blender yüzeye malzeme adı verir; Godot içe aktarma
+  betiği (`assets/models/priz_post_import.gd`) yüzeyi `assets/materials/<ad>.tres` ile değiştirir. Neden:
+  dokular tek kopya, malzemeler tüm modellerde ortak, ayar Godot'da tek dosyada. Geri dönüş: GLB'ye doku
+  gömmek için `export_image_format="AUTO"` ve Blender'da doku düğümleri.
+- **Prosedürel Blender malzemesi pişirilmez; dokular doğrudan numpy ile üretilir** (`make_textures.py`).
+  Neden: hızlı, tohumlu, tekrarlanabilir ve kusursuz döşenir. Pişirme yalnız AO için (Cycles → köşe rengi).
+- **Ortam örtmesi köşe rengine pişer** (Mobile çizicide SSAO yok). Duvar/zemin AO için 10 cm ızgaradır.
+  Cihazların yerine geçici kutular konarak duvarda temas gölgesi alınır.
+- **Renk-yalnız malzemeler ortak "vc_*" malzemelere toplanır** (renk × AO köşe renginde). Neden: çizim
+  çağrısı 194 → 108 yüzey. Bedel: bu yüzeylerde malzeme başına normal haritası farkı yok (küçük nesneler).
+- **Görünmez gölge kutusu:** tavan, ön ve sağ duvar yalnız gölge atar (`ShadowBox_shadowonly`). Neden:
+  güneş yalnız pencereden girsin, sabah/akşam uzun ışık lekeleri ve pencere kayıtlarının gölgesi oluşsun.
+  Öğle lekesi için gölgesiz bir "sekme" omni ışığı lekenin üstünü izler.
+- **Hacimsel sis yerine ışık hüzmesi kabuğu** (`light_shafts.gd` + `light_shaft.gdshader`): zemine/oda
+  kenarına kırpılmış, kenarları yumuşak, toz zerrecikli, düşük şiddet. LOW kademesinde kapalı.
+- **Paralaks kamerayı döndürür, dioramayı değil.** Ekranda aynı görünür; gölgeler güneşe göre sabit kalır.
+- **Kablolar ve priz işaretleri tek ağ + dizi parametreli gölgelendirici.** Hat/priz kimliği köşe rengi
+  (FLOAT) ile kodlanır; hat başına parlama/vurgu/solukluk tek malzemeden sürülür (3 + 7 çizim yerine 2).
+- **Renk körlüğü:** hat 1 kırmızı/daire, 2 mavi/üçgen, 3 sarı/kare, 4 mor/elmas — prizde, sigorta kutusu
+  levhasında ve şalter kolunda aynı. Kablo kılıfı da hat renginde.
+- **Sigorta göstergesi = blok dizisi** (tüp/ibre yerine). Neden: tasarım kapasiteyi "blok" ile anlatıyor;
+  telefonda sayılabilir, rakamsız. Blok sayısı = hat kapasitesi (gölgelendirici parametresi).
+- **Minyatür abartısı:** prizler ve fiş %30 büyük, hat kabloları 14 mm çaplı (gerçekte ~8 mm) — telefonda
+  okunurluk için. Odanın geri kalanı gerçek ölçüdedir.
+- **Kalite kademeleri tek yerde** (`QualityTiers`): DoF, parlama, gölge atlası/filtresi, hüzmeler, MSAA,
+  yansıma sondası. `project.godot` değiştirilmedi; ayarlar çalışma anında verilir.
+- **Ertelenen (görsel):** çizim çağrısını ~80'e indirmek için doku atlası; fiş oturma toz/tık efekti
+  (`p2-slice`); başka oda düzenleri için veri odaklı priz/hat tablosu; gerçek cihazda performans ölçümü.
 
 ## Ertelenenler
 

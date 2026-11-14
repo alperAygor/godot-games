@@ -1,0 +1,9 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "fan_blade"
+cull_mode = 2
+albedo_color = Color(0.6627, 0.8118, 0.7647, 1.0000)
+roughness = 0.32
+metallic = 0.0
+uv1_scale = Vector3(1.0000, 1.0000, 1.0000)

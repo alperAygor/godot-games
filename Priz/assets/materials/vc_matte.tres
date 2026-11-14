@@ -1,0 +1,9 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "vc_matte"
+vertex_color_use_as_albedo = true
+albedo_color = Color(1.0000, 1.0000, 1.0000, 1.0000)
+roughness = 0.72
+metallic = 0.0
+uv1_scale = Vector3(1.0000, 1.0000, 1.0000)
