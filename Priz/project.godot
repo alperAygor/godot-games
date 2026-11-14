@@ -15,6 +15,15 @@ config/version="0.1.0"
 run/main_scene="res://scenes/Boot.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 
+; --- p2-shell: kabuk (autoload) ---
+[autoload]
+
+GameManager="*res://scripts/autoload/GameManager.gd"
+AudioService="*res://scripts/autoload/AudioService.gd"
+AdManager="*res://scripts/autoload/AdManager.gd"
+GameData="*res://scripts/autoload/GameData.gd"
+Progress="*res://scripts/autoload/Progress.gd"
+
 [debug]
 
 gdscript/warnings/untyped_declaration=2
@@ -28,6 +37,20 @@ window/size/window_height_override=960
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=1
+
+; --- p2-shell: tema, giriş, dil ---
+[gui]
+
+theme/custom="res://assets/theme/ui_theme.tres"
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=true
+
+[internationalization]
+
+locale/translations=PackedStringArray("res://data/i18n/strings.en.translation", "res://data/i18n/strings.es.translation", "res://data/i18n/strings.tr.translation")
+locale/fallback="tr"
 
 [rendering]
 

@@ -8,7 +8,7 @@ Her aşama çalışan bir yapı bırakır. Durum: [ ] bekliyor, [~] sürüyor, [
 
 ## Aşama 2 — tek odalı dikey kesit (nihai kalite) → DUR, göster
 - [~] `p2-art` (Opus): Blender hattı, tek oda dioraması, 8 cihaz, dört dilim ışığı, görünüm sahnesi.
-- [ ] `p2-shell`: şablon altyapısının projeye taşınması (kayıt, dil, ses servisi, arayüz takımı).
+- [x] `p2-shell`: şablon altyapısının projeye taşınması (kayıt, dil, ses servisi, arayüz takımı, reklam politikası, rakamsız arayüz, `digit_probe`). Ayrıntı: `DECISIONS.md` "Aşama 2 — kabuk", `docs/ARCHITECTURE.md`.
 - [ ] `p2-sfx`: ElevenLabs ile fiş, tık, sigorta, cihaz döngüleri, uğultu, kazanma müziği.
 - [ ] `p2-slice`: sürükle-bırak, mıknatıs, fiziksel kablo, sigorta kutusu arayüzü, düz kip seviyeleri.
 - [ ] Ekran görüntüsü ve video ile kullanıcıya göster; "rakam yok" kapsamını sor.

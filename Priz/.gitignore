@@ -35,3 +35,6 @@ tests/results/
 
 # Blender ara dosyaları
 *.blend1
+
+# Python önbelleği
+__pycache__/

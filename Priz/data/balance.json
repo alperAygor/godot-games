@@ -1,0 +1,26 @@
+{
+  "_not": "Denge sayilari kodda degil burada. ProgressData.DEFAULT_BALANCE bu dosya okunamazsa kullanilan yedektir.",
+  "win_coins": 20,
+  "double_coins_multiplier": 2,
+  "require_online": true,
+  "placeholder": {
+    "taps_to_win": 5
+  },
+  "fuses_per_level": 3,
+  "win_stars": 3,
+  "coin_display": {
+    "_note": "Ekranda rakam yok: jeton miktari simge sayisiyla gosterilir. per_icon miktar = 1 simge; max_icons ustu yok; pile_from ve uzeri 'cok' yigin simgesi eklenir.",
+    "per_icon": 10,
+    "max_icons": 5,
+    "pile_from": 100
+  },
+  "level_pips": {
+    "_note": "Seviye ilerlemesi noktalarla: her blok icin 4 normal + 1 zor seviye (son nokta).",
+    "block": 5
+  },
+  "haptics": {
+    "tick_ms": 12,
+    "thud_ms": 35,
+    "success_ms": 60
+  }
+}
