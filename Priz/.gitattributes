@@ -1,0 +1,2 @@
+# Çeviri tablosuna herkes sona satır ekler: çakışmada iki taraf da korunur.
+data/i18n/strings.csv merge=union
