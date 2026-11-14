@@ -35,3 +35,7 @@ tests/results/
 
 # AdMob eklentisi indirme önbelleği (ikililer addons/admob/android/bin altında depoda tutulur)
 addons/admob/downloads/
+
+# Ekran görüntüleri depoya girmez (yerelde kalır)
+/docs/art/
+/docs/perf/shots/
