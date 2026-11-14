@@ -1,0 +1,24 @@
+keys,tr,en,es
+GAME_TITLE,Priz,Priz,Priz
+BOOT_LOADING,yükleniyor...,loading...,cargando...
+PLAY,Oyna,Play,Jugar
+OK,Tamam,OK,Listo
+SETTINGS_TITLE,Ayarlar,Settings,Ajustes
+SETTINGS_SOUND,Ses,Sound,Sonido
+SETTINGS_MUSIC,Müzik,Music,Música
+SETTINGS_VIBRATION,Titreşim,Vibration,Vibración
+PAUSED,Duraklatıldı,Paused,En pausa
+RESUME,Devam,Resume,Reanudar
+WIN_TITLE,Harika!,Great!,¡Genial!
+WIN_CONTINUE,Devam,Continue,Continuar
+WIN_DOUBLE,İkiye katla,Double it,Duplicar
+LOSE_TITLE,Olmadı,Not this time,Esta vez no
+LOSE_REVIVE,Bir hak daha,One more fuse,Un fusible más
+LOSE_RETRY,Tekrar dene,Try again,Reintentar
+NET_TITLE,Bağlantı gerekli,Connection required,Necesitas conexión
+NET_BODY,Oynamak için internete bağlan.,Connect to the internet to play.,Conéctate a internet para jugar.
+NET_RETRY,Tekrar dene,Try again,Reintentar
+NET_CHECKING,Bağlantı denetleniyor...,Checking connection...,Comprobando la conexión...
+UI_PRIVACY_OPTIONS,Gizlilik seçenekleri,Privacy options,Opciones de privacidad
+PH_TAP,Dokun,Tap,Toca
+PH_LOSE,Kaybet,Lose,Perder

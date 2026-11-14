@@ -1,0 +1,4 @@
+elevenlabs
+python-dotenv
+numpy
+fonttools

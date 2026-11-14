@@ -1,0 +1,70 @@
+{
+  "_not": "Priz reklam kurallari (tasarim belgesi). Odullu yerlesimler: sigorta hakki bitince +1 hak (extra_fuse), seviye sonu jeton ikiye katlama (double_coins), ipucu (hint), gun onizleme (day_preview), yenileme parcasini erken acma (renovation_early). per_run = seviye basina, per_session = oturum basina.",
+  "extra_fuse": {
+    "per_run": 1,
+    "per_session": 30
+  },
+  "double_coins": {
+    "per_run": 1,
+    "per_session": 30
+  },
+  "day_preview": {
+    "per_run": 1,
+    "per_session": 30
+  },
+  "renovation_early": {
+    "per_run": 1,
+    "per_session": 30
+  },
+  "hint": {
+    "per_run": 3,
+    "per_session": 60
+  },
+  "interstitial_slot": {
+    "per_run": 99,
+    "per_session": 999
+  },
+  "quiet": {
+    "_note": "Ilk N seviyede reklam, magaza ve acilir pencere YOK (Progress.is_quiet_period). Gecis reklami ve banner da buna uyar.",
+    "levels": 3
+  },
+  "interstitial": {
+    "_note": "Gecis reklami: YALNIZ seviye gecisinde; tamamlanan seviye first_after_level ve uzeri olmali; her gecis reklamindan sonra gap_cycle sirasiyla (belirlenimci, dairesel) 2 ya da 3 seviye beklenir; iki reklam arasi en az min_seconds_between sn; o gecista odullu reklam izlendiyse gosterilmez; reklamlari kaldir alindiysa asla.",
+    "first_after_level": 5,
+    "gap_cycle": [
+      2,
+      3
+    ],
+    "min_seconds_between": 90
+  },
+  "banner": {
+    "_note": "Banner YALNIZ burada listelenen ekranlarda gorunur (mahalle = ana ekran, koleksiyon). Oyun ekraninda asla. Sessiz donemde ve reklamlar kaldirildiysa gorunmez.",
+    "screens": [
+      "neighbourhood",
+      "collection"
+    ]
+  },
+  "settings": {
+    "_note": "show_start_timeout_seconds: gosterim istendikten sonra reklam bu surede ekrana gelmezse akis reklamsiz devam eder (Devam dugmesi asla takilmaz).",
+    "show_start_timeout_seconds": 3.0
+  },
+  "admob": {
+    "_note": "mode=test iken Google'in RESMI TEST kimlikleri kullanilir. Yayin oncesi production blogundaki REPLACE_* alanlarini AdMob konsolundaki gercek kimliklerle doldurun ve mode'u production yapin. Hata ayiklama surumu mode ne olursa olsun test kimliklerini kullanir. Eklenti kurulumu: docs/MONETIZATION.md",
+    "mode": "test",
+    "request_consent": true,
+    "test_device_ids": [],
+    "consent_debug_geography": "",
+    "load_retry_seconds": 20.0,
+    "consent_timeout_seconds": 8.0,
+    "test": {
+      "app_id": "ca-app-pub-3940256099942544~3347511713",
+      "rewarded_unit_id": "ca-app-pub-3940256099942544/5224354917",
+      "interstitial_unit_id": "ca-app-pub-3940256099942544/1033173712"
+    },
+    "production": {
+      "app_id": "REPLACE_WITH_REAL_ADMOB_APP_ID",
+      "rewarded_unit_id": "REPLACE_WITH_REAL_REWARDED_UNIT_ID",
+      "interstitial_unit_id": "REPLACE_WITH_REAL_INTERSTITIAL_UNIT_ID"
+    }
+  }
+}

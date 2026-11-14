@@ -47,3 +47,20 @@ Varlık listesi: `ASSETS.md`.
 ## Ses
 
 Sesler ve müzik ElevenLabs ile, anahtarı `.env.local` dosyasından yükleyen bir betikle üretilir.
+
+## Kabuk (p2-shell)
+
+Oyundan bağımsız uygulama kabuğu şablondan geldi; ayrıntı `docs/ARCHITECTURE.md` (Game ↔ kabuk sözleşmesi dahil).
+
+- Yerler: `scripts/autoload/` (GameManager, AudioService, AdManager, GameData, Progress), `scripts/shell/` (Loc, AdPacing, ProgressData,
+  Quantity, Haptics, AnalyticsLog, Motion, Juice, Icons; testleri `tests/unit/test_shell_*.gd`), `scripts/ui/` (ekranlar, `UiKit`, sayfalar,
+  `UiChip`, `UiPips`), `scripts/services/` (reklam sağlayıcıları), `scripts/net/`, `data/` (`ads.json`, `balance.json`, `theme.json`,
+  `i18n/strings.csv`). Rehberler: `docs/UI_GUIDE.md`, `docs/I18N.md`, `docs/MONETIZATION.md`.
+- **Rakam yok** kuralı otomatik korunur: `strings.csv` değerleri rakamsızdır, `tools/digit_probe.gd` ekranları gezer. Miktar = simge/nokta.
+- Reklam politikası yalnız `data/ads.json` + `AdPacing`; ilk 3 seviye sessiz (`Progress.is_quiet_period()`), banner yalnız mahalle/koleksiyon.
+- Tema: `data/theme.json` → `python3 tools/build_theme.py` (`ui_tokens.gd` ve `ui_theme.tres` elle düzenlenmez; `verify.sh` günceli denetler).
+- **Prob tuzakları:** `-s` ile çalışan araç/prob betiği autoload'lardan ÖNCE derlenir; autoload'a değen sınıfları (ResultSheet, RunFlow,
+  PauseSheet, SettingsSheet...) tür olarak anmaz — `Node`/`Control` tutup `call`/`emit_signal` kullan. Autoload `_ready`leri betiğin
+  `_initialize`ından sonra çalışır: `Progress.persist=false` hemen, ama `reset_state` ve `AdManager.set_provider` ilk kareden SONRA.
+  Godot betik hatasında da 0 döner: çıktıda `SCRIPT ERROR` / `Parse Error` / `PROBE HATA` aranır (verify.sh yapar).
+- Yeni autoload/çeviri/girdi ayarı `project.godot`'ta işaretli bölümlere eklenir; çizici ayarlarına dokunulmaz.

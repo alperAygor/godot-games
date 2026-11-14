@@ -14,7 +14,10 @@ var _exit_code: int = 1
 
 
 func _initialize() -> void:
-	pass
+	# Testler oyuncunun gerçek kaydını ASLA ezmemeli.
+	var progress: Node = root.get_node_or_null("Progress")
+	if progress != null:
+		progress.set("persist", false)
 
 
 func _process(_delta: float) -> bool:
