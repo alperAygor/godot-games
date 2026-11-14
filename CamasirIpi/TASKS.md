@@ -65,3 +65,14 @@ Mevsimler seviye bantlarıyla: ör. 1-30 yaz, 31-60 sonbahar, 61-90 kış, 91-12
 - [ ] **Q4** Zen modu (kaybetme yok, sakin sonsuz oyun)
 - [ ] **Q5** Çevrimdışı oynamak yasak: bağlantı yoksa "bağlantı gerekli" ekranı
 - [ ] **Q6** Mevsim ve kültür temaları: mekânla birlikte değişen görsel/ses seti + temaya özel, oynanışı etkileyen olaylar
+
+## Yayın hazırlığı (kullanıcı, 2026-11-15)
+
+Yayın adı: **"Clothesline Sort"** (alt başlık: "Laundry Color Puzzle"). Hedef: Google Play.
+Sıra (kullanıcı): önce oynanış düzeltmeleri, sonra mağaza hazırlığı.
+- [~] `ci-flow` (Opus): hızlı oynayınca animasyonların oyunu yavaşlatması; ana menüde Oyna düğmesinin telefonda
+      ortalanması; seviye geçişinin hızlanması.
+- [~] `ci-i18n` (Sonnet): Portekizce, Almanca, Japonca, Korece.
+- [~] `ci-play` (Sonnet): Google Play yayın şartlarının araştırması ve denetim listesi (yalnız belge).
+- [ ] `ci-audio`: müziğin iyileştirilmesi ve ses seviyeleri (ElevenLabs planı netleşince).
+- [ ] `ci-release`: Gradle/AAB, AdMob, satın alma, mağaza görselleri ve metinleri.
