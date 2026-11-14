@@ -1,0 +1,74 @@
+[
+  {
+    "id": "neon",
+    "name": "NEON ARENASI",
+    "floor_base": "#02050c",
+    "floor_line": "#1a6f9c",
+    "fog": "#0a1424",
+    "light_a": "#33ccff",
+    "light_b": "#cc33ff",
+    "sun": "#8fb4ff",
+    "props": {
+      "pillar": 8,
+      "crate": 14,
+      "crystal": 0,
+      "obelisk": 0,
+      "barrier": 8
+    },
+    "perimeter_cap": "#1a9bd8",
+    "perimeter_warm": "#e0409a",
+    "boss_name": "SENTİNEL",
+    "boss_color": "#ff2d70",
+    "name_en": "NEON ARENA",
+    "boss_name_en": "SENTINEL",
+    "boss": "sentinel"
+  },
+  {
+    "id": "kizil",
+    "name": "KIZIL SEKTÖR",
+    "floor_base": "#0c0302",
+    "floor_line": "#9c3a1a",
+    "fog": "#24100a",
+    "light_a": "#ff7a2b",
+    "light_b": "#ff2b5e",
+    "sun": "#ffb08f",
+    "props": {
+      "pillar": 4,
+      "crate": 6,
+      "crystal": 12,
+      "obelisk": 4,
+      "barrier": 10
+    },
+    "perimeter_cap": "#d8551a",
+    "perimeter_warm": "#ff2b5e",
+    "boss_name": "KIZIL DEV",
+    "boss_color": "#ff6a1f",
+    "name_en": "CRIMSON SECTOR",
+    "boss_name_en": "CRIMSON TITAN",
+    "boss": "titan"
+  },
+  {
+    "id": "buz",
+    "name": "BUZ TERMİNALİ",
+    "floor_base": "#01060b",
+    "floor_line": "#2f7fa8",
+    "fog": "#0a1a26",
+    "light_a": "#4fd8ff",
+    "light_b": "#b9f2ff",
+    "sun": "#cfefff",
+    "props": {
+      "pillar": 6,
+      "crate": 8,
+      "crystal": 6,
+      "obelisk": 6,
+      "barrier": 14
+    },
+    "perimeter_cap": "#2fa8d8",
+    "perimeter_warm": "#7fe0ff",
+    "boss_name": "BUZ HÜKÜMDARI",
+    "boss_color": "#5fd6ff",
+    "name_en": "ICE TERMINAL",
+    "boss_name_en": "FROST SOVEREIGN",
+    "boss": "frost"
+  }
+]
