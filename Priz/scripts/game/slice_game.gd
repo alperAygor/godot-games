@@ -5,17 +5,28 @@ extends Node3D
 ## kazanma sahnesi. Kurallar `PrizBoard`da (SliceState üzerinden); burası yalnız canlandırır.
 ##
 ## Kabuk (scripts/ui/game.gd) bunu örnekler: `start_level(i)`, sinyal `level_won` (kazanma sahnesi bitti),
-## `set_input_enabled(bool)`. Düz kip: kayıp yok. Gün kipi (aşama 3) için yer: `Phase.DAY` ve sigorta
-## kutusunun ana şalteri `start_day_requested` ile buraya eklenecek.
+## `set_input_enabled(bool)`. Düz kip: kayıp yok.
+## Gün kipi (aşama 3): planlamada dilim göstergeleri (DayGauges) ve cihaz şeritleri (DayStrips); tüm cihazlar
+## takılınca kutunun kırmızı ana şalteri canlanır, çekilince (dokun ya da sürükle) `PrizBoard.start_day()`
+## olayları `DayRun` çizelgesiyle oynatılır. Sigorta atarsa hak gider (`fuse_spent`), plan korunur; haklar
+## biterse `day_lost`. Temiz gün → kazanma sahnesi → `level_won`. Ödüllü kancalar: `show_hint()`,
+## `begin_preview()` (dilimleri elle gezme), `grant_extra_right()`, `restart_keep_plan()`.
 ## Prob/çekim için sürülebilir arayüz: `press/move/release(ekran)`, `drag_device_to_socket`,
-## `tap_device`, `screen_of_device`, `screen_of_room_socket`, `skip_win`.
+## `tap_device`, `screen_of_device`, `screen_of_room_socket`, `screen_of_lever`, `pull_lever`, `skip_win`.
 
 signal level_won
 signal level_started(index: int)
-## Gün kipi için ayrıldı (aşama 3): sigorta kutusunun ana şalteri.
-signal start_day_requested
+## Gün testi başladı (ana şalter çekildi).
+signal day_started
+## Sigorta attı; kalan hak (rakamsız gösterilir: kutudaki cam sigortalar).
+signal fuse_spent(rights_left: int)
+## Haklar bitti: kabuk kayıp sayfasını açar (ek hak / tekrar / çık).
+signal day_lost
+## Gün testi bitti ve planlamaya dönüldü (sigorta attıktan sonra).
+signal back_to_planning
 
-enum Mode { IDLE, PRESS_TRAY, DRAG, PRESS_PLUGGED, PRESS_SOCKET, PARALLAX, WIN, DONE }
+enum Mode { IDLE, PRESS_TRAY, DRAG, PRESS_PLUGGED, PRESS_SOCKET, PARALLAX, PRESS_LEVER, DAY, PREVIEW, LOST, WIN,
+	DONE }
 enum Phase { PLAN, DAY }
 
 const HINT_IDLE_SECONDS: float = 6.0
@@ -43,7 +54,7 @@ const CAM_OFFSET: Vector2 = Vector2(0.05, -1.95)
 ## Tasarım ekranı (1080 genişlik); alt bölge alttan ölçülür (uzun telefonlarda tepsi altta kalır).
 const DESIGN: Vector2 = Vector2(1080.0, 1920.0)
 ## Büyük sigorta kutusu: ekran merkezi (alttan) ve boyu (px).
-const PANEL_CENTER: Vector2 = Vector2(215.0, 1525.0)
+const PANEL_CENTER: Vector2 = Vector2(215.0, 1505.0)
 const PANEL_HEIGHT: float = 600.0
 ## Tepsi: sütun merkezleri, satır tabanları (alttan), yuva boyu (px).
 const TRAY_COLUMNS: Array[float] = [535.0, 735.0, 935.0]
@@ -51,6 +62,21 @@ const TRAY_ROWS: Array[float] = [1520.0, 1830.0]
 const SLOT_FIT: Vector2 = Vector2(150.0, 205.0)
 const SLOT_DISC_PX: float = 92.0
 const LINE_COLORS: Array[Color] = [Color(0.95, 0.4, 0.33), Color(0.33, 0.62, 0.95), Color(0.98, 0.78, 0.3)]
+## Ana şalter: dokunma yarıçapı ve "çekildi" sayılan sürükleme boyu (px).
+const LEVER_PICK_PX: float = 120.0
+const LEVER_PULL_PX: float = 110.0
+const LEVER_GLOW_SHADER: Shader = preload("res://scenes/game/lever_glow.gdshader")
+## Sigorta atınca: karanlıkta plan ışığına geçiş ve gösterge kararması.
+const BLOW_DARK_SECONDS: float = 1.35
+## Ödüllü ipucu daha uzun görünür.
+const PAID_HINT_SECONDS: float = 4.5
+## Odadaki cihaz şeridi: genişlik (m) ve cihazın tepesinden yükseklik.
+const ROOM_STRIP_WIDTH: float = 0.58
+const ROOM_STRIP_LIFT: float = 0.2
+## Büyük kutunun ana şalteri "açık"ta bu kadar iner (kol ekran altına taşmasın).
+const PANEL_LEVER_ON: float = 0.55
+## Tepsi şeridi cihaz tabanının bu kadar altında (px).
+const TRAY_STRIP_DROP_PX: float = 46.0
 
 var data: SliceData
 var content: PrizContent
@@ -97,6 +123,32 @@ var _slot_of: Dictionary = {}         # cihaz kimliği -> yuva dizini
 var _socket_depth: Dictionary = {}    # oda prizi -> kamera derinliği
 var _plug_count: int = 0
 
+# --- gün kipi ---
+var day_gauges: DayGauges
+var day_strips: DayStrips
+var fuses: DayFuses
+## Boşta otomatik ipucu (kabuk: yalnız sessiz dönemde; sonrası ödüllü ipucu).
+var auto_hint: bool = true
+var _run: DayRun
+var _planning_slice: int = PrizSlice.MORNING
+var _lever_live: bool = false
+var _lever_node: Node3D
+var _lever_glow: ShaderMaterial
+var _lever_t: float = 0.0
+var _lever_pulled_once: bool = false
+var _fault_lines: Array[int] = []
+var _fault_slice: int = -1
+var _fault_devices: Array[String] = []
+var _fault_t: float = 0.0
+var _day_tension: float = 0.0
+var _slice_loaded: bool = false
+var _slice_near: bool = false
+var _strip_tray_pos: Dictionary = {}  # cihaz kimliği -> tepsi şeridi merkezi (dünya)
+var tray_fade: float = 0.0
+var _preview_slice: int = -1
+var _preview_bar: DayPreviewBar
+var _bg_paused: bool = false
+
 
 func _ready() -> void:
 	data = SliceData.load_default()
@@ -128,12 +180,48 @@ func _ready() -> void:
 	audio = SliceAudio.new()
 	audio.name = "Audio"
 	add_child(audio)
+	# Gün kipi parçaları: hepsi baştan kurulur ve ısıtılır (ilk dilimde/sigortada takılma olmasın).
+	day_gauges = DayGauges.new(panel_box)
+	day_strips = DayStrips.new(view)
+	fuses = DayFuses.new()
+	fuses.name = "Fuses"
+	var model: Node = panel_box.get_node_or_null("Model")
+	(model if model != null else panel_box).add_child(fuses)
+	_lever_node = panel_box.find_child("MainLever", true, false) as Node3D
+	_lever_glow = ShaderMaterial.new()
+	_lever_glow.shader = LEVER_GLOW_SHADER
+	# Tepsi ışığı: gölgesiz, yalnız tepsi katmanını (SliceDevice.TRAY_LAYER) aydınlatır — kameranın sol
+	# üstünden önden vuran yumuşak ışık; TV, vantilatör gibi koyu/ince modeller tepside okunur.
+	var tray_light: DirectionalLight3D = DirectionalLight3D.new()
+	tray_light.name = "TrayLight"
+	tray_light.shadow_enabled = false
+	tray_light.light_cull_mask = SliceDevice.TRAY_LAYER
+	tray_light.light_energy = 0.75
+	tray_light.light_color = Color(1.0, 0.95, 0.88)
+	tray_light.light_specular = 0.6
+	add_child(tray_light)
+	var cam_b: Basis = view.camera_rig.camera.global_transform.basis
+	tray_light.global_basis = Basis.looking_at(-(cam_b.z * 0.75 + cam_b.y * 0.45 - cam_b.x * 0.35).normalized(), Vector3.UP)
 	get_viewport().size_changed.connect(_on_viewport_resized)
 
 
 func _exit_tree() -> void:
 	if _win_tween != null and _win_tween.is_valid():
 		_win_tween.kill()
+	_run = null
+
+
+## Uygulama arka plana giderse gün testi bekler; dönünce kaldığı yerden sürer.
+func _notification(what: int) -> void:
+	match what:
+		NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT:
+			_bg_paused = true
+			if _run != null:
+				_run.pause()
+		NOTIFICATION_APPLICATION_RESUMED, NOTIFICATION_APPLICATION_FOCUS_IN:
+			_bg_paused = false
+			if _run != null:
+				_run.resume()
 
 
 ## Hayalet parmak katmanı (kabuk verir; 2B, 3B'nin üstünde).
@@ -141,12 +229,19 @@ func set_overlay(control: Control) -> void:
 	finger = SliceFinger.new()
 	finger.name = "GhostFinger"
 	control.add_child(finger)
+	_preview_bar = DayPreviewBar.new()
+	_preview_bar.name = "DayPreviewBar"
+	control.add_child(_preview_bar)
+	_preview_bar.slice_chosen.connect(preview_slice)
+	_preview_bar.closed.connect(end_preview)
 
 
 func set_input_enabled(on: bool) -> void:
 	_input_enabled = on
 	if not on and (mode == Mode.DRAG or mode == Mode.PRESS_TRAY):
 		_cancel_drag()
+	if not on and mode == Mode.PRESS_LEVER:
+		_release_lever(false)
 	if not on and mode == Mode.PARALLAX:
 		view.camera_rig.set_parallax(Vector2.ZERO)
 		mode = Mode.IDLE
@@ -165,6 +260,7 @@ func start_level(index: int, transition: float = 0.0) -> void:
 	_tutorial_done = false
 	mode = Mode.IDLE
 	phase = Phase.PLAN
+	_planning_slice = level_time
 	view.camera_rig.reset_view()
 	view.day_light.set_slice(level_time, transition)
 	for box: FuseBox in [wall_box, panel_box]:
@@ -176,6 +272,7 @@ func start_level(index: int, transition: float = 0.0) -> void:
 			box.set_line_fill(line, 0.0)
 			box.set_breaker(line, true)
 	_apply_room_masks()
+	_setup_day_mode()
 	for device: PrizDevice in level.devices:
 		var d: SliceDevice = SliceDevice.new()
 		d.name = "Device_%s" % device.id
@@ -190,9 +287,15 @@ func start_level(index: int, transition: float = 0.0) -> void:
 		_slot_of[device.id] = device_order.size() - 1
 	tray.set_slot_count(device_order.size())
 	tray.set_faded(0.0)
+	_set_tray_fade(0.0)
+	_setup_strips()
 	_layout()
 	_refresh_lines(false)
 	audio.begin_level(level_time)
+	var loops: Array[String] = []
+	for id: String in device_order:
+		loops.append((devices[id] as SliceDevice).loop_sound)
+	audio.preload_sounds(loops)
 	fx.prewarm(view.get_socket("Socket_02").global_position)
 	_idle = 0.0
 	_hint_left = 0.0
@@ -218,6 +321,12 @@ func _clear_level() -> void:
 	_magnet_socket = ""
 	_near_lines.clear()
 	_plug_count = 0
+	_run = null
+	_preview_slice = -1
+	_clear_fault()
+	_set_lever_live(false)
+	if _preview_bar != null:
+		_preview_bar.close_bar()
 	if fx != null:
 		fx.clear_halos()
 	if finger != null:
@@ -292,6 +401,8 @@ func _layout() -> void:
 		var pip_origin: Vector3 = _screen_to_world(pip_screen, THUMB_DEPTH - 0.6)
 		var d: SliceDevice = devices[id] as SliceDevice
 		d.set_tray_layout(base, yaw, SLOT_FIT * px * Vector2(d_fit(d), d_fit(d)), pip_origin, block, _cam_basis)
+		var strip_screen: Vector2 = _design_to_screen(Vector2(TRAY_COLUMNS[col] - 8.0, TRAY_ROWS[row] + TRAY_STRIP_DROP_PX))
+		_strip_tray_pos[id] = _screen_to_world(strip_screen, THUMB_DEPTH - 0.9)
 	_socket_depth.clear()
 	for socket_name: String in data.room_socket_names():
 		var s: Node3D = view.get_socket(socket_name)
@@ -401,7 +512,21 @@ func press(p: Vector2) -> void:
 	if mode == Mode.WIN:
 		skip_win()
 		return
+	if mode == Mode.DAY:
+		# Dokunuş günü hızlandırır (sigortaya kadar).
+		if _run != null and not _run.is_fast():
+			_run.fast_forward()
+			if _run.is_fast():
+				audio.play("ui_soft")
+				Haptics.tick()
+		return
+	if mode == Mode.PREVIEW:
+		_scrub(p)
+		return
 	if mode != Mode.IDLE or state == null or not state.board.is_planning():
+		return
+	if is_day_mode() and p.distance_to(screen_of_lever()) < LEVER_PICK_PX:
+		_press_lever()
 		return
 	var tray_id: String = _tray_device_at(p)
 	if tray_id != "":
@@ -431,6 +556,10 @@ func move(p: Vector2) -> void:
 		Mode.PARALLAX:
 			var v: Vector2 = (p - _press_pos) / PARALLAX_PX
 			view.camera_rig.set_parallax(Vector2(-v.x, v.y))
+		Mode.PRESS_LEVER:
+			_drag_lever(p)
+		Mode.PREVIEW:
+			_scrub(p)
 		_:
 			pass
 
@@ -455,6 +584,8 @@ func release(p: Vector2) -> void:
 		Mode.PARALLAX:
 			view.camera_rig.set_parallax(Vector2.ZERO)
 			mode = Mode.IDLE
+		Mode.PRESS_LEVER:
+			_release_lever(true)
 		_:
 			pass
 
@@ -549,9 +680,13 @@ func _set_hover(socket_name: String) -> void:
 	if socket_name == "" or d == null:
 		wall_gauges.clear_ghost()
 		panel_gauges.clear_ghost()
+		day_gauges.clear_ghost()
 		_highlight_gauge_line(0)
 		if d != null:
 			d.set_pip_tint(SliceDevice.PIP_COLOR)
+		return
+	if is_day_mode():
+		_set_day_hover(d, socket_name)
 		return
 	var pv: Dictionary = state.preview(_active_device, socket_name)
 	var line: int = int(pv["line"])
@@ -564,7 +699,22 @@ func _set_hover(socket_name: String) -> void:
 		fx.set_halo(socket_name, 2.0)
 
 
+## Gün kipi hayaleti: cihazın blokları YALNIZ çalıştığı dilimlerin tüplerinde belirir.
+func _set_day_hover(d: SliceDevice, socket_name: String) -> void:
+	var dp: Dictionary = state.day_preview(d.device_id, socket_name)
+	var line: int = int(dp["line"])
+	var ghost: Vector4 = dp["ghost"] as Vector4
+	var amount: float = maxf(maxf(ghost.x, ghost.y), maxf(ghost.z, ghost.w))
+	var over: bool = int(dp["overflow_mask"]) != 0
+	day_gauges.set_ghost(line, amount, state.device_mask_at(d.device_id, socket_name), 0)
+	_highlight_gauge_line(line)
+	d.set_pip_tint(LINE_COLORS[line - 1] if not over else Color(1.0, 0.42, 0.3))
+	if _accepting.has(socket_name):
+		fx.set_halo(socket_name, 2.0)
+
+
 func _highlight_gauge_line(line: int) -> void:
+	day_gauges.set_highlight(line, line > 0)
 	for l: int in range(1, 5):
 		var v: float = 0.8 if l == line else 0.0
 		wall_box.set_line_highlight(l, v)
@@ -600,6 +750,7 @@ func _end_drag_visuals() -> void:
 	fx.clear_halos()
 	wall_gauges.clear_ghost()
 	panel_gauges.clear_ghost()
+	day_gauges.clear_ghost()
 	_highlight_gauge_line(0)
 	_hover_socket = ""
 	_magnet_socket = ""
@@ -645,6 +796,7 @@ func _reject(d: SliceDevice, sock: String, reason: StringName) -> void:
 func _seat(d: SliceDevice, sock: String) -> void:
 	var s: Node3D = view.get_socket(sock)
 	var line: int = state.room_line_of_room_socket(sock)
+	_clear_fault()
 	d.room_socket = sock
 	d.place = SliceDevice.Place.TRAVEL
 	d.seat_plug(s.global_transform, 0.08)
@@ -672,9 +824,11 @@ func _seat(d: SliceDevice, sock: String) -> void:
 func _on_device_arrived(d: SliceDevice) -> void:
 	if d.place != SliceDevice.Place.PLUGGED or state.board.socket_of(d.device_id) == "":
 		return
-	d.appliance.set_running(true)
-	audio.device_on(d.device_id, d.loop_sound)
-	if state.board.is_won() and mode != Mode.WIN and mode != Mode.DONE:
+	d.route_cable(view.get_socket(d.room_socket))
+	if _runs_in_planning(d.device_id) and phase == Phase.PLAN and mode != Mode.PREVIEW:
+		d.appliance.set_running(true)
+		audio.device_on(d.device_id, d.loop_sound)
+	if not is_day_mode() and state.board.is_won() and mode != Mode.WIN and mode != Mode.DONE:
 		_begin_win()
 
 
@@ -686,6 +840,7 @@ func unplug(device_id: String) -> bool:
 	var line: int = state.room_line_of(state.board.line_of_device(device_id))
 	if not state.board.unplug(device_id):
 		return false
+	_clear_fault()
 	audio.play("plug_unplug", 0.04)
 	audio.device_off(device_id)
 	Haptics.tick()
@@ -713,6 +868,7 @@ func _inspect(socket_name: String) -> void:
 	view.set_line_highlight(line, 1.0)
 	wall_box.set_line_highlight(line, 1.0)
 	panel_box.set_line_highlight(line, 1.0)
+	day_gauges.set_highlight(line, true)
 	for s: String in state.room_sockets():
 		if state.room_line_of_room_socket(s) == line:
 			fx.set_halo(s, 1.4)
@@ -723,6 +879,7 @@ func _set_inspect(line: int) -> void:
 		view.set_line_highlight(_inspect_line, 0.0)
 		wall_box.set_line_highlight(_inspect_line, 0.0)
 		panel_box.set_line_highlight(_inspect_line, 0.0)
+		day_gauges.set_highlight(0, false)
 		if mode != Mode.DRAG:
 			fx.clear_halos()
 	_inspect_line = line
@@ -737,6 +894,8 @@ func _refresh_lines(bounce: bool, bounce_line: int = 0) -> void:
 		wall_box.set_line_fill(line, f)
 		panel_box.set_line_fill(line, f)
 		view.set_line_glow(line, state.glow_for(line))
+	_refresh_day_gauges()
+	_refresh_lever()
 	if bounce and bounce_line > 0:
 		wall_gauges.bounce(bounce_line)
 		panel_gauges.bounce(bounce_line)
@@ -794,12 +953,14 @@ func _play_win() -> void:
 	_win_tween = t
 	for line: int in state.room_lines():
 		view.set_line_glow(line, 1.4)
+	day_strips.mmi.visible = false
 	# Tepsi işini bitirdi: yavaşça kaybolur, sahne dioramaya kalır.
 	var fade: Tween = create_tween()
 	fade.tween_method(_set_tray_fade, 0.0, 1.0, 0.7).set_trans(Tween.TRANS_SINE)
 
 
 func _set_tray_fade(v: float) -> void:
+	tray_fade = v
 	tray.set_faded(v)
 	for id: String in device_order:
 		var d: SliceDevice = devices[id] as SliceDevice
@@ -836,6 +997,604 @@ func is_won() -> bool:
 	return state != null and state.board.is_won()
 
 
+# --- gün kipi: kurulum ve planlama göstergeleri ---------------------------------------------------
+
+func is_day_mode() -> bool:
+	return state != null and state.is_day_mode()
+
+
+func _setup_day_mode() -> void:
+	if state.is_day_mode():
+		var caps: Dictionary = {}
+		for line: int in state.room_lines():
+			caps[line] = state.capacity_at(line, PrizSlice.MORNING)
+		day_gauges.enable(state.room_lines(), caps, state.max_capacity() + 1)
+		day_gauges.set_power(1.0)
+		day_gauges.set_focus(-1)
+		fuses.visible = true
+		fuses.set_rights(state.board.fuse_rights())
+	else:
+		if day_gauges.enabled:
+			day_gauges.disable()
+		fuses.visible = false
+	_lever_pulled_once = false
+	_set_lever_live(false)
+	if state.is_day_mode():
+		_prewarm_lever_glow()
+
+
+## Şalter parıltısı gölgelendiricisi seviye açılışında bir kez görünmeden çizilir (ilk canlanışta takılma olmasın).
+func _prewarm_lever_glow() -> void:
+	var mi: MeshInstance3D = _lever_node as MeshInstance3D
+	if mi == null or _lever_live:
+		return
+	_lever_glow.set_shader_parameter("strength", 0.0)
+	mi.material_overlay = _lever_glow
+	var t: Tween = create_tween()
+	t.tween_interval(0.15)
+	t.tween_callback(func() -> void:
+		_lever_glow.set_shader_parameter("strength", 1.0)
+		if not _lever_live:
+			mi.material_overlay = null)
+
+
+func _setup_strips() -> void:
+	if not state.is_day_mode():
+		day_strips.clear()
+		return
+	var masks: Array[int] = []
+	for id: String in device_order:
+		masks.append(state.device_mask(id))
+	day_strips.setup(masks)
+	day_strips.set_power(1.0)
+
+
+## Şeritler: tepside cihazın önünde (blok genişliği göstergeyle aynı), odada cihazın üstünde.
+func _update_strips() -> void:
+	if day_strips.count == 0:
+		return
+	var col_w: float = day_gauges.column_world_width()
+	var unit_w: float = DayGauges.unit_size(0.0).x
+	for i: int in device_order.size():
+		var d: SliceDevice = devices[device_order[i]] as SliceDevice
+		match d.place:
+			SliceDevice.Place.TRAY, SliceDevice.Place.DRAGGING:
+				if _strip_tray_pos.has(d.device_id):
+					day_strips.place(i, _strip_tray_pos[d.device_id] as Vector3, col_w * unit_w, _cam_basis)
+				else:
+					day_strips.hide(i)
+			SliceDevice.Place.PLUGGED:
+				var top: float = d.model_aabb.end.y * d.appliance.global_transform.basis.get_scale().y
+				day_strips.place(i, d.appliance.global_position + Vector3.UP * (top + ROOM_STRIP_LIFT), ROOM_STRIP_WIDTH,
+					_cam_basis)
+			_:
+				day_strips.hide(i)
+
+
+func _refresh_day_gauges() -> void:
+	if not is_day_mode():
+		return
+	for line: int in state.room_lines():
+		day_gauges.set_loads(line, state.slice_loads(line), state.capacity_at(line, PrizSlice.MORNING))
+
+
+## Planlamada cihaz çalışır mı: düz kipte takılıysa; gün kipinde takılı VE planlama dilimindeyse.
+func _runs_in_planning(device_id: String) -> bool:
+	if state.board.socket_of(device_id) == "":
+		return false
+	return not is_day_mode() or state.board.is_device_active(device_id, _planning_slice)
+
+
+# --- ana şalter -------------------------------------------------------------------------------
+
+func _set_lever_live(on: bool) -> void:
+	var was: bool = _lever_live
+	_lever_live = on
+	var mi: MeshInstance3D = _lever_node as MeshInstance3D
+	if mi != null:
+		mi.material_overlay = _lever_glow if on else null
+	if on and not was and state != null:
+		# Hazır: kol hafifçe kalkıp iner, yumuşak tık (sesi kapalıyken de görünür).
+		audio.play("socket_tick", 0.03)
+		_lever_wiggle(-12.0)
+
+
+func _refresh_lever() -> void:
+	var live: bool = is_day_mode() and phase == Phase.PLAN and state.board.can_start_day() \
+		and (mode == Mode.IDLE or mode == Mode.PRESS_LEVER)
+	_set_lever_live(live)
+
+
+func is_lever_live() -> bool:
+	return _lever_live
+
+
+## Kolun ekrandaki tutamak noktası (dokunma ve hayalet el).
+func screen_of_lever() -> Vector2:
+	var mi: MeshInstance3D = _lever_node as MeshInstance3D
+	if mi == null:
+		return Vector2(-1000.0, -1000.0)
+	var aabb: AABB = mi.get_aabb()
+	var grip: Vector3 = aabb.get_center()
+	grip.z = aabb.end.z
+	return _project(mi.global_transform * grip)
+
+
+func _set_lever_angle(t: float) -> void:
+	if _lever_node != null:
+		_lever_node.rotation.x = deg_to_rad(lerpf(FuseBox.MAIN_OFF_DEG, FuseBox.MAIN_ON_DEG * PANEL_LEVER_ON, t))
+
+
+func _lever_wiggle(deg: float) -> void:
+	if _lever_node == null:
+		return
+	var off: float = deg_to_rad(FuseBox.MAIN_OFF_DEG)
+	var t: Tween = create_tween()
+	t.tween_property(_lever_node, "rotation:x", off + deg_to_rad(deg), 0.07).set_ease(Tween.EASE_OUT)
+	t.tween_property(_lever_node, "rotation:x", off, 0.35).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+
+
+func _press_lever() -> void:
+	mode = Mode.PRESS_LEVER
+	_lever_t = 0.0
+	Haptics.tick()
+	if _lever_live:
+		audio.play("ui_soft")
+	else:
+		# Hazır değil: kol direnir, tepside bekleyen cihazlar zıplar ("önce hepsini tak").
+		audio.play("plug_reject", 0.04)
+		_lever_wiggle(10.0)
+		for id: String in device_order:
+			var d: SliceDevice = devices[id] as SliceDevice
+			if d.place == SliceDevice.Place.TRAY:
+				d.set_hint(true)
+				var t: Tween = create_tween()
+				t.tween_interval(0.7)
+				t.tween_callback(d.set_hint.bind(false))
+
+
+func _drag_lever(p: Vector2) -> void:
+	if not _lever_live:
+		return
+	_lever_t = clampf((p.y - _press_pos.y) / LEVER_PULL_PX, 0.0, 1.0)
+	_set_lever_angle(_lever_t)
+
+
+func _release_lever(allow: bool) -> void:
+	mode = Mode.IDLE
+	var tapped: bool = _finger_pos.distance_to(_press_pos) < TAP_MOVE_PX * 2.0
+	if allow and _lever_live and (tapped or _lever_t >= 0.55):
+		pull_lever()
+		return
+	if _lever_live:
+		var t: Tween = create_tween()
+		t.tween_property(_lever_node, "rotation:x", deg_to_rad(FuseBox.MAIN_OFF_DEG), 0.25) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+## Günü başlatır (dokunuş, sürükleme ya da prob). Hazır değilse kol direnir; false döner.
+func pull_lever() -> bool:
+	if not is_day_mode() or not state.board.can_start_day() or phase != Phase.PLAN \
+			or (mode != Mode.IDLE and mode != Mode.PRESS_LEVER):
+		if mode == Mode.IDLE and is_day_mode():
+			_press_lever()
+			mode = Mode.IDLE
+		return false
+	_lever_pulled_once = true
+	_tutorial_done = true
+	if finger != null:
+		finger.stop()
+	_begin_day()
+	return true
+
+
+# --- gün testi ----------------------------------------------------------------------------------
+
+func _begin_day() -> void:
+	_end_hint()
+	_set_inspect(0)
+	_clear_fault()
+	var events: Array[PrizEvent] = state.board.start_day()
+	if events.is_empty():
+		return
+	_run = DayRun.new(events)
+	if _bg_paused:
+		_run.pause()
+	phase = Phase.DAY
+	mode = Mode.DAY
+	_set_lever_live(false)
+	day_started.emit()
+	_apply_steps(_run.advance(0.0))
+
+
+func is_day_running() -> bool:
+	return _run != null
+
+
+func day_run() -> DayRun:
+	return _run
+
+
+func _apply_steps(steps: Array[DayRun.Step]) -> void:
+	for step: DayRun.Step in steps:
+		_apply_step(step.event)
+		if _run == null:
+			return
+
+
+func _time_k() -> float:
+	return 1.0 / maxf(_run.time_scale(), 1.0) if _run != null else 1.0
+
+
+func _apply_step(e: PrizEvent) -> void:
+	match e.type:
+		PrizEvent.DAY_START:
+			_day_start()
+		PrizEvent.SLICE_BEGIN:
+			_day_slice(e.slice)
+		PrizEvent.DEVICE_OFF:
+			_day_device(e.device_id, false)
+		PrizEvent.DEVICE_ON:
+			_day_device(e.device_id, true)
+		PrizEvent.LINE_LOAD:
+			_day_line_load(e)
+		PrizEvent.LINE_NEAR_LIMIT:
+			_day_near()
+		PrizEvent.FUSE_BLOWN:
+			_day_blow(e)
+		PrizEvent.BACK_TO_PLANNING:
+			_day_end_blow(false)
+		PrizEvent.LOSE:
+			_day_end_blow(true)
+		PrizEvent.DAY_SURVIVED:
+			_day_survived()
+		PrizEvent.WIN:
+			_run = null
+			_begin_win()
+		_:
+			pass
+
+
+func _day_start() -> void:
+	wall_box.set_main_lever(true)
+	var from: float = _lever_node.rotation.x if _lever_node != null else 0.0
+	panel_box.set_main_lever(true, false)
+	if _lever_node != null:
+		_lever_node.rotation.x = from
+		var lt: Tween = create_tween()
+		lt.tween_property(_lever_node, "rotation:x", deg_to_rad(FuseBox.MAIN_ON_DEG * PANEL_LEVER_ON), 0.16) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	audio.day_begin()
+	_fade_tray(1.0)
+	Haptics.thud()
+	view.camera_rig.shake(0.5)
+	# Şalter: her şey bir an susar, sonra sabahın cihazları tek tek açılır (neden-sonuç görünür).
+	for id: String in device_order:
+		var d: SliceDevice = devices[id] as SliceDevice
+		d.appliance.set_running(false, 0.2)
+		audio.device_off(id)
+	for line: int in state.room_lines():
+		wall_box.set_line_fill(line, 0.0)
+		view.set_line_glow(line, 0.0)
+	day_gauges.set_focus(-1)
+	day_strips.set_focus(-1)
+	_near_lines.clear()
+
+
+func _day_slice(slice: int) -> void:
+	var k: float = _time_k()
+	_slice_loaded = false
+	_slice_near = false
+	_day_tension = 0.0
+	view.day_light.set_slice(slice, 0.95 * k)
+	for box: FuseBox in [wall_box, panel_box]:
+		box.set_slice_dial(slice, 0.7 * k)
+	audio.play("slice_transition", 0.03)
+	audio.set_ambience(slice)
+	day_gauges.set_focus(slice)
+	day_gauges.reveal_hold()
+	day_strips.set_focus(slice)
+	Haptics.tick()
+
+
+func _day_device(device_id: String, on: bool) -> void:
+	var d: SliceDevice = devices.get(device_id, null) as SliceDevice
+	if d == null:
+		return
+	d.appliance.set_running(on)
+	if on:
+		audio.device_on(device_id, d.loop_sound)
+		if d.room_socket != "":
+			fx.set_halo(d.room_socket, 1.2)
+			var t: Tween = create_tween()
+			t.tween_interval(0.35)
+			t.tween_callback(fx.set_halo.bind(d.room_socket, 0.0))
+	else:
+		audio.device_off(device_id)
+
+
+func _day_line_load(e: PrizEvent) -> void:
+	var line: int = state.room_line_of(e.line_id)
+	if not _slice_loaded:
+		_slice_loaded = true
+		day_gauges.reveal(0.35 * _time_k())
+	wall_box.set_line_fill(line, e.fill)
+	panel_box.set_line_fill(line, e.fill)
+	view.set_line_glow(line, 0.0 if e.blocks <= 0 else 1.0 + 1.5 * smoothstep(0.75, 1.0, e.fill))
+	_day_tension = maxf(_day_tension, e.fill)
+	audio.set_tension(_day_tension)
+
+
+func _day_near() -> void:
+	if _slice_near:
+		return
+	_slice_near = true
+	_flicker(0.85)
+
+
+func _day_blow(e: PrizEvent) -> void:
+	var line: int = state.room_line_of(e.line_id)
+	for box: FuseBox in [wall_box, panel_box]:
+		box.trip(line)
+	day_gauges.set_fault(line, e.slice)
+	day_gauges.set_dim(line, true)
+	_fault_slice = e.slice
+	if not _fault_lines.has(line):
+		_fault_lines.append(line)
+	for id: String in state.devices_on_line_at(line, e.slice):
+		if not _fault_devices.has(id):
+			_fault_devices.append(id)
+	if _fault_lines.size() > 1:
+		return  # aynı dilimde ikinci hat: yalnız şalteri iner, dram bir kez
+	# "Çat": kıvılcım, anlık karanlık, cihazlar söner, sonra sessizlik.
+	audio.fuse_blow()
+	Haptics.thud()
+	view.camera_rig.shake(1.0)
+	var breaker: Node3D = panel_box.find_child("Breaker_%d" % line, true, false) as Node3D
+	if breaker != null:
+		fx.seat_burst(breaker.global_position, panel_box.global_basis.z.normalized(), Color(1.0, 0.55, 0.25))
+	fuses.set_rights(e.rights, true)
+	view.day_light.blackout(BLOW_DARK_SECONDS)
+	for id: String in device_order:
+		(devices[id] as SliceDevice).appliance.set_running(false, 0.5)
+	for l: int in state.room_lines():
+		view.set_line_glow(l, 0.0)
+		wall_box.set_line_fill(l, 0.0)
+	day_gauges.set_power(0.1)
+	day_strips.set_power(0.1)
+	fuse_spent.emit(e.rights)
+	# Karanlıkta plan ışığına geçilir; ışık geri geldiğinde oda planlamadadır.
+	var t: Tween = create_tween()
+	t.tween_interval(BLOW_DARK_SECONDS * 0.8)
+	t.tween_callback(func() -> void:
+		view.day_light.set_slice(_planning_slice, 0.0)
+		for box: FuseBox in [wall_box, panel_box]:
+			box.set_slice_dial(_planning_slice, 0.0))
+	t.tween_interval(BLOW_DARK_SECONDS * 0.4)
+	t.tween_callback(func() -> void:
+		day_gauges.set_power(1.0)
+		day_strips.set_power(1.0))
+
+
+## Sigortadan sonra: şalterler yeniden kalkar, oda planlamaya döner, neden işaretli kalır.
+func _day_end_blow(lost: bool) -> void:
+	_run = null
+	phase = Phase.PLAN
+	for line: int in _fault_lines:
+		day_gauges.set_dim(line, false)
+		for box: FuseBox in [wall_box, panel_box]:
+			box.set_breaker(line, true)
+	audio.play("breaker_flip", 0.03)
+	for box: FuseBox in [wall_box, panel_box]:
+		box.set_main_lever(false)
+	_resume_planning_scene()
+	_show_fault()
+	if lost:
+		mode = Mode.LOST
+		var t: Tween = create_tween()
+		t.tween_interval(0.6)
+		t.tween_callback(func() -> void:
+			if mode == Mode.LOST:
+				day_lost.emit())
+	else:
+		mode = Mode.IDLE
+		_refresh_lever()
+		back_to_planning.emit()
+
+
+func _day_survived() -> void:
+	for line: int in state.room_lines():
+		view.set_line_glow(line, 1.4)
+	day_gauges.set_focus(-1)
+	day_strips.set_focus(-1)
+	audio.play_pitched("window_light", 1.4, -4.0)
+	Haptics.tick()
+
+
+## Plan ışığı, planlama diliminin cihazları, müzik, tepsi; göstergeler tüm günü yeniden gösterir.
+func _resume_planning_scene() -> void:
+	view.day_light.set_slice(_planning_slice, 0.6)
+	for box: FuseBox in [wall_box, panel_box]:
+		box.set_slice_dial(_planning_slice, 0.6)
+	day_gauges.set_focus(-1)
+	day_gauges.reveal(0.0)
+	day_strips.set_focus(-1)
+	audio.resume_planning(_planning_slice)
+	_fade_tray(0.0)
+	for id: String in device_order:
+		var d: SliceDevice = devices[id] as SliceDevice
+		var run: bool = _runs_in_planning(id)
+		d.appliance.set_running(run)
+		if run:
+			audio.device_on(id, d.loop_sound)
+		else:
+			audio.device_off(id)
+	_refresh_lines(false)
+
+
+func _show_fault() -> void:
+	_fault_t = 0.0
+	for i: int in device_order.size():
+		if _fault_devices.has(device_order[i]):
+			day_strips.set_fault(i, _fault_slice)
+			var d: SliceDevice = devices[device_order[i]] as SliceDevice
+			d.nudge()
+			if d.room_socket != "":
+				fx.set_halo(d.room_socket, 1.5)
+
+
+func _clear_fault() -> void:
+	if day_gauges != null:
+		day_gauges.clear_fault()
+	if day_strips != null:
+		day_strips.clear_fault()
+	for line: int in _fault_lines:
+		view.set_line_highlight(line, 0.0)
+	if not _fault_devices.is_empty() and fx != null and mode != Mode.DRAG:
+		fx.clear_halos()
+	_fault_lines.clear()
+	_fault_devices.clear()
+	_fault_slice = -1
+
+
+## Sigortanın attığı hat/dilim ve o anda çalışan cihazlar (prob/çekim).
+func fault_info() -> Dictionary:
+	return {"lines": _fault_lines.duplicate(), "slice": _fault_slice, "devices": _fault_devices.duplicate()}
+
+
+## Ödüllü "+1 sigorta": kayıptan planlamaya döner, plan korunur, yeni cam sigorta yuvasına kayar.
+func grant_extra_right() -> void:
+	if state == null or not is_day_mode():
+		return
+	state.board.grant_extra_right()
+	fuses.set_rights(state.board.fuse_rights(), true)
+	audio.play("breaker_flip", 0.03)
+	Haptics.tick()
+	phase = Phase.PLAN
+	mode = Mode.IDLE
+	_refresh_lever()
+
+
+## Tekrar dene (plan korunur): seviye baştan kurulur, haklar dolar, cihazlar aynı prizlere anında takılır.
+func restart_keep_plan() -> void:
+	var plan: Dictionary = state.board.placement() if state != null else {}
+	start_level(level_index, 0.6)
+	_apply_plan_instant(plan)
+
+
+func _apply_plan_instant(plan: Dictionary) -> void:
+	for key: Variant in plan.keys():
+		var device_id: String = str(key)
+		var sid: String = str(plan[key])
+		if state.board.plug(device_id, sid) != PrizReason.OK:
+			continue
+		var d: SliceDevice = devices.get(device_id, null) as SliceDevice
+		var sock: String = state.room_socket_of(sid)
+		if d == null or sock == "":
+			continue
+		d.room_socket = sock
+		d.snap_plugged(view.get_socket(sock).global_transform)
+		d.route_cable(view.get_socket(sock))
+		d.set_pips_full(false, 0.0)
+		tray.set_slot_empty(int(_slot_of[device_id]), true)
+		_plug_count += 1
+		if _runs_in_planning(device_id):
+			d.appliance.set_running(true, 0.0)
+			audio.device_on(device_id, d.loop_sound)
+	_refresh_lines(false)
+
+
+# --- gün önizleme (ödüllü): dilimleri elle gezme ------------------------------------------------
+
+func can_preview() -> bool:
+	return is_day_mode() and mode == Mode.IDLE and phase == Phase.PLAN and state.board.is_planning()
+
+
+func begin_preview() -> bool:
+	if not can_preview():
+		return false
+	_end_hint()
+	_set_inspect(0)
+	mode = Mode.PREVIEW
+	if _preview_bar != null:
+		_preview_bar.open_bar()
+	_fade_tray(1.0)
+	preview_slice(PrizSlice.MORNING)
+	return true
+
+
+func is_previewing() -> bool:
+	return mode == Mode.PREVIEW
+
+
+func preview_slice(slice: int) -> void:
+	if mode != Mode.PREVIEW or slice == _preview_slice:
+		return
+	_preview_slice = clampi(slice, 0, PrizSlice.COUNT - 1)
+	if _preview_bar != null:
+		_preview_bar.set_current(_preview_slice)
+	view.day_light.set_slice(_preview_slice, 0.55)
+	for box: FuseBox in [wall_box, panel_box]:
+		box.set_slice_dial(_preview_slice, 0.45)
+	audio.play("slice_transition", 0.03)
+	audio.set_ambience(_preview_slice)
+	Haptics.tick()
+	for id: String in device_order:
+		var d: SliceDevice = devices[id] as SliceDevice
+		var run: bool = state.board.socket_of(id) != "" and state.board.is_device_active(id, _preview_slice)
+		d.appliance.set_running(run)
+		if run:
+			audio.device_on(id, d.loop_sound)
+		else:
+			audio.device_off(id)
+	for line: int in state.room_lines():
+		var cap: int = state.capacity_at(line, _preview_slice)
+		var blocks: int = state.load_at(line, _preview_slice)
+		var f: float = float(blocks) / float(maxi(cap, 1)) if cap > 0 else (2.0 if blocks > 0 else 0.0)
+		wall_box.set_line_fill(line, f)
+		view.set_line_glow(line, 0.0 if blocks <= 0 else 1.0 + 1.5 * smoothstep(0.75, 1.0, f))
+	audio.set_tension(state.tension_at(_preview_slice))
+	day_gauges.set_focus(_preview_slice)
+	day_gauges.reveal(0.3)
+	day_strips.set_focus(_preview_slice)
+	if state.tension_at(_preview_slice) >= PrizBoard.NEAR_LIMIT_FILL:
+		_flicker(0.6)
+
+
+func preview_index() -> int:
+	return _preview_slice
+
+
+func end_preview() -> void:
+	if mode != Mode.PREVIEW:
+		return
+	if _preview_bar != null:
+		_preview_bar.close_bar()
+	_preview_slice = -1
+	mode = Mode.IDLE
+	_fade_tray(0.0)
+	_resume_planning_scene()
+
+
+func _scrub(p: Vector2) -> void:
+	var w: float = get_viewport().get_visible_rect().size.x
+	preview_slice(clampi(int(p.x / maxf(w, 1.0) * 4.0), 0, 3))
+
+
+func _fade_tray(target: float) -> void:
+	var t: Tween = create_tween()
+	t.tween_method(_set_tray_fade, tray_fade, target, 0.3).set_trans(Tween.TRANS_SINE)
+
+
+## Ödüllü ipucu: cihaz ve doğru prizi daha uzun süre atar.
+func show_hint() -> void:
+	if state == null or not state.board.is_planning() or mode != Mode.IDLE:
+		return
+	_show_hint()
+	if _hint_left > 0.0:
+		_hint_left = PAID_HINT_SECONDS
+
+
 # --- ipucu ve öğretim ---------------------------------------------------------------------------
 
 func _process(delta: float) -> void:
@@ -843,11 +1602,21 @@ func _process(delta: float) -> void:
 	panel_gauges.process(delta)
 	if state == null:
 		return
+	if _run != null:
+		_apply_steps(_run.advance(delta))
+		if _run != null and _run.is_finished():
+			_run = null
+	_update_strips()
+	if not _fault_lines.is_empty() and mode == Mode.IDLE:
+		_fault_t += delta
+		var v: float = 0.45 + 0.4 * sin(_fault_t * 5.0)
+		for line: int in _fault_lines:
+			view.set_line_highlight(line, v)
 	if _inspect_left > 0.0:
 		_inspect_left -= delta
 		if _inspect_left <= 0.0:
 			_set_inspect(0)
-	if not _near_lines.is_empty() and mode != Mode.WIN and mode != Mode.DONE:
+	if not _near_lines.is_empty() and phase == Phase.PLAN and (mode == Mode.IDLE or mode == Mode.DRAG):
 		_flicker_cooldown -= delta
 		if _flicker_cooldown <= 0.0:
 			_flicker(0.35)
@@ -855,7 +1624,7 @@ func _process(delta: float) -> void:
 		_idle += delta
 		_update_tutorial()
 		var wait: float = PULSE_IDLE_SECONDS if _tutorial == "pulse" and _plug_count == 0 else HINT_IDLE_SECONDS
-		if _hint_left <= 0.0 and _idle >= wait:
+		if auto_hint and _hint_left <= 0.0 and _idle >= wait:
 			_show_hint()
 	if _hint_left > 0.0:
 		_hint_left -= delta
@@ -866,6 +1635,14 @@ func _process(delta: float) -> void:
 
 func _update_tutorial() -> void:
 	if finger == null:
+		return
+	if _tutorial == "lever":
+		# İlk gün seviyesi: her şey takılınca hayalet el kolu aşağı çeker (bir kez çekilene dek).
+		if _lever_live and not _lever_pulled_once:
+			var g: Vector2 = screen_of_lever()
+			finger.play(g + Vector2(0.0, -20.0), g + Vector2(0.0, LEVER_PULL_PX * 0.8))
+		elif finger.is_playing():
+			finger.stop()
 		return
 	if _tutorial != "drag" or _tutorial_done:
 		if finger.is_playing():

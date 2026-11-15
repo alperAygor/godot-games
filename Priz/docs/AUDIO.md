@@ -26,6 +26,8 @@ Hepsi Master'a gider. `duck()` yalnız Loops, Ambience ve Music'i kısar; SFX k�
 - `is_loop_playing(id)`, `loop_ids()`, `loop_volume_target(id)`, `loop_pitch_target(id)`, `loop_player(id)`, `loop_player_count()`.
 - `duck(seconds, depth_db = -14)`: 50 ms'de iner, `seconds` kısık kalır, 0.6 sn'de geri açılır. Art arda çağrı yeniler.
 - `play_jingle(sound_name, volume_db = 0)`: kısa, döngüsüz müzik parçası (kazanma); havuz turu onu kesmez.
+- `preload_sounds(names)` (aşama 3): sahne açılışında önbelleğe alır; ilk çalışta dosya okuma/çözme takılması olmaz
+  (oyun sahnesi gün seslerini, dört ortamı ve seviyenin cihaz döngülerini önceden yükler).
 - `set_sound_enabled(false)`: döngü katmanları kaydolu kalır ama duraklar; açılınca kaldığı yerden sürer.
   `set_music_enabled` müzik ve `play_jingle` içindir.
 
@@ -71,6 +73,10 @@ geçişli; `play_music("music_plan", -13)`). Otomatik başlayan `music_main` / `
 - Ortam (`play_ambience`) en altta, -6 dB civarı; müzik `music_plan` -13 dB. Efektler (SFX) hep önde.
 - Sigorta atması: `play("fuse_blow")`, `duck(1.5, -24)`, `stop_all_loops(0.25)`, `play("power_down")`.
 - Kazanma: `stop_all_loops`, `play_jingle("music_win", -3)`, pencereler `window_light` yükselen perdeyle.
+- Gün testi (aşama 3, `SliceAudio`): şalter `start_day` + planlama müziği çekilir; her dilim `slice_transition` + o dilimin
+  ortamı; cihaz döngüleri olaylarla açılıp kapanır; uğultu perdesi o dilimin en dolu hattını izler; sınırda
+  `lamp_flicker`; sigortada `fuse_blow` + `duck(1.8, -24)` + `stop_all_loops(0.25)` + `power_down`; plana dönüşte
+  `breaker_flip`, ortam, müzik ve uğultu geri gelir.
 
 ## Boyut
 

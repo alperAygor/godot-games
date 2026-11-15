@@ -208,8 +208,22 @@ func test_detect_device_language_is_supported() -> void:
 	assert_true(Loc.detect_device_language() in Loc.LANGUAGES)
 
 
-func test_apply_from_args_defaults_to_source_language() -> void:
+func test_apply_from_args_defaults_to_english() -> void:
 	Loc.apply_from_args(PackedStringArray(["--lang=es"]))
 	assert_eq(Loc.language(), "es")
 	Loc.apply_from_args(PackedStringArray())
-	assert_eq(Loc.language(), "tr")
+	assert_eq(Loc.language(), "en", "araçlarda varsayılan dil İngilizce")
+	Loc.set_language(Loc.LANG_TR)
+
+
+## Sahip kararı: İngilizce varsayılan; Türkçe yalnız Türkçe cihazda; desteklenmeyen dil İngilizce.
+func test_english_is_default_and_turkish_only_on_turkish_devices() -> void:
+	assert_eq(str(ProjectSettings.get_setting("internationalization/locale/fallback")), "en", "çeviri yedeği en")
+	assert_eq(Loc.DEFAULT_UNKNOWN, Loc.LANG_EN)
+	assert_eq(Loc.language_for_device("tr_TR"), "tr")
+	assert_eq(Loc.language_for_device("tr"), "tr")
+	assert_eq(Loc.language_for_device("es_MX"), "es")
+	assert_eq(Loc.language_for_device("en_US"), "en")
+	assert_eq(Loc.language_for_device("de_DE"), "en")
+	assert_eq(Loc.language_for_device("az_AZ"), "en", "Türkçeye yakın dil de İngilizce")
+	assert_eq(Loc.language_for_device(""), "en")

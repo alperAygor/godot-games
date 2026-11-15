@@ -3,7 +3,9 @@ extends SceneTree
 ## "Ekranda rakam yok" probu (headless): Priz kuralını çalışma anında doğrular.
 ## Üç dilde (tr/en/es) şu ekranları açar ve sahne ağacını gezer:
 ##   Home, Home+ayarlar sayfası, Game, Game+duraklatma, kazanma sayfası (2x sonrası dahil),
-##   kayıp sayfası, "bağlantı gerekli" sayfası.
+##   kayıp sayfası, "bağlantı gerekli" sayfası; aşama 3: gün kipi seviyesinde gün testi sürerken ve
+##   ödüllü gün önizlemesi açıkken (dilim göstergeleri, şeritler, önizleme çubuğu).
+## 3B metin düğümü (Label3D / TextMesh) oyun sahnesinde hiç olmamalı: dünya içi göstergeler çizimdir.
 ## Herhangi bir Label / Button / RichTextLabel (görünür olsun olmasın) metni rakam içeriyorsa başarısız olur.
 ## Rakam = ASCII 0-9, Arapça-Hint ve tam genişlik rakamlar.
 ##   godot --headless --path . -s res://tools/digit_probe.gd      çıkış 0 = geçti
@@ -67,7 +69,7 @@ func _run() -> void:
 	root.get_node("AdManager").call("set_provider", InstantProvider.new())
 	for code: String in Loc.LANGUAGES:
 		await _language_pass(code)
-	_check(_screens >= Loc.LANGUAGES.size() * 7, "her dilde 7 ekran/sayfa gezilmeli (gezilen %d)" % _screens)
+	_check(_screens >= Loc.LANGUAGES.size() * 9, "her dilde 9 ekran/sayfa gezilmeli (gezilen %d)" % _screens)
 	_check(_inspected > 100, "yeterince metin düğümü denetlenmeli (denetlenen %d)" % _inspected)
 	print("PROBE rakam_denetimi: %d ekran, %d metin düğümü, %d dil" % [_screens, _inspected, Loc.LANGUAGES.size()])
 	Loc.set_language(Loc.LANG_TR)
@@ -103,6 +105,19 @@ func _language_pass(code: String) -> void:
 	current_scene.call("_on_pause_requested")
 	await _frames(SETTLE_FRAMES)
 	_inspect(current_scene, "%s/game+duraklatma" % code)
+	# Gün kipi: önizleme çubuğu ve gün testi sürerken (PLAYER_LEVEL bir gün seviyesidir)
+	_open_scene(GAME_SCENE)
+	await _frames(SETTLE_FRAMES)
+	var day_slice: SliceGame = current_scene.get_node("Slice") as SliceGame
+	_check(day_slice.is_day_mode(), "%s: oyuncu seviyesi gün kipinde olmalı" % code)
+	await _plug_all(current_scene)
+	_check(day_slice.begin_preview(), "%s: gün önizlemesi açılmalı" % code)
+	await _frames(SETTLE_FRAMES)
+	_inspect(current_scene, "%s/game+onizleme" % code)
+	day_slice.end_preview()
+	_check(day_slice.pull_lever(), "%s: şalter günü başlatmalı" % code)
+	await _frames(SETTLE_FRAMES * 4)
+	_inspect(current_scene, "%s/game+gun" % code)
 	# Kazanma sayfası + 2x sonrası
 	_open_scene(GAME_SCENE)
 	await _frames(SETTLE_FRAMES)
@@ -146,13 +161,24 @@ func _plug_one(game: Node) -> void:
 	await _until(func() -> bool: return slice.all_settled())
 
 
-## Seviyeyi çözer ve kazanma sahnesini atlar (sonuç sayfası çıksın).
-func _solve(game: Node) -> void:
+## Tüm cihazları çözümdeki prizlere takar.
+func _plug_all(game: Node) -> void:
 	var slice: SliceGame = game.get_node("Slice") as SliceGame
 	var plan: Dictionary = PrizSolver.new().first_solution(slice.state.level, PrizContent.load_default().registry)
 	for id: Variant in plan.keys():
 		slice.drag_device_to_socket(str(id), str(plan[id]))
 		await _until(func() -> bool: return slice.all_settled())
+
+
+## Seviyeyi çözer (gün kipinde şalteri çeker, günü hızlandırır) ve kazanma sahnesini atlar.
+func _solve(game: Node) -> void:
+	var slice: SliceGame = game.get_node("Slice") as SliceGame
+	await _plug_all(game)
+	if slice.is_day_mode():
+		slice.pull_lever()
+		while slice.is_day_running():
+			slice.day_run().fast_forward()
+			await process_frame
 	await _until(func() -> bool: return slice.mode == SliceGame.Mode.WIN)
 	slice.skip_win()
 
@@ -179,6 +205,8 @@ func _open_scene(path: String) -> void:
 func _inspect(from: Node, label: String) -> void:
 	_screens += 1
 	for node: Node in _all_nodes(from):
+		if node is Label3D or (node is MeshInstance3D and (node as MeshInstance3D).mesh is TextMesh):
+			_check(false, "%s: 3B metin düğümü olmamalı (%s)" % [label, node.get_path()])
 		var text: String = ""
 		if node is RichTextLabel:
 			text = (node as RichTextLabel).text

@@ -5,13 +5,16 @@ extends Sheet
 ## sinyallere bağlanır; ödül/reklam mantığı burada değildir (yalnız gösterir).
 ## Kazanma: kupa diski, başlık, yıldız noktaları, jeton ödülü (jeton SİMGELERİ, rakam yok), ikincil
 ## "İkiye katla" (ödüllü reklam), büyük "Devam".
-## Kaybetme: sakin disk, başlık, birincil "Bir hak daha" (YALNIZ ödüllü reklam), ikincil "Tekrar dene".
+## Kaybetme: sakin disk, başlık, birincil "Bir hak daha" (YALNIZ ödüllü reklam), ikincil "Tekrar dene",
+## altta ev ikonu (çık).
 ## Priz kuralı: bu sayfada hiçbir rakam görünmez.
 
 signal continue_pressed
 signal double_pressed
 signal revive_pressed
 signal retry_pressed
+## Kayıpta "çık" (ana ekran) — ikon düğmesi, metinsiz.
+signal home_pressed
 
 const TITLE_SIZE: int = UiKit.TITLE_SIZE
 const MAIN_HEIGHT: float = UiKit.HEIGHT_PRIMARY
@@ -112,6 +115,16 @@ func _fill_lose(can_revive: bool) -> void:
 	retry.name = "RetryButton"
 	retry.pressed.connect(retry_pressed.emit)
 	column.add_child(retry)
+	column.add_child(UiKit.spacer(UiKit.SPACE_MD))
+	var home_row: CenterContainer = CenterContainer.new()
+	home_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(home_row)
+	var home: UiIconButton = UiIconButton.new()
+	home.name = "HomeButton"
+	home.setup("lucide/house")
+	home.disc_color = UiKit.ACCENT_SOFT
+	home.pressed.connect(home_pressed.emit)
+	home_row.add_child(home)
 
 
 ## Ödül simgelerini bir süre sonra doldurur (jeton sesiyle); simgeler sırayla "pop" yapar.

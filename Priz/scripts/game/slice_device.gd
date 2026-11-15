@@ -51,6 +51,11 @@ var _pip_tween: Tween
 var _plug_scale: float = PLUG_TRAY_SCALE
 var _hint: float = 0.0
 var _time: float = 0.0
+## Takılı cihazın kablosu: duvar/zemin boyunca döşenmiş durağan tüp (mobilyadan geçmez, her kare kurulmaz).
+var _route: MeshInstance3D
+## Tepside okunurluk: TV ekranı loş görüntü verir (siyah levha gibi okunmasın), modeller tepsi ışığı
+## katmanında (SliceGame'in gölgesiz tepsi ışığı yalnız bu katmanı aydınlatır).
+var _tray_look: bool = false
 
 
 func setup(p_id: String, p_type: String, p_blocks: int, spec: Dictionary) -> void:
@@ -262,6 +267,7 @@ func _squash() -> void:
 
 ## Tepsiye dönüş (fiş çekildi): fiş cihazla birlikte tepsiye uçar.
 func travel_to_tray() -> void:
+	_unroute()
 	place = Place.RETURNING
 	room_socket = ""
 	cable.floor_y = FREE_FLOOR_Y
@@ -294,6 +300,140 @@ func snap_plugged(socket_xform: Transform3D) -> void:
 	cable.snap_to_rest()
 
 
+## Fiş oturup cihaz yerine varınca kablo duvar diplerinden prize döşenir: cihazın fiş çıkışından duvara,
+## duvar boyunca (yerdeki cihazlarda süpürgelik hizasında) prizin altına, oradan fişe. Köşeler yumuşatılır.
+## Fizik ipi gizlenir ve durur (CPU tasarrufu); tepsiye dönüşte geri gelir.
+func route_cable(socket: Node3D) -> void:
+	if socket == null or appliance.get_plug_anchor() == null:
+		return
+	var a: Vector3 = appliance.get_plug_anchor().global_position
+	var end: Node3D = plug.find_child("CableAnchor", true, false) as Node3D
+	var b: Vector3 = end.global_position if end != null else plug.global_position
+	var n: Vector3 = socket.global_basis.z.normalized()
+	var back_wall: bool = absf(n.z) >= absf(n.x)
+	var off: float = 0.03
+	var floor_y: float = ROOM_FLOOR_Y + CABLE_RADIUS * 1.2
+	var low: bool = a.y < 0.55
+	var run_y: float = floor_y if low else a.y
+	var pts: PackedVector3Array = PackedVector3Array()
+	pts.append(a)
+	var on_wall: Vector3 = a
+	if back_wall:
+		on_wall.z = off
+	else:
+		on_wall.x = off
+	if low:
+		pts.append(Vector3(a.x, floor_y, a.z))
+		on_wall.y = floor_y
+	pts.append(on_wall)
+	var under: Vector3 = b
+	if back_wall:
+		under = Vector3(b.x, run_y, off)
+	else:
+		under = Vector3(off, run_y, b.z)
+	pts.append(under)
+	var below_plug: Vector3 = Vector3(under.x, b.y - 0.07, under.z)
+	if below_plug.y > under.y:
+		pts.append(below_plug)
+	pts.append(b)
+	pts = _smooth(_dedupe(pts), 3)
+	if _route == null:
+		_route = MeshInstance3D.new()
+		_route.name = "RoutedCable"
+		_route.top_level = true
+		_route.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(_route)
+	_route.global_transform = Transform3D.IDENTITY
+	_route.mesh = _tube(pts, CABLE_RADIUS, 8)
+	_route.material_override = PLUG_MAT
+	_route.visible = true
+	cable.visible = false
+	cable.set_process(false)
+	cable.set_physics_process(false)
+
+
+func _unroute() -> void:
+	if _route != null:
+		_route.visible = false
+	cable.visible = true
+	cable.set_process(true)
+	cable.set_physics_process(true)
+
+
+func has_routed_cable() -> bool:
+	return _route != null and _route.visible
+
+
+static func _dedupe(pts: PackedVector3Array) -> PackedVector3Array:
+	var out: PackedVector3Array = PackedVector3Array()
+	for p: Vector3 in pts:
+		if out.is_empty() or out[out.size() - 1].distance_to(p) > 0.005:
+			out.append(p)
+	return out
+
+
+## Chaikin köşe yumuşatma (uçlar sabit).
+static func _smooth(pts: PackedVector3Array, iterations: int) -> PackedVector3Array:
+	var cur: PackedVector3Array = pts
+	for _i: int in iterations:
+		if cur.size() < 3:
+			return cur
+		var nxt: PackedVector3Array = PackedVector3Array()
+		nxt.append(cur[0])
+		for k: int in range(cur.size() - 1):
+			var p0: Vector3 = cur[k]
+			var p1: Vector3 = cur[k + 1]
+			if k > 0:
+				nxt.append(p0.lerp(p1, 0.25))
+			if k < cur.size() - 2:
+				nxt.append(p0.lerp(p1, 0.75))
+		nxt.append(cur[cur.size() - 1])
+		cur = nxt
+	return cur
+
+
+static func _tube(pts: PackedVector3Array, r: float, sides: int) -> ArrayMesh:
+	var st: SurfaceTool = SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var n: int = pts.size()
+	var prev_normal: Vector3 = Vector3.ZERO
+	var rings: Array[PackedVector3Array] = []
+	var normals: Array[PackedVector3Array] = []
+	for i: int in n:
+		var t: Vector3 = (pts[mini(i + 1, n - 1)] - pts[maxi(i - 1, 0)]).normalized()
+		var nrm: Vector3 = prev_normal
+		if nrm == Vector3.ZERO or absf(nrm.dot(t)) > 0.95:
+			nrm = t.cross(Vector3.UP if absf(t.y) < 0.9 else Vector3.RIGHT).normalized()
+		nrm = (nrm - t * nrm.dot(t)).normalized()
+		prev_normal = nrm
+		var bin: Vector3 = t.cross(nrm).normalized()
+		var ring: PackedVector3Array = PackedVector3Array()
+		var rn: PackedVector3Array = PackedVector3Array()
+		for k: int in sides:
+			var ang: float = TAU * float(k) / float(sides)
+			var dir: Vector3 = nrm * cos(ang) + bin * sin(ang)
+			ring.append(pts[i] + dir * r)
+			rn.append(dir)
+		rings.append(ring)
+		normals.append(rn)
+	for i: int in range(n - 1):
+		for k: int in sides:
+			var k2: int = (k + 1) % sides
+			for v: Array in [[i, k], [i + 1, k], [i, k2], [i, k2], [i + 1, k], [i + 1, k2]]:
+				var ri: int = int(v[0])
+				var ki: int = int(v[1])
+				st.set_normal(normals[ri][ki])
+				st.set_uv(Vector2(float(ki) / float(sides), float(ri) / float(n - 1)))
+				st.add_vertex(rings[ri][ki])
+	return st.commit()
+
+
+## Küçük "ben buradayım" ezilmesi (sigorta nedeni, yalnız takılan gün cihazı).
+func nudge() -> void:
+	if place == Place.PLUGGED:
+		_squash()
+
+
 func is_busy() -> bool:
 	return place == Place.TRAVEL or place == Place.RETURNING
 
@@ -309,8 +449,27 @@ func pick_radius_world() -> float:
 	return maxf(model_aabb.size.x, model_aabb.size.y) * s * 0.5
 
 
+## Tepsi ışığı katmanı (bit 2). Odada yalnız varsayılan katman.
+const TRAY_LAYER: int = 2
+const TV_TRAY_POWER: float = 0.32
+
+
+func _set_tray_look(on: bool) -> void:
+	if on == _tray_look:
+		return
+	_tray_look = on
+	for node: Node in appliance.find_children("*", "VisualInstance3D", true, false):
+		var vi: VisualInstance3D = node as VisualInstance3D
+		vi.layers = (1 | TRAY_LAYER) if on else 1
+	if type == "tv":
+		var screen: MeshInstance3D = appliance.mesh_part("Screen")
+		if screen != null:
+			screen.set_instance_shader_parameter("power", TV_TRAY_POWER if on else appliance.get_level())
+
+
 func _process(delta: float) -> void:
 	_time += delta
+	_set_tray_look(place == Place.TRAY or place == Place.DRAGGING)
 	if _hint > 0.0 and place == Place.TRAY:
 		var t: Transform3D = tray_xform
 		var hop: float = absf(sin(_time * 5.0))

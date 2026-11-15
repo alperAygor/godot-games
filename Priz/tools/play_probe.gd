@@ -4,8 +4,11 @@ extends SceneTree
 ##  * kazanma yolu: çözücünün çözümü sürükle-bırakla takılır, kazanma sahnesi dokunarak atlanır -> sonuç sayfası -> jeton ödülü + yıldız + seviye ilerlemesi -> "Devam" -> yeni tur,
 ##  * ilk 3 seviye sessiz (ödüllü düğme yok), sonrasında "İkiye katla" (ödüllü reklam, simge sayısı artar),
 ##  * geçiş reklamı kuralı (5. seviyeden sonra, 2-3 seviyede bir; ödüllü izlenen geçişte yok),
-##  * kayıp yolu (düz kipte oyun kaybettirmez; gün kipi kancası `_show_lose` doğrudan çağrılır): kayıp sayfası ->
-##    "Bir hak daha" (ödüllü, tur başına bir kez) -> tekrar kayıp -> hak yok -> "Tekrar dene" temiz başlar,
+##  * kayıp yolu (kabuk kancası `_show_lose` doğrudan çağrılır; gerçek sigorta akışı `tools/day_probe.gd`): kayıp
+##    sayfası -> "Bir hak daha" (ödüllü, tur başına bir kez) -> tekrar kayıp -> hak yok -> "Tekrar dene" (gün kipinde
+##    plan korunur, haklar dolar; düz kipte temiz başlar),
+##  * aşama 3: kesitin 8. seviyesinden itibaren gün kipi — seviye ana şalterle (gerçek dokunuş) ve hızlandırılmış
+##    günle kazanılır,
 ##  * duraklatma sayfası oyunu durdurur ve kapanınca devam ettirir,
 ##  * ana ekran: "Oyna" düğmesi + ayarlar sayfası açılır, banner yalnız ana ekranda (oyun ekranında gizli).
 ## Reklamlar anında biten sahte sağlayıcıyla sürülür (gerçek zamanlı bekleme yok).
@@ -157,6 +160,17 @@ func _solve_current() -> bool:
 		if slice.drag_device_to_socket(str(id), str(plan[id])) != PrizReason.OK:
 			return false
 		await _until(func() -> bool: return slice.all_settled())
+	if slice.is_day_mode():
+		# Gün kipi: ana şalter gerçek dokunuşla çekilir, gün dokunuşla hızlanır.
+		var lever: Vector2 = slice.screen_of_lever()
+		slice.press(lever)
+		slice.release(lever)
+		if not slice.is_day_running():
+			return false
+		while slice.is_day_running():
+			slice.press(Vector2(540.0, 700.0))
+			slice.release(Vector2(540.0, 700.0))
+			await process_frame
 	if not await _until(func() -> bool: return slice.mode == SliceGame.Mode.WIN):
 		return false
 	await process_frame
@@ -254,8 +268,15 @@ func _play_lose_paths() -> void:
 	_check(await _until(func() -> bool: return _overlay() != null), "ikinci kayıp sayfası çıkmalı")
 	sheet = _overlay()
 	_check(sheet.find_child("ReviveButton", true, false) == null, "tur başına yalnız bir ek hak")
+	var placed: Dictionary = st.board.placement()
 	sheet.emit_signal(&"retry_pressed")
-	_check(await _until(func() -> bool: return _overlay() == null and _fresh_level()), "Tekrar dene temiz tur başlatmalı")
+	if slice.is_day_mode():
+		_check(await _until(func() -> bool: return _overlay() == null and slice.state != st),
+			"Tekrar dene yeni tur başlatmalı")
+		_check(slice.state.board.placement() == placed, "gün kipinde Tekrar dene planı korur")
+		_check(slice.state.board.fuse_rights() == 3, "Tekrar dene hakları doldurur")
+	else:
+		_check(await _until(func() -> bool: return _overlay() == null and _fresh_level()), "Tekrar dene temiz tur başlatmalı")
 	_check(int(_progress.call("level")) == level, "Tekrar dene seviyeyi değiştirmemeli")
 	_check(int(_progress.call("fuses_left")) == 3, "yeni tur hakları yeniler (seviye başına, kaydedilmez)")
 	print("PROBE kayip_yolu tamam (kayıp kancası + ek hak + tekrar dene)")

@@ -59,6 +59,20 @@ aşağıdaki çağrılar aynı kalır. Oyun sahnesi `RunFlow` (alt düğüm) ve 
 | Seviye geçişi | `flow.maybe_interstitial(BİTİRİLEN_seviye, then)` | politika `AdPacing`de; reklam yoksa `then` hemen çalışır |
 | Ana ekran / tekrar | `GameManager.goto_scene(&"home")`, `reload_scene()` | |
 
+**Gün kipi (aşama 3)** — `SliceGame` sinyalleri ve kancaları, `scripts/ui/game.gd` bağlar:
+
+| Olay | Oyun sahnesi | Kabuk |
+|---|---|---|
+| Sigorta attı | `fuse_spent(kalan)` | `Progress.lose_fuse()` |
+| Haklar bitti | `day_lost` | `flow.on_lose`, `ResultSheet.lose(+1 sigorta yalnız can_watch(EXTRA_FUSE))`; ev düğmesi `home_pressed` |
+| +1 sigorta (ödül) | `grant_extra_right()` (plan korunur) | `Progress.grant_extra_fuse()` |
+| Tekrar dene (gün kipi) | `restart_keep_plan()` (haklar dolar, plan aynı) | `Progress.begin_level_fuses()`, `flow.on_level_start` |
+| Kazandı | `level_won` (gece kazanma sahnesi sonrası) | yıldız = kalan sigorta (`board.fuse_rights()`, 1..3) |
+| İpucu (ödül `HINT`) | `show_hint()` | düğme yalnız `can_watch` iken görünür |
+| Gün önizleme (ödül `DAY_PREVIEW`) | `begin_preview()` / `preview_slice(s)` / `end_preview()` | bir kez alınınca seviye boyunca rozetsiz |
+
+Boşta ücretsiz otomatik ipucu `SliceGame.auto_hint` ile yalnız sessiz dönemde açıktır.
+
 Ödüllü yerleşimler (`AdManager.Placement`): `EXTRA_FUSE` (sigortalar bitince +1 hak), `DOUBLE_COINS`, `HINT`, `DAY_PREVIEW`,
 `RENOVATION_EARLY`. Titreşim: `Haptics.tick()/thud()/success()` (fiş oturunca `thud`).
 Sahne dili değişince `GameManager.reload_scene()` sahneyi baştan kurar; oyun sahnesi bunu kaldırabilmelidir.

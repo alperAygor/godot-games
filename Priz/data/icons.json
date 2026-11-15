@@ -17,5 +17,7 @@
   "lucide/volume-2": "res://assets/icons/lucide/volume-2.svg",
   "lucide/wifi-off": "res://assets/icons/lucide/wifi-off.svg",
   "lucide/wind": "res://assets/icons/lucide/wind.svg",
-  "lucide/x": "res://assets/icons/lucide/x.svg"
+  "lucide/x": "res://assets/icons/lucide/x.svg",
+  "priz/bulb": "res://assets/icons/priz/bulb.svg",
+  "priz/day": "res://assets/icons/priz/day.svg"
 }

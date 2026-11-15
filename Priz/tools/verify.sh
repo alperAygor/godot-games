@@ -24,6 +24,8 @@ PROBE_TIMEOUT="${VERIFY_PROBE_TIMEOUT:-180}"
 
 FAILED=0
 mkdir -p "$LOG_DIR"
+# build/ altını Godot içe aktarmasın (ekran görüntüleri, loglar).
+touch "$PROJECT_DIR/build/.gdignore"
 
 scan_errors() {
     local log="$1" label="$2" pattern
@@ -123,11 +125,11 @@ else
     echo "  - atlandi (python3 ya da build_theme.py yok)"
 fi
 
-echo "== 5/5 probelar (oynanis + dil + rakam + kesit) =="
+echo "== 5/5 probelar (oynanis + dil + rakam + kesit + gun) =="
 if [ "${VERIFY_SKIP_PROBES:-0}" = "1" ]; then
     echo "  - atlandi (VERIFY_SKIP_PROBES=1)"
 else
-    for probe in play_probe lang_probe digit_probe slice_probe; do
+    for probe in play_probe lang_probe digit_probe slice_probe day_probe; do
         if [ ! -f "$PROJECT_DIR/tools/$probe.gd" ]; then
             echo "  - $probe yok, atlandi"
             continue

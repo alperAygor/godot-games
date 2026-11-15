@@ -26,13 +26,27 @@ func _exit_tree() -> void:
 	stop_all(0.25)
 
 
+## Gün testinin tüm sesleri (ön yükleme listesi).
+const DAY_SOUNDS: Array[String] = ["start_day", "fuse_blow", "power_down", "slice_transition", "breaker_flip",
+	"lamp_flicker", "window_light", "music_win", "ambience_morning", "ambience_noon", "ambience_evening",
+	"ambience_night", "plug_reject", "socket_tick"]
+
+
 func begin_level(slice: int) -> void:
 	if _service == null:
 		return
+	if _service.has_method("preload_sounds"):
+		_service.call("preload_sounds", DAY_SOUNDS)
 	_service.call("play_ambience", "ambience_%s" % PrizSlice.id_of(slice), AMBIENCE_DB)
 	_service.call("play_music", "music_plan", MUSIC_DB)
 	_service.call("start_loop", HUM_ID, "hum_mains", HUM_BASE_DB, 1.0)
 	set_tension(0.0)
+
+
+## Seviyenin cihaz döngüleri önceden yüklenir (gün kipinde cihazlar ilk kez gün testinde açılır).
+func preload_sounds(names: Array[String]) -> void:
+	if _service != null and _service.has_method("preload_sounds"):
+		_service.call("preload_sounds", names)
 
 
 func set_ambience(slice: int) -> void:
@@ -94,6 +108,34 @@ func win() -> void:
 		_service.call("set_loop_volume", DEVICE_PREFIX + device_id, DEVICE_DB - 8.0, 1.2)
 	_service.call("play_ambience", "ambience_night", AMBIENCE_DB)
 	_service.call("play_jingle", "music_win", -3.0)
+
+
+## Gün testi başlar: büyük şalter sesi, planlama müziği çekilir (cihaz ve ev sesleri öne çıkar).
+func day_begin() -> void:
+	if _service == null:
+		return
+	_service.call("play", "start_day", 0.0)
+	_service.call("stop_music", 0.8)
+
+
+## Sigorta atması: sert "çat", ev sesleri bir anda kısılır, cihazlar söner, sonra sessizlik.
+func fuse_blow() -> void:
+	_devices.clear()
+	if _service == null:
+		return
+	_service.call("play", "fuse_blow", 0.0)
+	_service.call("duck", 1.8, -24.0)
+	_service.call("stop_all_loops", 0.25)
+	_service.call("play", "power_down", 0.0)
+
+
+## Plana dönüş: ortam, müzik ve uğultu geri gelir.
+func resume_planning(slice: int) -> void:
+	if _service == null:
+		return
+	_service.call("play_ambience", "ambience_%s" % PrizSlice.id_of(slice), AMBIENCE_DB)
+	_service.call("play_music", "music_plan", MUSIC_DB)
+	_service.call("start_loop", HUM_ID, "hum_mains", HUM_BASE_DB, 1.0)
 
 
 ## Seviye değişimi / çıkış: tüm cihaz katmanları ve uğultu kısılıp bırakılır.

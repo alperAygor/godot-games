@@ -1,6 +1,7 @@
 extends SceneTree
 
-## Dikey kesit probu (başsız): GERÇEK Game sahnesinde kesitin her seviyesini oynar. Denetleyiciyi gerçek
+## Dikey kesit probu (başsız): GERÇEK Game sahnesinde kesitin her DÜZ kip seviyesini oynar (gün kipi
+## seviyeleri `tools/day_probe.gd`). Denetleyiciyi gerçek
 ## giriş yolundan sürer (SliceGame.press/move/release — dokunma olaylarının gittiği yöntemler):
 ##  * her seviyede çözücünün ilk çözümü (`PrizSolver.first_solution`) sürükle-bırakla takılır,
 ##  * bir REDDEDİLEN takma (tahta değişmez, cihaz tepsiye döner, gösterge ret parlaması),
@@ -93,15 +94,18 @@ func _run() -> void:
 	root.add_child(_game)
 	current_scene = _game
 	await process_frame
-	var count: int = _slice().data.level_count()
-	_check(count >= 6, "kesitte en az altı seviye")
+	var count: int = 0
+	while count < _slice().data.level_count() and not _slice().data.load_level(count).is_day_mode():
+		count += 1
+	_check(count >= 6, "kesitte en az altı düz seviye")
 	for i: int in range(count):
 		await _play_level(i)
 		if _failed:
 			break
 	_check(AnalyticsLog.count("level_win") == count, "her kesit seviyesi kazanılmalı (%d/%d)" % [AnalyticsLog.count("level_win"), count])
-	_check(int(_progress.call("level")) == count + 1, "ilerleme kesit sonuna gelmeli")
-	_check(_slice().level_index == 0, "kesit bitince başa sarar")
+	_check(int(_progress.call("level")) == count + 1, "ilerleme düz seviyelerin sonuna gelmeli")
+	_check(_slice().level_index == count, "düz seviyelerden sonra gün kipi başlar")
+	_check(_slice().is_day_mode(), "sıradaki seviye gün kipinde")
 	# Sahne silinince katmanlar sızmamalı.
 	_game.queue_free()
 	await _wait(0.8)

@@ -172,3 +172,69 @@ Her aşamada buraya eklenir. Biçim: tarih, karar, neden, geri dönüş yolu.
 - **Ertelenen / zayıf:** çizim çağrısı oyun sahnesinde 164 (büyük kutu + tepsi + bloklar + haleler; sanatın 100'üne eklendi), gerçek
   cihazda ölçülmeli; tepsideki fan ince, TV siyah levha gibi okunuyor; odadaki fiş küçük, priz haleleri asıl işaret; takılı kablolar
   mobilyadan geçebilir; video pencere çözünürlüğünde (540x960).
+
+## Aşama 3 — gün döngüsü, test, sigorta, kazanma/kaybetme (2026-11-15, `p3-day`)
+
+- **Kesit sırası:** düz 1-7, gün 8-15 (şimdilik; tasarımdaki "gün döngüsü 15'te" eşiği 60 seviyelik kampanyada,
+  aşama 4). Gün seviyeleri `data/levels_slice/slice_008..015.json` (çekirdek biçimi, `mode: day`, `day_cycle`
+  öğesi, 3 hak, kapasite ≤ 6), dilimler `data/balance/devices.json` desenlerinden; her biri çözücü + temiz gün
+  testinden geçer (`test_slice_levels`). Gün seviyeleri SABAH planlanır (`levels.json time`).
+- **Öğretim sırası (yazısız):** 8 = yalnız lamba kısmi (akşam+gece), buzdolabı tüm gün → göstergedeki iki sütun
+  farkı açık; ilk kez şalter canlanınca hayalet el kolu aşağı çeker. 9 = "aha": tost makinesi (sabah) + TV
+  (akşam-gece) tek bir 2 bloklu hatta sığar; düz kipte çözümsüz (test bunu zorlar). 10 = gerçek gün (5 cihaz,
+  üç hat). 11-14 artan, 15 zor (tek çözüm, akşam tam kapasite).
+- **Planlamada dilim başına yük (ücretsiz taban):** büyük sigorta kutusunda her hat için DÖRT TÜP yan yana
+  (soldan sağa sabah → gece, altta güneş/ay simgeli dilim hücresi). Tüp boyu = kapasite, yanan blok = yük;
+  sınırdaki tüpün üst bloğu aynı renkte parlar (renk değişmez — sarı hatla karışmasın), taşan dilimde fazlası
+  tüpün ÜSTÜNE kırmızı blok olarak taşar ve tüp kenarı sakin kırmızı nabız atar. Neden bu biçim: "hangi
+  saatte taşıyor" sorusu okumadan, karşılaştırarak yanıtlanır; düz kipteki blok dili aynen sürer. Kutunun
+  modülleri tüplere yer açmak için aralanır; eski tek sütunlu göstergeler gün kipinde gizlenir. Duvardaki
+  küçük kutu tepe yükü (planlama) / o dilimin yükünü (gün testi) gösterir.
+- **Cihazın "ne zaman"ı:** dört hücreli şerit (aynı sıra, aynı simgeler) — tepside cihazın önünde, odada
+  cihazın üstünde. Çalıştığı dilimler renkli, diğerleri sönük. Halka yerine şerit seçildi: göstergenin
+  sütunlarıyla birebir hizalı ("bu şerit = hayaletin düşeceği sütunlar"). Yük blokları (düz kipteki sütun)
+  tepside aynen kalır.
+- **Sürüklerken:** hayalet bloklar YALNIZ cihazın çalıştığı dilimlerin tüplerinde, parlak kenarlı nabızla;
+  sığmayan kısım kırmızı. Gün kipinde taşma planlamada serbesttir (çekirdek kuralı), fiş oturur.
+- **Gün önizleme (ödüllü) ≠ göstergeler:** göstergeler herkese açık taban bilgidir. Ödüllü "gün önizleme"
+  zengin sürüm: dilimleri elle gezmek (alt çubukta dört disk ya da dioramada yatay sürükleme) — ışık o dilime
+  geçer, o dilimde çalışan cihazlar gerçekten çalışır, sesler ve uğultu o dilimi çalar. Bir kez alınınca o
+  seviye boyunca rozetsiz açılır. Gün sayılmaz (`days_run` değişmez).
+- **Günü başlat:** kutunun kırmızı ana şalteri; tüm cihazlar takılınca (`can_start_day`) sıcak kenar ışığıyla
+  nabız atar ve küçük bir tık + kıpırtı verir. Dokunmak ya da aşağı sürüklemek çeker; hazır değilken kol direnir
+  ve tepsideki bekleyen cihazlar zıplar. Büyük kutunun kolu "açık"ta %55 iner (ekran altına taşmasın).
+- **Gün koşusu = `DayRun` çizelgesi** (`scripts/game/day_run.gd`, saf, birim testli): giriş 0.75 sn, dilim
+  1.75 sn (temiz gün ≈ 8.1 sn); dilim içinde susanlar 0.12, açılanlar 0.32'den kademeli, yükler 0.6, sınır
+  0.85, sigorta 1.15; sigortadan plana dönüş 2.7 sn. Dokunuş hızlandırır (×3) ama sigortada gerçek hıza döner
+  (dram ve "neden" okunur). Duraklatma sayfası ağacı durdurur; uygulama arka plana gidince çizelge bekler;
+  uzun kare 0.1 sn'ye kısılır (adım atlanmaz). Şalter çekilince her şey bir an susar, sonra sabahın
+  cihazları tek tek açılır (neden-sonuç görünsün).
+- **Sigorta atması:** "çat" + kıvılcım (şalterde), o hattın şalteri iner, anlık karartma, cihazlar söner,
+  `power_down`, sessizlik; karanlıkta yalnız taşan tüp kırmızı çerçeveyle yanar. Işık plan ışığında geri gelir;
+  neden işaretli kalır: taşan dilim sütunu (göstergede kırmızı çerçeve), hattın kablosu nabız, o anda o hatta
+  çalışan cihazların şeridinde o dilim hücresi kırmızı + prizlerinde hale + küçük ezilme. İşaret ilk plan
+  değişikliğinde kalkar. Aynı dilimde birden çok hat atarsa hepsi işaretlenir, tek hak gider (çekirdek).
+- **Sigorta hakları = kutudaki üç cam kartuş sigorta** (kadranın sağında): atınca biri parlayıp isle kararır,
+  teli kopar; ödüllü ek hakta yenisi yuvasına kayar. Kabuk sayacı da düşer (`Progress.lose_fuse`).
+- **Kayıp:** son hak gidince oda planlamaya döner (plan ve neden görünür), 0.6 sn sonra kabuğun kayıp
+  sayfası: "+1 sigorta" (ödüllü; sessiz dönemde ve reklam hazır değilken HİÇ çıkmaz), "tekrar dene" (PLAN
+  KORUNUR, haklar dolar — kayıp sayfasında planı silmek cezalandırıcı olurdu) ve ev ikonu (çık). ResultSheet'e
+  metinsiz ev düğmesi eklendi (kabuk dosyası, küçük kanca).
+- **Kazanma:** temiz gün → mevcut gece kazanma sahnesi (pencereler/lambalar tek tek, geri çekilme, jingle,
+  dokununca atlanır) → sonuç sayfası. **Yıldız = kalan sağlam sigorta** (3 sağlam = 3 yıldız, ek hakla kazanılırsa
+  1); düz kipte `balance.json win_stars`.
+- **İpucu ve önizleme kancaları:** oyun ekranında sağ üstte ampul (ipucu) ve ufukta güneş (gün önizleme) ikon
+  düğmeleri, köşede küçük "video" rozeti; yalnız `RunFlow.can_watch` doğruyken görünür (ölü düğme yok). İpucu
+  = `PrizSolver.hint` fiziksel gösterimi (cihaz zıplar, doğru priz atar; 4.5 sn). **Boşta ücretsiz otomatik
+  ipucu artık yalnız sessiz dönemde** (ilk üç seviye — öğretim); sonrasında ipucu ödüllüdür (tasarımdaki gelir
+  noktası; ücretsiz otomatik ipucu bunu boşa çıkarırdı). İkonlar elle çizildi (`assets/icons/priz/`).
+- **Dil:** İngilizce varsayılan (sahip kararı): `locale/fallback="en"`, cihaz dili desteklenmiyorsa en, Türkçe
+  yalnız Türkçe cihazda, ayarlarda seçilen dil kazanır; araçlar `--lang` verilmezse en. Bu aşamada yeni metin
+  YOK (her şey çizim).
+- **Kablolar:** fiş oturup cihaz yerine varınca kablo duvar diplerinden döşenir (cihazdan duvara, yerdeki
+  cihazlarda süpürgelik hizasında prizin altına, oradan fişe; köşeler yumuşatılmış durağan tüp). Fizik ipi
+  gizlenir ve durur (her kare tüp kurma maliyeti de kalkar). Tepsiye dönüşte ip geri gelir.
+- **Tepsi okunurluğu:** yalnız tepsi katmanını aydınlatan gölgesiz yön ışığı (oda etkilenmez); TV tepside loş
+  görüntü verir (siyah levha değil); vantilatörün tepsi ölçeği büyütüldü.
+- **Çizim maliyeti:** dilim göstergeleri tek MultiMesh (hat başına örnek), şeritler tek MultiMesh, cam sigortalar
+  2 MultiMesh + 1 taban; hepsi gölgesiz; büyük kutunun eski göstergeleri gün kipinde gizli.

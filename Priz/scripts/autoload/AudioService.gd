@@ -543,6 +543,14 @@ func _looped(stream: AudioStream) -> AudioStream:
 	return copy
 
 
+## Ön yükleme (p3-day kancası): sahne açılışında çağrılır; ilk çalışta dosya okuma/çözme takılması olmasın
+## (ör. ilk sigorta atması, ilk dilim geçişindeki ortam sesi). Bilinmeyen adlar sessizce atlanır.
+func preload_sounds(names: Array) -> void:
+	for n: Variant in names:
+		if _table.has(str(n)):
+			_stream(str(n))
+
+
 func _stream(sound_name: String) -> AudioStream:
 	if _cache.has(sound_name):
 		return _cache[sound_name] as AudioStream

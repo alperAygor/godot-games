@@ -15,6 +15,11 @@ Her aşama çalışan bir yapı bırakır. Durum: [ ] bekliyor, [~] sürüyor, [
 - [ ] Ekran görüntüsü ve video ile kullanıcıya göster; "rakam yok" kapsamını sor.
 
 ## Aşama 3 — gün döngüsü, test, sigorta, kazanma/kaybetme akışı
+- [x] `p3-day`: dilim göstergeleri (hat başına dört tüp) ve cihaz şeritleri, ana şalter, `DayRun` çizelgesi, dört
+      dilim oynatımı, sigorta atması/neden/cam sigortalar, kayıp (+1 sigorta, planı koruyan tekrar, çık), kazanma
+      (yıldız = kalan sigorta), ödüllü ipucu ve gün önizleme kancaları, sekiz gün seviyesi (8-15, öğretim sırası),
+      `tools/day_probe.gd`, gün kareleri ve video (`tools/slice_shot.gd --only=day|dayperf|--dayvideo`), İngilizce
+      varsayılan dil. Ayrıntı `DECISIONS.md` "Aşama 3".
 ## Aşama 4 — içerik öğeleri ve 60 seviye
 ## Aşama 5 — mahalle, yenileme, koleksiyon, günlük seviye
 ## Aşama 6 — reklam/analitik, performans, Android paketi

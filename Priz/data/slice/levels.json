@@ -7,6 +7,14 @@
     {"file": "slice_004.json", "time": "morning", "tutorial": ""},
     {"file": "slice_005.json", "time": "noon", "tutorial": ""},
     {"file": "slice_006.json", "time": "evening", "tutorial": ""},
-    {"file": "slice_007.json", "time": "morning", "tutorial": ""}
+    {"file": "slice_007.json", "time": "morning", "tutorial": ""},
+    {"file": "slice_008.json", "time": "morning", "tutorial": "lever"},
+    {"file": "slice_009.json", "time": "morning", "tutorial": ""},
+    {"file": "slice_010.json", "time": "morning", "tutorial": ""},
+    {"file": "slice_011.json", "time": "morning", "tutorial": ""},
+    {"file": "slice_012.json", "time": "morning", "tutorial": ""},
+    {"file": "slice_013.json", "time": "morning", "tutorial": ""},
+    {"file": "slice_014.json", "time": "morning", "tutorial": ""},
+    {"file": "slice_015.json", "time": "morning", "tutorial": ""}
   ]
 }

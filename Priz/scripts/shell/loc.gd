@@ -9,7 +9,8 @@ const LANG_TR: String = "tr"
 const LANG_EN: String = "en"
 const LANG_ES: String = "es"
 const LANGUAGES: Array[String] = [LANG_TR, LANG_EN, LANG_ES]
-## Cihaz dili desteklenmiyorsa düşülen dil.
+## Cihaz dili desteklenmiyorsa düşülen dil. Sahibin kararı (tüm oyunlar): varsayılan İngilizce; Türkçe yalnız
+## Türkçe cihazda; ayarlarda seçilen dil her zaman kazanır. `project.godot` `locale/fallback="en"`.
 const DEFAULT_UNKNOWN: String = LANG_EN
 const SETTINGS_SECTION: String = "settings"
 const SETTINGS_KEY: String = "language"
@@ -44,7 +45,12 @@ static func set_language(code: String) -> void:
 
 ## Cihaz dilinden (OS) desteklenen dili seçer; bilinmeyen dil İngilizce olur.
 static func detect_device_language() -> String:
-	var code: String = OS.get_locale_language().to_lower()
+	return language_for_device(OS.get_locale_language())
+
+
+## Saf eşleme (test edilir): "tr_TR" → tr, "es_MX" → es, "de" / "" → en.
+static func language_for_device(locale_code: String) -> String:
+	var code: String = locale_code.substr(0, 2).to_lower()
 	return code if code in LANGUAGES else DEFAULT_UNKNOWN
 
 
@@ -79,9 +85,9 @@ static func choose(code: String) -> void:
 		progress.call("set_module_value", SETTINGS_SECTION, SETTINGS_KEY, language())
 
 
-## Araçlar için: komut satırındaki `--lang=tr|en|es` (yoksa kaynak dil tr). Kayda yazmaz.
+## Araçlar için: komut satırındaki `--lang=tr|en|es` (yoksa varsayılan dil en). Kayda yazmaz.
 static func apply_from_args(args: PackedStringArray) -> void:
-	var code: String = LANG_TR
+	var code: String = DEFAULT_UNKNOWN
 	for arg: String in args:
 		if arg.begins_with("--lang="):
 			code = arg.split("=")[1]

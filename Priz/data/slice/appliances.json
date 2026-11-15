@@ -5,6 +5,6 @@
   "kettle": {"fx": "res://scripts/fx/kettle_fx.gd", "anchor": "Anchor_Kettle", "loop": "loop_kettle", "tray_fit": 0.85},
   "toaster": {"fx": "res://scripts/fx/toaster_fx.gd", "anchor": "Anchor_Toaster", "loop": "loop_toaster", "tray_fit": 0.8},
   "tv": {"fx": "res://scripts/fx/tv_fx.gd", "anchor": "Anchor_TV", "loop": "loop_tv", "tray_fit": 1.0},
-  "fan": {"fx": "res://scripts/fx/fan_fx.gd", "anchor": "Anchor_Fan", "loop": "loop_fan", "tray_fit": 1.25},
+  "fan": {"fx": "res://scripts/fx/fan_fx.gd", "anchor": "Anchor_Fan", "loop": "loop_fan", "tray_fit": 1.45},
   "lamp": {"fx": "res://scripts/fx/lamp_fx.gd", "anchor": "Anchor_Lamp", "loop": "loop_lamp", "tray_fit": 0.95}
 }

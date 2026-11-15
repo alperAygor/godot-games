@@ -4,8 +4,11 @@ extends TestCase
 ## priz yerleri odadaki gerçek `Socket_0N` düğümlerine ve doğru kablo hattına eşlenir.
 
 const ROOM_SCENE: String = "res://assets/models/room/room_studio.glb"
-const MIN_LEVELS: int = 6
-const MAX_LEVELS: int = 8
+const MIN_LEVELS: int = 13
+const MAX_LEVELS: int = 16
+## Aşama 3: ilk yedi kesit seviyesi düz kip, sonrası gün kipi (öğretim sırası).
+const FLAT_COUNT: int = 7
+const CATALOG_PATH: String = "res://data/balance/devices.json"
 
 var content: PrizContent
 var data: SliceData
@@ -41,6 +44,10 @@ func test_every_slice_level_is_valid_and_solvable() -> void:
 		var plan: Dictionary = solver.first_solution(level, content.registry)
 		assert_eq(plan.size(), level.devices.size(), "%s: çözüm tüm cihazları kapsamalı" % path)
 		assert_true(board.apply_placement(plan).is_empty(), "%s: ilk çözüm uygulanabilmeli" % path)
+		if level.is_day_mode():
+			assert_true(board.can_start_day(), "%s: tüm cihazlar takılı, gün başlatılabilir" % path)
+			var events: Array[PrizEvent] = board.start_day()
+			assert_eq(events[events.size() - 1].type, PrizEvent.WIN, "%s: temiz gün kazandırmalı" % path)
 		assert_true(board.is_won(), "%s: ilk çözüm kazandırmalı" % path)
 
 
@@ -48,9 +55,17 @@ func test_flat_mode_single_room_two_or_three_lines() -> void:
 	for i: int in data.level_count():
 		var level: PrizLevel = data.load_level(i)
 		var path: String = data.level_path(i)
-		assert_eq(level.mode, PrizLevel.MODE_FLAT, path)
-		assert_eq(level.fuse_rights, 0, path)
-		assert_true(level.elements.is_empty(), "%s: düz kipte öğe yok" % path)
+		if i < FLAT_COUNT:
+			assert_eq(level.mode, PrizLevel.MODE_FLAT, path)
+			assert_eq(level.fuse_rights, 0, path)
+			assert_true(level.elements.is_empty(), "%s: düz kipte öğe yok" % path)
+		else:
+			assert_eq(level.mode, PrizLevel.MODE_DAY, path)
+			assert_eq(level.fuse_rights, 3, "%s: üç sigorta hakkı" % path)
+			assert_eq(level.elements, ["day_cycle"] as Array[String], path)
+			assert_eq(data.level_time(i), PrizSlice.MORNING, "%s: gün seviyesi sabah planlanır" % path)
+			for line: PrizLine in level.lines:
+				assert_true(line.capacity >= 1 and line.capacity <= 6, "%s: gösterge yuvası (kapasite ≤ 6)" % path)
 		assert_eq(level.rooms, [data.room_id] as Array[String], path)
 		assert_true(level.lines.size() >= 2 and level.lines.size() <= 3, "%s: 2-3 hat" % path)
 		assert_true(level.devices.size() >= 2 and level.devices.size() <= 6, "%s: tepsi en çok 6 cihaz" % path)
@@ -94,6 +109,58 @@ func test_anchors_map_to_real_sockets_on_matching_lines() -> void:
 			var line: PrizLine = level.find_line(socket.line)
 			assert_eq(data.room_line_of_socket(node_name), data.room_line_of_color(line.color),
 				"%s: %s odada başka hatta" % [path, socket.id])
+
+
+## Gün seviyeleri cihaz dilimlerini katalogdaki desenlerden alır (tür başına izinli seçenekler).
+func test_day_levels_use_catalog_slice_patterns() -> void:
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(CATALOG_PATH))
+	var options: Dictionary = {}
+	for entry: Variant in (parsed as Dictionary).get("devices", []) as Array:
+		var e: Dictionary = entry as Dictionary
+		var masks: Array[int] = []
+		for pattern: Variant in e.get("slices", []) as Array:
+			var ids: Array[String] = []
+			for id: Variant in pattern as Array:
+				ids.append(str(id))
+			masks.append(PrizSlice.mask_from_ids(ids))
+		options[str(e.get("type", ""))] = masks
+	for i: int in range(FLAT_COUNT, data.level_count()):
+		var level: PrizLevel = data.load_level(i)
+		for device: PrizDevice in level.devices:
+			var allowed: Array[int] = options.get(device.type, [] as Array[int]) as Array[int]
+			assert_true(allowed.has(device.slices), "%s: %s dilimleri katalogda yok" % [data.level_path(i), device.type])
+
+
+## Öğretim sırası: (1) yalnız BİR cihazın günü kısmi, (2) iki cihaz düz kipte sığmaz ama farklı saatlerde
+## çalıştıkları için aynı hatta sığar ("zaman ek kapasitedir"), (3) gerçek bir gün.
+func test_day_teaching_sequence() -> void:
+	var solver: PrizSolver = PrizSolver.new()
+	var first: PrizLevel = data.load_level(FLAT_COUNT)
+	var partial: int = 0
+	for device: PrizDevice in first.devices:
+		if device.slices != PrizSlice.ALL_MASK:
+			partial += 1
+	assert_eq(partial, 1, "ilk gün seviyesinde tek kısmi cihaz")
+	assert_eq(data.level_tutorial(FLAT_COUNT), "lever", "ilk gün seviyesinde şalter öğretimi")
+	var aha: PrizLevel = data.load_level(FLAT_COUNT + 1)
+	var flat: PrizLevel = aha.copy()
+	flat.mode = PrizLevel.MODE_FLAT
+	assert_false(solver.is_solvable(flat, content.registry), "ikinci gün seviyesi zamansız çözülemez")
+	assert_true(solver.is_solvable(aha, content.registry), "zamanla çözülür")
+	var shared: bool = false
+	var plan: Dictionary = solver.first_solution(aha, content.registry)
+	var board: PrizBoard = PrizBoard.new(aha, content.registry)
+	board.apply_placement(plan)
+	for line: PrizLine in aha.lines:
+		var devs: Array[String] = board.line_devices(line.id)
+		var sum: int = 0
+		for d: String in devs:
+			sum += aha.find_device(d).blocks
+		if devs.size() >= 2 and sum > line.capacity:
+			shared = true
+	assert_true(shared, "çözümde iki cihaz toplamı hattı aşar ama farklı saatlerde çalışır")
+	var real: PrizLevel = data.load_level(FLAT_COUNT + 2)
+	assert_true(real.devices.size() >= 4, "üçüncü gün seviyesi gerçek bir gün")
 
 
 func test_appliance_table_points_to_existing_assets() -> void:
