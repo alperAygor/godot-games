@@ -1,11 +1,11 @@
 extends SceneTree
 
-## Oynanış probu (headless): yer tutucu oyunu GERÇEK Game sahnesinde oynar ve akışı doğrular:
-##  * kazanma yolu: N dokunuş -> sonuç sayfası -> jeton ödülü + yıldız + seviye ilerlemesi -> "Devam" -> yeni tur,
+## Oynanış probu (headless): dikey kesiti GERÇEK Game sahnesinde oynar ve kabuk akışını doğrular:
+##  * kazanma yolu: çözücünün çözümü sürükle-bırakla takılır, kazanma sahnesi dokunarak atlanır -> sonuç sayfası -> jeton ödülü + yıldız + seviye ilerlemesi -> "Devam" -> yeni tur,
 ##  * ilk 3 seviye sessiz (ödüllü düğme yok), sonrasında "İkiye katla" (ödüllü reklam, simge sayısı artar),
 ##  * geçiş reklamı kuralı (5. seviyeden sonra, 2-3 seviyede bir; ödüllü izlenen geçişte yok),
-##  * kayıp yolu: sigorta hakları (3) -> biter -> kayıp sayfası -> "Bir hak daha" (ödüllü, tur başına bir kez)
-##    -> tekrar kayıp -> hak yok -> "Tekrar dene" temiz başlar,
+##  * kayıp yolu (düz kipte oyun kaybettirmez; gün kipi kancası `_show_lose` doğrudan çağrılır): kayıp sayfası ->
+##    "Bir hak daha" (ödüllü, tur başına bir kez) -> tekrar kayıp -> hak yok -> "Tekrar dene" temiz başlar,
 ##  * duraklatma sayfası oyunu durdurur ve kapanınca devam ettirir,
 ##  * ana ekran: "Oyna" düğmesi + ayarlar sayfası açılır, banner yalnız ana ekranda (oyun ekranında gizli).
 ## Reklamlar anında biten sahte sağlayıcıyla sürülür (gerçek zamanlı bekleme yok).
@@ -13,10 +13,9 @@ extends SceneTree
 ## NOT: `-s` betiği autoload'lardan ÖNCE derlenir; bu yüzden burada autoload'a değen sınıflar
 ## (ResultSheet, PauseSheet, SettingsSheet, RunFlow...) tür olarak ANILMAZ (derleme hatası verir):
 ## düğümler `Control`/`Node` olarak tutulur, sinyal/metot `emit_signal`/`call` ile çağrılır.
-## Oyun mekaniği değişince bu probun "oynama" kısmı (dokunuş döngüsü) yeni oyuna göre güncellenir;
-## iskelet kontrolleri (sonuç sayfası, ödül, reklam, kayıt) aynı kalır.
+## Kesit sınıfları (SliceGame, SliceState) autoload'a dokunmaz; tür olarak anılabilir.
 
-const WATCHDOG_SECONDS: float = 120.0
+const WATCHDOG_SECONDS: float = 170.0
 const WAIT_SECONDS: float = 15.0
 const WIN_REWARD: int = 20
 const WIN_STARS: int = 3
@@ -145,8 +144,30 @@ func _child_of_class(parent: Node, class_label: StringName) -> Node:
 	return null
 
 
-func _run_state() -> PlaceholderRun:
-	return _game.get("_run") as PlaceholderRun
+func _slice() -> SliceGame:
+	return _game.get_node("Slice") as SliceGame
+
+
+## Seviyeyi çözer (gerçek giriş yolu) ve kazanma sahnesini dokunarak atlar.
+func _solve_current() -> bool:
+	var slice: SliceGame = _slice()
+	var st: SliceState = slice.state
+	var plan: Dictionary = PrizSolver.new().first_solution(st.level, PrizContent.load_default().registry)
+	for id: Variant in plan.keys():
+		if slice.drag_device_to_socket(str(id), str(plan[id])) != PrizReason.OK:
+			return false
+		await _until(func() -> bool: return slice.all_settled())
+	if not await _until(func() -> bool: return slice.mode == SliceGame.Mode.WIN):
+		return false
+	await process_frame
+	slice.press(Vector2(540.0, 900.0))
+	slice.release(Vector2(540.0, 900.0))
+	return st.board.is_won()
+
+
+func _fresh_level() -> bool:
+	var slice: SliceGame = _slice()
+	return slice.state != null and slice.state.board.placement().is_empty() and slice.state.board.is_planning()
 
 
 # --- Kazanma yolu ---------------------------------------------------------------------------
@@ -165,10 +186,7 @@ func _play_win_levels() -> void:
 		_check(level == step + 1, "adım %d: seviye numarası beklenen" % step)
 		_check(int(_game.get("_level_number")) == level, "adım %d: oyun seviyesi kayıtla aynı olmalı" % step)
 		_check(_game.find_child("LevelPips", true, false) != null, "adım %d: HUD seviye noktaları" % step)
-		var run: PlaceholderRun = _run_state()
-		for _tap: int in range(run.target):
-			_game.call("_on_tap_pressed")
-		_check(run.is_won(), "adım %d: hedef dokunuştan sonra kazanılmış olmalı" % step)
+		_check(await _solve_current(), "adım %d: seviye çözülüp kazanılmalı" % step)
 		var shown: bool = await _until(func() -> bool: return _overlay() != null)
 		_check(shown, "adım %d: kazanma sayfası çıkmalı" % step)
 		if not shown:
@@ -197,7 +215,7 @@ func _play_win_levels() -> void:
 			data.last_interstitial_time -= 100.0
 		sheet.emit_signal(&"continue_pressed")
 		var next_started: bool = await _until(func() -> bool:
-			return _overlay() == null and int(_game.get("_level_number")) == level + 1 and _run_state().taps == 0)
+			return _overlay() == null and int(_game.get("_level_number")) == level + 1 and _fresh_level())
 		_check(next_started, "adım %d: Devam yeni turu başlatmalı" % step)
 		_check(AnalyticsLog.count("interstitial_shown") == interstitials_expected,
 			"adım %d: geçiş reklamı sayısı %d olmalı (şu an %d)" % [step, interstitials_expected,
@@ -213,12 +231,14 @@ func _play_lose_paths() -> void:
 	var coins: int = int(_progress.call("coins"))
 	var streak: int = int(_progress.call("win_streak"))
 	_check(int(_progress.call("fuses_left")) == 3, "tur 3 sigorta hakkıyla başlamalı")
-	_game.call("_on_tap_pressed")
-	_game.call("_on_lose_pressed")
-	_game.call("_on_lose_pressed")
-	_check(_run_state().is_playing() and int(_progress.call("fuses_left")) == 1, "ilk iki sigorta turu bitirmemeli")
-	_game.call("_on_lose_pressed")
-	_check(_run_state().is_lost(), "son hak gidince tur kaybedilmeli")
+	# Bir cihaz takılı iken kayıp (gün kipi kancası): plan korunmalı.
+	var slice: SliceGame = _slice()
+	var st: SliceState = slice.state
+	var plan: Dictionary = PrizSolver.new().first_solution(st.level, PrizContent.load_default().registry)
+	var first: String = str(plan.keys()[0])
+	slice.drag_device_to_socket(first, str(plan[first]))
+	await _until(func() -> bool: return slice.all_settled())
+	_game.call("_show_lose")
 	_check(await _until(func() -> bool: return _overlay() != null), "kayıp sayfası çıkmalı")
 	var sheet: Control = _overlay()
 	_check(sheet.find_child("ReviveButton", true, false) != null, "ilk kayıpta Bir hak daha sunulmalı")
@@ -226,19 +246,19 @@ func _play_lose_paths() -> void:
 		"kayıpta jeton/seviye değişmemeli")
 	_check(int(_progress.call("win_streak")) == 0 and streak > 0, "kayıp galibiyet serisini bitirmeli")
 	sheet.emit_signal(&"revive_pressed")
-	_check(_run_state().is_playing() and _run_state().taps == 1, "ek hak turu kaldığı yerden sürdürmeli")
-	_check(int(_progress.call("fuses_left")) == 1, "ödüllü reklam +1 sigorta hakkı vermeli")
 	_check(await _until(func() -> bool: return _overlay() == null), "ek hak sayfayı kapatmalı")
-	_game.call("_on_lose_pressed")
+	_check(st.board.socket_of(first) == str(plan[first]), "ek hak turu kaldığı yerden sürdürmeli (plan korunur)")
+	_check(bool(slice.get("_input_enabled")), "ek haktan sonra giriş açık")
+	_check(int(_progress.call("fuses_left")) == 4, "ödüllü reklam +1 sigorta hakkı vermeli")
+	_game.call("_show_lose")
 	_check(await _until(func() -> bool: return _overlay() != null), "ikinci kayıp sayfası çıkmalı")
 	sheet = _overlay()
 	_check(sheet.find_child("ReviveButton", true, false) == null, "tur başına yalnız bir ek hak")
 	sheet.emit_signal(&"retry_pressed")
-	_check(await _until(func() -> bool: return _overlay() == null and _run_state().taps == 0 and _run_state().is_playing()),
-		"Tekrar dene temiz tur başlatmalı")
+	_check(await _until(func() -> bool: return _overlay() == null and _fresh_level()), "Tekrar dene temiz tur başlatmalı")
 	_check(int(_progress.call("level")) == level, "Tekrar dene seviyeyi değiştirmemeli")
 	_check(int(_progress.call("fuses_left")) == 3, "yeni tur hakları yeniler (seviye başına, kaydedilmez)")
-	print("PROBE kayip_yolu tamam (sigorta + ek hak + tekrar dene)")
+	print("PROBE kayip_yolu tamam (kayıp kancası + ek hak + tekrar dene)")
 
 
 # --- Duraklatma -----------------------------------------------------------------------------

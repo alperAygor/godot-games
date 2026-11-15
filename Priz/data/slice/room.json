@@ -1,0 +1,17 @@
+{
+  "room": "living",
+  "anchors": {
+    "living_0": "Socket_01",
+    "living_1": "Socket_02",
+    "living_2": "Socket_03",
+    "living_3": "Socket_04",
+    "living_4": "Socket_05",
+    "living_5": "Socket_06",
+    "living_6": "Socket_07"
+  },
+  "socket_lines": {
+    "Socket_01": 1, "Socket_02": 1, "Socket_03": 2, "Socket_04": 3,
+    "Socket_05": 3, "Socket_06": 2, "Socket_07": 2
+  },
+  "line_colors": {"red": 1, "blue": 2, "yellow": 3}
+}

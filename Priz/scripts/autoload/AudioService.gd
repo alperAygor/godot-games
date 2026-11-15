@@ -66,6 +66,8 @@ var _ambience_tween: Tween = null
 var _ambience_name: String = ""
 var _music: AudioStreamPlayer = null
 var _music_name: String = ""
+## p2-slice: `stop_music` kısma tweeni (yeni `play_music` onu iptal eder).
+var _music_stop_tween: Tween = null
 ## Her ses adı için son çalınan varyant: aynı varyantın arka arkaya tekrarı "makine" gibi duyulur.
 var _last_variant: Dictionary = {}
 ## Adlı döngü katmanları: id -> LoopLayer. Boştaki oynatıcılar `_loop_free` içinde yeniden kullanılır.
@@ -233,6 +235,8 @@ func play_music(sound_name: String, volume_db: float = MUSIC_VOLUME_DB) -> void:
 	var stream: AudioStream = _stream(sound_name)
 	if stream == null:
 		return
+	if _music_stop_tween != null and _music_stop_tween.is_valid():
+		_music_stop_tween.kill()
 	var ogg: AudioStreamOggVorbis = stream as AudioStreamOggVorbis
 	if ogg != null:
 		ogg.loop = true
@@ -243,6 +247,21 @@ func play_music(sound_name: String, volume_db: float = MUSIC_VOLUME_DB) -> void:
 	_music.stream_paused = not _music_on
 	var fade: Tween = create_tween()
 	fade.tween_property(_music, "volume_db", volume_db, MUSIC_FADE_IN_S)
+
+
+# --- p2-slice: müziği yumuşakça durdurma (kazanma anı, ana ekrana dönüş) ---
+## Döngülü müziği `fade_out` sürede kısıp durdurur; sonraki `play_music` aynı parçayı baştan açar.
+func stop_music(fade_out: float = 1.0) -> void:
+	if _music == null or not _music.playing:
+		return
+	_music_name = ""
+	var player: AudioStreamPlayer = _music
+	var fade: Tween = create_tween()
+	_music_stop_tween = fade
+	fade.tween_property(player, "volume_db", SILENT_DB, maxf(fade_out, 0.01))
+	fade.tween_callback(func() -> void:
+		if _music_name == "":
+			player.stop())
 
 
 ## Kısa, döngüsüz müzik parçasını (ör. kazanma) Müzik bus'ında çalar. Yeni parça eskisini keser.

@@ -1,0 +1,111 @@
+{
+  "band": [
+    1,
+    1000
+  ],
+  "devices": [
+    {
+      "id": "d0",
+      "load": 2,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "morning",
+        "noon",
+        "evening",
+        "night"
+      ],
+      "type": "tv"
+    },
+    {
+      "id": "d1",
+      "load": 1,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "morning",
+        "noon",
+        "evening",
+        "night"
+      ],
+      "type": "fan"
+    },
+    {
+      "id": "d2",
+      "load": 2,
+      "props": {},
+      "room": "living",
+      "slices": [
+        "morning",
+        "noon",
+        "evening",
+        "night"
+      ],
+      "type": "toaster"
+    }
+  ],
+  "difficulty": "normal",
+  "elements": [],
+  "format": 1,
+  "fuse_rights": 0,
+  "id": "slice_002",
+  "lines": [
+    {
+      "capacity": 3,
+      "color": "red",
+      "id": "L0",
+      "props": {},
+      "shape": "circle"
+    },
+    {
+      "capacity": 3,
+      "color": "blue",
+      "id": "L1",
+      "props": {},
+      "shape": "triangle"
+    }
+  ],
+  "meta": {
+    "slice": true
+  },
+  "mode": "flat",
+  "number": 2,
+  "rooms": [
+    "living"
+  ],
+  "seed": 0,
+  "sockets": [
+    {
+      "anchor": "living_0",
+      "id": "s0",
+      "line": "L0",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "living_1",
+      "id": "s1",
+      "line": "L0",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "living_2",
+      "id": "s2",
+      "line": "L1",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    },
+    {
+      "anchor": "living_6",
+      "id": "s3",
+      "line": "L1",
+      "props": {},
+      "room": "living",
+      "seats": 1
+    }
+  ]
+}

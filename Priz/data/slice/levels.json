@@ -1,0 +1,12 @@
+{
+  "dir": "res://data/levels_slice",
+  "levels": [
+    {"file": "slice_001.json", "time": "morning", "tutorial": "drag"},
+    {"file": "slice_002.json", "time": "noon", "tutorial": "pulse"},
+    {"file": "slice_003.json", "time": "evening", "tutorial": "pulse"},
+    {"file": "slice_004.json", "time": "morning", "tutorial": ""},
+    {"file": "slice_005.json", "time": "noon", "tutorial": ""},
+    {"file": "slice_006.json", "time": "evening", "tutorial": ""},
+    {"file": "slice_007.json", "time": "morning", "tutorial": ""}
+  ]
+}

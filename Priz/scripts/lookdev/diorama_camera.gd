@@ -36,6 +36,9 @@ var _focus_override: Vector3 = Vector3.ZERO
 var _distance_override: float = 0.0
 var _dof_far: bool = true
 var _dof_near: bool = true
+# --- p2-slice: fiş oturunca küçük kamera sarsıntısı ---
+var _shake: float = 0.0
+var _shake_time: float = 0.0
 
 
 func _ready() -> void:
@@ -90,6 +93,11 @@ func frame_focus(point: Vector3, dist: float, yaw: float = NAN, pitch: float = N
 	_update_camera()
 
 
+## p2-slice: kısa, sönümlü kadraj sarsıntısı (fiş oturması). `amount` ≈ 0..1 (1 ≈ 3 cm görüntü kayması).
+func shake(amount: float) -> void:
+	_shake = maxf(_shake, clampf(amount, 0.0, 1.5))
+
+
 ## Kalite kademesi alan derinliğini açıp kapatır.
 func set_dof(far_on: bool, near_on: bool) -> void:
 	_dof_far = far_on
@@ -101,7 +109,11 @@ func _process(delta: float) -> void:
 	var k: float = 1.0 - exp(-parallax_smooth * delta)
 	var prev: Vector2 = _parallax
 	_parallax = _parallax.lerp(_parallax_target, k)
-	if prev.distance_to(_parallax) > 0.00001 or (_pull_tween != null and _pull_tween.is_running()):
+	var shaking: bool = _shake > 0.0
+	if shaking:
+		_shake = maxf(0.0, _shake - delta * 4.5)
+		_shake_time += delta
+	if shaking or prev.distance_to(_parallax) > 0.00001 or (_pull_tween != null and _pull_tween.is_running()):
 		_update_camera()
 
 
@@ -119,6 +131,10 @@ func _update_camera() -> void:
 	camera.fov = fov_deg if not close_up else 26.0
 	camera.v_offset = 0.0 if close_up else screen_offset.y * (dist / distance)
 	camera.h_offset = 0.0 if close_up else screen_offset.x
+	if _shake > 0.0:
+		var a: float = _shake * _shake * 0.03
+		camera.h_offset += sin(_shake_time * 71.0) * a
+		camera.v_offset += cos(_shake_time * 53.0) * a
 	if attributes != null:
 		# Eğik kaydırma (tilt-shift) hissi: odak düzleminin önü ve arkası hafif bulanık.
 		var span: float = 1.4 if not close_up else 0.35
