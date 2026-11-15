@@ -117,6 +117,13 @@ func tick(delta: float) -> void:
 	_score.text = KIT.fmt(int(round(_shown)))
 
 
+## C1: başlık (ZAFER / OYUN BİTTİ). RunFlow her `show_gameover` sonrası çağırır.
+func set_title(text: String, color: Color) -> void:
+	_title.text = text
+	_title.add_theme_color_override("font_color", color)
+	_title.add_theme_color_override("font_outline_color", Color(color.r, color.g, color.b, 0.22))
+
+
 ## Çekirdek kazancı rozetini ve toplamı günceller (çift çekirdek ödülü sonrası).
 func set_cores(earned: int, total: int) -> void:
 	_cores.set_amount(earned)

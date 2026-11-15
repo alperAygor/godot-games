@@ -2,6 +2,7 @@ extends RefCounted
 class_name LaunchOptions
 ## Oyun bayrakları (`--` sonrası komut satırı argümanları; araçlar ve hata ayıklama için). Saf, testli.
 ##   --demo  --wave=N  --hp=X  --die=T  --cards  --nova  --map=N  --give=a,b  --boss=tür  --ship=id  --screen=ad  --seed=N
+##   --mode=standard|quick|endless (C1; yoksa oyuncunun seçtiği mod)  --after-victory=finish|continue (C1; bot zaferde)
 
 var demo := false
 var start_wave := 1
@@ -16,6 +17,10 @@ var debug_boss := ""
 var debug_give: Array = []
 ## 0 = rastgele. Tohumlu koşu: bkz. RunFlow.reseed (+ `--fixed-fps` ile kare-kare belirlenimli).
 var run_seed := 0
+## C1: koşu modu ("" = oyuncunun seçimi / varsayılan). Bilinmeyen ad RunState'te sonsuza düşer.
+var run_mode := ""
+## C1: bot (demo) zaferde ne yapar: "finish" (sonuç ekranı) | "continue" (sonsuza devam).
+var after_victory := "finish"
 
 func parse(args: PackedStringArray) -> void:
 	demo = "--demo" in args
@@ -42,3 +47,7 @@ func parse(args: PackedStringArray) -> void:
 			debug_screen = arg.get_slice("=", 1)
 		elif arg.begins_with("--seed="):
 			run_seed = int(arg.get_slice("=", 1))
+		elif arg.begins_with("--mode="):
+			run_mode = arg.get_slice("=", 1)
+		elif arg.begins_with("--after-victory="):
+			after_victory = arg.get_slice("=", 1)

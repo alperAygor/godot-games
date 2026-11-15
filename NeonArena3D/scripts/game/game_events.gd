@@ -28,3 +28,9 @@ signal reward_computed(cores: int)
 ## Koşu bitti: {score, best, record, wave, level, kills, combo, time, cores, total_cores}.
 ## SEAM(ads: interstitial): koşu sonu geçiş reklamı buradan tetiklenir.
 signal run_ended(summary: Dictionary)
+## C1: sektör boss'u yenildi (0 tabanlı sektör, bu koşuda temizlenen toplam). Görevler (C7) için.
+signal sector_cleared(sector: int, total: int)
+## C1: sektör kapısında seçim yapıldı ("" = atlandı).
+signal gate_chosen(option_id: String)
+## C1: son sektör temizlendi (zafer). run_ended ayrıca gelir (SONUÇLAR'da ya da sonsuza devam edilen koşu bitince).
+signal run_won(summary: Dictionary)

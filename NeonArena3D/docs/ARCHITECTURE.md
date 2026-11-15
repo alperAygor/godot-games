@@ -114,6 +114,23 @@ Dinleyici yokken davranış değişmez. Kodda `SEAM(...)` yorumuyla işaretli ka
 | kart seçimi gösterildi, yenileme mümkün | `CardsFlow.open` → `events.cards_shown(cards, rerolls)`; `CardsFlow.grant_reroll()` + `reroll()` | `rerolls == 0` iken reklamla yenileme |
 | koşu sonu ödülü hesaplandı | `RunFlow.on_player_died` → `events.reward_computed(cores)` | ödül `Settings.record_run` ile işlendi; çift çekirdek `Settings.meta` üzerinden eklenir |
 
+C1 (koşu yapısı) ek olayları: `sector_cleared(sector, total)`, `gate_chosen(option_id)`, `run_won(summary)`. `run_ended` özetinde
+ayrıca `mode, won, outcome ("death"|"victory"), sectors, sectors_total, gates, reward` vardır. Zaferle biten koşu da `state == "dead"`
+(= koşu bitti) olur; `MonetizationHooks` geçiş reklamına `{"died": outcome != "victory"}` verir.
+
+### C1 koşu yapısı (özet)
+- Saf çekirdek `RunState` (`scripts/core/run_state.gd`): `set_mode(standard|quick|endless)` → `begin()`; aşamalar `PHASE_GATE`, `PHASE_VICTORY`
+  (step bekler); `choose_gate(id)`, `continue_endless()`, `finish_victory()`; ödül `reward(core_mult)`; `snapshot()/restore()`.
+  Mod seçilmezse SONSUZ = eski davranış (aynı tohumla aynı akış; kapı seçenekleri ayrı `gate_rng`'den).
+- Veri: `data/balance/waves.json` → `run` (modlar, ödül eğrisi, kapı seçenekleri, `sector_mix`). Kayıt: `RunRecords` (`Settings.flags`
+  içinde `run_mode`, `rec_<mod>_{best,wave,runs,wins,fastest}`; settings.gd değişmedi).
+- Sahne: `RunFlow` (kapı/zafer/mod seçici/hedef göstergesi), ekranlar `scripts/ui/screens/{gate,victory}.gd` (menus.gd'ye dokunmadan
+  `menus.modules`'a kaydedilir, `screens_rebuilt`'te yeniden), `scripts/ui/sector_hud.gd` (CanvasLayer 9). Bayraklar: `--mode=`,
+  `--after-victory=finish|continue`, `--screen=gate|victory`. Probe: `tools/dev/run_probe.gd` (kapıda). Sim: `--modes`, `--gate-policy`, `--career-mode`.
+- Diğer görevler için kancalar: C3 → kapı seçeneğinde `card_tier: "cursed"`; `data/cards.json`'da bu katmanda kart varsa kapı onu sunar
+  (`loadout.apply`), yoksa kapının kendi `effect`i. C2 → `run.sector_mix[sektör] = {tür: ağırlık çarpanı}` (RunState.unlocked_kinds), ve
+  zorluk için `run.difficulty_wave(n)` (hızlı modda etkin dalga ≠ dalga numarası; elit eşiği hâlâ `run.wave` kullanıyor).
+
 Not: roadmap C13'ün `scripts/game/events.gd` dosyası (koşu içi rastgele olaylar) bu olay yolundan ayrıdır.
 
 ## 5. Faz 1 sahiplik haritası (modül düzeyinde)
@@ -146,5 +163,5 @@ Not: roadmap C13'ün `scripts/game/events.gd` dosyası (koşu içi rastgele olay
 ## 7. Bilinen sınırlar (F2 kapsamı dışında bırakıldı)
 
 - Görsel/juice sabitleri (kıvılcım sayıları, sarsıntı, renkler) ve silah sapma aralıkları kodda; `combat.json` yalnız oynanışı etkileyenleri taşır.
-- Çekirdek ödül formülü (`MetaProgress.run_reward`: puan/150 + 3·(dalga−1) + 20·boss) `meta_progress.gd`'de sabit (F4 dosyası).
+- Çekirdek ödülü C1'den beri `RunState.reward` (eğri `waves.json` → `run.modes.<mod>.reward`); `MetaProgress.run_reward` yalnız mod tanımı yoksa (eski formül).
 - `tests/sim/run_sim.gd` savaş formüllerinin kopyası; `combat.json` değerlerini okumuyor.

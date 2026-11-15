@@ -40,7 +40,41 @@ static func dist(values: Array) -> Dictionary:
 	}
 
 static func group_key(r: Dictionary) -> String:
-	return "%s|%s|%s|%s" % [r.get("ship", "?"), r.get("tier", "?"), r.get("build", "none"), r.get("policy", "random")]
+	return "%s|%s|%s|%s|%s" % [r.get("mode", "endless"), r.get("ship", "?"), r.get("tier", "?"), r.get("build", "none"), r.get("policy", "random")]
+
+static func sector_table(runs: Array, sectors: int) -> Dictionary:
+	## C1: sektörlü modda kaç koşu k. sektörü temizledi (k = 1..sectors; son = zafer), medyan sonuç, ödül, kapı hataları.
+	var cleared: Array = []
+	var waves: Array = []
+	var cores: Array = []
+	var vtimes: Array = []
+	var hit: Array = []
+	for k in sectors:
+		hit.append(0)
+	var wins := 0
+	var gate_errors := 0
+	var gate_picks := {}
+	for r in runs:
+		var c := int(r.get("sectors_cleared", 0))
+		cleared.append(c)
+		waves.append(r["wave"])
+		cores.append(r["cores"])
+		for k in mini(c, sectors):
+			hit[k] = int(hit[k]) + 1
+		if bool(r.get("won", false)):
+			wins += 1
+			vtimes.append(float(r.get("victory_time", 0.0)))
+		gate_errors += (r.get("gate_errors", []) as Array).size()
+		for g in r.get("gates", []):
+			gate_picks[str(g) if str(g) != "" else "(atla)"] = int(gate_picks.get(str(g) if str(g) != "" else "(atla)", 0)) + 1
+	var rates: Array = []
+	for k in sectors:
+		rates.append(_round(float(hit[k]) / float(maxi(1, runs.size()))))
+	return {
+		"runs": runs.size(), "clear_rate": rates, "victory_rate": _round(float(wins) / float(maxi(1, runs.size()))),
+		"sectors": dist(cleared), "wave": dist(waves), "cores": dist(cores), "victory_time_s": dist(vtimes),
+		"gate_errors": gate_errors, "gate_picks": gate_picks,
+	}
 
 static func summarize(runs: Array) -> Dictionary:
 	## Bir grup koşunun dağılım özeti.
@@ -183,6 +217,20 @@ static func check(report: Dictionary, expect_full_cards := true) -> Array:
 		var b: Variant = report.get("by_tier", {}).get(tier_pair[1], null)
 		if a != null and b != null and float(b["wave"]["median"]) + 0.01 < float(a["wave"]["median"]):
 			problems.append("tam atölye (%.1f dalga) boş atölyeden (%.1f) daha kötü: yükseltmeler ters etki ediyor" % [float(b["wave"]["median"]), float(a["wave"]["median"])])
+	# C1: koşu yapısı — sonlu modlar her zaman biter, gelişmiş atölyeyle zafer mümkün, kapılar imkânsız durum üretmez.
+	for mode in report.get("by_mode", {}):
+		var m: Dictionary = report["by_mode"][mode]
+		if mode != "endless" and int(m.get("capped", 0)) > 0:
+			problems.append("mod %s: %d koşu zaman sınırına takıldı (sonlu mod bitmeli)" % [mode, int(m["capped"])])
+	for mode in report.get("sectors", {}):
+		var tiers: Dictionary = report["sectors"][mode]
+		for tier in tiers:
+			var t: Dictionary = tiers[tier]
+			if int(t.get("gate_errors", 0)) > 0:
+				problems.append("mod %s / %s: %d kapı hatası (imkânsız durum)" % [mode, tier, int(t["gate_errors"])])
+		var top: Variant = tiers.get("maxed", null)
+		if top != null and int(top["runs"]) >= 4 and float(top["victory_rate"]) <= 0.0:
+			problems.append("mod %s: tam atölyeyle hiç zafer yok (zafer erişilemez)" % mode)
 	if report.has("determinism") and not bool(report["determinism"].get("same", true)):
 		problems.append("aynı tohum iki kez farklı sonuç verdi (belirlenimsizlik)")
 	return problems
