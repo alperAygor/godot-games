@@ -33,6 +33,7 @@ Kural: modüller birbirine ve duruma yalnız `GameContext` (`ctx`) üzerinden er
 | `weapons.gd` | `WeaponSystem` | gemi silahları (atış topu/saçma/ray/roket), roket güdümü, düşman mermisi, refakat dronları | — |
 | `spawner.gd` | `Spawner` | düşman/toplanabilir doğurma, doğma noktası, elit şansı, av modu temposu, düşman adımı (engel kaçınma, itme, sınır, bombacı fitili), ayrılma | dalga süresi, av sayacı |
 | `boss_events.gd` | `BossEvents` | boss doğma, Boss3D sinyallerinin mermi/tehlike/ışın karşılıkları, yer tehlikeleri, lazerler, ölüm sekansı | iniş/ölüm bayrakları |
+| `card_effects.gd` | `CardEffects` | C3 kart etkileri (yeni 25 kart, 6 evrim, lanet bedelleri) — diğer modüller yalnız tek satırlık kanca çağırır (`shot_damage_mult`, `on_hit`, `on_kill`, `on_hurt`, `on_dash`, `on_nova`, `tick` …); kart ekranına yasaklama satırı + evrim ipucu (`cards.add_below_reroll`); lanetli kart için `apply_curse(id)` (C1 kapısı). Sayılar `data/card_rules.json` → `params` | bıçak/taret/iz/statik/füze sayaçları, öldürme sayacı |
 | `cards_flow.gd` | `CardsFlow` | seviye kartı aç/yenile/seç, duraklatma, arka arkaya bekleyen seviyeler | açık mı, bekleyen, kart çekiliş RNG |
 | `camera_rig.gd` | `CameraRig` | kamera (menü süzülmesi, öne bakış, boss yakınlaştırma, sarsıntı), fare nişanı, nişan halkası | kamera düğümleri, öne bakış, yakınlaştırma |
 | `feedback.gd` | `Feedback` | juice: dünya parıltıları, vinyet (hasar/düşük can/ton), hasar sayıları, kalp atışı, atılma/kalkan/hasar efektleri | vinyet değerleri |
@@ -127,9 +128,27 @@ ayrıca `mode, won, outcome ("death"|"victory"), sectors, sectors_total, gates, 
 - Sahne: `RunFlow` (kapı/zafer/mod seçici/hedef göstergesi), ekranlar `scripts/ui/screens/{gate,victory}.gd` (menus.gd'ye dokunmadan
   `menus.modules`'a kaydedilir, `screens_rebuilt`'te yeniden), `scripts/ui/sector_hud.gd` (CanvasLayer 9). Bayraklar: `--mode=`,
   `--after-victory=finish|continue`, `--screen=gate|victory`. Probe: `tools/dev/run_probe.gd` (kapıda). Sim: `--modes`, `--gate-policy`, `--career-mode`.
-- Diğer görevler için kancalar: C3 → kapı seçeneğinde `card_tier: "cursed"`; `data/cards.json`'da bu katmanda kart varsa kapı onu sunar
-  (`loadout.apply`), yoksa kapının kendi `effect`i. C2 → `run.sector_mix[sektör] = {tür: ağırlık çarpanı}` (RunState.unlocked_kinds), ve
-  zorluk için `run.difficulty_wave(n)` (hızlı modda etkin dalga ≠ dalga numarası; elit eşiği hâlâ `run.wave` kullanıyor).
+- Diğer görevler için kancalar (C1+C2+C3 entegrasyonunda bağlandı, aşağıya bkz.): C3 → kapı seçeneğinde `card_tier: "cursed"`;
+  C2 → `run.sector_mix[sektör] = {tür: ağırlık çarpanı}` (RunState.unlocked_kinds) ve zorluk için `run.difficulty_wave(n)`.
+
+### C1 × C2 × C3 entegrasyonu
+- **Lanetli kapı → C3 lanetli kartı.** Kapı açılınca `RunState.assign_gate_cards(alınmamış lanet kimlikleri)` (`gate_rng` ile) `card_tier:
+  "cursed"` seçeneğine bir kart atar (`run.gate_cards`, anlık görüntüde saklanır). Ekran `GateScreen.describe(def, Loadout.curse_info(kart))`
+  ile kartın adını, etkisini (artı), bedelini (eksi) ve KARTIN ödülünü seçimden önce gösterir. Seçilince `RunFlow._on_gate_closed` →
+  `ctx.effects.apply_curse(id)` (bir kez; ödül `core_mult`'a katlanır). Kartlı seçenekte `RunState.gate_reward_bonus(id) = 0`: kapının kendi
+  `reward_mult`'u (+%15) EKLENMEZ — çift sayım yok. Lanetli kart kalmadıysa kapının kendi `effect` + `reward_mult`'u yedek. Bot/sim aynı kural
+  (`bot_gate_choice(..., rewards)` kartın gerçek ödülünü tartar). Testler: `test_run_state` (saf), `test_balance_sim` (sim), `run_probe` §5 (sahne).
+- **Elit/zorluk ölçeği etkin dalgayla.** `EnemyData.elite_chance(elite, run.difficulty_wave(n), boss_dalgası)` ve `prefix_wave(etkin)`:
+  elit eşiği (`from_wave`), şansı ve öneklerin `min_wave`'i hem `Spawner.spawn_enemy`'de hem simde etkin dalgayı kullanır (türlerin
+  `unlock`'u zaten `RunState.unlocked_kinds`'te etkin dalgayla). Sonsuz/standartta etkin dalga = n: davranış birebir aynı (tohumlu sim ve
+  belirlenimli `scene_probe` iziyle kanıtlandı). `max_alive` dalgaya bağlı değil.
+- **Sektör tadı (yalnız veri).** `run.sector_mix`: S1 NEON (öğrenme; seyrek hücumcu), S2 KIZIL (kalkancı+onarıcı, mayıncı, tank), S3 BUZ (sıçrayıcı,
+  hücumcu, kuluçka+sürü). Kuluçka `sectors` [0,1] → [0,1,2] (standartta başka türlü hiç görünmezdi). Karışım yalnız sektörlü modlarda ve zafere
+  kadar (`RunState.sector_mix`): sonsuz mod ve zafer sonrası devam karışımsız.
+- **AŞIRI GERİLİM** düşman can/hasar çarpanı `run.hp_scale()/damage_scale()` içinde: yeni türler, elit önekleri (çarpanlar ölçeğin üstüne),
+  bölünen parçalar, kuluçka yavruları, mayın/iniş hasarı (düşmanın ölçekli hasarı) ve boss dahil; simde de aynı (test_balance_sim).
+- **Kalkancı hasar sayısı.** `enemy3d.take_damage` gerçek verilen hasarı döner (+ `last_blocked`); `Feedback.enemy_damage_number` gerçek sayıyı
+  gösterir (zırhlı ×0,5, yorgun hücumcu ×1,5 dahil), kalkana gelen vuruşta küçük mavi sayı + seyrek "ENGEL" işareti.
 
 Not: roadmap C13'ün `scripts/game/events.gd` dosyası (koşu içi rastgele olaylar) bu olay yolundan ayrıdır.
 
@@ -152,8 +171,10 @@ Not: roadmap C13'ün `scripts/game/events.gd` dosyası (koşu içi rastgele olay
 - `--seed=N` (ya da sahneye eklenmeden önce `scene.run_seed = N`): global `randf` akışı, kart çekilişi ve RunState dalga
   planı tohumlanır (`RunFlow.reseed`, her koşu başında). `--seed` yoksa oyun eskisi gibi rastgele.
 - `--fixed-fps 60` kare süresini duvar saatinden ayırır. İkisi birlikte: aynı kod = aynı koşu.
-- `tools/sim/scene_probe.gd -- --demo --seed=N ...` çıktısındaki `trace_md5`, her 0,1 sn örnekte dalga/öldürme/puan/
+- `tools/sim/scene_probe.gd -- --demo --seed=N ...` çıktısındaki `trace_md5`, her örnekte (SABİT kare aralığı: `--sample-frames=6`;
+  eskiden duvar saati zamanlayıcısıydı ve iz çalıştırmalar arası kararsızdı) dalga/öldürme/puan/
   seviye/can/konum/canlı/mermi sayısı/durum izinin özetidir. Yeniden düzenleme sonrası aynı `trace_md5` = davranış aynı.
+  `--dump=yol` örnek başına iz satırlarını yazar (fark nerede başladı); `--mode=endless|quick|standard` sahnenin moduna geçer.
   ```
   godot --headless --fixed-fps 60 --path . -s res://tools/sim/scene_probe.gd -- --demo --ship=sahin --seed=11 --seconds=60
   ```

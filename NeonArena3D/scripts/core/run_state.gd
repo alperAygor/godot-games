@@ -73,6 +73,10 @@ var mode_def: Dictionary = {}
 var sectors_cleared := 0
 var gate_options: Array[String] = []
 var gates_taken: Array[String] = []
+## Açık kapıda C3 lanetli kartı atanmış seçenekler: seçenek kimliği → kart kimliği (`assign_gate_cards`). Kartlı seçenekte
+## ödül kartın kendi `curse.reward_mult`'u ile gelir (Loadout.apply_curse onu `core_mult`'a katar): kapının kendi
+## `reward_mult`'u EKLENMEZ (çift sayım yok). Kart yoksa kapının kendi `effect` + `reward_mult`'u yedek olarak kalır.
+var gate_cards: Dictionary = {}
 var won := false
 var continued := false
 var reward_mult := 1.0
@@ -165,6 +169,7 @@ func begin() -> void:
 	sectors_cleared = 0
 	gate_options.clear()
 	gates_taken.clear()
+	gate_cards.clear()
 	won = false
 	continued = false
 	reward_mult = 1.0
@@ -420,6 +425,23 @@ func _gate_allowed(id: String) -> bool:
 	var limit := int(gate_def(id).get("max_per_run", -1))
 	return limit < 0 or gates_taken.count(id) < limit
 
+func assign_gate_cards(cursed_ids: Array) -> Dictionary:
+	## Açık kapıdaki `card_tier: "cursed"` seçeneklerine alınmamış lanetli kartlardan birini `gate_rng` ile atar
+	## (`cursed_ids` = Loadout.cursed_cards() kimlikleri, veri sırası). Liste boşsa atanmaz → kapının kendi etkisi (yedek).
+	## Kapı açılınca (seçimden ÖNCE, ekran kartı göstersin diye) bir kez çağrılır; aynı açılışta tekrar çağrı yeniden çekmez.
+	if not gate_cards.is_empty():
+		return gate_cards
+	for id in gate_options:
+		if str(gate_def(id).get("card_tier", "")) == "cursed" and not cursed_ids.is_empty():
+			gate_cards[id] = str(cursed_ids[gate_rng.randi() % cursed_ids.size()])
+	return gate_cards
+
+func gate_reward_bonus(id: String) -> float:
+	## Bu seçeneğin RunState ödül çarpanına (`reward_mult`) katkısı: lanetli kart atanmışsa 0 (ödül kartın `core_mult`'unda).
+	if id == "" or gate_cards.has(id):
+		return 0.0
+	return float(gate_def(id).get("reward_mult", 0.0))
+
 func choose_gate(id: String) -> bool:
 	## Kapı seçimi ("" = atla). Koşu düzeyi etkiler burada (ödül çarpanı, kasa, sonraki sektör zorluğu); oyuncuya
 	## dönük etkiler (iyileşme, kart, yenileme) `gate_closed` dinleyicisinde. Sonra harita değişir, sonraki dalga başlar.
@@ -430,14 +452,15 @@ func choose_gate(id: String) -> bool:
 	if id != "":
 		var g := gate_def(id)
 		gates_taken.append(id)
-		reward_mult += float(g.get("reward_mult", 0.0))
+		reward_mult += gate_reward_bonus(id)
 		banked_cores += int(g.get("bank_cores", 0))
 		if g.has("enemy_hp_mult") or g.has("enemy_damage_mult"):
 			enemy_hp_mod *= float(g.get("enemy_hp_mult", 1.0))
 			enemy_damage_mod *= float(g.get("enemy_damage_mult", 1.0))
 			_mod_sector = sectors_cleared
 	gate_options.clear()
-	gate_closed.emit(id)
+	gate_closed.emit(id)   # dinleyici (RunFlow/sim) kartlı seçenekte `gate_cards[id]` ile lanetli kartı uygular
+	gate_cards.clear()
 	map_index += 1
 	map_changed.emit(map_index)
 	_start_wave(wave + 1)
@@ -476,13 +499,14 @@ func can_continue() -> bool:
 
 func sector_mix() -> Dictionary:
 	## C2 kancası: `run.sector_mix[sektör]` = {tür: ağırlık çarpanı}. Boş → dalga planı değişmez.
+	## Yalnız sektörlü modlarda (standart/hızlı) ve zafere kadar: sonsuz mod ve zafer sonrası devam eski döngüyle aynı kalır.
 	var mix: Array = run_defs().get("sector_mix", [])
-	if mix.is_empty():
+	if mix.is_empty() or total_sectors() <= 0 or continued:
 		return {}
 	var entry: Variant = mix[mini(sectors_cleared, mix.size() - 1)]
 	return entry if typeof(entry) == TYPE_DICTIONARY else {}
 
-static func bot_gate_choice(options: Array, gate_table: Dictionary, hp_ratio: float, policy := "auto") -> String:
+static func bot_gate_choice(options: Array, gate_table: Dictionary, hp_ratio: float, policy := "auto", rewards: Dictionary = {}) -> String:
 	## Bot (demo, simülasyon) kapı seçimi. safe: hep ilk (güvenli); risky: en yüksek ödül çarpanı/kasa;
 	## auto: can < %50 → güvenli, değilse risky. Seçenek yoksa "" (atla).
 	if options.is_empty():
@@ -493,7 +517,8 @@ static func bot_gate_choice(options: Array, gate_table: Dictionary, hp_ratio: fl
 	var best_v := -1.0
 	for id in options:
 		var g: Dictionary = gate_table.get(str(id), {})
-		var v := float(g.get("reward_mult", 0.0)) * 100.0 + float(g.get("bank_cores", 0))
+		# rewards: seçenek → gerçek ödül payı (lanetli kart atanmışsa kartınki); verilmezse kapı tanımındaki reward_mult.
+		var v := float(rewards.get(str(id), g.get("reward_mult", 0.0))) * 100.0 + float(g.get("bank_cores", 0))
 		if v > best_v:
 			best_v = v
 			best = str(id)
@@ -551,6 +576,7 @@ func snapshot() -> Dictionary:
 		out[key] = get(key)
 	out["gates_taken"] = Array(gates_taken)
 	out["gate_options"] = Array(gate_options)
+	out["gate_cards"] = gate_cards.duplicate()
 	# 64 bit durum metin olarak: JSON sayıları kayan noktaya düşer ve hassasiyet kaybolur.
 	out["rng_state"] = str(rng.state)
 	out["gate_rng_state"] = str(gate_rng.state)
@@ -567,6 +593,11 @@ func restore(data: Dictionary) -> void:
 	gate_options.clear()
 	for id in data.get("gate_options", []):
 		gate_options.append(str(id))
+	gate_cards.clear()
+	var gc: Variant = data.get("gate_cards", {})
+	if gc is Dictionary:
+		for id in gc:
+			gate_cards[str(id)] = str(gc[id])
 	rng.state = str(data.get("rng_state", str(rng.state))).to_int()
 	gate_rng.state = str(data.get("gate_rng_state", str(gate_rng.state))).to_int()
 	for key in ["wave", "phase", "map_index", "score", "xp", "level", "xp_next", "kills", "bosses", "max_combo", "sectors_cleared",

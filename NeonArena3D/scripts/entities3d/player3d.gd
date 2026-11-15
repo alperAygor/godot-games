@@ -12,6 +12,7 @@ var aim2 := Vector2.RIGHT
 var move_dir := Vector2.RIGHT
 var max_hp := 100.0
 var hp := 100.0
+var hp_before_hit := 100.0   ## son take_damage'den önceki can (CardEffects.on_hurt: Çelik Gövde iadesi ölümcül vuruşu doğru hesaplasın)
 var speed := 330.0
 var radius := 13.0
 var invuln := 0.0
@@ -241,6 +242,7 @@ func take_damage(amount: float, from: Vector2) -> bool:
 		velocity2 += push * 140.0
 		shield_broken.emit()
 		return false
+	hp_before_hit = hp
 	hp -= amount
 	invuln = float(GameData.number("player.hurt_invuln", 0.7))
 	_hurt_blink = invuln

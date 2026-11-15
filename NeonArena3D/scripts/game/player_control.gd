@@ -31,6 +31,7 @@ func apply_loadout() -> void:
 	player.fire_rate_mult = loadout.m("fire_rate_mult")
 	player.dash_cd_mult = loadout.m("dash_cd_mult")
 	ctx.weapons.sync_drones()
+	ctx.effects.on_loadout_applied()
 
 func idle(delta: float) -> void:
 	## Menüde gemi arkada süzülür.

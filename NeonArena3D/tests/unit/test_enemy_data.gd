@@ -41,7 +41,9 @@ func test_resolve_kind_sector_and_cap() -> void:
 	eq(EnemyData.resolve_kind(en, "minelayer", 1, {}), "minelayer", "doğru sektörde kendisi")
 	eq(EnemyData.resolve_kind(en, "minelayer", 1, {"minelayer": 2}), en["minelayer"]["fallback"], "üst sınırda yedek")
 	eq(EnemyData.resolve_kind(en, "medic", 2, {"medic": 1}), "medic", "üst sınırın altında kendisi")
-	eq(EnemyData.resolve_kind(en, "brooder", 2, {}), en["brooder"]["fallback"], "kuluçka 2. sektörde yok")
+	# Entegrasyon (sektör karışımı): kuluçka artık 3. sektörde (BUZ TERMİNALİ) de var; standart modda başka türlü hiç görünmezdi.
+	eq(EnemyData.resolve_kind(en, "brooder", 2, {}), "brooder", "kuluçka 3. sektörde var")
+	eq(EnemyData.resolve_kind(en, "blinker", 1, {}), en["blinker"]["fallback"], "sıçrayıcı yalnız 3. sektörde")
 
 func test_waves_one_to_three_have_no_new_types() -> void:
 	## Yeni düşmanlar RunState.unlocked_kinds üzerinden zamanlanır (unlock + weight): ilk 3 dalga eskisi gibi nazik.
@@ -56,3 +58,25 @@ func test_waves_one_to_three_have_no_new_types() -> void:
 		late.append(str(entry["kind"]))
 	for kind in new_kinds:
 		check(kind in late, "14. dalgada açık: " + kind)
+
+func test_elite_chance_uses_effective_wave() -> void:
+	## Entegrasyon (C1 × C2): elit eşiği/şansı etkin dalgayla. Sonsuz/standartta etkin dalga = n → eski formül birebir.
+	var defs := _data()
+	var elite: Dictionary = defs["elite"]
+	var from := float(elite.get("from_wave", 4))
+	for n in [1, 3, 4, 7, 12, 30]:
+		var legacy := -1.0
+		if float(n) >= from:
+			legacy = minf(float(elite["chance_max"]), float(elite["chance"]) + float(elite["chance_per_wave"]) * float(n))
+		eq(EnemyData.elite_chance(elite, float(n), false), legacy, "dalga %d: eski formül" % n)
+		eq(EnemyData.prefix_wave(float(n)), n, "ön ek dalgası = n")
+	eq(EnemyData.elite_chance(elite, 12.0, true), -1.0, "boss dalgasında elit yok")
+	var quick := RunState.new(defs, 3)
+	quick.set_mode("quick")
+	var scale := float(defs["run"]["modes"]["quick"]["wave_scale"])
+	check(scale > 1.0, "hızlı mod sıkıştırılmış (wave_scale > 1)")
+	for n in [4, 6, 8]:
+		var eff := quick.difficulty_wave(n)
+		near(eff, 1.0 + float(n - 1) * scale, 0.0001, "hızlı %d. dalga etkin %.2f" % [n, eff])
+		gt(EnemyData.elite_chance(elite, eff, false), EnemyData.elite_chance(elite, float(n), false), "hızlı %d. dalga: elit şansı etkin dalgadan (daha yüksek)" % n)
+		eq(EnemyData.prefix_wave(eff), int(floor(eff + 0.0001)), "ön ek dalgası = etkin dalganın tam kısmı")

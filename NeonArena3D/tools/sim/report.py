@@ -66,11 +66,29 @@ def render(rep):
         L.append("")
         L.append("## Kart politikası")
         L.append(table(["politika", "medyan dalga", "p90"], [[k, f(v["wave"]["median"]), f(v["wave"]["p90"])] for k, v in rep["by_policy"].items()]))
+    if rep.get("sectors"):
+        L.append("")
+        L.append("## Sektörler (C1: temizleme oranı S1..Sn, zafer, kapı seçimleri)")
+        rows = []
+        for mode, tiers in rep["sectors"].items():
+            for tier, st in tiers.items():
+                rows.append([mode, tier, st["runs"], " / ".join(f"%{100 * v:.0f}" for v in st["clear_rate"]), f"%{100 * st['victory_rate']:.0f}",
+                             f(st["wave"]["median"]), f(st["cores"]["median"], 0), st["gate_errors"], pct_text(st.get("gate_picks", {}), 4)])
+        L.append(table(["mod", "atölye", "koşu", "temizleme S1/S2/S3", "zafer", "medyan dalga", "medyan çekirdek", "kapı hatası", "kapı seçimi"], rows))
+    if rep.get("by_mode"):
+        L.append("")
+        L.append("## Mod başına: ölüm yeri (boss dalgası / normal dalga) ve çekirdek")
+        L.append(table(["mod", "koşu", "medyan dalga", "ölüm: boss dalgası", "ölüm: normal dalga", "boss payı", "çekirdek medyan", "çekirdek ort."],
+                       [[k, v["runs"], f(v["wave"]["median"]), v.get("deaths", {}).get("boss_wave", "-"), v.get("deaths", {}).get("normal_wave", "-"),
+                         f"%{100 * v.get('deaths', {}).get('boss_share', 0):.0f}", f(v["cores"]["median"]), f(v["cores"]["mean"])] for k, v in rep["by_mode"].items()]))
     L.append("")
     L.append("## Ölüm nedenleri (genel, canı bitiren son vuruş)")
     L.append(pct_text(o["death_causes"], 12))
     L.append("")
     L.append("Alınan hasar payı: " + pct_text({k: v for k, v in o["damage_share"].items()}, 10))
+    if o.get("damage_share_normal"):
+        L.append("")
+        L.append("Normal dalgada (boss yokken) alınan hasar payı (C2): " + pct_text(o["damage_share_normal"], 12))
     L.append("")
     L.append("Medyan dalga zaman çizelgesi (sn → dalga): " + ", ".join(f"{k} sn → {f(v)}" for k, v in sorted(o["median_wave_at_seconds"].items(), key=lambda kv: int(kv[0]))))
     L.append("")
@@ -96,6 +114,16 @@ def render(rep):
         if c.get("endgame_ship_share"):
             L.append("Her şey alındıktan sonra (12 koşu): kullanım " + ", ".join(f"{k} %{100 * v:.0f}" for k, v in c["endgame_ship_share"].items()) +
                      " · ort. dalga " + ", ".join(f"{k} {f(v)}" for k, v in c["endgame_ship_mean_wave"].items()))
+    sc = rep.get("scan")
+    if sc:
+        L.append("")
+        L.append(f"## Kırık kombinasyon taraması ({sc['ship']}, atölye {sc['tier']}, {sc['seeds']} tohum; yapısız medyan {f(sc['baseline_median'])})")
+        L.append(table(["grup", "giriş", "en iyi", "en iyi IQM", "ort. IQM", "oran (kapı)", "düz medyan oranı", "sınır"],
+                       [[g, len(v["entries"]), v["best"], f(v["best_median"]), f(v["mean_median"]), f(v["ratio"], 2), f(v.get("median_ratio", 0), 2), f(v["max_ratio"], 2)] for g, v in sc["groups"].items()]))
+        for g, v in sc["groups"].items():
+            items = sorted(v["entries"].items(), key=lambda kv: -kv[1])
+            L.append("")
+            L.append(f"{g}: " + ", ".join(f"{k} {f(x)}" for k, x in items))
     a = rep["assertions"]
     L.append("")
     L.append("## Doğrulamalar")

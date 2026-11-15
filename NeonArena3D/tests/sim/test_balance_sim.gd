@@ -194,3 +194,51 @@ func test_sector_table_and_checks() -> void:
 	check(problems.any(func(p): return "zaman sınırına" in str(p)), "sonlanmayan sonlu mod yakalanmalı")
 	check(problems.any(func(p): return "zafer erişilemez" in str(p)), "erişilemeyen zafer yakalanmalı")
 	check(problems.any(func(p): return "kapı hatası" in str(p)), "kapı hatası yakalanmalı")
+
+func test_overload_gate_scales_new_kinds_and_elite_prefixes() -> void:
+	## Entegrasyon (C1 × C2): AŞIRI GERİLİM'in düşman can/hasar çarpanı C2'nin yeni türlerine ve elit öneklerine de geçer.
+	var data := RunSimScript.load_data()
+	var elite: Dictionary = data["balance"]["elite"]
+	elite["chance"] = 1.0
+	elite["chance_max"] = 1.0
+	var sim := RunSimScript.new(data)
+	sim.play({"seed": 3, "mode": "standard", "max_time": 0.2})
+	var g: Dictionary = sim.run.gate_def("overload")
+	for kind in ["charger", "shielder", "medic", "minelayer", "blinker", "brooder"]:
+		var st: Dictionary = data["balance"]["enemies"][kind]
+		sim.run.wave = 12
+		sim.run.enemy_hp_mod = 1.0
+		sim.run.enemy_damage_mod = 1.0
+		sim.enemies.clear()
+		sim._spawn(kind, false, 300.0)
+		var plain: Dictionary = sim.enemies[0]
+		sim.run.enemy_hp_mod = float(g["enemy_hp_mult"])
+		sim.run.enemy_damage_mod = float(g["enemy_damage_mult"])
+		sim._spawn(kind, false, 300.0)
+		var hard: Dictionary = sim.enemies[1]
+		near(float(hard["hp"]) / float(plain["hp"]), float(g["enemy_hp_mult"]), 0.0001, "%s: can ×%.2f" % [kind, float(g["enemy_hp_mult"])])
+		near(float(hard["dmg"]) / float(plain["dmg"]), float(g["enemy_damage_mult"]), 0.0001, "%s: hasar ×%.2f" % [kind, float(g["enemy_damage_mult"])])
+		near(float(plain["hp"]), float(st["hp"]) * sim.run.hp_scale() / float(g["enemy_hp_mult"]), 0.01, "%s: taban can × dalga ölçeği" % kind)
+		sim._spawn(kind, true, 300.0)   # elit (şans 1): ön ek çarpanı ölçeğin ÜSTÜNE
+		var el: Dictionary = sim.enemies[2]
+		check(bool(el["elite"]), "%s: elit doğdu" % kind)
+		var pd: Dictionary = (elite["prefixes"] as Dictionary).get(str(el["prefix"]), {})
+		var hp_m := float(pd.get("hp_mult", elite.get("hp_mult", 3.0)))
+		var dm_m := float(pd.get("damage_mult", elite.get("damage_mult", 1.3)))
+		near(float(el["hp"]), float(st["hp"]) * sim.run.hp_scale() * hp_m, 0.01, "%s/%s: elit can = taban × kapılı ölçek × önek" % [kind, str(el["prefix"])])
+		near(float(el["dmg"]), float(st["damage"]) * sim.run.damage_scale() * dm_m, 0.01, "%s/%s: elit hasar kapılı ölçekte" % [kind, str(el["prefix"])])
+
+func test_cursed_gate_in_sim_applies_one_real_curse() -> void:
+	## Entegrasyon (C1 × C3): sim kapısı lanetli seçenekte gerçek lanetli kartı uygular, ödülü çift saymaz, hata üretmez.
+	var sim := _sim()
+	var seen := 0
+	for s in range(1, 25):
+		var r := sim.play({"seed": s, "ship": "vektor", "meta": sim.meta_for_fraction(0.6), "mode": "standard", "gate_policy": "risky"})
+		eq((r["gate_errors"] as Array).size(), 0, "tohum %d: kapı hatası yok" % s)
+		var n_cursed := (r["gates"] as Array).count("cursed")
+		eq((r["curses"] as Array).size(), n_cursed, "tohum %d: her lanetli seçim tam bir lanet" % s)
+		check(n_cursed <= 1, "tohum %d: koşu başına en çok bir lanetli kapı" % s)
+		if n_cursed == 1:
+			seen += 1
+			near(sim.run.reward_mult, 1.0 + (0.25 if (r["gates"] as Array).has("overload") else 0.0), 0.0001, "tohum %d: kapı +%%15 eklenmez" % s)
+	gt(float(seen), 0.0, "riskli politikada lanetli kapı en az bir kez seçildi")

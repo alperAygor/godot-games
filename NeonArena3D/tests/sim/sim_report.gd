@@ -88,6 +88,9 @@ static func summarize(runs: Array) -> Dictionary:
 	var capped := 0
 	var causes := {}
 	var damage := {}
+	var damage_n := {}
+	var deaths_boss := 0
+	var deaths_normal := 0
 	var boss_kills := {}
 	var kbk := {}
 	var wave_at := {}
@@ -105,6 +108,13 @@ static func summarize(runs: Array) -> Dictionary:
 		causes[c] = int(causes.get(c, 0)) + 1
 		for k in r["damage_taken"]:
 			damage[k] = float(damage.get(k, 0.0)) + float(r["damage_taken"][k])
+		for k in r.get("damage_normal", {}):   # C2: boss yokken (normal dalga) alınan hasar
+			damage_n[k] = float(damage_n.get(k, 0.0)) + float(r["damage_normal"][k])
+		if not bool(r["capped"]) and str(r["death_cause"]) != "victory":
+			if bool(r.get("death_in_boss", false)):
+				deaths_boss += 1
+			else:
+				deaths_normal += 1
 		for k in r["boss_kills"]:
 			boss_kills[k] = int(boss_kills.get(k, 0)) + int(r["boss_kills"][k])
 		for k in r["kills_by_kind"]:
@@ -122,11 +132,19 @@ static func summarize(runs: Array) -> Dictionary:
 	var damage_share := {}
 	for k in damage:
 		damage_share[k] = _round(float(damage[k]) / maxf(1.0, total_damage))
+	var total_n := 0.0
+	for k in damage_n:
+		total_n += float(damage_n[k])
+	var damage_share_n := {}
+	for k in damage_n:
+		damage_share_n[k] = _round(float(damage_n[k]) / maxf(1.0, total_n))
 	return {
 		"runs": runs.size(), "capped": capped,
 		"wave": dist(waves), "time_s": dist(times), "kills": dist(kills), "score": dist(scores),
 		"cores": dist(cores), "level": dist(levels), "peak_alive": dist(peaks),
-		"death_causes": causes, "damage_share": damage_share, "boss_kills": boss_kills,
+		"death_causes": causes, "damage_share": damage_share, "damage_share_normal": damage_share_n, "boss_kills": boss_kills,
+		"deaths": {"boss_wave": deaths_boss, "normal_wave": deaths_normal,
+			"boss_share": _round(float(deaths_boss) / float(maxi(1, deaths_boss + deaths_normal)))},
 		"kills_by_kind": kbk, "median_wave_at_seconds": wave_marks,
 	}
 
@@ -208,6 +226,8 @@ static func check(report: Dictionary, expect_full_cards := true) -> Array:
 	if expect_full_cards:
 		for id in report.get("cards", {}):
 			var c: Dictionary = report["cards"][id]
+			if str(c.get("tier", "")) in ["evolution", "cursed"]:
+				continue   # havuz dışı / yalnız tarif tamamlanınca: kırık kombinasyon taraması ölçer
 			if int(c["offered"]) == 0:
 				problems.append("kart %s hiç sunulmadı" % id)
 			elif int(c["picked"]) == 0 and int(c["offered"]) >= 20:
@@ -231,6 +251,46 @@ static func check(report: Dictionary, expect_full_cards := true) -> Array:
 		var top: Variant = tiers.get("maxed", null)
 		if top != null and int(top["runs"]) >= 4 and float(top["victory_rate"]) <= 0.0:
 			problems.append("mod %s: tam atölyeyle hiç zafer yok (zafer erişilemez)" % mode)
+	# C3: kırık kombinasyon taraması
+	if report.has("scan"):
+		var sc: Dictionary = report["scan"]
+		if float(sc.get("ratio", 0.0)) > float(sc.get("max_ratio", 1.6)):
+			problems.append("kırık kombinasyon: %s sağlam medyan (IQM) dalga %.1f, ortalama %.1f (oran %.2f > %.2f)" % [str(sc.get("best", "?")), float(sc.get("best_median", 0.0)), float(sc.get("mean_median", 0.0)), float(sc["ratio"]), float(sc.get("max_ratio", 1.6))])
 	if report.has("determinism") and not bool(report["determinism"].get("same", true)):
 		problems.append("aynı tohum iki kez farklı sonuç verdi (belirlenimsizlik)")
 	return problems
+
+static func iqm(values: Array) -> float:
+	## Çeyrekler arası ortalama: sıralı listenin ortadaki yarısının ortalaması. Dalga sonuçları boss dalgalarında
+	## kümelendiği için (5/10/25…) az tohumda medyan bir kümeden ötekine sıçrar; IQM medyanın sağlam karşılığıdır.
+	if values.is_empty():
+		return 0.0
+	var sorted: Array = values.duplicate()
+	sorted.sort()
+	var cut := sorted.size() / 4
+	return mean(sorted.slice(cut, sorted.size() - cut))
+
+static func scan_summary(entries: Dictionary, max_ratio: float) -> Dictionary:
+	## Kırık kombinasyon taraması: entries = {ad: [dalga...]}. Kapı oranı = en iyi IQM / ortalama IQM (sağlam medyan);
+	## düz medyan oranı da raporlanır (median_ratio).
+	var medians := {}
+	var iqms := {}
+	var best := ""
+	var best_v := -1.0
+	var total := 0.0
+	var best_med := -1.0
+	var total_med := 0.0
+	for k in entries:
+		var md := quantile(entries[k], 0.5)
+		var q := iqm(entries[k])
+		medians[k] = _round(md)
+		iqms[k] = _round(q)
+		total += q
+		total_med += md
+		best_med = maxf(best_med, md)
+		if q > best_v or (q == best_v and str(k) < best):
+			best_v = q
+			best = k
+	var n := float(maxi(1, entries.size()))
+	return {"entries": iqms, "medians": medians, "best": best, "best_median": _round(best_v), "mean_median": _round(total / n),
+		"ratio": _round(best_v / maxf(0.001, total / n)), "median_ratio": _round(best_med / maxf(0.001, total_med / n)), "max_ratio": max_ratio}

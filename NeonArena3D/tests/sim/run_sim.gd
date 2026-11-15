@@ -10,7 +10,7 @@ class_name RunSim
 ## Bu bir DENGE TERMOMETRESİDİR, oynanış kopyası değildir; mutlak sayılar değil, sürümler arası farklar
 ## ve gemi/kart/zorluk arası oranlar anlamlıdır. Aynı tohum + aynı veri = aynı sonuç.
 
-const VERSION := 2   # 2: C1 koşu modları (standart/hızlı/sonsuz), sektör kapıları, zafer, ödül eğrisi
+const VERSION := 3   # 2: C1 koşu modları (standart/hızlı/sonsuz), sektör kapıları, zafer, ödül eğrisi · C2 yeni türler/seçkin önekleri · C3 kart etkileri; 3: C1+C2+C3 birleşik
 const DATA_PATHS := {
 	"balance": BalanceData.DIR, "cards": "res://data/cards.json", "ships": "res://data/ships.json",
 	"upgrades": "res://data/upgrades.json", "maps": "res://data/maps.json", "model": "res://tests/sim/sim_model.json",
@@ -49,6 +49,17 @@ var _death_cause := ""
 var _hunt_timer := 35.0
 var _gate_policy := "auto"
 var _continue := false
+# C3 kart etkileri (oyundaki CardEffects'in soyut karşılığı; sayılar data/card_rules.json → params, davranış sabitleri sim_model.json → cards)
+var cp: Dictionary = {}
+var cm: Dictionary = {}
+var _blade_timer := 0.0
+var _turrets: Array = []
+var _trail_left := 0.0
+var _trail_timer := 0.0
+var _static_timer := 0.0
+var _missile_timer := 0.0
+var _kill_count := 0
+var _blasts: Array = []
 
 static func load_data() -> Dictionary:
 	## Veri dosyalarını okur (otoyük gerektirmez); eksik/bozuksa boş sözlük döner.
@@ -74,6 +85,14 @@ func _init(data: Dictionary) -> void:
 	upgrades = data["upgrades"]
 	maps = data["maps"]
 	model = data["model"]
+	cp = (Loadout.load_rules().get("params", {}) as Dictionary)
+	cm = model.get("cards", {})
+
+func _p(key: String, fallback := 0.0) -> float:
+	return float(cp.get(key, fallback))
+
+func _c(key: String, fallback := 0.0) -> float:
+	return float(cm.get(key, fallback))
 
 # --- Yardımcılar ----------------------------------------------------------------
 func ship_def(id: String) -> Dictionary:
@@ -114,6 +133,12 @@ func boss_stats(kind: String) -> Dictionary:
 		out.merge(kinds[kind], true)
 	return out
 
+func _card_by_id(id: String) -> Dictionary:
+	for c in cards:
+		if str(c.get("id", "")) == id:
+			return c
+	return {}
+
 func _num(d: Dictionary, key: String, fallback: float) -> float:
 	return float(d.get(key, fallback))
 
@@ -141,7 +166,10 @@ func play(opts: Dictionary) -> Dictionary:
 	for id in opts.get("give", []):
 		for card in cards:
 			if str(card.get("id", "")) == str(id):
-				loadout.apply(card)
+				if str(card.get("tier", "")) == "cursed":
+					loadout.apply_curse(str(id))
+				else:
+					loadout.apply(card)
 	run = RunState.new(bal, seed_value)
 	run.set_mode(mode)
 	run.spawn_due.connect(_on_spawn_due)
@@ -161,6 +189,14 @@ func play(opts: Dictionary) -> Dictionary:
 	revives_used = 0
 	last_cause = ""
 	_death_cause = ""
+	_blade_timer = 0.0
+	_turrets.clear()
+	_trail_left = 0.0
+	_trail_timer = 0.0
+	_static_timer = 0.0
+	_missile_timer = 0.0
+	_kill_count = 0
+	_blasts.clear()
 	max_hp = float(bal["player"]["max_health"]) + loadout.m("max_hp_bonus")
 	hp = max_hp
 	shield = 1 if loadout.i("start_shield") > 0 else 0
@@ -169,7 +205,8 @@ func play(opts: Dictionary) -> Dictionary:
 		"seed": seed_value, "ship": str(sdef["id"]), "policy": policy,
 		"damage_taken": {}, "damage_normal": {}, "ttk": {}, "kills_by_kind": {}, "picks": [], "peak_alive": 0, "nova_uses": 0,
 		"hp_lost": 0.0, "hp_lost_boss": 0.0, "boss_time": 0.0, "wave_at": {}, "rerolls_unused": 2 + loadout.i("rerolls"), "revived": 0, "boss_kills": {},
-		"mode": run.mode, "gates": [], "gate_errors": [], "won": false, "continued": false, "sectors_cleared": 0,
+		"mode": run.mode, "gates": [], "gate_errors": [], "won": false, "continued": false, "sectors_cleared": 0, "curses": [],
+			"death_in_boss": false,
 	}
 	run.begin()
 	run.map_index = int(opts.get("start_map", 0))
@@ -230,9 +267,13 @@ func _tick(dt: float, policy: String) -> void:
 			_hunt_timer = 15.0
 			_hunt_stragglers()
 	var crowd := _tick_enemies(dt)
+	var near_dash := float(model.get("dash_near", 0.0))
+	if near_dash > 0.0 and dash_cd <= 0.0 and not _nearest(Vector2.ZERO, near_dash).is_empty():
+		_dash()   # Autopilot: yakında düşman varken atılma hazırsa atılır (scripts/game/autopilot.gd)
 	_tick_boss(dt)
 	_tick_player_fire(dt)
 	_tick_drones(dt)
+	_tick_cards(dt)
 	if nova >= 100.0 and (crowd >= 4 or not boss.is_empty()):
 		_use_nova()
 	_reap()
@@ -259,31 +300,38 @@ func _resolve_gate() -> void:
 		_gate_error("seçeneksiz kapı")
 	elif int(run.gate_def(str(ids[0])).get("risk", 0)) != 0:
 		_gate_error("ilk seçenek güvenli değil (çıkmaz riski)")
+	# C3 lanetli kartı: oyundaki RunFlow._resolve_gate ile aynı kural (RunState.assign_gate_cards, alınmamış lanetler).
+	var cursed_ids: Array = []
+	for c in loadout.cursed_cards():
+		cursed_ids.append(str(c.get("id", "")))
+	run.assign_gate_cards(cursed_ids)
+	var rewards := {}
+	for gid in run.gate_cards:
+		rewards[gid] = float(Loadout.curse_info(_card_by_id(str(run.gate_cards[gid])))["reward_mult"]) - 1.0
 	var pick := ""
 	if _gate_policy == "random":
 		pick = "" if ids.is_empty() else str(ids[run.gate_rng.randi() % ids.size()])
 	else:
-		pick = RunState.bot_gate_choice(ids, run.gate_defs(), hp / maxf(1.0, max_hp), _gate_policy)
+		pick = RunState.bot_gate_choice(ids, run.gate_defs(), hp / maxf(1.0, max_hp), _gate_policy, rewards)
 	var def := run.gate_def(pick)
 	if pick != "":
 		if float(def.get("heal_ratio", 0.0)) > 0.0:
 			_heal(max_hp * float(def["heal_ratio"]))
 		res["rerolls_unused"] = int(res["rerolls_unused"]) + int(def.get("rerolls", 0))
-		var card := {}
-		if def.has("card_tier"):
-			for c in cards:
-				if str(c.get("tier", "")) == str(def["card_tier"]):
-					card = c
-					break
 		var before := max_hp
-		if not card.is_empty():
-			loadout.apply(card)
+		var curse_id := str(run.gate_cards.get(pick, ""))
+		if curse_id != "":
+			var n_before := loadout.curses.size()
+			if not loadout.apply_curse(curse_id) or loadout.curses.size() != n_before + 1:
+				_gate_error("lanetli kart uygulanamadı: " + curse_id)
+			(res["curses"] as Array).append(curse_id)
 		elif def.has("effect"):
-			loadout.apply_effects(def["effect"])
+			loadout.apply_effects(def["effect"])   # yedek: lanetli kart kalmadı
+		run.xp_mult = loadout.m("xp_mult")
 		max_hp = float(bal["player"]["max_health"]) + loadout.m("max_hp_bonus")
 		if max_hp > before:
 			hp += max_hp - before
-		hp = clampf(hp, 0.0, max_hp)
+		hp = clampf(maxf(hp, 1.0), 1.0, maxf(1.0, max_hp))   # RunFlow._on_gate_closed ile aynı: kapı öldürmez
 	if not run.choose_gate(pick):
 		_gate_error("seçim reddedildi: " + pick)
 	(res["gates"] as Array).append(pick)
@@ -296,11 +344,12 @@ func _resolve_gate() -> void:
 
 # --- Oyuncu hasarı / iyileşme -----------------------------------------------------
 func _heal(amount: float) -> void:
+	amount *= loadout.m("heal_mult")
 	var room := max_hp - hp
 	hp = minf(max_hp, hp + amount)
 	if loadout.i("harvest") > 0:
 		overheal += maxf(0.0, amount - room)
-		if overheal >= 50.0 and shield <= 0:
+		if overheal >= (_p("bloodmoon_shield_at", 25.0) if loadout.i("evo_bloodmoon") > 0 else 50.0) and shield <= 0:
 			overheal = 0.0
 			shield = 1
 
@@ -310,7 +359,13 @@ func _hurt(amount: float, cause: String) -> bool:
 	if shield > 0:
 		shield -= 1
 		invuln = 0.75
+		if loadout.i("shield_bash") > 0:
+			_area_damage(Vector2.ZERO, _p("shield_bash_radius", 210.0), _pdmg() * _p("shield_bash_damage", 5.0))
+			invuln = maxf(invuln, _p("shield_bash_invuln", 1.0))
 		return false
+	if loadout.m("plating") > 0.0:
+		amount = maxf(_p("plating_min", 1.0), amount - loadout.m("plating"))
+	amount *= maxf(1.0, loadout.m("hurt_mult"))
 	hp -= amount
 	invuln = float(bal["player"].get("hurt_invuln", 0.7))
 	last_cause = cause
@@ -344,6 +399,7 @@ func _on_death() -> void:
 		return
 	hp = 0.0
 	_death_cause = last_cause if last_cause != "" else "unknown"
+	res["death_in_boss"] = not boss.is_empty() or run.is_boss_wave(run.wave)   # ölüm boss dalgasında mı (boss vs normal dalga)
 	run.end_run()
 
 func _on_wave_started(_wave: int) -> void:
@@ -368,13 +424,15 @@ func _spawn(kind: String, allow_elite: bool, near_dist: float) -> void:
 	var st: Dictionary = (bal["enemies"] as Dictionary)[kind]
 	var elite := false
 	var ed: Dictionary = bal.get("elite", {})
-	if allow_elite and kind != "swarmer" and not ed.is_empty() and run.wave >= int(ed.get("from_wave", 4)) and not run.is_boss_wave(run.wave):
-		var chance := minf(float(ed.get("chance_max", 0.16)), float(ed.get("chance", 0.05)) + float(ed.get("chance_per_wave", 0.006)) * float(run.wave))
-		elite = rng.randf() < chance
+	var eff := run.difficulty_wave(run.wave)   # Spawner.spawn_enemy ile aynı: elit kuralları etkin dalgayla
+	if allow_elite and kind != "swarmer":
+		var chance := EnemyData.elite_chance(ed, eff, run.is_boss_wave(run.wave))
+		if chance >= 0.0:
+			elite = rng.randf() < chance
 	var prefix := ""
 	var pd: Dictionary = {}
 	if elite:
-		prefix = EnemyData.pick_prefix(ed, kind, run.wave, rng.randf())
+		prefix = EnemyData.pick_prefix(ed, kind, EnemyData.prefix_wave(eff), rng.randf())
 		if prefix != "":
 			pd = ed["prefixes"][prefix]
 	var w: Dictionary = bal["waves"]
@@ -396,7 +454,7 @@ func _spawn(kind: String, allow_elite: bool, near_dist: float) -> void:
 		"pts": int(round(float(st["points"]) * pt_m)),
 		"ch": 0, "ct": 0.0, "cool": 1.0, "hatched": 0,
 	}
-	e["max_hp"] = e["hp"]
+	e["max_hp"] = e["hp"]   # C2 (şifacı/can çalma) ve C3 (infaz) aynı anahtarı okur
 	e["born"] = t
 	enemies.append(e)
 
@@ -410,6 +468,8 @@ func _hunt_stragglers() -> void:
 func _approach_factor() -> float:
 	var a: Dictionary = model["approach"]
 	var speed := float(bal["player"]["speed"]) * loadout.m("speed_mult")
+	if loadout.i("adrenaline") > 0 and hp < max_hp * _p("adrenaline_hp", 0.4):
+		speed *= 1.0 + _p("adrenaline_speed", 0.15)
 	var f := float(a["base"]) * pow(float(a["ref_speed"]) / maxf(60.0, speed), float(a["speed_exp"]))
 	return clampf(f, float(a["min"]), float(a["max"]))
 
@@ -571,6 +631,7 @@ func _contact(e: Dictionary, p_contact: float) -> void:
 func _dash() -> void:
 	dash_cd = float(bal["player"]["dash_cooldown"]) * loadout.m("dash_cd_mult")
 	invuln = maxf(invuln, float(model["dash_invuln"]))
+	_on_dash_cards()
 	var dd := loadout.m("dash_damage")
 	if dd > 0.0:
 		var dmg := dd * loadout.m("damage_mult") * (2.0 if loadout.i("blitz") > 0 else 1.0)
@@ -696,7 +757,10 @@ func _weapon_range() -> float:
 	return speed * float(weapon.get("life", 0.85)) * float((model.get("chase_reach", {}) as Dictionary).get(str(weapon.get("type", "")), 1.0))
 
 func _fire_interval() -> float:
-	return float(weapon.get("interval", 0.135)) * (0.5 if overdrive > 0.0 else 1.0) / maxf(0.2, loadout.m("fire_rate_mult"))
+	var rate := loadout.m("fire_rate_mult")
+	if loadout.i("adrenaline") > 0 and hp < max_hp * _p("adrenaline_hp", 0.4):
+		rate *= 1.0 + _p("adrenaline_rate", 0.5)
+	return float(weapon.get("interval", 0.135)) * (0.5 if overdrive > 0.0 else 1.0) / maxf(0.2, rate)
 
 func _tick_player_fire(dt: float) -> void:
 	fire_cd -= dt
@@ -709,7 +773,7 @@ func _tick_player_fire(dt: float) -> void:
 func _shoot() -> void:
 	var kind := str(weapon.get("type", "blaster"))
 	var acc_cfg: Dictionary = model["accuracy"]
-	var base := float(bal["player"]["damage"]) * loadout.m("damage_mult") * float(weapon.get("damage", 1.0))
+	var base := float(bal["player"]["damage"]) * loadout.m("damage_mult") * float(weapon.get("damage", 1.0)) * _shot_mult()
 	var reach := _weapon_range()
 	var extra := loadout.i("projectiles") - 1
 	var size_f := clampf(sqrt(loadout.m("bullet_size") * float(weapon.get("size", 1.0))), 0.8, 1.4)
@@ -740,20 +804,22 @@ func _shoot() -> void:
 	if kind == "rocket":
 		pierce_extra = 0
 	var crit_p := loadout.m("crit")
+	_rear_shots(base, acc)
 	for i in n:
 		if rng.randf() >= acc:
 			continue
 		var crit := rng.randf() < crit_p
 		var dmg := base * (2.0 if crit else 1.0)
 		if at_boss:
-			_boss_hit(dmg)
+			_boss_hit(dmg * (1.0 + loadout.m("hunter")))   # Avcı: oyunda yalnız mermi isabetinde (CardEffects.boss_damage_mult)
 			continue
 		if target["dead"]:
 			target = _nearest(Vector2.ZERO, reach)
 			if target.is_empty():
 				return
-		_damage_enemy(target, dmg, crit)
+		_damage_enemy(target, dmg * _elite_mult(target), crit)
 		_chain_hit(target, dmg, crit)
+		_on_hit_cards(target, dmg, crit, pierce_extra <= 0 or kind == "rocket")
 		if kind == "rocket":
 			_area_damage(target["pos"], float(weapon.get("blast", 72.0)), dmg * 0.6, target)
 		elif pierce_extra > 0:
@@ -777,12 +843,12 @@ func _chain_hit(source: Dictionary, dmg: float, crit: bool) -> void:
 		jumps += 2
 	if jumps <= 0:
 		return
-	var cd := dmg * (1.0 if storm else 0.5)
+	var cd := dmg * (1.0 if storm else _p("chain_damage_base", 0.5) + loadout.m("chain_power"))
 	var visited: Array = [source]
 	var cur: Dictionary = source
 	for n in jumps:
 		var best: Dictionary = {}
-		var best_d := 240.0
+		var best_d := 240.0 * (_p("thunder_chain_range", 1.5) if loadout.i("evo_thunder") > 0 else 1.0)
 		for e in enemies:
 			if e["dead"] or e["spawn"] > 0.0 or visited.has(e):
 				continue
@@ -835,7 +901,7 @@ func _tick_drones(dt: float) -> void:
 		return
 	var cd := 0.28 if loadout.i("hive") > 0 else 0.55
 	var shots := float(count) * dt / cd
-	var dmg := float(bal["player"]["damage"]) * loadout.m("damage_mult") * 0.55
+	var dmg := float(bal["player"]["damage"]) * loadout.m("damage_mult") * 0.55 * (_p("swarm_drone_damage", 1.5) if loadout.i("evo_swarm") > 0 else 1.0)
 	var acc := float(model["accuracy"]["drone"])
 	var whole := int(shots)
 	if rng.randf() < shots - float(whole):
@@ -846,13 +912,15 @@ func _tick_drones(dt: float) -> void:
 		var target := _nearest(Vector2.ZERO, 700.0)
 		if not target.is_empty():
 			_damage_enemy(target, dmg, false)
+			if loadout.i("evo_swarm") > 0:
+				_pierce_line(target, dmg, int(_p("swarm_drone_pierce", 2.0)), float(model["line_prob"]))
 		elif not boss.is_empty() and float(boss["intro"]) <= 0.0:
 			_boss_hit(dmg)
 
 func _use_nova() -> void:
 	nova = 0.0
 	res["nova_uses"] = int(res["nova_uses"]) + 1
-	var radius := float(bal["player"]["nova_radius"])
+	var radius := float(bal["player"]["nova_radius"]) * (_p("singularity_radius", 1.4) if loadout.i("evo_singularity") > 0 else 1.0)
 	var dmg := float(bal["player"]["nova_damage"]) * loadout.m("damage_mult") * (1.0 + 0.12 * float(run.wave - 1))
 	if loadout.i("doom_nova") > 0:
 		radius *= 1.5
@@ -862,6 +930,7 @@ func _use_nova() -> void:
 	_area_damage(Vector2.ZERO, radius, dmg)
 	_boss_blast(radius, dmg)
 	invuln = maxf(invuln, 0.6)
+	_on_nova_cards(radius, dmg)
 
 # --- Ölüm / ganimet -----------------------------------------------------------------
 func _reap() -> void:
@@ -883,9 +952,11 @@ func _reap() -> void:
 		res["ttk"][kind] = tk
 		run.enemy_died(int(e["pts"]))
 		var big: bool = bool(e["elite"])
-		nova = minf(100.0, nova + float(bal["player"]["nova_per_kill"]) * loadout.m("nova_rate_mult") * (3.0 if big else 1.0))
+		var od := _p("overdrive_nova_mult", 2.0) if loadout.i("overdrive_plus") > 0 and overdrive > 0.0 else 1.0
+		nova = minf(100.0, nova + float(bal["player"]["nova_per_kill"]) * loadout.m("nova_rate_mult") * (3.0 if big else 1.0) * od)
 		if loadout.m("vampire") > 0.0:
-			_heal(loadout.m("vampire"))
+			_heal(loadout.m("vampire") * (_p("bloodmoon_vampire", 2.0) if loadout.i("evo_bloodmoon") > 0 else 1.0))
+		_on_kill_cards(e)
 		if kind == "tank":
 			for k in 2:
 				_spawn("chaser", false, (e["pos"] as Vector2).length())
@@ -912,6 +983,9 @@ func _reap() -> void:
 			_area_damage(e["pos"], 85.0 + 22.0 * float(ex), float(bal["player"]["damage"]) * loadout.m("damage_mult") * (0.9 + 0.5 * float(ex)), e)
 		if big or rng.randf() < float(bal["pickups"].get("drop_chance", 0.15)):
 			_pickup()
+		if bool(e["elite"]) and loadout.m("hunter") > 0.0:
+			for k in int(_p("hunter_extra_drops", 1.0)):
+				_pickup()
 
 func _pickup() -> void:
 	var pk: Dictionary = model["pickup"]
@@ -925,9 +999,241 @@ func _pickup() -> void:
 	if r < sw and shield <= 0:
 		shield = 1
 	elif r < sw + ow:
-		overdrive = float(pb.get("overdrive_time", 6.0))
+		overdrive = float(pb.get("overdrive_time", 6.0)) * (_p("overdrive_time_mult", 2.0) if loadout.i("overdrive_plus") > 0 else 1.0)
 	else:
 		_heal(float(pb.get("heal_amount", 22.0)))
+	var blast := loadout.i("pickup_blast")
+	if blast > 0:
+		_area_damage(Vector2.ZERO, _p("pickup_blast_radius", 220.0), _pdmg() * _p("pickup_blast_damage", 4.0) * (1.0 + _p("pickup_blast_per_level", 0.5) * float(blast - 1)))
+		nova = minf(100.0, nova + _p("pickup_blast_nova", 10.0))
+
+# --- C3 kart etkileri (oyun: scripts/game/card_effects.gd) ----------------------------------------
+func _pdmg() -> float:
+	return float(bal["player"]["damage"]) * loadout.m("damage_mult")
+
+func _shot_mult() -> float:
+	## CardEffects.shot_damage_mult: çok mermi cezası, ivme (bot hareket payı), sabit nişan (durma payı), kombo.
+	var mult := 1.0
+	if loadout.i("projectiles") > 1:
+		mult *= loadout.m("projectile_damage_mult")
+	if loadout.m("momentum") > 0.0:
+		mult *= 1.0 + loadout.m("momentum") * _c("moving_ratio", 0.7)
+	if loadout.m("steady") > 0.0 and rng.randf() < _c("still_share", 0.12):
+		mult *= 1.0 + loadout.m("steady")
+	if loadout.m("combo_power") > 0.0:
+		mult *= 1.0 + minf(_p("combo_cap", 0.45), loadout.m("combo_power") * float(run.combo))
+	return mult
+
+func _elite_mult(e: Dictionary) -> float:
+	return 1.0 + loadout.m("hunter") if bool(e["elite"]) and loadout.m("hunter") > 0.0 else 1.0
+
+func _rear_shots(base: float, acc: float) -> void:
+	var rear := loadout.i("rear_guns")
+	for k in rear:
+		if rng.randf() >= acc * _c("rear_hit", 0.35):
+			continue
+		var t := _nearest(Vector2.ZERO, 560.0)
+		if not t.is_empty():
+			_damage_enemy(t, base * _p("rear_damage", 0.7), false)
+
+func _pierce_line(from_e: Dictionary, dmg: float, count: int, line_p: float) -> void:
+	var from: Vector2 = from_e["pos"]
+	var prev: Dictionary = from_e
+	for j in count:
+		if rng.randf() >= line_p:
+			break
+		var nxt := _nearest(from, 400.0, prev)
+		if nxt.is_empty():
+			break
+		_damage_enemy(nxt, dmg, false)
+		from = nxt["pos"]
+		prev = nxt
+
+func _on_hit_cards(e: Dictionary, dmg: float, crit: bool, stopped: bool) -> void:
+	var ex := loadout.m("execute")
+	if ex > 0.0 and not e["dead"] and float(e["hp"]) < float(e["max_hp"]) * (_p("execute_base", 0.12) + _p("execute_per_level", 0.08) * (ex - 1.0)):
+		e["dead"] = true
+	var shards := loadout.i("crit_shards")
+	if shards > 0 and crit:
+		var n := int(_p("shard_count", 3.0)) + int(_p("shard_per_level", 2.0)) * (shards - 1)
+		for k in n:
+			if rng.randf() < _c("shard_hit", 0.3):
+				var t := _nearest(e["pos"], 160.0, e)
+				if not t.is_empty():
+					_damage_enemy(t, dmg * _p("shard_damage", 0.55), false)
+	var split := loadout.i("split_shot")
+	if split > 0 and e["dead"]:
+		for k in int(_p("split_count", 2.0)) * split:
+			if rng.randf() < _c("split_hit", 0.35):
+				var t := _nearest(e["pos"], 260.0, e)
+				if not t.is_empty():
+					_damage_enemy(t, dmg * _p("split_damage", 0.5), false)
+	var bounces := loadout.i("ricochet")
+	if stopped and bounces > 0:
+		var cur: Dictionary = e
+		var d := dmg
+		for k in bounces:
+			if rng.randf() >= _c("ricochet_hit", 0.6):
+				break
+			var nxt := _nearest(cur["pos"], _p("ricochet_range", 300.0), cur)
+			if nxt.is_empty():
+				break
+			d *= _p("ricochet_damage", 0.7)
+			_damage_enemy(nxt, d, false)
+			cur = nxt
+
+func _on_kill_cards(_e: Dictionary) -> void:
+	if loadout.i("kill_shield") > 0:
+		_kill_count += 1
+		var list: Array = cp.get("kill_shield_kills", [30, 20])
+		if _kill_count >= int(list[mini(loadout.i("kill_shield"), list.size()) - 1]) and shield <= 0:
+			_kill_count = 0
+			shield = 1
+
+func _on_dash_cards() -> void:
+	if loadout.m("dash_nova") > 0.0:
+		nova = minf(100.0, nova + loadout.m("dash_nova"))
+	if loadout.i("turret") > 0:
+		if _turrets.size() >= loadout.i("turret"):
+			_turrets.pop_front()
+		_turrets.append([_p("turret_life", 6.0), 0.2])
+	var comet := loadout.i("evo_comet") > 0
+	if loadout.i("dash_trail") > 0 or comet:
+		_trail_left = _p("trail_life", 2.4)
+	var slam := loadout.i("dash_blast")
+	if slam > 0:
+		var at := Vector2.from_angle(rng.randf() * TAU) * _c("dash_blast_offset", 90.0)
+		_blasts.append([float(bal["player"].get("dash_time", 0.15)), at, _p("dash_blast_radius", 120.0) + _p("dash_blast_per_level", 40.0) * float(slam - 1),
+			_pdmg() * _p("dash_blast_damage", 3.0) * (_p("comet_blast_mult", 2.0) if comet else 1.0)])
+	if loadout.i("reflect") > 0:
+		var shooters := 0
+		for e in enemies:
+			if not e["dead"] and (e["kind"] == "shooter" or e["kind"] == "sniper" or e["kind"] == "orbiter") and (e["pos"] as Vector2).length() < 760.0:
+				shooters += 1
+		for k in mini(shooters, int(_c("reflect_max", 4.0))):
+			if rng.randf() < _c("reflect_hit", 0.5):
+				var t := _nearest(Vector2.ZERO, 700.0)
+				if not t.is_empty():
+					_damage_enemy(t, _pdmg() * _p("reflect_damage", 2.0), false)
+
+func _on_nova_cards(radius: float, dmg: float) -> void:
+	if loadout.i("nova_vortex") > 0:
+		var reach := radius * _p("vortex_reach_mult", 1.7)
+		for e in enemies:
+			if not e["dead"] and (e["pos"] as Vector2).length() < reach:
+				e["pos"] = (e["pos"] as Vector2) * _c("vortex_pull_keep", 0.35)
+		var mult := _p("singularity_vortex", 1.5) if loadout.i("evo_singularity") > 0 else 1.0
+		_blasts.append([_p("vortex_delay", 0.55), Vector2.ZERO, _p("vortex_radius", 230.0), dmg * _p("vortex_damage", 0.8) * mult])
+	if loadout.i("nova_shell") > 0:
+		if shield <= 0:
+			shield = 1
+		_heal(_p("nova_shell_heal", 15.0))
+	if loadout.i("evo_singularity") > 0:
+		nova = minf(100.0, nova + _p("singularity_refund", 30.0))
+
+func _tick_cards(dt: float) -> void:
+	var i := _blasts.size() - 1
+	while i >= 0:
+		var b: Array = _blasts[i]
+		b[0] = float(b[0]) - dt
+		if float(b[0]) <= 0.0:
+			_area_damage(b[1], float(b[2]), float(b[3]))
+			if (b[1] as Vector2).length() < float(b[2]):
+				_boss_blast(float(b[2]), float(b[3]))
+			_blasts.remove_at(i)
+		i -= 1
+	var blades := loadout.i("orbit_blades")
+	if blades > 0:
+		_blade_timer -= dt
+		if _blade_timer <= 0.0:
+			var pulse := maxf(0.03, _p("orbit_pulse", 0.15))
+			_blade_timer += pulse
+			var r := _p("orbit_radius", 58.0)
+			var hit := _p("orbit_hit_radius", 24.0)
+			var dmg := _pdmg() * _p("orbit_damage", 1.0)
+			for e in enemies:
+				if e["dead"] or e["spawn"] > 0.0:
+					continue
+				var d := (e["pos"] as Vector2).length()
+				var band := hit + float(e["rad"])
+				if absf(d - r) < band and rng.randf() < minf(1.0, float(blades) * 2.0 * band / (TAU * r) * _c("blade_cover", 1.0)):
+					_damage_enemy(e, dmg, false)
+			if not boss.is_empty() and float(boss["intro"]) <= 0.0 and float(boss["dist"]) < r + hit + float((boss["st"] as Dictionary).get("radius", 62.0)):
+				_boss_hit(dmg * float(blades) * _c("blade_boss_share", 0.3))
+	if not _turrets.is_empty():
+		var acc := float(model["accuracy"]["drone"])
+		var tdmg := _pdmg() * _p("turret_damage", 0.85)
+		var k := _turrets.size() - 1
+		while k >= 0:
+			var tu: Array = _turrets[k]
+			tu[0] = float(tu[0]) - dt
+			tu[1] = float(tu[1]) - dt
+			if float(tu[0]) <= 0.0:
+				_turrets.remove_at(k)
+				k -= 1
+				continue
+			if float(tu[1]) <= 0.0:
+				tu[1] = _p("turret_interval", 0.42)
+				if rng.randf() < acc:
+					var t := _nearest(Vector2.ZERO, _p("turret_range", 560.0) + _c("turret_offset", 100.0))
+					if not t.is_empty():
+						_damage_enemy(t, tdmg, false)
+					elif not boss.is_empty() and float(boss["intro"]) <= 0.0:
+						_boss_hit(tdmg)
+			k -= 1
+	if _trail_left > 0.0:
+		_trail_left -= dt
+		_trail_timer -= dt
+		if _trail_timer <= 0.0:
+			var tick := _p("trail_tick", 0.2)
+			_trail_timer = tick
+			var lvl := maxi(loadout.i("dash_trail"), int(_p("comet_trail", 1.0)) if loadout.i("evo_comet") > 0 else 0)
+			var tdmg2 := _pdmg() * _p("trail_dps", 2.6) * tick * (1.0 + _p("trail_per_level", 0.5) * float(lvl - 1))
+			var reach := _c("trail_reach", 200.0)
+			for e in enemies:
+				if not e["dead"] and e["spawn"] <= 0.0 and (e["pos"] as Vector2).length() < reach and rng.randf() < _c("trail_cover", 0.45):
+					_damage_enemy(e, tdmg2, false)
+	var st := loadout.i("static_field")
+	if st > 0:
+		var thunder := loadout.i("evo_thunder") > 0
+		_static_timer -= dt * (_p("thunder_static_rate", 2.0) if thunder else 1.0)
+		if _static_timer <= 0.0:
+			_static_timer = _p("static_interval", 1.0)
+			var want := int(_p("static_targets", 2.0)) + (st - 1) + (int(_p("thunder_static_targets", 2.0)) if thunder else 0)
+			var sdmg := _pdmg() * _p("static_damage", 1.5)
+			var hit_list: Array = []
+			for n in want:
+				var best: Dictionary = {}
+				var best_d := _p("static_range", 230.0)
+				for e in enemies:
+					if e["dead"] or e["spawn"] > 0.0 or hit_list.has(e):
+						continue
+					var d := (e["pos"] as Vector2).length()
+					if d < best_d:
+						best_d = d
+						best = e
+				if best.is_empty():
+					break
+				hit_list.append(best)
+			for e in hit_list:
+				_damage_enemy(e, sdmg, false)
+				_chain_hit(e, sdmg, false)
+	var pods := loadout.i("missile_pod")
+	if pods > 0:
+		_missile_timer -= dt * float(pods)
+		if _missile_timer <= 0.0:
+			var t := _nearest(Vector2.ZERO, _p("missile_range", 700.0))
+			if t.is_empty():
+				_missile_timer = 0.2
+				if not boss.is_empty() and float(boss["intro"]) <= 0.0 and float(boss["dist"]) < _p("missile_range", 700.0):
+					_missile_timer = _p("missile_interval", 2.2)
+					_boss_hit(_pdmg() * _p("missile_damage", 2.5) * float(model["accuracy"]["rocket"]))
+			else:
+				_missile_timer = _p("missile_interval", 2.2)
+				if rng.randf() < float(model["accuracy"]["rocket"]):
+					var md := _pdmg() * _p("missile_damage", 2.5)
+					_damage_enemy(t, md, false)
+					_area_damage(t["pos"], _p("missile_blast", 64.0), md * 0.6, t)
 
 # --- Kartlar ----------------------------------------------------------------------
 func _card_score(card: Dictionary, weights: Dictionary, syn_bonus: float) -> float:

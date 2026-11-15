@@ -78,6 +78,18 @@ static func validate(enemies: Dictionary, elite: Dictionary) -> PackedStringArra
 			errors.append("elite.prefixes.%s: split_count>=1 ve split_hp_frac>0 gerekli" % id)
 	return errors
 
+static func elite_chance(elite: Dictionary, eff_wave: float, boss_wave: bool) -> float:
+	## Elit olma olasılığı; -1 = bu doğuşta elit denemesi YOK (rastgele sayı çekilmez). `eff_wave` = RunState.difficulty_wave(dalga):
+	## hızlı mod (wave_scale 1,6) elitleri dalga numarasına göre değil etkin zorluğa göre açar; sonsuz/standartta (ölçek 1)
+	## etkin dalga = dalga numarası → eski kuralla birebir aynı. Boss dalgasında elit yok.
+	if elite.is_empty() or boss_wave or eff_wave < float(elite.get("from_wave", 4)):
+		return -1.0
+	return minf(float(elite.get("chance_max", 0.16)), float(elite.get("chance", 0.05)) + float(elite.get("chance_per_wave", 0.006)) * eff_wave)
+
+static func prefix_wave(eff_wave: float) -> int:
+	## Ön eklerin `min_wave` karşılaştırması için etkin dalganın tam kısmı (sonsuzda = dalga numarası).
+	return int(floor(eff_wave + 0.0001))
+
 static func prefix_applies(prefix: Dictionary, kind: String, wave: int) -> bool:
 	if wave < int(prefix.get("min_wave", 1)):
 		return false

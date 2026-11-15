@@ -135,14 +135,14 @@ func _run() -> void:
 	await _wait(0.4)   # kartlar belirince tıklanabilir
 	var pick: String = scene.run.gate_options[1]
 	var mult_before: float = scene.run.reward_mult
+	var bonus: float = scene.run.gate_reward_bonus(pick)   # lanetli kart atanmışsa 0 (ödül core_mult'ta)
 	ctx.flow.gate.press(1)
 	ctx.flow.gate.press(0)   # çift dokunuş: yok sayılmalı
 	await _wait(0.1)
 	_check(not paused and ctx.menus.current == "", "seçimden sonra oyun sürer")
 	_check(Array(scene.run.gates_taken) == [pick], "seçilen kapı kaydedildi (%s), çift dokunuş yok sayıldı" % pick)
 	_check(scene.run.map_index == 1 and scene.run.wave == 6, "2. sektör başladı")
-	var g: Dictionary = scene.run.gate_def(pick)
-	_check(scene.run.reward_mult >= mult_before + float(g.get("reward_mult", 0.0)) - 0.001, "kapı ödül çarpanı uygulandı")
+	_check(absf(scene.run.reward_mult - (mult_before + bonus)) < 0.001, "kapı ödül çarpanı uygulandı (+%.2f)" % bonus)
 	scene.run.jump_to(10)
 	_check(await _kill_boss(), "2. boss bitirildi")
 	_check(await _until(func(): return ctx.menus.current == "gate"), "ikinci kapı")
@@ -162,6 +162,9 @@ func _run() -> void:
 	await _wait(0.3)
 	scene.player.invuln = 0.0
 	scene.player.shield = 0
+	# Bot kart seçimi rastgele: İkinci Şans (revive) seçildiyse bu ölüm diriltmeye dönerdi (C3 sonrası 45 kartlık havuzda
+	# bu tohumla seçiliyor). Diriltme hakları harcanmış say: burada ölüm → sonuç akışı sınanıyor.
+	ctx.flow.revives_used = scene.loadout.i("revive")
 	scene.player.take_damage(99999.0, scene.player.pos2 + Vector2.UP)
 	_check(await _until(func(): return ctx.menus.current == "gameover"), "ölüm → sonuç ekranı")
 	_check(ctx.flow.outcome == "death" and scene.run.won, "ölümle bitti, zafer korunur")
@@ -226,6 +229,47 @@ func _run() -> void:
 	ctx.flow.gate.press(-1)
 	await _wait(0.1)
 	_check(not paused and scene.run.map_index == 1, "debug kapısı da kapanır")
+	ctx.flow.enter_menu()
+
+	print("== 5) LANETLİ GÜÇ kapısı → C3 lanetli kartı (bedel/ödül önceden, tek uygulama, çift ödül yok) ==")
+	await _start("standard", false, 5)
+	_check(await _kill_boss(), "boss bitirildi")
+	_check(await _until(func(): return ctx.menus.current == "gate"), "kapı açıldı")
+	# Seçenekler rastgele: lanetli seçeneği garanti etmek için açık kapıyı yeniden sun (oyuncu yolu aynı).
+	scene.run.gate_options.assign(["repair", "cursed", "overload"])
+	scene.run.gate_cards.clear()
+	ctx.flow.on_gate_opened(Array(scene.run.gate_options))
+	await _wait(0.4)
+	var curse_id := str(scene.run.gate_cards.get("cursed", ""))
+	var GD: Node = root.get_node("GameData")
+	var curse_card: Dictionary = GD.card_by_id(curse_id)
+	_check(str(curse_card.get("tier", "")) == "cursed", "lanetli seçeneğe gerçek lanetli kart atandı: " + curse_id)
+	var gcard = ctx.flow.gate._cards[1]
+	var bad_lines := 0
+	for line in gcard.lines:
+		if not bool(line[1]):
+			bad_lines += 1
+	var info := Loadout.curse_info(curse_card)
+	_check(gcard.title == scene.tr(str(curse_card.get("name", ""))) and bad_lines >= 1, "kartta lanetin adı ve bedeli görünür (%s)" % gcard.title)
+	var reward_line := false
+	for line in gcard.lines:
+		reward_line = reward_line or str(line[0]).find(str(int(round((float(info["reward_mult"]) - 1.0) * 100.0)))) >= 0
+	_check(reward_line, "kartta lanetin kendi ödülü görünür (×%.2f)" % float(info["reward_mult"]))
+	var core_before: float = scene.loadout.m("core_mult")
+	var rm_before: float = scene.run.reward_mult
+	var picked := [0]
+	var pick_cb := func(c: Dictionary): picked[0] += 1 if str(c.get("id", "")) == curse_id else 0
+	ctx.events.card_picked.connect(pick_cb)
+	ctx.flow.gate.press(1)
+	ctx.flow.gate.press(1)   # çift dokunuş
+	await _wait(0.2)
+	ctx.events.card_picked.disconnect(pick_cb)
+	_check(Array(scene.loadout.curses) == [curse_id] and scene.loadout.count(curse_id) == 1, "lanet tam bir kez uygulandı")
+	_check(picked[0] == 1, "lanet sinyali (LANET afişi) bir kez")
+	_check(absf(scene.run.reward_mult - rm_before) < 0.001, "kapının kendi +%15'i eklenmedi")
+	_check(absf(scene.loadout.m("core_mult") - core_before * float(info["reward_mult"])) < 0.001, "ödül yalnız kartın reward_mult'u (core_mult ×%.2f)" % float(info["reward_mult"]))
+	_check(absf(scene.player.max_hp - (float(GD.number("player.max_health", 100.0)) + scene.loadout.m("max_hp_bonus"))) < 0.01, "gemi istatistikleri yenilendi (azami can %.0f)" % scene.player.max_hp)
+	_check(scene.state == "playing" and not paused, "kapıdan sonra oyun sürer")
 	ctx.flow.enter_menu()
 
 	FX.set_base_scale(1.0)

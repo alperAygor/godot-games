@@ -151,14 +151,21 @@ func _pick(id: String) -> void:
 
 
 ## Saf: kapı tanımından (ve varsa C3 lanetli kartından) kart satırları üretir: [[metin, olumlu mu], ...].
-static func describe(def: Dictionary, card: Dictionary = {}) -> Array:
+## `curse` = Loadout.curse_info(kart) ({name, desc, drawback, reward_mult}); verilirse kartın etkisi (artı), bedeli (eksi)
+## ve kartın KENDİ ödülü gösterilir — kapının yedek `effect`/`reward_mult`'u gösterilmez (oyun da onu uygulamaz).
+static func describe(def: Dictionary, curse: Dictionary = {}) -> Array:
 	var out: Array = []
 	if def.has("heal_ratio"):
 		out.append([TranslationServer.translate("can +%%%d") % int(round(float(def["heal_ratio"]) * 100.0)), true])
 	if int(def.get("rerolls", 0)) > 0:
 		out.append([TranslationServer.translate("+%d kart yenileme") % int(def["rerolls"]), true])
-	if not card.is_empty():
-		out.append([TranslationServer.translate(str(card.get("desc", ""))), true])
+	if not curse.is_empty():
+		out.append([TranslationServer.translate(str(curse.get("desc", ""))), true])
+		if str(curse.get("drawback", "")) != "":
+			out.append([TranslationServer.translate("bedel: %s") % TranslationServer.translate(str(curse["drawback"])), false])
+		var rm := float(curse.get("reward_mult", 1.0))
+		if rm > 1.0:
+			out.append([TranslationServer.translate("koşu ödülü +%%%d") % int(round((rm - 1.0) * 100.0)), true])
 	else:
 		var effect: Dictionary = def.get("effect", {})
 		if effect.has("damage_mult"):
@@ -169,7 +176,7 @@ static func describe(def: Dictionary, card: Dictionary = {}) -> Array:
 		out.append([TranslationServer.translate("sonraki sektörde düşman canı +%%%d") % int(round((float(def["enemy_hp_mult"]) - 1.0) * 100.0)), false])
 	if def.has("enemy_damage_mult"):
 		out.append([TranslationServer.translate("düşman hasarı +%%%d") % int(round((float(def["enemy_damage_mult"]) - 1.0) * 100.0)), false])
-	if float(def.get("reward_mult", 0.0)) > 0.0:
+	if float(def.get("reward_mult", 0.0)) > 0.0 and curse.is_empty():
 		out.append([TranslationServer.translate("koşu ödülü +%%%d") % int(round(float(def["reward_mult"]) * 100.0)), true])
 	if int(def.get("bank_cores", 0)) > 0:
 		out.append([TranslationServer.translate("+%d çekirdek hemen kasaya (ölsen de kalır)") % int(def["bank_cores"]), true])

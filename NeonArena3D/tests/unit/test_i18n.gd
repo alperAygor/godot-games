@@ -9,13 +9,18 @@ func _en() -> Dictionary:
 	## lang_en.json + görev başına `data/lang/en_*.json` (I18n._load_extra_files ile aynı birleştirme).
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(EN_PATH))
 	var out: Dictionary = parsed if parsed is Dictionary else {}
+	# Görev başına ek dosyalar (data/lang/en_*.json) I18n'de ad sırasıyla birleşir (sonraki üstüne yazar); kapsam testi de onları sayar.
 	var dir := DirAccess.open("res://data/lang")
 	if dir != null:
+		var names: Array[String] = []
 		for file_name in dir.get_files():
 			if file_name.begins_with("en_") and file_name.ends_with(".json"):
-				var extra: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/lang/" + file_name))
-				if extra is Dictionary:
-					out.merge(extra, true)
+				names.append(file_name)
+		names.sort()
+		for file_name in names:
+			var extra: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/lang/" + file_name))
+			if extra is Dictionary:
+				out.merge(extra, true)
 	return out
 
 func _scripts(dir_path: String, out: Array) -> void:

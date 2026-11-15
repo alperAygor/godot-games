@@ -99,6 +99,8 @@ var hatched := 0
 var shield_angle := 0.0
 var from_split := false
 var blocked_hits := 0               ## kalkanın engellediği vuruş sayısı (probe/ölçüm)
+var last_blocked := false           ## son take_damage kalkana mı geldi (hasar sayısı "ENGEL" işareti)
+var block_cue_cd := 0.0             ## "ENGEL" yazısı en sık bu aralıkla (her vuruşta yazı yağmuru olmasın)
 var model: MeshInstance3D
 var tele: MeshInstance3D
 var halo: MeshInstance3D
@@ -215,9 +217,11 @@ func shield_blocks(push: Vector2, amount: float) -> bool:
 		return false
 	return (-push).normalized().dot(Vector2.from_angle(shield_angle)) > _shield_cos
 
-func take_damage(amount: float, push := Vector2.ZERO) -> void:
+func take_damage(amount: float, push := Vector2.ZERO) -> float:
+	## Gerçekten verilen hasarı döner (elit `take_mult`, yorgun hücumcu, kalkan engeli dahil): hasar sayıları bunu gösterir.
+	last_blocked = false
 	if dead:
-		return
+		return 0.0
 	var dmg := amount * take_mult
 	if kind == "charger" and state == CH_RECOVER:
 		dmg *= float(stats.get("recover_taken_mult", 1.5))   # yorgun anında açık hedef
@@ -225,6 +229,7 @@ func take_damage(amount: float, push := Vector2.ZERO) -> void:
 		dmg *= float(stats.get("shield_block", 0.12))
 		_block_t = 1.0
 		blocked_hits += 1
+		last_blocked = true
 		knock2 += push * 0.3
 	else:
 		_flash = 1.0
@@ -233,6 +238,7 @@ func take_damage(amount: float, push := Vector2.ZERO) -> void:
 	hp_shown = 2.2
 	if hp <= 0.0:
 		dead = true
+	return dmg
 
 func heal(amount: float) -> void:
 	hp = minf(max_hp, hp + amount)
@@ -268,6 +274,7 @@ func tick(delta: float, target: Vector2) -> bool:
 	_time += delta
 	_flash = maxf(0.0, _flash - delta * 9.0)
 	_block_t = maxf(0.0, _block_t - delta * 6.0)
+	block_cue_cd = maxf(0.0, block_cue_cd - delta)
 	if lifesteal > 0.0 and touch_cd > _last_touch + 0.0001 and not is_spawning():
 		heal(max_hp * lifesteal)   # emici: temas vuruşu iyileştirir (CombatSystem touch_cd'yi vuruşta kurar)
 		_flash = 1.0

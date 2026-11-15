@@ -51,4 +51,7 @@ plan listesi (`pending`) değişmez.
 
 - Düşmanlar havuzlanmaz (mevcut tasarım: doğur / `queue_free`); probe "havuza dönüş"ü liste çıkışı + düğümün serbest kalması olarak sınar.
 - Mayın ve sıçrayıcı iniş bölgeleri boss'un `ctx.hazards` sistemini kullanır: patlama efekti/sarsıntı boss yer tehlikesiyle aynıdır (`BossEvents.tick_hazards`).
-- Kalkanın engellediği vuruşta `CombatSystem` yine tam hasar sayısı gösterir (gerçek hasar düşer; sayı kaynağı combat.gd'dedir).
+- (Entegrasyonda giderildi) Kalkanın engellediği vuruşta artık gerçek hasar sayısı (küçük, mavi) + seyrek "ENGEL" işareti gösterilir
+  (`enemy3d.take_damage` verilen hasarı döner; `Feedback.enemy_damage_number`).
+- Entegrasyon: elit eşiği/şansı/önek `min_wave` artık `run.difficulty_wave(n)` ile (hızlı mod); sektör karışımı `run.sector_mix`
+  (waves.json) S2/S3'e kendi türlerini verir; kuluçka `sectors` [0,1,2].

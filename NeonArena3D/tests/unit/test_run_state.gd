@@ -276,7 +276,9 @@ func test_quick_mode_short_and_compressed() -> void:
 	var r := _mode_run("quick")
 	eq(r.waves_per_sector(), 3, "hızlı: 3 dalgalık sektör")
 	check(r.is_boss_wave(3) and r.is_boss_wave(9) and not r.is_boss_wave(5), "boss 3/6/9. dalgada")
-	near(r.difficulty_wave(3), 4.2, 0.0001, "etkin dalga 1+2×1.6")
+	var qs := float(r.mode_def["wave_scale"])
+	gt(qs, 1.0, "hızlı mod sıkıştırılmış")
+	near(r.difficulty_wave(3), 1.0 + 2.0 * qs, 0.0001, "etkin dalga 1+2×ölçek")
 	check(not r.gates_enabled(), "hızlıda kapı yok")
 	var gates := [0]
 	r.gate_opened.connect(func(_o): gates[0] += 1)
@@ -302,7 +304,13 @@ func test_endless_wave_math_identical_to_legacy() -> void:
 
 func test_gate_rng_does_not_shift_wave_plans() -> void:
 	## Kapı seçenekleri ayrı RNG'den: standart ve sonsuz koşu aynı tohumla aynı dalga planlarını üretir.
-	var a := _mode_run("standard", 21)
+	## (Sektör karışımı `run.sector_mix` standart planı BİLEREK değiştirir; RNG akışını sınamak için burada boşaltılır.)
+	var defs := _defs()
+	defs["run"]["sector_mix"] = []
+	defs["run"]["modes"]["standard"]["wave_scale"] = 1.0   # standart 0,85 (entegrasyon ayarı) planı da BİLEREK değiştirir
+	var a := RunStateScript.new(defs, 21)
+	a.set_mode("standard")
+	a.begin()
 	var b := _mode_run("endless", 21)
 	for r in [a, b]:
 		r.jump_to(5)
@@ -462,3 +470,102 @@ func test_run_data_valid_and_translated() -> void:
 		check((en as Dictionary).has(m.get_string(1)), "kapı satırı çevrilmiş: " + m.get_string(1))
 	for name in GateScreenScript.RISK_NAME:
 		check((en as Dictionary).has(name), "risk adı çevrilmiş: " + name)
+
+# --- Entegrasyon: C1 lanetli kapı ↔ C3 lanetli kartlar ----------------------------------------
+func _cursed_gate() -> RunState:
+	var r := _mode_run("standard")
+	r.jump_to(5)
+	_finish_sector(r)
+	r.gate_options = ["repair", "cursed", "overload"]
+	return r
+
+func test_cursed_gate_assigns_real_curse_without_double_reward() -> void:
+	var cards: Array = JSON.parse_string(FileAccess.get_file_as_string("res://data/cards.json"))
+	var l := Loadout.new(cards)
+	var ids: Array = []
+	for c in l.cursed_cards():
+		ids.append(str(c["id"]))
+	gt(float(ids.size()), 0.0, "C3 lanetli kartları var")
+	var r := _cursed_gate()
+	var assigned := r.assign_gate_cards(ids)
+	eq(assigned.size(), 1, "yalnız lanetli seçeneğe kart atanır")
+	check(ids.has(str(assigned.get("cursed", ""))), "atanan kart alınmamış bir lanetli kart")
+	var again := r.assign_gate_cards(ids)
+	eq(str(again["cursed"]), str(assigned["cursed"]), "aynı açılışta yeniden çekilmez (ekrandaki kart = uygulanan kart)")
+	near(r.gate_reward_bonus("cursed"), 0.0, 0.0001, "kartlı seçenekte kapının kendi +%15'i yok")
+	near(r.gate_reward_bonus("overload"), 0.25, 0.0001, "diğer seçenekler değişmez")
+	var card_id := str(assigned["cursed"])
+	var card: Dictionary = {}
+	for c in cards:
+		if str(c["id"]) == card_id:
+			card = c
+	var info := Loadout.curse_info(card)
+	check(str(info["drawback"]) != "" and float(info["reward_mult"]) > 1.0, "bedel ve ödül seçimden önce bilinir")
+	var lines := GateScreenScript.describe(r.gate_def("cursed"), info)
+	var has_bad := false
+	for line in lines:
+		has_bad = has_bad or not bool(line[1])
+	check(has_bad, "kapı kartında bedel (eksi satır) gösterilir")
+	var closed: Array = []
+	r.gate_closed.connect(func(id: String):
+		closed.append(id)
+		if r.gate_cards.has(id):
+			check(l.apply_curse(str(r.gate_cards[id])), "lanet uygulanır"))
+	check(r.choose_gate("cursed"), "lanetli seçilir")
+	eq(closed, ["cursed"], "gate_closed bir kez")
+	eq(l.curses.size(), 1, "lanet tam bir kez")
+	near(r.reward_mult, 1.0, 0.0001, "RunState ödül çarpanı artmaz (çift sayım yok)")
+	near(l.m("core_mult"), float(info["reward_mult"]), 0.0001, "ödül kartın reward_mult'u kadar (core_mult)")
+	near(float(r.reward(l.m("core_mult"))["mult"]), snappedf(float(info["reward_mult"]), 0.01), 0.0001, "koşu sonu çarpanı = kartın ödülü")
+	check(r.gate_cards.is_empty(), "kapı kapanınca atama temizlenir")
+	check(not l.apply_curse(card_id), "aynı lanet ikinci kez uygulanmaz")
+
+func test_cursed_gate_falls_back_to_own_effect() -> void:
+	var r := _cursed_gate()
+	eq(r.assign_gate_cards([]).size(), 0, "lanetli kart kalmadıysa atama yok")
+	check(r.choose_gate("cursed"), "yedek etkiyle seçilir")
+	near(r.reward_mult, 1.0 + float(r.gate_def("cursed")["reward_mult"]), 0.0001, "yedekte kapının kendi ödülü (+%15)")
+
+func test_cursed_gate_card_survives_snapshot() -> void:
+	var r := _cursed_gate()
+	r.assign_gate_cards(["l_cam", "l_kan"])
+	var r2 := _run()
+	r2.restore(JSON.parse_string(JSON.stringify(r.snapshot())))
+	eq(str(r2.gate_cards.get("cursed", "")), str(r.gate_cards["cursed"]), "açık kapının kartı anlık görüntüde korunur")
+
+func test_bot_gate_choice_uses_card_reward() -> void:
+	var table := _run().gate_defs()
+	var opts := ["repair", "cursed", "overload"]
+	eq(RunStateScript.bot_gate_choice(opts, table, 0.9, "auto"), "overload", "kartsız: kapı tanımı (+%25 > +%15)")
+	eq(RunStateScript.bot_gate_choice(opts, table, 0.9, "auto", {"cursed": 0.5}), "cursed", "kartın ödülü (AÇGÖZLÜLÜK +%50) sayılır")
+
+func test_sector_mix_flavours_sectors_only_in_sector_modes() -> void:
+	## Entegrasyon (C1 sector_mix × C2 türleri): her sektörün kendi karışımı; 1. sektörün 1-3. dalgası yalnız eski hafif türler;
+	## sonsuz mod ve zafer sonrası devam karışımsız (eski döngü).
+	var defs := _defs()
+	var mix: Array = defs["run"]["sector_mix"]
+	eq(mix.size(), 3, "üç sektörün karışımı")
+	for entry in mix:
+		for kind in entry:
+			if not str(kind).begins_with("_"):
+				check((defs["enemies"] as Dictionary).has(str(kind)), "karışımda bilinen tür: " + str(kind))
+				check(float(entry[kind]) >= 0.0, "ağırlık çarpanı negatif değil: " + str(kind))
+	for mode in ["standard", "quick"]:
+		var r := _mode_run(mode)
+		# Standart (yeni oyuncunun varsayılan modu): 1-3. dalga yalnız eski hafif türler. Hızlı mod sıkıştırılmıştır
+		# (3. dalga = etkin 4,2 ve boss dalgası): orada da 1-2. dalga hafif.
+		for n in ([1, 2, 3] if mode == "standard" else [1, 2]):
+			for k in r.unlocked_kinds(n):
+				check(str(k["kind"]) in ["chaser", "shooter", "swarmer"] or float(k["weight"]) <= 0.0,
+					"%s %d. dalga hafif: %s" % [mode, n, str(k["kind"])])
+	var r2 := _mode_run("standard")
+	eq(r2.sector_mix(), mix[0] as Dictionary, "S1 karışımı")
+	r2.sectors_cleared = 1
+	eq(r2.sector_mix(), mix[1] as Dictionary, "S2 karışımı")
+	r2.sectors_cleared = 2
+	eq(r2.sector_mix(), mix[2] as Dictionary, "S3 karışımı")
+	r2.continued = true
+	eq(r2.sector_mix(), {}, "zafer sonrası devamda karışım yok")
+	var e := _run()
+	e.sectors_cleared = 1
+	eq(e.sector_mix(), {}, "sonsuz modda karışım yok (eski oyun)")
