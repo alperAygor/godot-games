@@ -1,0 +1,413 @@
+{
+ "id": "w1-020",
+ "world": 1,
+ "par": 16,
+ "cells": [
+  {
+   "x": 3,
+   "y": 1,
+   "a": [],
+   "b": [
+    3
+   ]
+  },
+  {
+   "x": 1,
+   "y": 2,
+   "a": [],
+   "b": [
+    4
+   ]
+  },
+  {
+   "x": 2,
+   "y": 2,
+   "a": [],
+   "b": [
+    5
+   ]
+  },
+  {
+   "x": 3,
+   "y": 2,
+   "a": [
+    0
+   ],
+   "b": [
+    6
+   ]
+  },
+  {
+   "x": 1,
+   "y": 3,
+   "a": [
+    1
+   ],
+   "b": [
+    7
+   ]
+  },
+  {
+   "x": 2,
+   "y": 3,
+   "a": [
+    2
+   ],
+   "b": [
+    8
+   ]
+  },
+  {
+   "x": 3,
+   "y": 3,
+   "a": [
+    3
+   ],
+   "b": [
+    9
+   ]
+  },
+  {
+   "x": 1,
+   "y": 4,
+   "a": [
+    4
+   ],
+   "b": [
+    10
+   ]
+  },
+  {
+   "x": 2,
+   "y": 4,
+   "a": [
+    5
+   ],
+   "b": [
+    10
+   ]
+  },
+  {
+   "x": 3,
+   "y": 4,
+   "a": [
+    6
+   ],
+   "b": [
+    11
+   ]
+  },
+  {
+   "x": 2,
+   "y": 5,
+   "a": [
+    7,
+    8
+   ],
+   "b": [
+    12
+   ]
+  },
+  {
+   "x": 3,
+   "y": 5,
+   "a": [
+    9
+   ],
+   "b": [
+    12
+   ]
+  },
+  {
+   "x": 3,
+   "y": 6,
+   "a": [
+    11,
+    10
+   ],
+   "b": [
+    13
+   ]
+  },
+  {
+   "x": 3,
+   "y": 7,
+   "a": [
+    12
+   ],
+   "b": [
+    14
+   ]
+  },
+  {
+   "x": 3,
+   "y": 8,
+   "a": [
+    13
+   ],
+   "b": []
+  }
+ ],
+ "vehicles": [
+  {
+   "id": "L",
+   "type": "loco",
+   "cell": 8
+  },
+  {
+   "id": "b1",
+   "type": "wagon",
+   "color": "blue",
+   "cell": 2
+  },
+  {
+   "id": "b2",
+   "type": "wagon",
+   "color": "blue",
+   "cell": 9
+  },
+  {
+   "id": "r1",
+   "type": "wagon",
+   "color": "red",
+   "cell": 3
+  },
+  {
+   "id": "r2",
+   "type": "wagon",
+   "color": "red",
+   "cell": 4
+  },
+  {
+   "id": "y1",
+   "type": "wagon",
+   "color": "yellow",
+   "cell": 0
+  }
+ ],
+ "links": [],
+ "targets": [
+  {
+   "cell": 0,
+   "color": "red"
+  },
+  {
+   "cell": 3,
+   "color": "blue"
+  },
+  {
+   "cell": 6,
+   "color": "red"
+  },
+  {
+   "cell": 9,
+   "color": "blue"
+  },
+  {
+   "cell": 11,
+   "color": "yellow"
+  }
+ ],
+ "solution": [
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 2,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 3,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 4,
+   "branches": []
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "y1",
+    "r1"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 1,
+   "branches": [
+    1
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "r1",
+    "b2"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 1,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 2,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 3,
+   "branches": [
+    1,
+    1
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "y1",
+    "b2"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 2,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 4,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 2,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "b2",
+    "L"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 2,
+   "branches": [
+    1,
+    1
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 3,
+   "branches": []
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "b1",
+    "r1"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 1,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "r1",
+    "y1"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 1,
+   "branches": [
+    1
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 1,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 2,
+   "branches": [
+    0
+   ]
+  }
+ ],
+ "metrics": {
+  "par": 16,
+  "min_cells": 30,
+  "states": 341070,
+  "dead_states": 0,
+  "depth_max": 20,
+  "depth_hist": {
+   "0": 15,
+   "1": 75,
+   "2": 105,
+   "3": 1335,
+   "4": 2663,
+   "5": 3382,
+   "6": 17586,
+   "7": 21819,
+   "8": 19340,
+   "9": 29832,
+   "10": 27727,
+   "11": 28668,
+   "12": 45346,
+   "13": 49859,
+   "14": 38242,
+   "15": 35914,
+   "16": 14440,
+   "17": 4077,
+   "18": 589,
+   "19": 42,
+   "20": 14
+  },
+  "detours": 7,
+  "solutions_at_par": 40,
+  "path_width": 7,
+  "uncouples": 6,
+  "difficulty": 10
+ },
+ "_gen": {
+  "template": "ingle_h2",
+  "template_max_par": 20,
+  "candidates_at_par": 9474
+ }
+}

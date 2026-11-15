@@ -1,0 +1,207 @@
+{
+ "id": "w1-006",
+ "world": 1,
+ "par": 5,
+ "cells": [
+  {
+   "x": 3,
+   "y": 2,
+   "a": [],
+   "b": [
+    2
+   ]
+  },
+  {
+   "x": 2,
+   "y": 3,
+   "a": [],
+   "b": [
+    3
+   ]
+  },
+  {
+   "x": 3,
+   "y": 3,
+   "a": [
+    0
+   ],
+   "b": [
+    4
+   ]
+  },
+  {
+   "x": 2,
+   "y": 4,
+   "a": [
+    1
+   ],
+   "b": [
+    5
+   ]
+  },
+  {
+   "x": 3,
+   "y": 4,
+   "a": [
+    2
+   ],
+   "b": [
+    6
+   ]
+  },
+  {
+   "x": 2,
+   "y": 5,
+   "a": [
+    3
+   ],
+   "b": [
+    7
+   ]
+  },
+  {
+   "x": 3,
+   "y": 5,
+   "a": [
+    4
+   ],
+   "b": [
+    7
+   ]
+  },
+  {
+   "x": 3,
+   "y": 6,
+   "a": [
+    6,
+    5
+   ],
+   "b": [
+    8
+   ]
+  },
+  {
+   "x": 3,
+   "y": 7,
+   "a": [
+    7
+   ],
+   "b": [
+    9
+   ]
+  },
+  {
+   "x": 3,
+   "y": 8,
+   "a": [
+    8
+   ],
+   "b": [
+    10
+   ]
+  },
+  {
+   "x": 3,
+   "y": 9,
+   "a": [
+    9
+   ],
+   "b": []
+  }
+ ],
+ "vehicles": [
+  {
+   "id": "L",
+   "type": "loco",
+   "cell": 5
+  },
+  {
+   "id": "b1",
+   "type": "wagon",
+   "color": "blue",
+   "cell": 3
+  },
+  {
+   "id": "r1",
+   "type": "wagon",
+   "color": "red",
+   "cell": 2
+  }
+ ],
+ "links": [],
+ "targets": [
+  {
+   "cell": 1,
+   "color": "red"
+  },
+  {
+   "cell": 3,
+   "color": "blue"
+  }
+ ],
+ "solution": [
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 1,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 3,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 3,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 4,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 3,
+   "branches": [
+    1
+   ]
+  }
+ ],
+ "metrics": {
+  "par": 5,
+  "min_cells": 14,
+  "states": 522,
+  "dead_states": 0,
+  "depth_max": 8,
+  "depth_hist": {
+   "0": 11,
+   "1": 48,
+   "2": 24,
+   "3": 140,
+   "4": 87,
+   "5": 81,
+   "6": 85,
+   "7": 34,
+   "8": 12
+  },
+  "detours": 3,
+  "solutions_at_par": 6,
+  "path_width": 3,
+  "uncouples": 0,
+  "hardness": 5.44,
+  "difficulty": 3
+ },
+ "_gen": {
+  "template": "spur",
+  "template_max_par": 8,
+  "candidates_at_par": 64
+ }
+}

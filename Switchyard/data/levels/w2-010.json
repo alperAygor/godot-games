@@ -1,0 +1,403 @@
+{
+ "id": "w2-010",
+ "world": 2,
+ "par": 15,
+ "cells": [
+  {
+   "x": 3,
+   "y": 1,
+   "a": [],
+   "b": [
+    3
+   ]
+  },
+  {
+   "x": 1,
+   "y": 2,
+   "a": [],
+   "b": [
+    4
+   ]
+  },
+  {
+   "x": 2,
+   "y": 2,
+   "a": [],
+   "b": [
+    5
+   ]
+  },
+  {
+   "x": 3,
+   "y": 2,
+   "a": [
+    0
+   ],
+   "b": [
+    6
+   ]
+  },
+  {
+   "x": 1,
+   "y": 3,
+   "a": [
+    1
+   ],
+   "b": [
+    7
+   ]
+  },
+  {
+   "x": 2,
+   "y": 3,
+   "a": [
+    2
+   ],
+   "b": [
+    8
+   ]
+  },
+  {
+   "x": 3,
+   "y": 3,
+   "a": [
+    3
+   ],
+   "b": [
+    9
+   ]
+  },
+  {
+   "x": 1,
+   "y": 4,
+   "a": [
+    4
+   ],
+   "b": [
+    10
+   ]
+  },
+  {
+   "x": 2,
+   "y": 4,
+   "a": [
+    5
+   ],
+   "b": [
+    10
+   ]
+  },
+  {
+   "x": 3,
+   "y": 4,
+   "a": [
+    6
+   ],
+   "b": [
+    11
+   ]
+  },
+  {
+   "x": 2,
+   "y": 5,
+   "a": [
+    7,
+    8
+   ],
+   "b": [
+    12
+   ],
+   "kind": "spring",
+   "spring": 0
+  },
+  {
+   "x": 3,
+   "y": 5,
+   "a": [
+    9
+   ],
+   "b": [
+    12
+   ]
+  },
+  {
+   "x": 3,
+   "y": 6,
+   "a": [
+    11,
+    10
+   ],
+   "b": [
+    13
+   ]
+  },
+  {
+   "x": 3,
+   "y": 7,
+   "a": [
+    12
+   ],
+   "b": [
+    14
+   ]
+  },
+  {
+   "x": 3,
+   "y": 8,
+   "a": [
+    13
+   ],
+   "b": [
+    15
+   ]
+  },
+  {
+   "x": 3,
+   "y": 9,
+   "a": [
+    14
+   ],
+   "b": []
+  }
+ ],
+ "vehicles": [
+  {
+   "id": "L",
+   "type": "loco",
+   "cell": 11
+  },
+  {
+   "id": "b1",
+   "type": "wagon",
+   "color": "blue",
+   "cell": 3
+  },
+  {
+   "id": "g1",
+   "type": "wagon",
+   "color": "green",
+   "cell": 7
+  },
+  {
+   "id": "r1",
+   "type": "wagon",
+   "color": "red",
+   "cell": 4
+  },
+  {
+   "id": "y1",
+   "type": "wagon",
+   "color": "yellow",
+   "cell": 10
+  }
+ ],
+ "links": [],
+ "targets": [
+  {
+   "cell": 0,
+   "color": "red"
+  },
+  {
+   "cell": 3,
+   "color": "blue"
+  },
+  {
+   "cell": 6,
+   "color": "yellow"
+  },
+  {
+   "cell": 9,
+   "color": "green"
+  }
+ ],
+ "solution": [
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 1,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 1,
+   "branches": [
+    1
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 4,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 1,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "r1",
+    "g1"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 1,
+   "branches": [
+    1
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "g1",
+    "y1"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 3,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 5,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 1,
+   "branches": [
+    1
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "b1",
+    "r1"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 1,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "r1",
+    "y1"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 1,
+   "branches": [
+    1
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 2,
+   "branches": []
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "g1",
+    "b1"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 2,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "y1",
+    "L"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 1,
+   "branches": [
+    1
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 2,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 2,
+   "branches": [
+    0
+   ]
+  }
+ ],
+ "metrics": {
+  "par": 15,
+  "min_cells": 28,
+  "states": 56064,
+  "dead_states": 0,
+  "depth_max": 15,
+  "depth_hist": {
+   "0": 13,
+   "1": 242,
+   "2": 116,
+   "3": 1609,
+   "4": 1715,
+   "5": 1860,
+   "6": 2913,
+   "7": 6045,
+   "8": 7388,
+   "9": 6938,
+   "10": 8664,
+   "11": 7690,
+   "12": 5202,
+   "13": 3741,
+   "14": 1786,
+   "15": 142
+  },
+  "detours": 5,
+  "solutions_at_par": 50,
+  "path_width": 10,
+  "uncouples": 6,
+  "hardness": 9.92,
+  "difficulty": 5
+ },
+ "_gen": {
+  "template": "ingle_h3",
+  "template_max_par": 15,
+  "candidates_at_par": 110
+ }
+}

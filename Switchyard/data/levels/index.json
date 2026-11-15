@@ -1,53 +1,244 @@
 {
- "_not": "YER TUTUCU: çekirdek işçisi gerçek seviyelerle değiştirir (docs/CORE_API.md §1).",
  "levels": [
   {
    "id": "w1-001",
    "world": 1,
-   "par": 3,
-   "difficulty": 1
+   "par": 1,
+   "difficulty": 2
   },
   {
    "id": "w1-002",
    "world": 1,
-   "par": 4,
+   "par": 2,
    "difficulty": 2
   },
   {
    "id": "w1-003",
    "world": 1,
-   "par": 5,
-   "difficulty": 2
+   "par": 3,
+   "difficulty": 1
   },
   {
    "id": "w1-004",
    "world": 1,
-   "par": 6,
+   "par": 3,
    "difficulty": 3
   },
   {
    "id": "w1-005",
    "world": 1,
-   "par": 7,
-   "difficulty": 3
+   "par": 5,
+   "difficulty": 2
   },
   {
    "id": "w1-006",
    "world": 1,
-   "par": 8,
+   "par": 5,
    "difficulty": 4
   },
   {
    "id": "w1-007",
    "world": 1,
    "par": 9,
-   "difficulty": 4
+   "difficulty": 3
   },
   {
    "id": "w1-008",
    "world": 1,
+   "par": 7,
+   "difficulty": 3
+  },
+  {
+   "id": "w1-009",
+   "world": 1,
+   "par": 11,
+   "difficulty": 4
+  },
+  {
+   "id": "w1-010",
+   "world": 1,
    "par": 10,
+   "difficulty": 4
+  },
+  {
+   "id": "w1-011",
+   "world": 1,
+   "par": 9,
    "difficulty": 5
+  },
+  {
+   "id": "w1-012",
+   "world": 1,
+   "par": 11,
+   "difficulty": 3
+  },
+  {
+   "id": "w1-013",
+   "world": 1,
+   "par": 10,
+   "difficulty": 6
+  },
+  {
+   "id": "w1-014",
+   "world": 1,
+   "par": 13,
+   "difficulty": 6
+  },
+  {
+   "id": "w1-015",
+   "world": 1,
+   "par": 11,
+   "difficulty": 8
+  },
+  {
+   "id": "w1-016",
+   "world": 1,
+   "par": 13,
+   "difficulty": 5
+  },
+  {
+   "id": "w1-017",
+   "world": 1,
+   "par": 13,
+   "difficulty": 9
+  },
+  {
+   "id": "w1-018",
+   "world": 1,
+   "par": 14,
+   "difficulty": 6
+  },
+  {
+   "id": "w1-019",
+   "world": 1,
+   "par": 15,
+   "difficulty": 6
+  },
+  {
+   "id": "w1-020",
+   "world": 1,
+   "par": 16,
+   "difficulty": 10
+  },
+  {
+   "id": "w2-001",
+   "world": 2,
+   "par": 10,
+   "difficulty": 3
+  },
+  {
+   "id": "w2-002",
+   "world": 2,
+   "par": 9,
+   "difficulty": 6
+  },
+  {
+   "id": "w2-003",
+   "world": 2,
+   "par": 15,
+   "difficulty": 9
+  },
+  {
+   "id": "w2-004",
+   "world": 2,
+   "par": 13,
+   "difficulty": 4
+  },
+  {
+   "id": "w2-005",
+   "world": 2,
+   "par": 21,
+   "difficulty": 10
+  },
+  {
+   "id": "w2-006",
+   "world": 2,
+   "par": 24,
+   "difficulty": 10
+  },
+  {
+   "id": "w2-007",
+   "world": 2,
+   "par": 12,
+   "difficulty": 7
+  },
+  {
+   "id": "w2-008",
+   "world": 2,
+   "par": 10,
+   "difficulty": 6
+  },
+  {
+   "id": "w2-009",
+   "world": 2,
+   "par": 18,
+   "difficulty": 9
+  },
+  {
+   "id": "w2-010",
+   "world": 2,
+   "par": 20,
+   "difficulty": 10
+  },
+  {
+   "id": "w2-011",
+   "world": 2,
+   "par": 21,
+   "difficulty": 10
+  },
+  {
+   "id": "w2-012",
+   "world": 2,
+   "par": 26,
+   "difficulty": 10
+  },
+  {
+   "id": "w2-013",
+   "world": 2,
+   "par": 11,
+   "difficulty": 6
+  },
+  {
+   "id": "w2-014",
+   "world": 2,
+   "par": 8,
+   "difficulty": 3
+  },
+  {
+   "id": "w2-015",
+   "world": 2,
+   "par": 21,
+   "difficulty": 10
+  },
+  {
+   "id": "w2-016",
+   "world": 2,
+   "par": 15,
+   "difficulty": 5
+  },
+  {
+   "id": "w2-017",
+   "world": 2,
+   "par": 15,
+   "difficulty": 4
+  },
+  {
+   "id": "w2-018",
+   "world": 2,
+   "par": 28,
+   "difficulty": 10
+  },
+  {
+   "id": "w2-019",
+   "world": 2,
+   "par": 28,
+   "difficulty": 8
+  },
+  {
+   "id": "w2-020",
+   "world": 2,
+   "par": 34,
+   "difficulty": 10
   }
  ]
 }

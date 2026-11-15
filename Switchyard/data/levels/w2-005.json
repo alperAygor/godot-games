@@ -1,0 +1,509 @@
+{
+ "id": "w2-005",
+ "world": 2,
+ "par": 21,
+ "cells": [
+  {
+   "x": 3,
+   "y": 1,
+   "a": [],
+   "b": [
+    2
+   ]
+  },
+  {
+   "x": 5,
+   "y": 1,
+   "a": [],
+   "b": [
+    3
+   ]
+  },
+  {
+   "x": 3,
+   "y": 2,
+   "a": [
+    0
+   ],
+   "b": [
+    4,
+    5
+   ]
+  },
+  {
+   "x": 5,
+   "y": 2,
+   "a": [
+    1
+   ],
+   "b": [
+    6
+   ]
+  },
+  {
+   "x": 3,
+   "y": 3,
+   "a": [
+    2
+   ],
+   "b": [
+    7
+   ]
+  },
+  {
+   "x": 4,
+   "y": 3,
+   "a": [
+    2
+   ],
+   "b": [
+    8
+   ]
+  },
+  {
+   "x": 5,
+   "y": 3,
+   "a": [
+    3
+   ],
+   "b": [
+    8
+   ]
+  },
+  {
+   "x": 3,
+   "y": 4,
+   "a": [
+    4
+   ],
+   "b": [
+    9
+   ]
+  },
+  {
+   "x": 4,
+   "y": 4,
+   "a": [
+    5,
+    6
+   ],
+   "b": [
+    10
+   ]
+  },
+  {
+   "x": 3,
+   "y": 5,
+   "a": [
+    7
+   ],
+   "b": [
+    12,
+    11
+   ]
+  },
+  {
+   "x": 4,
+   "y": 5,
+   "a": [
+    8
+   ],
+   "b": [
+    13
+   ]
+  },
+  {
+   "x": 2,
+   "y": 6,
+   "a": [
+    9
+   ],
+   "b": [
+    14
+   ]
+  },
+  {
+   "x": 3,
+   "y": 6,
+   "a": [
+    9
+   ],
+   "b": [
+    15
+   ]
+  },
+  {
+   "x": 4,
+   "y": 6,
+   "a": [
+    10
+   ],
+   "b": [
+    16
+   ]
+  },
+  {
+   "x": 2,
+   "y": 7,
+   "a": [
+    11
+   ],
+   "b": [
+    17
+   ]
+  },
+  {
+   "x": 3,
+   "y": 7,
+   "a": [
+    12
+   ],
+   "b": [
+    18
+   ]
+  },
+  {
+   "x": 4,
+   "y": 7,
+   "a": [
+    13
+   ],
+   "b": [
+    18
+   ]
+  },
+  {
+   "x": 2,
+   "y": 8,
+   "a": [
+    14
+   ],
+   "b": []
+  },
+  {
+   "x": 3,
+   "y": 8,
+   "a": [
+    15,
+    16
+   ],
+   "b": [
+    19
+   ]
+  },
+  {
+   "x": 3,
+   "y": 9,
+   "a": [
+    18
+   ],
+   "b": []
+  }
+ ],
+ "vehicles": [
+  {
+   "id": "L",
+   "type": "loco",
+   "cell": 11,
+   "power": 1
+  },
+  {
+   "id": "b1",
+   "type": "wagon",
+   "color": "blue",
+   "cell": 3
+  },
+  {
+   "id": "r1",
+   "type": "wagon",
+   "color": "red",
+   "cell": 1
+  },
+  {
+   "id": "y1",
+   "type": "wagon",
+   "color": "yellow",
+   "cell": 6
+  }
+ ],
+ "links": [],
+ "targets": [
+  {
+   "cell": 17,
+   "color": "red"
+  },
+  {
+   "cell": 14,
+   "color": "blue"
+  },
+  {
+   "cell": 1,
+   "color": "yellow"
+  }
+ ],
+ "solution": [
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 4,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 2,
+   "branches": [
+    1
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 1,
+   "branches": [
+    1
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "b1",
+    "y1"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 5,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 1,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "y1",
+    "L"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 6,
+   "branches": [
+    1,
+    1
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "r1",
+    "b1"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 5,
+   "branches": []
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "b1",
+    "L"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 6,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "y1",
+    "L"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 6,
+   "branches": [
+    1
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "L",
+    "b1"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 7,
+   "branches": [
+    1,
+    1
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 6,
+   "branches": []
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "r1",
+    "L"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 7,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 3,
+   "branches": [
+    1
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 3,
+   "branches": [
+    1
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "y1",
+    "L"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 5,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 6,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 6,
+   "branches": [
+    0,
+    1
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "L",
+    "r1"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 2,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 4,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 4,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 2,
+   "branches": [
+    1
+   ]
+  }
+ ],
+ "metrics": {
+  "par": 21,
+  "min_cells": 86,
+  "states": 155652,
+  "dead_states": 0,
+  "depth_max": 21,
+  "depth_hist": {
+   "0": 20,
+   "1": 55,
+   "2": 93,
+   "3": 204,
+   "4": 596,
+   "5": 907,
+   "6": 1799,
+   "7": 4032,
+   "8": 6708,
+   "9": 9638,
+   "10": 12820,
+   "11": 13397,
+   "12": 16838,
+   "13": 22016,
+   "14": 21398,
+   "15": 20140,
+   "16": 14592,
+   "17": 7497,
+   "18": 2453,
+   "19": 415,
+   "20": 28,
+   "21": 6
+  },
+  "detours": 2,
+  "solutions_at_par": 10,
+  "path_width": 4,
+  "uncouples": 9,
+  "difficulty": 10
+ },
+ "_gen": {
+  "template": "timesaver",
+  "template_max_par": 21,
+  "candidates_at_par": 6
+ }
+}

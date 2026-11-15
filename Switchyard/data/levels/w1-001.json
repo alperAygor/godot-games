@@ -1,0 +1,118 @@
+{
+ "id": "w1-001",
+ "world": 1,
+ "par": 1,
+ "cells": [
+  {
+   "x": 3,
+   "y": 3,
+   "a": [],
+   "b": [
+    1
+   ]
+  },
+  {
+   "x": 3,
+   "y": 4,
+   "a": [
+    0
+   ],
+   "b": [
+    2
+   ]
+  },
+  {
+   "x": 3,
+   "y": 5,
+   "a": [
+    1
+   ],
+   "b": [
+    3
+   ]
+  },
+  {
+   "x": 3,
+   "y": 6,
+   "a": [
+    2
+   ],
+   "b": [
+    4
+   ]
+  },
+  {
+   "x": 3,
+   "y": 7,
+   "a": [
+    3
+   ],
+   "b": [
+    5
+   ]
+  },
+  {
+   "x": 3,
+   "y": 8,
+   "a": [
+    4
+   ],
+   "b": [
+    6
+   ]
+  },
+  {
+   "x": 3,
+   "y": 9,
+   "a": [
+    5
+   ],
+   "b": []
+  }
+ ],
+ "vehicles": [
+  {
+   "id": "L",
+   "type": "loco",
+   "cell": 6
+  },
+  {
+   "id": "r1",
+   "type": "wagon",
+   "cell": 4,
+   "color": "red"
+  }
+ ],
+ "links": [],
+ "targets": [
+  {
+   "cell": 1,
+   "color": "red"
+  }
+ ],
+ "solution": [
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 4,
+   "branches": []
+  }
+ ],
+ "metrics": {
+  "par": 1,
+  "min_cells": 4,
+  "states": 27,
+  "dead_states": 0,
+  "depth_max": 2,
+  "depth_hist": {
+   "0": 6,
+   "1": 15,
+   "2": 6
+  },
+  "detours": 0,
+  "solutions_at_par": 1,
+  "path_width": 1,
+  "uncouples": 0,
+  "difficulty": 2
+ }
+}

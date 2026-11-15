@@ -145,6 +145,37 @@ else
     done
 fi
 
+# >>> sy-core
+# Çekirdek: Python kural aynası testleri, uygunluk vektörleri güncel mi, seviye dosyaları (çözüm par'da oynar,
+# ekran kısıtları, zorluk eğrisi). Sahibi sy-core; bu blok dışında bu dosyaya dokunulmaz.
+echo "== sy-core: python kurallari + vektorler + seviyeler =="
+if command -v python3 >/dev/null 2>&1 && [ -d "$PROJECT_DIR/tools/yard" ]; then
+    if (cd "$PROJECT_DIR" && python3 -m unittest discover -s tools/yard) >"$LOG_DIR/sy_core_unittest.log" 2>&1; then
+        echo "  + python testleri ($(grep -m1 -oE 'Ran [0-9]+ tests' "$LOG_DIR/sy_core_unittest.log"))"
+    else
+        echo "  x python testleri — log: $LOG_DIR/sy_core_unittest.log"
+        tail -5 "$LOG_DIR/sy_core_unittest.log" | sed 's/^/    /'
+        FAILED=1
+    fi
+    if python3 "$PROJECT_DIR/tools/yard/vectors.py" --check >"$LOG_DIR/sy_core_vectors.log" 2>&1; then
+        echo "  + $(cat "$LOG_DIR/sy_core_vectors.log")"
+    else
+        echo "  x vektorler eski (python3 tools/yard/vectors.py)"
+        FAILED=1
+    fi
+    if python3 "$PROJECT_DIR/tools/yard/check_levels.py" >"$LOG_DIR/sy_core_levels.log" 2>&1; then
+        echo "  + $(tail -1 "$LOG_DIR/sy_core_levels.log")"
+    else
+        echo "  x seviye denetimi — log: $LOG_DIR/sy_core_levels.log"
+        head -5 "$LOG_DIR/sy_core_levels.log" | sed 's/^/    /'
+        FAILED=1
+    fi
+else
+    echo "  x python3 ya da tools/yard yok"
+    FAILED=1
+fi
+# <<< sy-core
+
 echo
 if [ "$FAILED" -eq 0 ]; then
     echo "SONUC: gecti"

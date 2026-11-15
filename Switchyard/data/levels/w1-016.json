@@ -1,0 +1,407 @@
+{
+ "id": "w1-016",
+ "world": 1,
+ "par": 13,
+ "cells": [
+  {
+   "x": 3,
+   "y": 1,
+   "a": [],
+   "b": [
+    2
+   ]
+  },
+  {
+   "x": 5,
+   "y": 1,
+   "a": [],
+   "b": [
+    3
+   ]
+  },
+  {
+   "x": 3,
+   "y": 2,
+   "a": [
+    0
+   ],
+   "b": [
+    4,
+    5
+   ]
+  },
+  {
+   "x": 5,
+   "y": 2,
+   "a": [
+    1
+   ],
+   "b": [
+    6
+   ]
+  },
+  {
+   "x": 3,
+   "y": 3,
+   "a": [
+    2
+   ],
+   "b": [
+    7
+   ]
+  },
+  {
+   "x": 4,
+   "y": 3,
+   "a": [
+    2
+   ],
+   "b": [
+    8
+   ]
+  },
+  {
+   "x": 5,
+   "y": 3,
+   "a": [
+    3
+   ],
+   "b": [
+    8
+   ]
+  },
+  {
+   "x": 3,
+   "y": 4,
+   "a": [
+    4
+   ],
+   "b": [
+    9
+   ]
+  },
+  {
+   "x": 4,
+   "y": 4,
+   "a": [
+    5,
+    6
+   ],
+   "b": [
+    10
+   ]
+  },
+  {
+   "x": 3,
+   "y": 5,
+   "a": [
+    7
+   ],
+   "b": [
+    12,
+    11
+   ]
+  },
+  {
+   "x": 4,
+   "y": 5,
+   "a": [
+    8
+   ],
+   "b": [
+    13
+   ]
+  },
+  {
+   "x": 2,
+   "y": 6,
+   "a": [
+    9
+   ],
+   "b": [
+    14
+   ]
+  },
+  {
+   "x": 3,
+   "y": 6,
+   "a": [
+    9
+   ],
+   "b": [
+    15
+   ]
+  },
+  {
+   "x": 4,
+   "y": 6,
+   "a": [
+    10
+   ],
+   "b": [
+    16
+   ]
+  },
+  {
+   "x": 2,
+   "y": 7,
+   "a": [
+    11
+   ],
+   "b": [
+    17
+   ]
+  },
+  {
+   "x": 3,
+   "y": 7,
+   "a": [
+    12
+   ],
+   "b": [
+    18
+   ]
+  },
+  {
+   "x": 4,
+   "y": 7,
+   "a": [
+    13
+   ],
+   "b": [
+    18
+   ]
+  },
+  {
+   "x": 2,
+   "y": 8,
+   "a": [
+    14
+   ],
+   "b": []
+  },
+  {
+   "x": 3,
+   "y": 8,
+   "a": [
+    15,
+    16
+   ],
+   "b": [
+    19
+   ]
+  },
+  {
+   "x": 3,
+   "y": 9,
+   "a": [
+    18
+   ],
+   "b": []
+  }
+ ],
+ "vehicles": [
+  {
+   "id": "L",
+   "type": "loco",
+   "cell": 15
+  },
+  {
+   "id": "b1",
+   "type": "wagon",
+   "color": "blue",
+   "cell": 14
+  },
+  {
+   "id": "r1",
+   "type": "wagon",
+   "color": "red",
+   "cell": 3
+  },
+  {
+   "id": "y1",
+   "type": "wagon",
+   "color": "yellow",
+   "cell": 11
+  }
+ ],
+ "links": [],
+ "targets": [
+  {
+   "cell": 17,
+   "color": "red"
+  },
+  {
+   "cell": 14,
+   "color": "blue"
+  },
+  {
+   "cell": 1,
+   "color": "yellow"
+  }
+ ],
+ "solution": [
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 2,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 1,
+   "branches": [
+    1
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 5,
+   "branches": []
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "y1",
+    "b1"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 3,
+   "branches": [
+    1
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 2,
+   "branches": [
+    1
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 3,
+   "branches": []
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "L",
+    "y1"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 3,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 3,
+   "branches": [
+    0,
+    0
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "r1",
+    "L"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 3,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 6,
+   "branches": [
+    1,
+    1
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "y1",
+    "L"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 2,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 3,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 5,
+   "branches": [
+    0,
+    1
+   ]
+  }
+ ],
+ "metrics": {
+  "par": 13,
+  "min_cells": 41,
+  "states": 159552,
+  "dead_states": 0,
+  "depth_max": 14,
+  "depth_hist": {
+   "0": 20,
+   "1": 110,
+   "2": 210,
+   "3": 764,
+   "4": 2489,
+   "5": 4282,
+   "6": 12122,
+   "7": 17134,
+   "8": 25361,
+   "9": 25037,
+   "10": 29687,
+   "11": 24364,
+   "12": 14408,
+   "13": 3339,
+   "14": 225
+  },
+  "detours": 4,
+  "solutions_at_par": 301,
+  "path_width": 19,
+  "uncouples": 4,
+  "hardness": 8.32,
+  "difficulty": 4
+ },
+ "_gen": {
+  "template": "timesaver",
+  "template_max_par": 14,
+  "candidates_at_par": 225
+ }
+}

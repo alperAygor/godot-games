@@ -1,0 +1,304 @@
+{
+ "id": "w2-012",
+ "world": 2,
+ "par": 10,
+ "cells": [
+  {
+   "x": 2,
+   "y": 1,
+   "a": [],
+   "b": [
+    2
+   ]
+  },
+  {
+   "x": 3,
+   "y": 1,
+   "a": [],
+   "b": [
+    3
+   ],
+   "kind": "plate"
+  },
+  {
+   "x": 2,
+   "y": 2,
+   "a": [
+    0
+   ],
+   "b": [
+    4
+   ]
+  },
+  {
+   "x": 3,
+   "y": 2,
+   "a": [
+    1
+   ],
+   "b": [
+    5
+   ]
+  },
+  {
+   "x": 2,
+   "y": 3,
+   "a": [
+    2
+   ],
+   "b": [
+    6
+   ],
+   "kind": "gate"
+  },
+  {
+   "x": 3,
+   "y": 3,
+   "a": [
+    3
+   ],
+   "b": [
+    7
+   ]
+  },
+  {
+   "x": 2,
+   "y": 4,
+   "a": [
+    4
+   ],
+   "b": [
+    8
+   ]
+  },
+  {
+   "x": 3,
+   "y": 4,
+   "a": [
+    5
+   ],
+   "b": [
+    9
+   ]
+  },
+  {
+   "x": 2,
+   "y": 5,
+   "a": [
+    6
+   ],
+   "b": [
+    10
+   ]
+  },
+  {
+   "x": 3,
+   "y": 5,
+   "a": [
+    7
+   ],
+   "b": [
+    10
+   ]
+  },
+  {
+   "x": 3,
+   "y": 6,
+   "a": [
+    9,
+    8
+   ],
+   "b": [
+    11
+   ]
+  },
+  {
+   "x": 3,
+   "y": 7,
+   "a": [
+    10
+   ],
+   "b": [
+    12
+   ]
+  },
+  {
+   "x": 3,
+   "y": 8,
+   "a": [
+    11
+   ],
+   "b": [
+    13
+   ]
+  },
+  {
+   "x": 3,
+   "y": 9,
+   "a": [
+    12
+   ],
+   "b": []
+  }
+ ],
+ "vehicles": [
+  {
+   "id": "L",
+   "type": "loco",
+   "cell": 6
+  },
+  {
+   "id": "b1",
+   "type": "wagon",
+   "color": "blue",
+   "cell": 7
+  },
+  {
+   "id": "r1",
+   "type": "wagon",
+   "color": "red",
+   "cell": 3
+  }
+ ],
+ "links": [],
+ "targets": [
+  {
+   "cell": 0,
+   "color": "red"
+  },
+  {
+   "cell": 3,
+   "color": "blue"
+  }
+ ],
+ "solution": [
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 2,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 3,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 5,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 1,
+   "branches": [
+    1
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "r1",
+    "b1"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 5,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "b1",
+    "L"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 4,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 4,
+   "branches": [
+    1
+   ]
+  },
+  {
+   "t": "uncouple",
+   "between": [
+    "r1",
+    "L"
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 4,
+   "branches": []
+  },
+  {
+   "t": "drive",
+   "side": "a",
+   "steps": 5,
+   "branches": [
+    0
+   ]
+  },
+  {
+   "t": "drive",
+   "side": "b",
+   "steps": 1,
+   "branches": []
+  }
+ ],
+ "metrics": {
+  "par": 10,
+  "min_cells": 33,
+  "states": 1114,
+  "dead_states": 36,
+  "depth_max": 16,
+  "depth_hist": {
+   "0": 12,
+   "1": 37,
+   "2": 23,
+   "3": 69,
+   "4": 78,
+   "5": 23,
+   "6": 215,
+   "7": 69,
+   "8": 77,
+   "9": 160,
+   "10": 143,
+   "11": 30,
+   "12": 10,
+   "13": 70,
+   "14": 24,
+   "15": 18,
+   "16": 20
+  },
+  "detours": 1,
+  "solutions_at_par": 2,
+  "path_width": 2,
+  "uncouples": 3,
+  "hardness": 6.28,
+  "difficulty": 3
+ },
+ "_gen": {
+  "template": "fork",
+  "template_max_par": 16,
+  "candidates_at_par": 122
+ }
+}
