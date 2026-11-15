@@ -5,6 +5,8 @@ extends Node
 
 signal purchase_finished(product_id: String, success: bool, error: String)
 signal purchases_restored(product_ids: PackedStringArray)
+signal restore_failed(reason: String)
+signal availability_changed
 
 var provider: IapProvider
 
@@ -17,9 +19,13 @@ func set_provider(new_provider: IapProvider) -> void:
 	if provider:
 		provider.purchase_finished.disconnect(_on_purchase_finished)
 		provider.purchases_restored.disconnect(_on_purchases_restored)
+		provider.restore_failed.disconnect(_on_restore_failed)
+		provider.availability_changed.disconnect(_on_availability_changed)
 	provider = new_provider
 	provider.purchase_finished.connect(_on_purchase_finished)
 	provider.purchases_restored.connect(_on_purchases_restored)
+	provider.restore_failed.connect(_on_restore_failed)
+	provider.availability_changed.connect(_on_availability_changed)
 	provider.initialize(get_product_ids())
 
 
@@ -42,6 +48,18 @@ func purchase(product_id: String) -> void:
 
 func restore_purchases() -> void:
 	provider.restore_purchases()
+
+
+func reconnect() -> void:
+	provider.reconnect()
+
+
+func _on_restore_failed(reason: String) -> void:
+	restore_failed.emit(reason)
+
+
+func _on_availability_changed() -> void:
+	availability_changed.emit()
 
 
 func _on_purchase_finished(product_id: String, success: bool, error: String) -> void:

@@ -14,5 +14,17 @@
 		"retry_day": {"limit": 0, "scope": "day"},
 		"daily_retry": {"limit": 1, "scope": "date"},
 		"endless_continue": {"limit": 1, "scope": "run"}
+	},
+	"timeouts": {
+		"_comment": "Saniye. rewarded_seconds: ödüllü reklam isteği bu sürede hiç yanıtlanmazsa oyun 'ödülsüz' sayıp devam eder (oyuncu asla takılmaz); sağlayıcının kendi gösterim zaman aşımından (ads_ids.json ads.show_timeout_seconds) UZUN olmalı. interstitial_seconds: geçiş reklamı kapanmazsa oyun yine devam eder.",
+		"rewarded_seconds": 150,
+		"interstitial_seconds": 90
+	},
+	"free_retry": {
+		"_comment": "KARAR BEKLİYOR (O8 -> T-B1): 'Günü tekrar oyna' için ücretsiz yol. enabled: ücretsiz yol var mı. available_when: 'ad_unavailable' = yalnızca reklam gösterilemiyorsa (hazır değil/zaman aşımı/başarısız) çıkar; 'always' = reklam varken de çıkar. cost: ücretsiz yolun bedeli; kind 'none' | 'cash_pl' (sabah nakdinden düşülecek PL) | ...; bunu UYGULAYAN T-B1'dir (Monetization.take_free_retry bedeli yalnızca döndürür). Aşağıdaki değerler ŞİMDİLİK varsayılandır (decision_pending=true): bedelsiz ve yalnızca reklam yokken.",
+		"enabled": true,
+		"available_when": "ad_unavailable",
+		"decision_pending": true,
+		"cost": {"kind": "none", "value": 0}
 	}
 }

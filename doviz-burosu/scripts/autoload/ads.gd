@@ -46,6 +46,18 @@ func request_consent() -> void:
 	provider.request_consent()
 
 
+func consent_regime() -> String:
+	return provider.consent_regime()
+
+
+func set_notice_answered(answered: bool) -> void:
+	provider.set_notice_answered(answered)
+
+
+func config_problem() -> String:
+	return provider.config_problem()
+
+
 func show_privacy_options() -> bool:
 	return provider.show_privacy_options()
 

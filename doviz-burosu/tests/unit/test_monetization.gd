@@ -18,6 +18,7 @@ func before_each() -> void:
 	tree.root.get_node("IAP").set_provider(mock_iap)
 	monetization.last_ad_seconds = -100000.0
 	monetization.clock_override = -1.0
+	monetization._ad_failed.clear()
 
 
 func after_each() -> void:
@@ -576,7 +577,7 @@ func test_market_without_a_store_disables_buying() -> void:
 	await scenes.goto(Scenes.MARKET)
 	await tree.process_frame
 	assert_true((node("BuyNoAdsButton") as Button).disabled)
-	assert_eq(_label("BuyNoAdsButton"), "Mağaza şu an yok")
+	assert_eq(_label("BuyNoAdsButton"), tr("MARKET_CONNECTING"), "mağaza geç bağlanabilir: 'kapalı' denmez, bağlanılıyor yazar")
 
 
 func test_settings_has_a_restore_button() -> void:
@@ -591,3 +592,228 @@ func test_supporter_plant_only_for_no_ads_owners() -> void:
 	save_manager.data["purchases"] = ["no_ads"]
 	await _open_desk()
 	assert_true(node("SupporterDecor") != null)
+
+
+# --- Sertleştirme: yapılandırma, zaman aşımları, ücretsiz yol, geç bağlanan mağaza ---------------------
+
+class SilentAds extends MockAdsProvider:
+	## Hiç yanıt vermeyen SDK (takılma benzetimi).
+	func show_rewarded(_placement: String) -> void:
+		pass
+
+	func show_interstitial(_placement: String) -> void:
+		pass
+
+
+class CountingIap extends MockIapProvider:
+	var reconnects := 0
+
+	func reconnect() -> void:
+		reconnects += 1
+
+
+func _real_config(real_app := "") -> Dictionary:
+	return {"mode": "real", "providers": {"admob": true, "play_billing": true}, "android": {
+		"test_app_id": "t~1", "test_rewarded_unit": "t/1", "test_interstitial_unit": "t/2",
+		"real_app_id": real_app, "real_rewarded_unit": "", "real_interstitial_unit": ""}}
+
+
+func test_incomplete_real_config_installs_no_ads_and_reports_loudly_in_every_build() -> void:
+	var reports: Array = []
+	monetization.problem_logger = func(message: String, release: bool) -> void: reports.append([message, release])
+	for release in [false, true]:
+		monetization.install_providers(_real_config(), release, true)
+		assert_eq(monetization.config_error, AdsConfig.PROBLEM_REAL_INCOMPLETE)
+		var ads_node := tree.root.get_node("Ads")
+		assert_false(ads_node.provider is MockAdsProvider or ads_node.provider is AdMobAdsProvider, "sessizce test/mock reklama düşülmez")
+		assert_false(ads_node.is_rewarded_ready("x"))
+	assert_eq(reports.size(), 2)
+	assert_eq(reports[1][1], true, "yayın sürümünde 'release' bayrağıyla (push_error) bildirilir")
+	monetization.problem_logger = Callable()
+	monetization.install_providers()
+	assert_eq(monetization.config_error, "", "gönderilen yapılandırma (test kipi) sorunsuz")
+
+
+func test_release_builds_without_the_sdk_get_the_silent_base_providers_not_the_mocks() -> void:
+	monetization.install_providers({}, true, false)
+	assert_false(tree.root.get_node("Ads").provider is MockAdsProvider)
+	assert_false(tree.root.get_node("IAP").provider is MockIapProvider)
+	monetization.install_providers()  # headless debug: sahte sağlayıcılar geri gelir (diğer testler için)
+	assert_true(tree.root.get_node("Ads").provider is MockAdsProvider)
+
+
+func test_a_rewarded_ad_that_never_answers_times_out_without_trapping_the_player() -> void:
+	tree.root.get_node("Ads").set_provider(SilentAds.new())
+	monetization.rewarded_timeout_override = 0.05
+	var results: Array = []
+	var failures: Array = []
+	monetization.reward_failed.connect(func(placement: String, reason: String) -> void: failures.append([placement, reason]), CONNECT_ONE_SHOT)
+	monetization.request_reward("retry_day", func(rewarded: bool) -> void: results.append(rewarded))
+	assert_eq(results, [])
+	await get_tree_timer(0.15)
+	assert_eq(results, [false], "zaman aşımı 'ödülsüz' bitirir ve tam bir kez çağrılır")
+	assert_eq(failures, [["retry_day", "timeout"]])
+	# bekleyen istek temizlendi: sonraki reklam normal çalışır
+	tree.root.get_node("Ads").set_provider(mock_ads)
+	var later: Array = []
+	monetization.request_reward("rate_tip", func(rewarded: bool) -> void: later.append(rewarded))
+	await _wait_frames()
+	assert_eq(later, [true])
+	monetization.rewarded_timeout_override = -1.0
+
+
+func get_tree_timer(seconds: float) -> void:
+	await tree.create_timer(seconds).timeout
+
+
+func test_a_late_sdk_answer_after_the_timeout_does_not_call_back_twice() -> void:
+	var silent := SilentAds.new()
+	tree.root.get_node("Ads").set_provider(silent)
+	monetization.rewarded_timeout_override = 0.05
+	var results: Array = []
+	monetization.request_reward("retry_day", func(rewarded: bool) -> void: results.append(rewarded))
+	await get_tree_timer(0.15)
+	silent.rewarded_finished.emit("retry_day", true)
+	await _wait_frames()
+	assert_eq(results, [false])
+	monetization.rewarded_timeout_override = -1.0
+
+
+func test_a_rewarded_request_without_a_ready_ad_reports_not_ready() -> void:
+	mock_ads.ready_state = false
+	mock_ads.cancel_next = true
+	var failures: Array = []
+	monetization.reward_failed.connect(func(placement: String, reason: String) -> void: failures.append([placement, reason]), CONNECT_ONE_SHOT)
+	var results: Array = []
+	monetization.request_reward("retry_day", func(rewarded: bool) -> void: results.append(rewarded))
+	await _wait_frames()
+	assert_eq(results, [false])
+	assert_eq(failures, [["retry_day", "not_ready"]])
+	mock_ads.ready_state = true
+
+
+func test_busy_requests_report_busy() -> void:
+	tree.root.get_node("Ads").set_provider(SilentAds.new())
+	monetization.rewarded_timeout_override = 0.2
+	var failures: Array = []
+	monetization.reward_failed.connect(func(placement: String, reason: String) -> void: failures.append([placement, reason]))
+	monetization.request_reward("rate_tip", func(_r: bool) -> void: pass)
+	var second: Array = []
+	monetization.request_reward("double_pay", func(rewarded: bool) -> void: second.append(rewarded))
+	assert_eq(second, [false])
+	assert_eq(failures.back(), ["double_pay", "busy"])
+	await get_tree_timer(0.3)
+	monetization.rewarded_timeout_override = -1.0
+
+
+func test_an_interstitial_that_never_closes_still_lets_the_game_continue_exactly_once() -> void:
+	var silent := SilentAds.new()
+	tree.root.get_node("Ads").set_provider(silent)
+	monetization.interstitial_timeout_override = 0.05
+	_ready_for_interstitial()
+	assert_true(monetization.interstitial_decision()["allowed"])
+	var count := [0]
+	monetization.show_interstitial_then("day_end", func() -> void: count[0] += 1)
+	assert_eq(count[0], 0)
+	await get_tree_timer(0.15)
+	assert_eq(count[0], 1, "kapanmayan reklam oyunu kilitlemez")
+	silent.interstitial_closed.emit("day_end")
+	await _wait_frames()
+	assert_eq(count[0], 1, "geç gelen kapanış ikinci kez çağırmaz")
+	monetization.interstitial_timeout_override = -1.0
+
+
+func test_free_retry_exists_whenever_the_ad_cannot_be_shown() -> void:
+	mock_ads.ready_state = true
+	var with_ad: Dictionary = monetization.retry_day_options()
+	assert_true(bool(with_ad["ad"]["enabled"]))
+	assert_false(bool(with_ad["free"]["available"]), "varsayılan: reklam varken ücretsiz yol çıkmaz (karar bekliyor)")
+	assert_false(bool(monetization.take_free_retry()["ok"]))
+	mock_ads.ready_state = false
+	var no_ad: Dictionary = monetization.retry_day_options()
+	assert_false(bool(no_ad["ad"]["enabled"]))
+	assert_true(bool(no_ad["free"]["available"]), "reklam yoksa ilerleme reklama bağlı kalmaz")
+	assert_eq(no_ad["free"]["reason"], RetryPolicy.REASON_AD_NOT_READY)
+	var taken: Dictionary = monetization.take_free_retry()
+	assert_true(bool(taken["ok"]))
+	assert_eq(taken["cost_kind"], "none", "bedel şimdilik varsayılan: karar T-B1/O8")
+	assert_true(bool(no_ad["free"]["decision_pending"]))
+	assert_true("retry_day_free" in _event_names())
+	mock_ads.ready_state = true
+
+
+func test_free_retry_also_opens_after_the_ad_flow_failed() -> void:
+	tree.root.get_node("Ads").set_provider(SilentAds.new())
+	monetization.rewarded_timeout_override = 0.05
+	monetization.request_reward("retry_day", func(_r: bool) -> void: pass)
+	await get_tree_timer(0.15)
+	tree.root.get_node("Ads").set_provider(mock_ads)  # reklam yeniden hazır görünse bile: son deneme başarısızdı
+	var options: Dictionary = monetization.retry_day_options()
+	assert_true(bool(options["ad"]["enabled"]))
+	assert_true(bool(options["free"]["available"]))
+	assert_eq(options["free"]["reason"], RetryPolicy.REASON_AD_FAILED)
+	var got: Array = []
+	monetization.request_reward("retry_day", func(rewarded: bool) -> void: got.append(rewarded))
+	await _wait_frames()
+	assert_false(bool(monetization.retry_day_options()["free"]["available"]), "başarılı reklamdan sonra bayrak temizlenir")
+	monetization.rewarded_timeout_override = -1.0
+
+
+func test_retry_policy_follows_the_config() -> void:
+	var always := {"enabled": true, "available_when": "always", "cost": {"kind": "cash_pl", "value": 40}}
+	var option := RetryPolicy.free_option(true, false, always)
+	assert_true(bool(option["available"]))
+	assert_eq([option["cost_kind"], option["cost_value"]], ["cash_pl", 40])
+	var off := {"enabled": false, "available_when": "always", "cost": {"kind": "none", "value": 0}}
+	assert_false(bool(RetryPolicy.free_option(false, true, off)["available"]), "kapalıysa hiç çıkmaz")
+	var shipped := JsonIO.read_dict("res://data/ads.json").get("free_retry", {}) as Dictionary
+	assert_true(bool(shipped.get("enabled", false)) and bool(shipped.get("decision_pending", false)), "gönderilen varsayılan işaretli ve açık")
+
+
+func test_market_shows_connecting_then_refreshes_when_the_store_arrives_late() -> void:
+	var late := CountingIap.new()
+	late.available = false
+	tree.root.get_node("IAP").set_provider(late)
+	await scenes.goto(Scenes.MARKET)
+	await tree.process_frame
+	assert_eq(_label("BuyNoAdsButton"), tr("MARKET_CONNECTING"))
+	assert_true((node("BuyNoAdsButton") as Button).disabled)
+	var timer: Timer = tree.current_scene.find_child("StoreRetryTimer", true, false) as Timer
+	assert_true(timer != null and not timer.is_stopped(), "bağlantı yokken aralıklı yeniden deneme çalışır")
+	timer.timeout.emit()
+	assert_eq(late.reconnects, 1)
+	late.set_available(true)  # bağlantı geç geldi
+	await tree.process_frame
+	assert_false((node("BuyNoAdsButton") as Button).disabled)
+	assert_true(_label("BuyNoAdsButton").contains(late.get_price_text("no_ads")))
+	assert_true(timer.is_stopped(), "bağlanınca deneme durur")
+
+
+func test_market_tells_the_player_when_a_payment_is_pending() -> void:
+	await scenes.goto(Scenes.MARKET)
+	await tree.process_frame
+	mock_iap.pending_next = true
+	await tap("BuyNoAdsButton")
+	await _wait_frames()
+	assert_eq(_label("MarketStatus"), tr("MARKET_PENDING"))
+	assert_false(monetization.owns_no_ads())
+	assert_false((node("BuyNoAdsButton") as Button).disabled, "tekrar denenebilir")
+
+
+func test_market_restore_failure_is_not_reported_as_nothing_to_restore() -> void:
+	await scenes.goto(Scenes.MARKET)
+	await tree.process_frame
+	mock_iap.set_available(false)
+	await tap("RestoreButton")
+	await _wait_frames()
+	assert_eq(_label("MarketStatus"), tr("MARKET_RESTORE_FAILED"))
+	mock_iap.set_available(true)
+
+
+func test_a_cancelled_purchase_stays_quiet() -> void:
+	await scenes.goto(Scenes.MARKET)
+	await tree.process_frame
+	mock_iap.fail_next = "user_cancelled"
+	await tap("BuyNoAdsButton")
+	await _wait_frames()
+	assert_eq(_label("MarketStatus"), "")

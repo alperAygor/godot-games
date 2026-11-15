@@ -1,19 +1,12 @@
 extends Node
-## Analitik. Şimdilik no-op: olayları hiçbir yere göndermez.
-## Gerçek SDK eklenince sadece _send() değişir; oyun kodu Analytics.log_event(...) çağırmaya devam eder.
-## Kullanıcı onayı (KVKK/GDPR) olmadan hiçbir şey gönderilmemeli: `consent_given`.
+## Yerel olay günlüğü. Bu oyunda analitik SDK'sı YOK ve hiçbir olay cihazdan ÇIKMAZ: olaylar yalnızca bellekte (son 50) tutulur;
+## testler ve hata ayıklama içindir. Gönderim yolu bilerek yok (eski `_send()` kaldırıldı); bu yüzden onay/anahtar da yok ve
+## gizlilik metni analitikten söz etmez. Gerçek bir analitik SDK'sı eklenirse ÖNCE ayrı bir açık-izin anahtarı (`game/analytics_consent`),
+## onay penceresi metni, Veri güvenliği formu ve gizlilik politikası güncellenmelidir (docs/MONETIZATION.md).
+## Oyun kodu `Analytics.log_event(...)` çağırmaya devam eder.
 
-var consent_given := false
-## Son olaylar (yalnızca bellekte; testler ve hata ayıklama için). Gönderim yine onaya bağlıdır.
+## Son olaylar (yalnızca bellekte).
 var recent: Array[Dictionary] = []
-
-
-func _ready() -> void:
-	consent_given = bool(SettingsManager.get_value("game", "analytics_consent"))
-
-
-func set_consent(given: bool) -> void:
-	consent_given = given
 
 
 func log_event(event_name: String, params: Dictionary = {}) -> void:
@@ -22,9 +15,3 @@ func log_event(event_name: String, params: Dictionary = {}) -> void:
 		recent.pop_front()
 	if OS.is_debug_build():
 		print_verbose("[Analytics] %s %s" % [event_name, params])
-	if consent_given:
-		_send(event_name, params)
-
-
-func _send(_event_name: String, _params: Dictionary) -> void:
-	pass

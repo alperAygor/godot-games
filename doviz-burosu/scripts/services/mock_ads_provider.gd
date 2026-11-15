@@ -7,6 +7,18 @@ var interactive := false
 ## Testlerde bir sonraki ödüllü reklamı iptal ettirmek için (ödül verilmez).
 var cancel_next := false
 var ready_state := true
+## Testlerde onay rejimini seçmek için (varsayılan: bilgi penceresi gösterilen bölge).
+var regime := ConsentFlow.REGIME_NOTICE
+## Sağlayıcıya iletilenler (testler).
+var notice_answered := false
+
+
+func consent_regime() -> String:
+	return regime
+
+
+func set_notice_answered(answered: bool) -> void:
+	notice_answered = answered
 
 
 func is_rewarded_ready(_placement: String) -> bool:

@@ -144,7 +144,7 @@ func _collect() -> Dictionary:
 	config["debug_signing"] = keystore_path.to_lower().contains("debug") \
 		or OS.get_environment(ENV_USER) == "androiddebugkey"
 	var state: Dictionary = _read_json(STATE_PATH)
-	config["privacy_policy_url"] = String(state.get("privacy_policy_url", ""))
+	config["privacy_policy_url"] = String(ids.get("privacy_policy_url", ""))  # TEK kaynak: oyun içi bağlantıyla aynı (data/ads_ids.json)
 	config["last_uploaded_version_code"] = int(state.get("last_uploaded_version_code", 0))
 	return config
 

@@ -33,6 +33,21 @@ func request_consent() -> void:
 	consent_finished.emit.call_deferred()
 
 
+## Onay rejimi (ConsentFlow.REGIME_*). Taban sınıf: reklam SDK'sı yok, sorulacak bir şey yok.
+func consent_regime() -> String:
+	return ConsentFlow.REGIME_NONE
+
+
+## Oyunun kendi bilgi penceresi yanıtlandı mı (NOTICE rejiminde SDK ancak bundan sonra başlar). Açılışta kayıtlı karardan, sonra pencereden gelir.
+func set_notice_answered(_answered: bool) -> void:
+	pass
+
+
+## Yapılandırma sorunu kodu (AdsConfig.PROBLEM_*); boş = sorun yok. Sorun varken SDK başlamaz.
+func config_problem() -> String:
+	return ""
+
+
 ## Ayarlar > Gizlilik seçenekleri: sağlayıcının onay formunu yeniden açar (varsa). Açabildiyse true.
 func show_privacy_options() -> bool:
 	return false

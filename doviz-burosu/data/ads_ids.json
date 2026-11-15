@@ -1,5 +1,5 @@
 {
-	"_comment": "Reklam ve satın alma kimlikleri. AdMob uygulama/reklam birimi kimlikleri GİZLİ DEĞİLDİR (APK içinde görünür) ama yanlış kimlikle gerçek reklam açmak hesabı riske atar: gerçek kimlikler yalnızca kullanıcıdan gelir. mode=test iken Google'ın herkese açık TEST kimlikleri kullanılır (geliştirme ve debug APK). Yayın için: mode=real yap, real_* alanlarını doldur, `python3 tools/sync_ads_config.py` çalıştır (AdMob manifest kaydını üretir), sonra release export al. Gerçek kimlik boşsa mode=real sessizce test'e düşer.",
+	"_comment": "Reklam ve satın alma kimlikleri. AdMob uygulama/reklam birimi kimlikleri GİZLİ DEĞİLDİR (APK içinde görünür) ama yanlış kimlikle gerçek reklam açmak hesabı riske atar: gerçek kimlikler yalnızca kullanıcıdan gelir. mode=test iken Google'ın herkese açık TEST kimlikleri kullanılır (geliştirme ve debug APK). Yayın için: mode=real yap, real_* alanlarını doldur, `python3 tools/sync_ads_config.py` çalıştır (AdMob manifest kaydını üretir), sonra release export al. mode=real iken kimlik eksik ya da Google test kimliğiyse reklam SDK'sı HİÇ başlamaz ve hata yazılır (sessizce test'e DÜŞMEZ). privacy_policy_url: oyun içi bağlantının VE yayın kapısının okuduğu TEK adres (yer tutucu 'example.' içerir; yayın sürümünde yer tutucuyken düğme gizlenir; gerçek https:// adresini sahip yazar).",
 	"mode": "test",
 	"providers": {
 		"admob": true,
@@ -16,9 +16,13 @@
 	"ads": {
 		"max_ad_content_rating": "PG",
 		"reload_delay_seconds": 20,
-		"reload_max_delay_seconds": 240
+		"reload_max_delay_seconds": 240,
+		"show_timeout_seconds": 120
 	},
 	"billing": {
-		"product_ids": {"no_ads": "no_ads"}
-	}
+		"product_ids": {
+			"no_ads": "no_ads"
+		}
+	},
+	"privacy_policy_url": "https://example.com/doviz-burosu/privacy-placeholder"
 }

@@ -45,6 +45,9 @@ class FakeAdmob extends Node:
 	func update_consent_info() -> void:
 		calls.append("update_consent_info")
 
+	func reset_consent_info() -> void:
+		calls.append("reset_consent_info")
+
 	func get_consent_status() -> FakeConsent:
 		return consent
 
@@ -122,6 +125,7 @@ var admob: FakeAdmob
 var ads: AdMobAdsProvider
 var billing: FakeBilling
 var iap: PlayBillingIapProvider
+var logged: Array[String] = []
 
 
 func after_each() -> void:
@@ -138,18 +142,29 @@ func _make_ads(config: Dictionary = {}) -> void:
 	if is_instance_valid(admob):
 		admob.free()  # bir testte ikinci kez kurulursa öncekini bırak
 	admob = FakeAdmob.new()
+	logged.clear()
 	ads = AdMobAdsProvider.new(config, admob)
+	ads.problem_logger = func(message: String) -> void: logged.append(message)
 	ads.initialize()
 
 
 func _make_iap() -> void:
 	billing = FakeBilling.new()
 	iap = PlayBillingIapProvider.new(billing)
+	iap.schedule_reconnects = false  # gerçek zamanlayıcı kurma; yeniden bağlanma testte elle tetiklenir
 	iap.initialize(PackedStringArray(["no_ads"]))
+
+
+## Bağlanır ve ürün ayrıntılarını alır (satın almanın önkoşulu).
+func _connect_iap(price := "₺99,99") -> void:
+	billing.connected.emit()
+	billing.query_product_details_response.emit({"response_code": 0, "product_details": [
+		{"product_id": "no_ads", "one_time_purchase_offer_details_list": [{"formatted_price": price}]}]})
 
 
 func _ready_ads() -> void:
 	_make_ads()
+	ads.set_notice_answered(true)
 	ads.request_consent()
 	admob.consent_info_updated.emit()
 	admob.initialization_completed.emit(null)
@@ -161,10 +176,35 @@ func test_test_ids_are_used_unless_real_ids_are_complete() -> void:
 	var base := {"mode": "test", "android": {"real_app_id": "ca-app-pub-1~2", "real_rewarded_unit": "ca-app-pub-1/3", "real_interstitial_unit": "ca-app-pub-1/4"}}
 	assert_false(AdMobAdsProvider.new(base).uses_real_ids(), "mode=test")
 	var empty := {"mode": "real", "android": {"real_app_id": "", "real_rewarded_unit": "x", "real_interstitial_unit": "y"}}
-	assert_false(AdMobAdsProvider.new(empty).uses_real_ids(), "boş gerçek kimlik sessizce test'e düşer")
+	assert_false(AdMobAdsProvider.new(empty).uses_real_ids())
+	assert_eq(AdMobAdsProvider.new(empty).config_problem(), AdsConfig.PROBLEM_REAL_INCOMPLETE, "boş gerçek kimlik artık sessizce test'e DÜŞMEZ, sorun olarak bildirilir")
 	var real := base.duplicate(true)
 	real["mode"] = "real"
 	assert_true(AdMobAdsProvider.new(real).uses_real_ids())
+	assert_eq(AdMobAdsProvider.new(real).config_problem(), "")
+
+
+func test_real_mode_with_missing_or_test_ids_never_starts_the_sdk() -> void:
+	var test_ids := {"test_app_id": "t~1", "test_rewarded_unit": "t/1", "test_interstitial_unit": "t/2"}
+	var incomplete := {"mode": "real", "android": test_ids.merged({"real_app_id": "", "real_rewarded_unit": "", "real_interstitial_unit": ""})}
+	_make_ads(incomplete)
+	assert_eq(ads.config_problem(), AdsConfig.PROBLEM_REAL_INCOMPLETE)
+	assert_eq(logged.size(), 1, "yüksek sesle hata yazılır")
+	assert_true("test'e düşülmedi" in logged[0] or "test kimliğine düşülmedi" in logged[0])
+	var finished := [0]
+	ads.consent_finished.connect(func() -> void: finished[0] += 1)
+	ads.set_notice_answered(true)
+	ads.request_consent()
+	await tree.process_frame
+	assert_eq(finished[0], 1, "onay bekleyen kalmaz")
+	assert_eq(admob.calls, [], "SDK'ya hiçbir çağrı yapılmaz (ne onay ne başlatma ne yükleme)")
+	assert_eq(ads.consent_regime(), ConsentFlow.REGIME_NONE)
+	assert_false(ads.is_rewarded_ready("x"))
+	var leaked := incomplete.duplicate(true)
+	leaked["android"]["real_app_id"] = "ca-app-pub-3940256099942544~3347511713"
+	leaked["android"]["real_rewarded_unit"] = "ca-app-pub-1111111111111111/2222222222"
+	leaked["android"]["real_interstitial_unit"] = "ca-app-pub-1111111111111111/3333333333"
+	assert_eq(AdMobAdsProvider.new(leaked).config_problem(), AdsConfig.PROBLEM_REAL_IS_TEST, "real alanında Google test kimliği = hata")
 
 
 func test_shipped_config_is_test_mode_with_google_test_ids() -> void:
@@ -194,6 +234,7 @@ func test_provider_configures_the_plugin_node() -> void:
 
 func test_ads_start_only_after_consent_is_resolved() -> void:
 	_make_ads()
+	ads.set_notice_answered(true)
 	var finished := [0]
 	ads.consent_finished.connect(func() -> void: finished[0] += 1)
 	ads.request_consent()
@@ -204,7 +245,7 @@ func test_ads_start_only_after_consent_is_resolved() -> void:
 
 
 func test_required_consent_shows_the_form_before_starting() -> void:
-	_make_ads()
+	_make_ads()  # UMP rejiminde oyunun kendi penceresi beklenmez: form bitince SDK başlar
 	admob.consent.status = "REQUIRED"
 	admob.form_available = true
 	ads.request_consent()
@@ -219,6 +260,7 @@ func test_required_consent_shows_the_form_before_starting() -> void:
 
 func test_consent_failures_do_not_block_the_game() -> void:
 	_make_ads()
+	ads.set_notice_answered(true)
 	ads.request_consent()
 	admob.consent_info_update_failed.emit(null)
 	assert_true("initialize" in admob.calls)
@@ -231,8 +273,46 @@ func test_consent_failures_do_not_block_the_game() -> void:
 	assert_true("initialize" in admob.calls)
 
 
+func test_outside_ump_regions_the_sdk_waits_for_the_games_own_notice() -> void:
+	_make_ads()
+	var finished := [0]
+	ads.consent_finished.connect(func() -> void: finished[0] += 1)
+	ads.request_consent()
+	admob.consent_info_updated.emit()  # NOT_REQUIRED: UMP formu yok
+	assert_eq(finished[0], 1)
+	assert_eq(ads.consent_regime(), ConsentFlow.REGIME_NOTICE)
+	assert_false("initialize" in admob.calls, "bilgi penceresi yanıtlanmadan SDK (ve reklam isteği) yok")
+	ads.set_notice_answered(true)
+	assert_eq(admob.calls.count("initialize"), 1)
+	ads.set_notice_answered(true)
+	assert_eq(admob.calls.count("initialize"), 1, "SDK bir kez başlar")
+
+
+func test_ump_regions_show_only_the_ump_form_and_ignore_the_games_own_notice() -> void:
+	_make_ads()
+	admob.consent.status = "REQUIRED"
+	admob.form_available = true
+	ads.request_consent()
+	admob.consent_info_updated.emit()
+	admob.consent_form_loaded.emit()
+	admob.consent_form_dismissed.emit(null)
+	assert_eq(ads.consent_regime(), ConsentFlow.REGIME_FORM)
+	assert_true("initialize" in admob.calls, "yalnız UMP yeterli: oyun penceresi beklenmez")
+	assert_true(ads.show_privacy_options(), "ayarlardan UMP yeniden açılabilir")
+	assert_eq(admob.calls.slice(-2), ["reset_consent_info", "update_consent_info"])
+
+
+func test_a_failed_consent_lookup_falls_back_to_the_notice_regime() -> void:
+	_make_ads()
+	ads.request_consent()
+	admob.consent_info_update_failed.emit(null)
+	assert_eq(ads.consent_regime(), ConsentFlow.REGIME_NOTICE)
+	assert_false(ads.show_privacy_options(), "UMP yok: gizlilik seçenekleri oyunun kendi penceresinden")
+
+
 func test_personalization_follows_the_users_choice() -> void:
 	_make_ads()
+	ads.set_notice_answered(true)
 	ads.set_personalization(false)
 	assert_eq(admob.calls.back(), "personalization:2", "reddedince kişiselleştirilmemiş reklam")
 	ads.request_consent()
@@ -243,10 +323,13 @@ func test_personalization_follows_the_users_choice() -> void:
 	assert_eq(admob.calls.slice(-2), ["personalization:1", "request_configuration"], "başlatıldıktan sonra SDK'ya yeniden uygulanır")
 
 
-func test_privacy_options_reopen_the_consent_flow() -> void:
+func test_umps_decision_is_not_overridden_by_the_games_personalization_setting() -> void:
 	_make_ads()
-	assert_true(ads.show_privacy_options())
-	assert_eq(admob.calls, ["update_consent_info"])
+	admob.consent.status = "OBTAINED"
+	ads.set_personalization(false)
+	ads.request_consent()
+	admob.consent_info_updated.emit()
+	assert_eq(admob.calls.filter(func(c: String) -> bool: return c.begins_with("personalization")).back(), "personalization:1")
 
 
 # --- AdMob: ödüllü ----------------------------------------------------------------------------------
@@ -377,7 +460,7 @@ func test_price_text_comes_from_the_store_wherever_it_is_nested() -> void:
 
 func test_a_purchase_is_acknowledged_before_the_reward_is_given() -> void:
 	_make_iap()
-	billing.connected.emit()
+	_connect_iap()
 	var results: Array = []
 	iap.purchase_finished.connect(func(id: String, ok: bool, error: String) -> void: results.append([id, ok, error]))
 	iap.purchase("no_ads")
@@ -391,7 +474,7 @@ func test_a_purchase_is_acknowledged_before_the_reward_is_given() -> void:
 
 func test_an_already_acknowledged_purchase_completes_at_once() -> void:
 	_make_iap()
-	billing.connected.emit()
+	_connect_iap()
 	var results: Array = []
 	iap.purchase_finished.connect(func(id: String, ok: bool, _e: String) -> void: results.append([id, ok]))
 	iap.purchase("no_ads")
@@ -402,18 +485,18 @@ func test_an_already_acknowledged_purchase_completes_at_once() -> void:
 
 func test_pending_purchases_give_nothing() -> void:
 	_make_iap()
-	billing.connected.emit()
+	_connect_iap()
 	var results: Array = []
 	iap.purchase_finished.connect(func(id: String, ok: bool, _e: String) -> void: results.append([id, ok]))
 	iap.purchase("no_ads")
 	billing.on_purchase_updated.emit(_purchase(2))
-	assert_eq(results, [])
+	assert_eq(results, [["no_ads", false]], "sahiplik/ödül yok; 'beklemede' başarısız olarak bildirilir")
 	assert_false("ack:tok-1" in billing.calls, "PENDING onaylanmaz")
 
 
 func test_cancelled_and_failed_purchases_report_failure() -> void:
 	_make_iap()
-	billing.connected.emit()
+	_connect_iap()
 	var results: Array = []
 	iap.purchase_finished.connect(func(id: String, ok: bool, error: String) -> void: results.append([id, ok, error]))
 	iap.purchase("no_ads")
@@ -426,7 +509,7 @@ func test_cancelled_and_failed_purchases_report_failure() -> void:
 
 func test_failed_acknowledge_is_reported_as_failure() -> void:
 	_make_iap()
-	billing.connected.emit()
+	_connect_iap()
 	var results: Array = []
 	iap.purchase_finished.connect(func(id: String, ok: bool, error: String) -> void: results.append([id, ok, error]))
 	iap.purchase("no_ads")
@@ -437,7 +520,7 @@ func test_failed_acknowledge_is_reported_as_failure() -> void:
 
 func test_item_already_owned_counts_as_success() -> void:
 	_make_iap()
-	billing.connected.emit()
+	_connect_iap()
 	var results: Array = []
 	iap.purchase_finished.connect(func(id: String, ok: bool, _e: String) -> void: results.append([id, ok]))
 	iap.purchase("no_ads")
@@ -459,7 +542,7 @@ func test_owned_items_are_restored_on_startup_and_unacknowledged_ones_get_acknow
 	_make_iap()
 	var restored: Array = []
 	iap.purchases_restored.connect(func(ids: PackedStringArray) -> void: restored.append(ids))
-	billing.connected.emit()
+	_connect_iap()
 	billing.query_purchases_response.emit(_purchase(1, false, "tok-9"))
 	assert_eq(restored.size(), 1)
 	assert_true("no_ads" in restored[0], "açılışta sahiplik bildirilir")
@@ -468,16 +551,19 @@ func test_owned_items_are_restored_on_startup_and_unacknowledged_ones_get_acknow
 
 func test_restore_reports_nothing_for_pending_or_failed_queries() -> void:
 	_make_iap()
-	billing.connected.emit()
+	_connect_iap()
 	billing.query_purchases_response.emit({"response_code": 0, "purchases": []})
 	var restored: Array = []
 	iap.purchases_restored.connect(func(ids: PackedStringArray) -> void: restored.append(ids))
 	iap.restore_purchases()
 	billing.query_purchases_response.emit(_purchase(2))
 	assert_true(restored[0].is_empty(), "beklemedeki satın alma sahiplik sayılmaz")
+	var failures: Array = []
+	iap.restore_failed.connect(func(reason: String) -> void: failures.append(reason))
 	iap.restore_purchases()
 	billing.query_purchases_response.emit({"response_code": 6, "purchases": []})
-	assert_true(restored[1].is_empty())
+	assert_eq(restored.size(), 1, "hatalı sorgu 'hiçbir şey yok' demez")
+	assert_eq(failures, ["billing_error_6"])
 
 
 func test_restore_before_connection_is_answered_after_connecting() -> void:
@@ -486,10 +572,101 @@ func test_restore_before_connection_is_answered_after_connecting() -> void:
 	iap.purchases_restored.connect(func(ids: PackedStringArray) -> void: restored.append(ids))
 	iap.restore_purchases()
 	assert_eq(restored.size(), 0)
-	billing.connected.emit()
+	_connect_iap()
 	billing.query_purchases_response.emit(_purchase(1, true))
 	assert_eq(restored.size(), 1)
 	assert_true("no_ads" in restored[0])
+
+
+func test_purchase_waits_for_product_details_before_starting() -> void:
+	_make_iap()
+	billing.connected.emit()
+	var results: Array = []
+	iap.purchase_finished.connect(func(id: String, ok: bool, error: String) -> void: results.append([id, ok, error]))
+	iap.purchase("no_ads")
+	assert_false("purchase:no_ads" in billing.calls, "ayrıntısız satın alma Play'de DEVELOPER_ERROR verir: bekletilir")
+	billing.query_product_details_response.emit({"response_code": 0, "product_details": [{"product_id": "no_ads"}]})
+	assert_eq(billing.calls.back(), "purchase:no_ads")
+	assert_eq(results, [])
+
+
+func test_a_product_missing_from_the_store_fails_cleanly() -> void:
+	_make_iap()
+	billing.connected.emit()
+	billing.query_product_details_response.emit({"response_code": 0, "product_details": [], "unfetched_products": ["no_ads"]})
+	var results: Array = []
+	iap.purchase_finished.connect(func(id: String, ok: bool, error: String) -> void: results.append([id, ok, error]))
+	iap.purchase("no_ads")
+	await tree.process_frame
+	assert_eq(results, [["no_ads", false, "item_unavailable"]])
+	assert_false("purchase:no_ads" in billing.calls)
+
+
+func test_pending_purchase_reports_pending_and_a_later_confirmation_grants() -> void:
+	_make_iap()
+	_connect_iap()
+	var results: Array = []
+	iap.purchase_finished.connect(func(id: String, ok: bool, error: String) -> void: results.append([id, ok, error]))
+	iap.purchase("no_ads")
+	billing.on_purchase_updated.emit(_purchase(2))
+	assert_eq(results, [["no_ads", false, "pending"]], "ödül yok ama oyuncuya 'beklemede' denir")
+	iap.purchase("no_ads")  # takılı kalmaz: yeni deneme mümkün
+	assert_eq(billing.calls.back(), "purchase:no_ads")
+	# Play ödemeyi sonradan tamamlar (uygulama o sırada başka ekranda olabilir)
+	billing.on_purchase_updated.emit(_purchase(1, false, "tok-late"))
+	billing.acknowledge_purchase_response.emit({"response_code": 0, "token": "tok-late"})
+	assert_eq(results.back(), ["no_ads", true, ""])
+
+
+func test_late_connection_announces_availability_and_price() -> void:
+	_make_iap()
+	var changes := [0]
+	iap.availability_changed.connect(func() -> void: changes[0] += 1)
+	assert_false(iap.is_available())
+	_connect_iap("$2,99")
+	assert_true(iap.is_available())
+	assert_true(changes[0] >= 1, "Market ekranı yenilenir")
+	assert_eq(iap.get_price_text("no_ads"), "$2,99", "3.3.0 yerleşimi: one_time_purchase_offer_details_list[0].formatted_price")
+
+
+func test_a_dropped_connection_reconnects_with_backoff() -> void:
+	_make_iap()
+	_connect_iap()
+	var changes := [0]
+	iap.availability_changed.connect(func() -> void: changes[0] += 1)
+	billing.disconnected.emit()
+	assert_false(iap.is_available())
+	assert_eq(changes[0], 1)
+	assert_true(iap.reconnect_pending)
+	assert_eq([iap.reconnect_delay(1), iap.reconnect_delay(2), iap.reconnect_delay(3), iap.reconnect_delay(9)], [2.0, 4.0, 8.0, 60.0])
+	var starts := billing.calls.count("start_connection")
+	iap._reconnect_now()
+	assert_eq(billing.calls.count("start_connection"), starts + 1)
+	iap._reconnect_now()
+	assert_eq(billing.calls.count("start_connection"), starts + 1, "bağlanma sürerken ikinci başlatma yok")
+	billing.connected.emit()
+	assert_true(iap.is_available())
+	assert_eq(iap.reconnect_attempts, 0)
+
+
+func test_connect_error_fails_a_waiting_restore_and_a_purchase_cleanly() -> void:
+	_make_iap()
+	var failures: Array = []
+	iap.restore_failed.connect(func(reason: String) -> void: failures.append(reason))
+	iap.restore_purchases()
+	billing.connect_error.emit(3, "billing unavailable")
+	await tree.process_frame
+	assert_eq(failures, ["store_unavailable"], "'geri yüklenecek yok' ile karıştırılmaz")
+	assert_true(iap.reconnect_pending)
+
+
+func test_a_purchase_before_the_store_is_ready_asks_for_a_reconnect() -> void:
+	_make_iap()
+	billing.connect_error.emit(3, "")
+	var starts := billing.calls.count("start_connection")
+	iap.purchase("no_ads")
+	await tree.process_frame
+	assert_eq(billing.calls.count("start_connection"), starts + 1)
 
 
 # --- Sağlayıcı seçimi --------------------------------------------------------------------------------------
