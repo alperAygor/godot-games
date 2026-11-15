@@ -1,0 +1,8 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://assets/materials/shaders/highlight.gdshader" id="1"]
+
+[resource]
+resource_name = "highlight"
+shader = ExtResource("1")
+shader_parameter/tint = Color(1.0000, 0.9529, 0.7686, 1.0000)

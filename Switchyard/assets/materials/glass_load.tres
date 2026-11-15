@@ -1,0 +1,10 @@
+[gd_resource type="StandardMaterial3D" load_steps=1 format=3]
+
+[resource]
+resource_name = "glass_load"
+transparency = 1
+cull_mode = 2
+albedo_color = Color(0.7490, 0.8902, 0.9020, 0.4200)
+metallic_specular = 0.9
+roughness = 0.05
+metallic = 0.0
