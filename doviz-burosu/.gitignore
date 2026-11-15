@@ -1,7 +1,18 @@
 # Godot 4+ cache ve import çıktısı
 .godot/
-# Gradle build kullanılırsa oluşan Android kaynak klasörü
-/android/
+# Android Gradle şablonu (Godot 4.7.2.stable): kaynaklar depoda, derleme çıktısı/büyük kitaplıklar dışarıda.
+# Temiz klonda geri kurmak: docs/store/RELEASE_STATUS.md ("Şablonu yeniden kurma").
+/android/build/libs/
+/android/build/build/
+/android/build/.gradle/
+/android/build/local.properties
+/android/build/assetPackInstallTime/build/
+/android/build/assetPackInstallTime/src/
+/android/build/res/mipmap*/
+/android/build/res/drawable/splash_icon.webp
+/android/build/src/debug/
+/android/build/res/values*/godot_project_name_string.xml
+/android/.gradle/
 
 # Export ve araç çıktıları
 /build/*
