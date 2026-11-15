@@ -4,7 +4,7 @@ extends TestCase
 const RunStateScript = preload("res://scripts/core/run_state.gd")
 
 func _defs() -> Dictionary:
-	return JSON.parse_string(FileAccess.get_file_as_string("res://data/balance.json"))
+	return BalanceData.load_dir()["data"]
 
 func _run(seed_value: int = 11) -> RunState:
 	return RunStateScript.new(_defs(), seed_value)

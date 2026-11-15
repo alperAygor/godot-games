@@ -1,0 +1,133 @@
+{
+  "combat": {
+    "_comment": "Eskiden scripts/ui/game3d.gd içine gömülü olan oynanış sabitleri (F2 ile taşındı, değerler birebir aynı). Kod bunları açılışta GameTuning'e (scripts/game/game_tuning.gd) bir kez okur; her alan zorunludur ve doğrulanır. Hasar çarpanları oyuncu/düşman/boss temel hasarına göredir. Not: tests/sim/run_sim.gd bu formüllerin kopyasını taşır; burada sayı değiştiren, simülasyonu da güncellemeli.",
+    "nova": {
+      "wave_scale": 0.12,
+      "clear_radius_mult": 1.3,
+      "invuln": 0.6,
+      "boss_kill_gain": 50,
+      "milestone_gain": 10,
+      "elite_kill_mult": 3,
+      "doom_radius_mult": 1.5,
+      "doom_aftershocks": 3,
+      "doom_delay": 0.35,
+      "doom_delay_step": 0.3,
+      "doom_damage": 0.6,
+      "doom_min": 0.35,
+      "doom_max": 0.8,
+      "aftershock_radius": 150
+    },
+    "revive": {
+      "hp_ratio": 0.5,
+      "invuln": 2.2,
+      "blast_radius": 420,
+      "blast_damage": 80
+    },
+    "run": {
+      "base_rerolls": 2,
+      "card_invuln": 0.8,
+      "pickup_radius": 34,
+      "magnet_pull": 135,
+      "harvest_shield_at": 50,
+      "wave_clear_heal": 8,
+      "map_clear_heal": 0.25,
+      "hunt_after": 35,
+      "hunt_every": 15
+    },
+    "hits": {
+      "knockback": 90,
+      "heavy_knockback": 26,
+      "area_knockback": 240,
+      "chain_range": 240,
+      "chain_damage": 0.5,
+      "storm_jumps": 2,
+      "storm_chain_damage": 1.0,
+      "dash_reach": 22,
+      "dash_hit_cd": 0.4,
+      "dash_knockback": 260,
+      "blitz_mult": 2,
+      "touch_cd": 0.6,
+      "thorns_knockback": 220,
+      "fortress_thorns_mult": 3,
+      "boss_charge_contact": 1.4,
+      "bomber_area_damage": 1.6
+    },
+    "explosive": {
+      "radius": 85,
+      "radius_per_level": 22,
+      "damage": 0.9,
+      "damage_per_level": 0.5
+    },
+    "tank_split": {
+      "count": 2,
+      "offset": 34,
+      "delay": 0.35
+    },
+    "fortress": {
+      "bullets": 12,
+      "damage": 1.4,
+      "speed": 760,
+      "life": 0.55,
+      "size": 1.1,
+      "pierce": 1
+    },
+    "drones": {
+      "orbit": 80,
+      "spin": 2.4,
+      "range": 700,
+      "boss_range": 800,
+      "cooldown": 0.55,
+      "hive_cooldown": 0.28,
+      "bullet_speed": 900,
+      "damage": 0.55,
+      "life": 0.75,
+      "size": 0.8
+    },
+    "weapons": {
+      "scatter_pellets_per_extra": 2,
+      "scatter_arc_per_extra": 0.1,
+      "scatter_recoil": 120,
+      "rail_offset": 18,
+      "rail_recoil": 160,
+      "rocket_offset": 0.42,
+      "blaster_offset": 0.1,
+      "blaster_recoil_mult": 0.3
+    },
+    "enemy_bullets": {
+      "damage": 0.8,
+      "life": 3.2,
+      "sniper_size": 1.25
+    },
+    "boss_attacks": {
+      "lap_hp": 0.25,
+      "bullet_life": 4.2,
+      "bullet_size": 1.45,
+      "radial_speed": 250,
+      "radial_damage": 0.5,
+      "aimed_shots": 3,
+      "aimed_spread": 0.13,
+      "aimed_speed": 470,
+      "aimed_damage": 0.6,
+      "spiral_speed": 235,
+      "spiral_damage": 0.45,
+      "zone_damage": 0.9,
+      "zone_burst_speed": 210,
+      "zone_burst_damage": 0.45,
+      "ring_damage": 0.5,
+      "fan_damage": 0.45,
+      "leap_damage": 1.2,
+      "leap_burst": 14,
+      "blink_bullets": 10,
+      "blink_speed": 180,
+      "blink_damage": 0.4
+    },
+    "auto_aim": {
+      "retarget": 0.12,
+      "keep_bias": 0.8,
+      "priority_bias": 0.85,
+      "blocked_penalty": 2.2,
+      "boss_range_mult": 1.25,
+      "boss_bias": 1.15
+    }
+  }
+}

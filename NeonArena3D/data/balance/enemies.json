@@ -1,0 +1,105 @@
+{
+  "enemies": {
+    "chaser": {
+      "hp": 22,
+      "speed": 132,
+      "radius": 15,
+      "damage": 12,
+      "points": 10,
+      "color": "#ff3d6e",
+      "turn": 3.2,
+      "weight": 1,
+      "unlock": 1
+    },
+    "shooter": {
+      "hp": 18,
+      "speed": 96,
+      "radius": 14,
+      "damage": 10,
+      "points": 16,
+      "color": "#ffb02e",
+      "turn": 2.4,
+      "keep_distance": 280,
+      "fire_interval": 1.9,
+      "bullet_speed": 330,
+      "weight": 0.55,
+      "unlock": 2
+    },
+    "swarmer": {
+      "hp": 10,
+      "speed": 200,
+      "radius": 10,
+      "damage": 6,
+      "points": 6,
+      "color": "#ff8a2e",
+      "turn": 4.6,
+      "weight": 0.75,
+      "unlock": 3,
+      "pack": 3
+    },
+    "orbiter": {
+      "hp": 34,
+      "speed": 158,
+      "radius": 16,
+      "damage": 10,
+      "points": 18,
+      "color": "#b98cff",
+      "turn": 3,
+      "orbit_radius": 240,
+      "fire_interval": 1.6,
+      "bullet_speed": 260,
+      "weight": 0.35,
+      "unlock": 4
+    },
+    "tank": {
+      "hp": 96,
+      "speed": 62,
+      "radius": 27,
+      "damage": 22,
+      "points": 45,
+      "color": "#a45cff",
+      "turn": 1.4,
+      "weight": 0.25,
+      "unlock": 5
+    },
+    "sniper": {
+      "hp": 26,
+      "speed": 76,
+      "radius": 14,
+      "damage": 22,
+      "points": 22,
+      "color": "#29ffb3",
+      "turn": 2.2,
+      "keep_distance": 470,
+      "charge_time": 1.1,
+      "fire_interval": 2.8,
+      "bullet_speed": 760,
+      "weight": 0.3,
+      "unlock": 6
+    },
+    "bomber": {
+      "hp": 44,
+      "speed": 106,
+      "radius": 18,
+      "damage": 26,
+      "points": 25,
+      "color": "#ff4b2b",
+      "turn": 2.2,
+      "explode_radius": 135,
+      "weight": 0.3,
+      "unlock": 7,
+      "fuse_range": 105,
+      "fuse_time": 0.55
+    }
+  },
+  "elite": {
+    "from_wave": 4,
+    "chance": 0.05,
+    "chance_per_wave": 0.006,
+    "chance_max": 0.16,
+    "hp_mult": 3.2,
+    "damage_mult": 1.3,
+    "scale": 1.32,
+    "points_mult": 3
+  }
+}

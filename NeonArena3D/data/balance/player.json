@@ -1,0 +1,25 @@
+{
+  "player": {
+    "max_health": 100,
+    "speed": 360,
+    "accel": 2600,
+    "friction": 9,
+    "radius": 13,
+    "fire_interval": 0.135,
+    "damage": 12,
+    "bullet_speed": 980,
+    "bullet_life": 0.85,
+    "dash_speed": 1250,
+    "dash_time": 0.15,
+    "dash_cooldown": 1.05,
+    "hurt_invuln": 0.7,
+    "spread": 0.035,
+    "knockback": 90,
+    "nova_cost": 100,
+    "nova_per_kill": 4.5,
+    "nova_radius": 340,
+    "nova_damage": 70,
+    "shield_regen_time": 18,
+    "auto_aim_range": 760
+  }
+}
