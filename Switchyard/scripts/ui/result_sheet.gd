@@ -1,127 +1,88 @@
 class_name ResultSheet
 extends Sheet
 
-## Kazanma ve kaybetme sayfası. Game yalnız `ResultSheet.win(...)` / `.lose(...)` çağırır ve
-## sinyallere bağlanır; ödül/reklam mantığı burada değildir (yalnız gösterir).
-## Kazanma: kupa diski, başlık, sayarak artan jeton ödülü, ikincil "2×" (ödüllü reklam), büyük "Devam".
-## Kaybetme: sakin disk, başlık, birincil "Devam et" (YALNIZ ödüllü reklam), ikincil "Tekrar dene".
+## Seviye sonucu sayfası: 1-3 yıldız, başlık, hamle ve par, "yeni rekor" notu; altta tek büyük birincil
+## (Sonraki; son seviyede Seviyeler) ve iki sakin ikincil (Tekrar, Seviyeler). Yalnız gösterir;
+## ilerleme/reklam mantığı Game sahnesindedir.
 
-signal continue_pressed
-signal double_pressed
-signal revive_pressed
+signal next_pressed
 signal retry_pressed
+signal levels_pressed
 
+const STAR_PIXELS: float = 120.0
+const STAR_GAP: int = UiTokens.SPACE_LG
 const TITLE_SIZE: int = UiKit.TITLE_SIZE
-const REWARD_SIZE: int = UiKit.TYPE_DISPLAY
-const REWARD_ICON: float = UiKit.ICON_LG
 const MAIN_HEIGHT: float = UiKit.HEIGHT_PRIMARY
-const DOUBLE_WIDTH: float = 300.0
 const BLOCK_GAP: float = UiKit.SPACE_LG
-const COUNT_DELAY: float = 0.5
-const COUNT_SECONDS: float = 0.9
-const REWARD_ROW_GAP: int = UiTokens.SPACE_MD
+const ROW_GAP: int = UiTokens.SPACE_MD
 const WIN_SOUND: String = "win"
-const COIN_SOUND: String = "coin"
+const STAR_SOUND: String = "ui_soft"
+const STAR_PITCH_BASE: float = 1.0
+const STAR_PITCH_STEP: float = 0.18
+const STAR_VOLUME_DB: float = -2.0
 
-var _reward_label: Label = null
-var _reward_shown: float = 0.0
-var _double_button: Button = null
-var _count_tween: Tween = null
+var _stars: UiStarRow = null
 
 
-## Kazanma sayfası. `reward` ÖDENEN jetondur; `can_double` ödüllü reklam sunulabiliyorsa true.
-static func win(parent: Node, reward: int, can_double: bool) -> ResultSheet:
+## info: { stars:int, moves:int, par:int, new_best:bool, has_next:bool }
+static func solved(parent: Node, info: Dictionary) -> ResultSheet:
 	var sheet: ResultSheet = ResultSheet.new()
 	sheet.build(parent, false)
-	sheet._fill_win(reward, can_double)
+	sheet._fill(info)
 	sheet.play_intro()
 	return sheet
 
 
-## Kaybetme sayfası. `can_revive` false ise (bu turda kullanıldı / reklam yok) "Tekrar dene" birincil olur.
-static func lose(parent: Node, can_revive: bool) -> ResultSheet:
-	var sheet: ResultSheet = ResultSheet.new()
-	sheet.build(parent, false)
-	sheet._fill_lose(can_revive)
-	sheet.play_intro()
-	return sheet
+func stars_shown() -> int:
+	return _stars.earned() if _stars != null else 0
 
 
-## "2×" sonrası: ödül toplamına yumuşakça sayar ve ikinci düğmeyi kaldırır.
-func show_doubled(total: int) -> void:
-	if _double_button != null:
-		_double_button.visible = false
-	_count_reward(total, 0.0)
-
-
-func reward_text() -> String:
-	return _reward_label.text if _reward_label != null else ""
-
-
-func _fill_win(reward: int, can_double: bool) -> void:
+func _fill(info: Dictionary) -> void:
 	var column: VBoxContainer = content()
-	column.add_child(UiKit.centered_disc("lucide/trophy", UiKit.COIN_SOFT, UiKit.GOLD))
+	var earned: int = int(info.get("stars", 1))
+	_stars = UiStarRow.new()
+	_stars.name = "Stars"
+	_stars.setup(earned, STAR_PIXELS, STAR_GAP)
+	column.add_child(_stars)
 	column.add_child(UiKit.spacer(BLOCK_GAP))
-	column.add_child(UiKit.label(UiStrings.win_title(), TITLE_SIZE))
-	column.add_child(UiKit.spacer(UiKit.SPACE_SM))
-	var reward_row: HBoxContainer = HBoxContainer.new()
-	reward_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	reward_row.add_theme_constant_override("separation", REWARD_ROW_GAP)
-	reward_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	column.add_child(reward_row)
-	var coin: TextureRect = UiKit.tinted_icon("lucide/coins", REWARD_ICON, UiKit.GOLD)
-	coin.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	reward_row.add_child(coin)
-	# Sayarken basamaklar oynamasın diye sabit genişlikli rakamlar.
-	_reward_label = UiKit.numeric_label(UiStrings.REWARD_FORMAT % 0, REWARD_SIZE)
-	reward_row.add_child(_reward_label)
-	_count_reward(reward, COUNT_DELAY)
-	column.add_child(UiKit.spacer(UiKit.SPACE_XL))
-	if can_double:
-		_double_button = UiKit.button(UiStrings.WIN_DOUBLE, &"SecondaryButton", "lucide/video", UiKit.MIN_TOUCH)
-		_double_button.custom_minimum_size.x = DOUBLE_WIDTH
-		_double_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		_double_button.name = "DoubleButton"
-		_double_button.pressed.connect(double_pressed.emit)
-		column.add_child(_double_button)
-		# Reklam düğmesi ile "Devam" arasında en az 42 px (16 dp) boşluk: yanlışlıkla basılmasın.
-		column.add_child(UiKit.spacer(UiKit.AD_BUTTON_GAP))
-	var next: Button = UiKit.button(UiStrings.win_continue(), &"", "", MAIN_HEIGHT)
-	next.name = "ContinueButton"
-	next.pressed.connect(continue_pressed.emit)
-	column.add_child(next)
-	AudioService.play(WIN_SOUND)
-
-
-func _fill_lose(can_revive: bool) -> void:
-	var column: VBoxContainer = content()
-	column.add_child(UiKit.centered_disc("lucide/wind", UiKit.ACCENT_SOFT, UiKit.TEXT_MUTED))
-	column.add_child(UiKit.spacer(BLOCK_GAP))
-	column.add_child(UiKit.label(UiStrings.lose_title(), TITLE_SIZE))
+	var title: Label = UiKit.wrap_label(UiStrings.result_title(earned), TITLE_SIZE)
+	title.name = "Title"
+	column.add_child(title)
+	column.add_child(UiKit.spacer(UiKit.SPACE_XS))
+	var detail: Label = UiKit.label(UiStrings.result_moves(int(info.get("moves", 0)), int(info.get("par", 0))),
+		UiKit.TYPE_BODY, UiKit.TEXT_MUTED)
+	detail.name = "Detail"
+	column.add_child(detail)
+	if bool(info.get("new_best", false)):
+		var best: Label = UiKit.label(UiStrings.result_best(), UiKit.TYPE_CAPTION, UiKit.ACCENT)
+		best.name = "NewBest"
+		column.add_child(best)
 	column.add_child(UiKit.spacer(UiKit.SPACE_XXL))
-	if can_revive:
-		var revive: Button = UiKit.button(UiStrings.lose_revive(), &"", "lucide/video", MAIN_HEIGHT)
-		revive.name = "ReviveButton"
-		revive.pressed.connect(revive_pressed.emit)
-		column.add_child(revive)
-		column.add_child(UiKit.spacer(UiKit.AD_BUTTON_GAP))
-	var retry: Button = UiKit.button(UiStrings.lose_retry(), &"SecondaryButton" if can_revive else &"",
-		"lucide/rotate-ccw", MAIN_HEIGHT if not can_revive else UiKit.MIN_TOUCH)
+	var has_next: bool = bool(info.get("has_next", false))
+	var main: Button = UiKit.button(UiStrings.result_next() if has_next else UiStrings.levels(), &"",
+		"lucide/chevron-right" if has_next else "lucide/grid-2x2", MAIN_HEIGHT)
+	main.name = "NextButton"
+	main.pressed.connect((next_pressed if has_next else levels_pressed).emit)
+	column.add_child(main)
+	column.add_child(UiKit.spacer(UiKit.SPACE_MD))
+	var row: HBoxContainer = HBoxContainer.new()
+	row.add_theme_constant_override("separation", ROW_GAP)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(row)
+	var retry: Button = UiKit.button(UiStrings.result_retry(), &"SecondaryButton", "lucide/rotate-ccw", UiKit.HEIGHT_SECONDARY)
 	retry.name = "RetryButton"
+	retry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	retry.pressed.connect(retry_pressed.emit)
-	column.add_child(retry)
+	row.add_child(retry)
+	if has_next:
+		var levels: Button = UiKit.button(UiStrings.levels(), &"SecondaryButton", "lucide/grid-2x2", UiKit.HEIGHT_SECONDARY)
+		levels.name = "LevelsButton"
+		levels.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		levels.pressed.connect(levels_pressed.emit)
+		row.add_child(levels)
+	AudioService.play(WIN_SOUND)
+	_stars.pop_in(_play_star)
 
 
-func _count_reward(total: int, delay: float) -> void:
-	if _count_tween != null and _count_tween.is_valid():
-		_count_tween.kill()
-	_count_tween = create_tween()
-	_count_tween.tween_interval(delay)
-	_count_tween.tween_callback(AudioService.play.bind(COIN_SOUND))
-	_count_tween.tween_method(_set_reward_shown, _reward_shown, float(total), COUNT_SECONDS)\
-		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-
-
-func _set_reward_shown(value: float) -> void:
-	_reward_shown = value
-	_reward_label.text = UiStrings.REWARD_FORMAT % roundi(value)
+func _play_star(index: int) -> void:
+	AudioService.play_pitched(STAR_SOUND, STAR_PITCH_BASE + STAR_PITCH_STEP * float(index), STAR_VOLUME_DB)

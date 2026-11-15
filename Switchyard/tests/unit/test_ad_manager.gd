@@ -46,13 +46,17 @@ func test_placement_enum_matches_provider_constant() -> void:
 
 func test_every_placement_has_key_and_limits_in_data() -> void:
 	var limits: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/ads.json")) as Dictionary
-	for placement_name: String in ["CONTINUE", "DOUBLE_COINS", "INTERSTITIAL"]:
+	for placement_name: String in ["HINT", "SKIP", "INTERSTITIAL"]:
 		assert_true(limits.has(placement_name), "ads.json: %s" % placement_name)
 		assert_true(AdManager.PLACEMENT_KEYS.values().has(placement_name))
 
 
 func test_pacing_block_comes_from_ads_json() -> void:
-	assert_eq(int(_ads.call("interstitial_pacing")["first_level"]), 4)
+	var pacing: Dictionary = _ads.call("interstitial_pacing")
+	assert_eq(int(pacing["first_level"]), 4)
+	assert_eq(int(pacing["every_n"]), 3)
+	assert_eq(int(pacing["min_gap_seconds"]), 60)
+	assert_eq(int((_ads.call("rewarded_config") as Dictionary)["buttons_from_level"]), 4)
 
 
 func test_interstitial_completes_on_dismiss() -> void:
@@ -99,7 +103,7 @@ func test_stale_timeout_is_ignored() -> void:
 func test_rewarded_failure_when_ad_never_appears() -> void:
 	var provider: ScriptedProvider = ScriptedProvider.new()
 	_ads.call("set_provider", provider)
-	_ads.call("show_rewarded", _placement("CONTINUE"))
+	_ads.call("show_rewarded", _placement("HINT"))
 	_ads.call("_on_show_timeout", int(_ads.get("_pending_ticket")))
 	assert_eq(_log, ["rew:false"])
 
@@ -108,12 +112,22 @@ func test_rewarded_reward_flow_and_per_run_limit() -> void:
 	var provider: ScriptedProvider = ScriptedProvider.new()
 	provider.mode = "shown_then_reward"
 	_ads.call("set_provider", provider)
-	assert_true(bool(_ads.call("can_offer", _placement("DOUBLE_COINS"))))
-	_ads.call("show_rewarded", _placement("DOUBLE_COINS"))
+	assert_true(bool(_ads.call("can_offer", _placement("SKIP"))))
+	_ads.call("show_rewarded", _placement("SKIP"))
 	assert_eq(_log, ["rew:true"])
-	assert_false(bool(_ads.call("can_offer", _placement("DOUBLE_COINS"))), "tur başına bir kez")
+	assert_false(bool(_ads.call("can_offer", _placement("SKIP"))), "atlama seviye başına bir kez")
 	_ads.call("reset_run_limits")
-	assert_true(bool(_ads.call("can_offer", _placement("DOUBLE_COINS"))), "yeni turda yine sunulur")
+	assert_true(bool(_ads.call("can_offer", _placement("SKIP"))), "yeni seviyede yine sunulur")
+
+
+func test_hint_can_be_watched_repeatedly_in_one_level() -> void:
+	var provider: ScriptedProvider = ScriptedProvider.new()
+	provider.mode = "shown_then_reward"
+	_ads.call("set_provider", provider)
+	for _i: int in range(5):
+		assert_true(bool(_ads.call("can_offer", _placement("HINT"))))
+		_ads.call("show_rewarded", _placement("HINT"))
+	assert_eq(_log.size(), 5, "her ipucu bir reklam, sınır yok")
 
 
 func test_default_provider_has_no_plugin_on_desktop() -> void:

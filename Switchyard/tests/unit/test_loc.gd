@@ -11,15 +11,22 @@ const KEY_PATTERN: String = "^[A-Z][A-Z0-9_]*$"
 const MIN_KEYS: int = 15
 ## Kodda anahtar gibi görünen (aile önekli) her sabit metin tabloda olmalı: sözlükte tutulan
 ## (`Loc.t(DEĞİŞKEN)` ile çözülen) anahtarlar da yakalansın. Yeni aile eklenince buraya da eklenir.
-const KEY_FAMILY_PATTERN: String = "\"((?:NET|UI|LOSE|WIN|SETTINGS|PH|BOOT|GAME)_[A-Z0-9_]+)\""
+const KEY_FAMILY_PATTERN: String = "\"((?:NET|UI|LOSE|WIN|SETTINGS|PH|BOOT|GAME|HOME|MAP|HUD|RESULT|AD|SKIP|SHOP)_[A-Z0-9_]+)\""
 ## Uzunluk bütçeleri (karakter): [anahtar deseni, en çok karakter]. İlk eşleşen geçerlidir;
 ## en uzun dil (tr/en/es) ölçülür. Düğmeler en katı: 1080 genişlikte tek satıra sığmalı.
 const LENGTH_BUDGETS: Array = [
 	["^(OK|WIN_CONTINUE|RESUME|LOSE_RETRY|LOSE_REVIVE|NET_RETRY|PH_TAP|PH_LOSE)$", 20],
-	["^UI_PRIVACY_OPTIONS$", 26],
+	["^(HOME_LEVELS|RESULT_NEXT|RESULT_RETRY|SKIP_WATCH|SKIP_CANCEL|SHOP_REMOVE_ADS)$", 20],
+	["^(UI_PRIVACY_OPTIONS|SHOP_RESTORE)$", 26],
 	["^SETTINGS_[A-Z]+$", 16],
-	["^(NET|WIN|LOSE|PH)_", 50],
+	["^(HUD|MAP_TITLE|MAP_WORLD|RESULT_[0-9]|RESULT_BEST)", 14],
+	["^SKIP_BODY$", 70],
+	["^(NET|WIN|LOSE|PH|AD|SHOP|MAP|RESULT|SKIP)_", 50],
 ]
+## Şablondan kalan, artık kullanılmayan anahtarlar. strings.csv yalnız sona eklenir (merge=union), bu yüzden
+## satırlar silinmez; kullanılmayan-anahtar denetiminden bilerek muaftır.
+const RETIRED_KEYS: Array[String] = ["WIN_TITLE", "WIN_CONTINUE", "LOSE_TITLE", "LOSE_REVIVE", "LOSE_RETRY",
+	"PH_TAP", "PH_LOSE", "PH_LEFT_ONE", "PH_LEFT_OTHER"]
 
 var _table: Dictionary = {}
 var _duplicates: Array[String] = []
@@ -129,6 +136,8 @@ func test_no_unused_keys() -> void:
 	_load_table()
 	var source: String = _all_source()
 	for key: String in _table.keys():
+		if RETIRED_KEYS.has(key):
+			continue
 		assert_true(source.contains("\"%s\"" % key), "kullanılmayan anahtar: %s" % key)
 
 
@@ -163,27 +172,27 @@ func test_length_budgets() -> void:
 
 func test_language_switch_changes_output() -> void:
 	Loc.set_language(Loc.LANG_TR)
-	assert_eq(Loc.t("LOSE_RETRY"), "Tekrar dene")
+	assert_eq(Loc.t("NET_RETRY"), "Tekrar dene")
 	Loc.set_language(Loc.LANG_EN)
-	assert_eq(Loc.t("LOSE_RETRY"), "Try again")
+	assert_eq(Loc.t("NET_RETRY"), "Try again")
 	assert_eq(Loc.language(), "en")
 	Loc.set_language(Loc.LANG_ES)
-	assert_eq(Loc.t("LOSE_RETRY"), "Reintentar")
+	assert_eq(Loc.t("NET_RETRY"), "Reintentar")
 	Loc.set_language("de")
 	assert_eq(Loc.language(), "en", "bilinmeyen dil İngilizce olur")
 	Loc.set_language(Loc.LANG_TR)
 
 
-func test_plural_and_format() -> void:
+func test_plural_helper_picks_one_or_other() -> void:
 	Loc.set_language(Loc.LANG_EN)
-	assert_eq(Loc.n("PH_LEFT_ONE", "PH_LEFT_OTHER", 1) % 1, "1 tap left")
-	assert_eq(Loc.n("PH_LEFT_ONE", "PH_LEFT_OTHER", 4) % 4, "4 taps left")
+	assert_eq(Loc.n("NET_TITLE", "NET_RETRY", 1), "Connection required")
+	assert_eq(Loc.n("NET_TITLE", "NET_RETRY", 4), "Try again")
 	assert_eq(Loc.f("LEVEL", [7]), "Level 7")
+	assert_eq(Loc.f("MAP_WORLD", [2]), "World 2")
 	Loc.set_language(Loc.LANG_ES)
-	assert_eq(Loc.n("PH_LEFT_ONE", "PH_LEFT_OTHER", 1) % 1, "Queda 1 toque")
-	assert_eq(Loc.n("PH_LEFT_ONE", "PH_LEFT_OTHER", 3) % 3, "Quedan 3 toques")
+	assert_eq(Loc.f("RESULT_MOVES", [5, 4]), "Movimientos 5 · Par 4")
 	Loc.set_language(Loc.LANG_TR)
-	assert_eq(Loc.n("PH_LEFT_ONE", "PH_LEFT_OTHER", 1) % 1, "1 dokunuş kaldı")
+	assert_eq(Loc.f("RESULT_MOVES", [5, 4]), "Hamle 5 · Par 4")
 
 
 func test_unknown_key_returns_key() -> void:

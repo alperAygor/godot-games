@@ -3,27 +3,28 @@ extends Node
 ## Ödüllü reklam orkestrasyonu. SDK bilmez; `AdsProvider` ile konuşur.
 ## Ödül YALNIZCA sağlayıcıdan `rewarded` geldikten sonra verilir (idempotent).
 
-## CONTINUE: kayıpta devam (ödüllü). DOUBLE_COINS: kazanımda 2x jeton (ödüllü).
+## HINT: ipucu (ödüllü, her ipucu bir reklam). SKIP: seviyeyi atla (ödüllü).
 ## INTERSTITIAL ödüllü değildir: `show_interstitial()` ile gösterilir, ödül sinyali vermez.
 ## Sıra `AdsProvider.INTERSTITIAL_PLACEMENT` ile aynı kalmalı (testle sabitli). Yeni yerleşim sona eklenir.
-enum Placement { CONTINUE, DOUBLE_COINS, INTERSTITIAL }
+enum Placement { HINT, SKIP, INTERSTITIAL }
 
 const PLACEMENT_KEYS: Dictionary = {
-	Placement.CONTINUE: "CONTINUE",
-	Placement.DOUBLE_COINS: "DOUBLE_COINS",
+	Placement.HINT: "HINT",
+	Placement.SKIP: "SKIP",
 	Placement.INTERSTITIAL: "INTERSTITIAL",
 }
 
 const LIMITS_PATH: String = "res://data/ads.json"
 const SETTINGS_KEY: String = "settings"
 const PACING_KEY: String = "interstitial"
+const REWARDED_KEY: String = "rewarded"
 ## Gösterim istendikten sonra reklam bu sürede ekrana gelmezse akış reklamsız sürer.
 const DEFAULT_SHOW_TIMEOUT: float = 3.0
 
 ## data/ads.json okunamazsa kullanılan yedek limitler (tur = bir seviye denemesi).
 const DEFAULT_LIMITS: Dictionary = {
-	"CONTINUE": {"per_run": 1, "per_session": 30},
-	"DOUBLE_COINS": {"per_run": 1, "per_session": 30},
+	"HINT": {"per_run": 99, "per_session": 9999},
+	"SKIP": {"per_run": 1, "per_session": 9999},
 	"INTERSTITIAL": {"per_run": 99, "per_session": 999},
 }
 
@@ -117,6 +118,12 @@ func show_interstitial() -> bool:
 ## `data/ads.json` -> "interstitial" bloğu (AdPacing girdisi: first_level ...).
 func interstitial_pacing() -> Dictionary:
 	var block: Variant = _limits.get(PACING_KEY)
+	return (block as Dictionary) if block is Dictionary else {}
+
+
+## `data/ads.json` -> "rewarded" bloğu (buttons_from_level ...).
+func rewarded_config() -> Dictionary:
+	var block: Variant = _limits.get(REWARDED_KEY)
 	return (block as Dictionary) if block is Dictionary else {}
 
 

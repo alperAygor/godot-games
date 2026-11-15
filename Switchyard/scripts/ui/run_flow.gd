@@ -1,22 +1,35 @@
 class_name RunFlow
 extends Node
 
-## Oyun ekranı ile ekonomi/reklam/analitik arasındaki yapıştırıcı. game.gd yalnız kısa
-## çağrılar yapar; kararlar `Progress`, `AdPacing` ve `AdManager`dadır.
+## Oyun ekranı ile reklam/analitik arasındaki yapıştırıcı. game.gd yalnız kısa çağrılar yapar;
+## kararlar `LevelProgress`, `AdPacing` ve `AdManager`dadır.
 ## Ekranın alt düğümü olarak eklenir (`add_child(RunFlow.new())`); sahneyle birlikte silinir.
+## Sahibin reklam kararı (docs/MONETIZATION.md): ipucu ve seviye atlama = birer ödüllü reklam;
+## geçiş reklamı yalnız seviye arasında ve `AdPacing` izin verirse.
 
 const MS_PER_SECOND: float = 1000.0
+## Reklam sunulamama nedenleri (UI yalnız bu kodlara bakar; metin `UiStrings.ad_reason`).
+const REASON_NOT_READY: String = "not_ready"
+const REASON_OFFLINE: String = "offline"
+const REASON_TIMEOUT: String = "timeout"
+const REASON_NOT_FINISHED: String = "not_finished"
+
+## Reklam sunulamadı / başarısız oldu (düğme nedenini söylesin).
+signal ad_unavailable(placement: AdManager.Placement, reason: String)
+
+## Unix saniyesi veren saat; boşsa sistem saati. Probe/test geçiş reklamı aralığını buradan sürer.
+var time_source: Callable = Callable()
 
 var _level_started_msec: int = 0
-## Aynı anda tek reklam akışı: bekleyen yerleşim ve ödül geri çağrısı.
+var _level_number: int = 0
+## Aynı anda tek reklam akışı: bekleyen yerleşim ve geri çağrılar.
 var _pending_placement: int = -1
 var _pending_reward: Callable = Callable()
 var _pending_failure: Callable = Callable()
 var _pending_interstitial: Callable = Callable()
-var _pending_interstitial_level: int = 0
-## Oyuncu bu seviye geçişinde (kazanma sayfasında) ödüllü reklam izledi mi? Öyleyse hemen ardından
-## geçiş reklamı gösterilmez. Her sonuç sayfasında (kazanma/kayıp) ve seviye başında sıfırlanır.
-var _rewarded_in_transition: bool = false
+var _pending_interstitial_number: int = 0
+## Bu seviyede (ipucu ya da atlama ile) ödüllü reklam izlendi mi: geçiş reklamı kararına girer.
+var _rewarded_this_level: bool = false
 
 
 func _ready() -> void:
@@ -35,94 +48,120 @@ func _exit_tree() -> void:
 		AdManager.ad_failed.disconnect(_on_ad_failed)
 
 
-## Seviye başı: reklam sınırı "seviye başına" sayılır.
+## Yeni seviye yüklendi (aynı seviyeyi baştan başlatmak buraya GELMEZ): reklam sınırları sıfırlanır.
 func on_level_start(level_number: int) -> void:
 	AdManager.reset_run_limits()
-	_rewarded_in_transition = false
+	_rewarded_this_level = false
+	_level_number = level_number
 	_level_started_msec = Time.get_ticks_msec()
 	AnalyticsLog.level_start(level_number)
 
 
-## Kazanç: ilerlemeyi işler. Dönen sözlük `Progress.complete_level` çıktısıdır
-## ({"coins": bu seviyenin kazancı, "level": yeni seviye}).
-func on_win(level_number: int) -> Dictionary:
-	_rewarded_in_transition = false
+func on_solved(level_number: int) -> void:
 	AnalyticsLog.level_win(level_number, _elapsed_seconds())
-	return Progress.complete_level()
 
 
-func on_lose(level_number: int) -> void:
-	_rewarded_in_transition = false
-	AnalyticsLog.level_lose(level_number, _elapsed_seconds())
+func rewarded_this_level() -> bool:
+	return _rewarded_this_level
 
 
-## 2x jeton: ödüle EKLENECEK fazlalık (çarpan data/balance.json `double_coins_multiplier`).
-func double_bonus(reward: int) -> int:
-	var multiplier: int = ProgressData.to_count(Progress.balance_table().get("double_coins_multiplier"), 2)
-	return reward * maxi(multiplier - 1, 0)
+## İpucu / atlama düğmeleri bu seviyede görünsün mü (ilk 3 seviyede hayır).
+func rewarded_buttons_visible(level_number: int) -> bool:
+	return AdPacing.rewarded_buttons_visible(level_number, AdManager.rewarded_config())
 
 
-## Ödüllü reklam sunulabilir mi (sağlayıcı hazır + sınır dolmadı).
+## Ödüllü reklam sunulabilir mi (sağlayıcı hazır + sınır dolmadı + başka reklam yok).
 func can_watch(placement: AdManager.Placement) -> bool:
 	return _pending_placement == -1 and AdManager.can_offer(placement)
 
 
-## Ödüllü reklamı izletir; ödül YALNIZ başarıda `on_success` ile verilir.
+## Ödüllü reklam sunulamıyorsa nedeni.
+func unavailable_reason() -> String:
+	if OnlineGate.is_active() and not OnlineGate.checker().is_fresh():
+		return REASON_OFFLINE
+	return REASON_NOT_READY
+
+
+## Ödüllü reklamı izletir; ödül YALNIZ başarıda `on_success` ile verilir. Sunulamazsa `ad_unavailable`
+## sinyali neden ile gelir, `on_failure` çalışır ve akış takılmaz. Dönen: reklam başlatıldı mı.
 func watch(placement: AdManager.Placement, on_success: Callable,
-		on_failure: Callable = Callable()) -> void:
+		on_failure: Callable = Callable()) -> bool:
 	if not can_watch(placement):
-		return
+		ad_unavailable.emit(placement, unavailable_reason())
+		if on_failure.is_valid():
+			on_failure.call()
+		return false
 	var key: String = String(AdManager.PLACEMENT_KEYS.get(placement, ""))
 	AnalyticsLog.rewarded_offered(key)
 	_pending_placement = placement
 	_pending_reward = on_success
 	_pending_failure = on_failure
 	AdManager.show_rewarded(placement)
+	return true
 
 
-## Seviye geçişinde (Devam) geçiş reklamı gerekiyorsa gösterir, sonra `then` çalışır.
-## Karar saf `AdPacing`dedir (data/ads.json): varsayılan 4. seviyeden itibaren her geçişte;
-## "reklamları kaldır" varsa asla; bu geçişte ödüllü reklam izlendiyse asla.
+## Seviye arası geçiş reklamı: `AdPacing` izin veriyorsa gösterir, sonra (her durumda) `then` çalışır.
+## `completed_number`: biten seviyenin sıra numarası; `first_completion`: ilk kez mi tamamlandı.
 ## Reklam hazır değilse/zaman aşımında akış sessizce sürer.
-func maybe_interstitial(next_level: int, then: Callable) -> void:
-	var show: bool = AdPacing.should_show(next_level, Progress.remove_ads_owned(),
-		_rewarded_in_transition, AdManager.interstitial_pacing())
+func maybe_interstitial(completed_number: int, first_completion: bool, then: Callable) -> void:
+	var pacing: Dictionary = AdManager.interstitial_pacing()
+	var show: bool = AdPacing.should_show(completed_number, first_completion, Progress.remove_ads_owned(),
+		_rewarded_this_level, AdPacing.seconds_since(_now(), Progress.data.last_interstitial_time), pacing)
 	if not show or _pending_placement != -1:
 		then.call()
 		return
 	# Geri çağrı reklamdan ÖNCE kaydedilir: eşzamanlı biten sağlayıcıda sinyal show içinde gelir.
 	_pending_interstitial = then
-	_pending_interstitial_level = next_level
+	_pending_interstitial_number = completed_number
 	if not AdManager.show_interstitial():
 		_pending_interstitial = Callable()
 		then.call()
 
 
+func _now() -> float:
+	return float(time_source.call()) if time_source.is_valid() else Time.get_unix_time_from_system()
+
+
 func _on_rewarded_finished(placement: AdManager.Placement, success: bool) -> void:
-	if int(placement) != _pending_placement:
+	if int(placement) != _pending_placement or not success:
 		return
 	var key: String = String(AdManager.PLACEMENT_KEYS.get(placement, ""))
 	var reward: Callable = _pending_reward
+	_clear_pending()
+	AnalyticsLog.rewarded_watched(key)
+	_rewarded_this_level = true
+	Progress.mark_rewarded_watched()
+	if reward.is_valid():
+		reward.call()
+
+
+## Başlamayan / yarım kalan / zaman aşımına uğrayan ödüllü reklam: ödülsüz, nedeniyle bildirilir.
+func _on_ad_failed(placement: AdManager.Placement, reason: String) -> void:
+	if int(placement) != _pending_placement:
+		return
+	var key: String = String(AdManager.PLACEMENT_KEYS.get(placement, ""))
 	var failure: Callable = _pending_failure
+	_clear_pending()
+	AnalyticsLog.rewarded_skipped(key)
+	ad_unavailable.emit(placement, _reason_code(reason))
+	if failure.is_valid():
+		failure.call()
+
+
+func _clear_pending() -> void:
 	_pending_placement = -1
 	_pending_reward = Callable()
 	_pending_failure = Callable()
-	if success:
-		AnalyticsLog.rewarded_watched(key)
-		_rewarded_in_transition = true
-		Progress.mark_rewarded_watched()
-		if reward.is_valid():
-			reward.call()
-	else:
-		AnalyticsLog.rewarded_skipped(key)
-		if failure.is_valid():
-			failure.call()
 
 
-## Sınır/bekleyen yüzünden hiç başlamayan reklam: ödülsüz "atlandı" say.
-func _on_ad_failed(placement: AdManager.Placement, _reason: String) -> void:
-	if int(placement) == _pending_placement:
-		_on_rewarded_finished(placement, false)
+static func _reason_code(provider_reason: String) -> String:
+	match provider_reason:
+		"timeout":
+			return REASON_TIMEOUT
+		"dismissed_early":
+			return REASON_NOT_FINISHED
+		_:
+			return REASON_NOT_READY
 
 
 func _on_interstitial_finished(success: bool) -> void:
@@ -131,8 +170,8 @@ func _on_interstitial_finished(success: bool) -> void:
 	var then: Callable = _pending_interstitial
 	_pending_interstitial = Callable()
 	if success:
-		AnalyticsLog.interstitial_shown(_pending_interstitial_level)
-		Progress.mark_interstitial_shown()
+		AnalyticsLog.interstitial_shown(_pending_interstitial_number)
+		Progress.mark_interstitial_shown(_now())
 	then.call()
 
 

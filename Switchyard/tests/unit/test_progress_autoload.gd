@@ -26,20 +26,17 @@ func _make() -> Node:
 
 
 func test_save_and_reload() -> void:
-	_progress.call("add_coins", 75)
-	_progress.call("complete_level")
+	_progress.call("set_module_value", "levels", "w1-001", {"best": 4, "stars": 2, "solved": true, "skipped": false})
 	assert_false(FileAccess.file_exists(TEST_PATH + ".tmp"), "geçici dosya kalmamalı")
 	var again: Node = _make()
 	again.call("load_from_disk")
-	assert_eq(int(again.call("coins")), 95)
-	assert_eq(int(again.call("level")), 2)
+	assert_eq(int((again.call("module_section", "levels") as Dictionary)["w1-001"]["best"]), 4)
 	again.free()
 
 
 func test_persist_false_writes_nothing() -> void:
 	_progress.set("persist", false)
-	_progress.call("add_coins", 10)
-	_progress.call("complete_level")
+	_progress.call("set_module_value", "levels", "w1-001", {"best": 4})
 	assert_false(FileAccess.file_exists(TEST_PATH))
 
 
@@ -48,8 +45,7 @@ func test_corrupt_file_falls_back_and_keeps_backup() -> void:
 	file.store_string("{bozuk json")
 	file.close()
 	_progress.call("load_from_disk")
-	assert_eq(int(_progress.call("level")), 1)
-	assert_eq(int(_progress.call("coins")), 0)
+	assert_eq((_progress.call("module_section", "levels") as Dictionary).size(), 0, "bozuk kayıt varsayılana döner")
 	assert_true(FileAccess.file_exists(TEST_PATH + ".bak"))
 	assert_eq(FileAccess.get_file_as_string(TEST_PATH + ".bak"), "{bozuk json")
 
@@ -66,19 +62,18 @@ func test_module_values_and_remove_ads_flag_persist() -> void:
 	again.free()
 
 
-func test_purchase_is_one_atomic_write() -> void:
-	_progress.call("add_coins", 100)
-	assert_false(bool(_progress.call("purchase_module_value", 150, "shop", "x", 1)), "yetersiz jeton")
-	assert_eq(_progress.call("module_value", "shop", "x"), null)
-	assert_true(bool(_progress.call("purchase_module_value", 60, "shop", "x", 1)))
-	assert_eq(int(_progress.call("coins")), 40)
-	assert_eq(int(_progress.call("module_value", "shop", "x")), 1)
+func test_module_section_returns_a_copy() -> void:
+	_progress.call("set_module_value", "levels", "a", {"best": 1})
+	var copy: Dictionary = _progress.call("module_section", "levels") as Dictionary
+	copy["b"] = {"best": 2}
+	assert_false((_progress.call("module_section", "levels") as Dictionary).has("b"), "kopya kaydı değiştirmez")
+	assert_eq((_progress.call("module_section", "yok") as Dictionary).size(), 0)
 
 
 func test_changed_signal_fires_on_commit() -> void:
 	var hits: Array[int] = [0]
 	_progress.connect("changed", func() -> void: hits[0] += 1)
-	_progress.call("add_coins", 1)
+	_progress.call("set_module_value", "levels", "a", {"best": 1})
 	_progress.call("set_setting", "sound", false)
 	assert_eq(hits[0], 2)
 

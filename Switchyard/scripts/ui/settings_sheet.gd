@@ -1,7 +1,7 @@
 class_name SettingsSheet
 extends Sheet
 
-## Ayarlar sayfası: ses/müzik/titreşim anahtarları + dil (TR/EN/ES) + (varsa) gizlilik seçenekleri.
+## Ayarlar sayfası: ses/müzik/titreşim anahtarları + dil (TR/EN/ES) + "Reklamları kaldır" + (varsa) gizlilik seçenekleri.
 ## Ana ekrandan açılır. Dil değişince sahne baştan kurulur (yarım çevrilmiş ekran kalmasın).
 
 const SECTION_GAP: float = UiKit.SPACE_XL
@@ -18,6 +18,8 @@ static func open(parent: Node) -> SettingsSheet:
 	var languages: UiLanguageRow = UiLanguageRow.new()
 	languages.language_changed.connect(sheet._on_language_changed)
 	column.add_child(languages)
+	sheet.add_gap(SECTION_GAP)
+	column.add_child(UiShopRow.new())
 	# Gizlilik seçenekleri yalnız reklam katmanı sunuyorsa görünür (AB/ABD onay formu için kanca).
 	if UiData.privacy_options_available():
 		sheet.add_gap(SECTION_GAP)

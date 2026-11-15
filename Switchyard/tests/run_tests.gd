@@ -18,6 +18,8 @@ func _initialize() -> void:
 	var progress: Node = root.get_node_or_null("Progress")
 	if progress != null:
 		progress.set("persist", false)
+	# Dil bu makinenin yerel ayarından bağımsız sabitlenir (geliştirici makinesi Türkçe): testler İngilizce başlar.
+	TranslationServer.set_locale("en")
 
 
 func _process(_delta: float) -> bool:

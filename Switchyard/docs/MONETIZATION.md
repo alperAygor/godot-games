@@ -3,21 +3,45 @@
 Şablonda **AdMob eklentisi KURULU DEĞİLDİR** (`addons/admob` kopyalanmadı). Reklam kodu hazırdır ve eklenti/native tekil
 nesneleri bulunana dek kendiliğinden pasiftir: masaüstünde/debug'da `MockAdsProvider`, release'te `NoAdsProvider`.
 
-## 1. Varsayılan kurallar (oyunun sahibi değiştirebilir)
+## 1. Reklam politikası (sahibin kararı, 2026-11-15; sayılar `data/ads.json`)
 
-| Konu | Kural |
-|---|---|
-| Kayıpta devam | Yalnız ödüllü reklamla, tur başına bir kez (`CONTINUE`). |
-| 2x jeton | Yalnız kazanmada, ödüllü reklamla (`DOUBLE_COINS`). |
-| Geçiş reklamı | `data/ads.json` → `interstitial.first_level` (4) ve sonrası HER seviye geçişinde ("Devam" yolunda). Oyun sırasında asla. |
-| İstisna 1 | "Reklamları kaldır" alındıysa geçiş reklamı asla (`Progress.remove_ads_owned()`); ödüllü açık kalır. |
-| İstisna 2 | O geçişte ödüllü reklam izlendiyse hemen ardından geçiş reklamı yok. |
-| Reklam yoksa | Hazır değilse ya da 3 sn içinde ekrana gelmezse akış sessizce sürer. |
-| Çevrimdışı | Oynamak yasak (`data/balance.json` → `require_online`; `OnlineGate`). Kapatmak için `false`. |
+Jeton ekonomisi YOKTUR. Para kazanma dört yerleşimdir:
 
-Karar fonksiyonu `scripts/core/ad_pacing.gd` (saf, testli). Yeni yerleşim: `AdManager.Placement` enum'una SONA ekle,
-`PLACEMENT_KEYS` + `data/ads.json` limitini yaz (`INTERSTITIAL` sırası `AdsProvider.INTERSTITIAL_PLACEMENT` ile aynı kalmalı;
-yerleşim INTERSTITIAL'dan sonra eklenecekse sabiti ve testi birlikte güncelle).
+| Yerleşim | Tür | Kural |
+|---|---|---|
+| İpucu | ödüllü | Her ipucu bir reklam. Ödül gelince `LevelSession.show_hint()` çağrılır. Seviye başına sınır yok (`HINT.per_run: 99`). |
+| Seviyeyi atla | ödüllü | Önce onay sayfası ("Seviye atlansın mı?"), sonra bir reklam. Ödülden sonra seviye "atlandı" işaretlenir, sıradaki açılır, yıldız yok. Seviye başına bir kez (`SKIP.per_run: 1`). |
+| Geçiş reklamı | interstitial | Aşağıdaki kural. Oyun sırasında ASLA; yalnız sonuç sayfasından çıkarken (Sonraki ya da Seviyeler). |
+| Reklamları kaldır | ücretli, tek seferlik | YALNIZ geçiş reklamını kapatır; ipucu ve atlama ödüllü kalır. |
+
+**Düğme eşiği:** ipucu ve atla düğmeleri 1-3. seviyelerde görünmez (`rewarded.buttons_from_level: 4`).
+
+**Geçiş reklamı kuralı** (`interstitial.first_level: 4`, `every_n: 3`, `min_gap_seconds: 60`; karar saf `AdPacing`, testli):
+- 1-3. seviyeler oynanırken reklam yok. `first_level` = reklamın ÖNÜNDE gelebileceği ilk seviye: 3. seviye bitince 4'e
+  geçerken ilk reklam gelir, sonra her `every_n` seviyede bir. Yani reklam, **3, 6, 9, 12... numaralı seviyelerin bitişinde**.
+- Yalnız seviye İLK KEZ tamamlandığında (çözme ya da atlama) sayılır. Eski seviyeyi tekrar oynamak sırayı ilerletmez.
+- "Reklamları kaldır" alındıysa asla.
+- O seviyede ödüllü reklam izlendiyse (ipucu ya da atlama) o geçişte yok (`suppress_after_rewarded: true`; `false` yaparsan serbest).
+- Son geçiş reklamından beri `min_gap_seconds` dolmadıysa yok. Bu yüzden atlanan reklam ERTELENMEZ; sıradaki reklam kendi sırasında gelir.
+- Reklam hazır değilse ya da `settings.show_start_timeout_seconds` (3 sn) içinde ekrana gelmezse akış sessizce sürer.
+- Sonuç sayfasından "Tekrar" ile çıkılırsa reklam yok; sıra hakkı seviyeden gerçekten çıkarken (Sonraki / Seviyeler) tüketilir.
+
+12 seviyelik örnek (hep ilk kez, bitişler arası >= 60 sn, reklam hazır, ödüllü kullanılmadı):
+
+| biten seviye | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| geçiş reklamı | - | - | **var** | - | - | **var** | - | - | **var** | - | - | **var** |
+
+Varyasyonlar: 6. seviyede ipucu izlendiyse 6'daki reklam yok (9'daki yine gelir); 9. seviye atlandıysa 9'daki yok;
+3'ten 30 sn sonra biten 6'da reklam yok (aralık); reklamlar kaldırıldıysa hiçbiri.
+
+**Reklam yoksa:** ödüllü düğme nedenini söyler (kısa bildirim: reklam yok / bağlantı yok / reklam açılmadı / video yarıda
+kapandı) ve hiçbir şey takılmaz (düğme yeniden açılır, saha girdisi açık). Çevrimdışı oynamak yasak: `data/balance.json` →
+`require_online`, `OnlineGate`.
+
+**Kod yolu:** `Game` (`scripts/ui/game.gd`) → `RunFlow` (`scripts/ui/run_flow.gd`: ödüllü akış, geçiş kararı, saat) →
+`AdManager` (sağlayıcı, sınırlar, 3 sn zaman aşımı) → `AdsProvider` (Mock / NoAds / AdMob). Yerleşimler:
+`AdManager.Placement { HINT, SKIP, INTERSTITIAL }` (INTERSTITIAL sırası `AdsProvider.INTERSTITIAL_PLACEMENT` ile aynı kalır).
 
 ## 2. AdMob eklentisini eklemek (elle)
 
@@ -59,16 +83,21 @@ Keystore yolu/şifresi bu depoya YAZILMAZ; imzalamayı editörde yerel yap (`exp
 İnternet izinleri (`internet`, `access_network_state`) çevrimiçi kapısı ve reklamlar için preset'lerde açıktır.
 Ön ayarlar: **Android (release)** (Gradle AAB, arm64), **Android (test apk)** (Gradle'sız debug APK), **Desktop pack check (Linux)** (boyut/PCK denetimi).
 
-## 5. Kapsam dışı (şablonda YOK)
+## 5. Satın alma ("Reklamları kaldır")
 
-Google Play Faturalandırma / "reklamları kaldır" satın alma servisi taşınmadı; yalnız sahiplik bayrağı vardır
-(`Progress.set_remove_ads_owned`). Satın alma eklenecekse bir `IapProvider` arayüzü + mock + Play Billing sağlayıcısı yazılır
-ve açılışta sahiplik mağazadan yeniden doğrulanır.
+Arayüz `IapProvider` (taban = "mağaza yok"), `MockIapProvider` (masaüstü/debug), `IapService` (sağlayıcıyı seçer, sahipliği
+`Progress` "shop" modülüne yazar, açılışta mağazadan yeniden doğrular). Adlar ve sinyaller kardeş projeyle (CamasirIpi)
+AYNIDIR; gerçek `play_billing_provider.gd` olduğu gibi kopyalanıp `IapService.make_default_provider()` içindeki KANCA'ya
+bağlanır (eklenti kurulumu ayrı görev). Release derlemesinde sağlayıcı yoksa "mağaza yok": düğme kapalı, sahte başarı VERİLMEZ.
+Satır (`UiShopRow`): fiyat mağazadan, satın al, geri yükle, sahip olunca "Reklamlar kaldırıldı". Yeri: Ayarlar sayfası ve
+ana ekrandaki küçük "yasak" ikonundan açılan `ShopSheet` (sahip olununca ikon kalkar).
+Ürün kimliği: `remove_ads` (Play Console ile aynı olmalı).
 
 ## 6. Test listesi (Android cihaz, ilk kez burada doğrulanır)
 
 - [ ] Gradle export hatasız; logcat'te `[AdMob] Native plugin ... not found` yok.
-- [ ] Test modunda ödüllü reklam: "Devam et" ve "2×" ödülü yalnız kapanınca (ödül kazanıldıysa) verir; erken kapatınca yok.
-- [ ] Geçiş reklamı `first_level` ve sonrası "Devam"da; uçak modunda takılmaz (≤3 sn sonra devam).
+- [ ] Test modunda ödüllü reklam: ipucu ve atlama ödülü yalnız izlenince verilir; erken kapatınca yok ("video yarıda kapandı" bildirimi).
+- [ ] Geçiş reklamı 3, 6, 9, 12. seviye bitişinde (Sonraki / Seviyeler); uçak modunda takılmaz (≤3 sn sonra devam).
+- [ ] "Reklamları kaldır" gerçek Play Billing ile: satın alma, yeniden kurulumda geri yükleme, iade sonrası kaydın temizlenmesi.
 - [ ] UMP formu (AB VPN/test cihazı) çıkar, oyun beklemeden açılır.
 - [ ] Release'te `mode: production` + gerçek kimlikler; test kimliği kalmadı.

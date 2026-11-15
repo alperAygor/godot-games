@@ -44,8 +44,7 @@ static func set_language(code: String) -> void:
 
 ## Cihaz dilinden (OS) desteklenen dili seçer; bilinmeyen dil İngilizce olur.
 static func detect_device_language() -> String:
-	var code: String = OS.get_locale_language().to_lower()
-	return code if code in LANGUAGES else DEFAULT_UNKNOWN
+	return LanguagePick.resolve("", OS.get_locale(), LANGUAGES)
 
 
 static func _progress() -> Node:
@@ -55,20 +54,20 @@ static func _progress() -> Node:
 	return loop.root.get_node_or_null(PROGRESS_PATH)
 
 
-## Kayıtlı dili uygular; ilk açılışta (kayıt yok) cihaz dilini seçip kaydeder.
+## Dili seçer ve uygular: kayıtlı (oyuncunun elle seçtiği) dil kazanır; yoksa cihaz dili destekleniyorsa o;
+## yoksa İngilizce (bkz. LanguagePick). İlk açılışta cihaz dili KAYDEDİLMEZ: kayıt yalnız elle seçimdir,
+## böylece cihaz dili sonradan değişirse oyun da onu izler. Dönen: uygulanan dil kodu.
 ## İlk ekran kurulmadan ÖNCE çağrılır (Boot), böylece hiçbir ekran yarım çevrilmiş açılmaz.
-static func apply_saved() -> void:
+## `device_locale` yalnız testler içindir (boşsa OS.get_locale()).
+static func apply_saved(device_locale: String = "") -> String:
 	var progress: Node = _progress()
 	var saved: String = ""
 	if progress != null:
 		saved = String(progress.call("module_value", SETTINGS_SECTION, SETTINGS_KEY, ""))
-	if saved in LANGUAGES:
-		set_language(saved)
-		return
-	var code: String = detect_device_language()
+	var code: String = LanguagePick.resolve(saved, device_locale if not device_locale.is_empty() else OS.get_locale(),
+		LANGUAGES)
 	set_language(code)
-	if progress != null:
-		progress.call("set_module_value", SETTINGS_SECTION, SETTINGS_KEY, code)
+	return code
 
 
 ## Oyuncunun elle seçimi: uygular ve kaydeder (ekranı yeniden kurmak çağırana aittir).
