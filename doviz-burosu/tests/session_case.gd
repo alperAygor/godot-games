@@ -54,7 +54,8 @@ func after_each() -> void:
 	session.office_enabled = true
 	tree.root.get_node("SettingsManager").set_value("game", "consent_asked", _original_consent, false)
 	tree.root.get_node("SettingsManager").set_value("game", "guide_seen", _original_guide, false)
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(SESSION_TEST_PATH))
+	for suffix in ["", ".bak", ".tmp"]:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(SESSION_TEST_PATH + suffix))
 
 
 func tap(node_name: String) -> void:

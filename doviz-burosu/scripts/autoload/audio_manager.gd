@@ -26,6 +26,8 @@ var _fade_tween: Tween
 var _sfx_players: Array[AudioStreamPlayer] = []
 var _sfx_cache := {}
 var _blip_cache := {}
+## Uygulama arka planda / odak başka yerde: tüm oynatıcılar duraklatılır, yeni ses başlatılmaz.
+var _suspended := false
 
 
 func _ready() -> void:
@@ -56,6 +58,42 @@ func _ready() -> void:
 
 	_apply_volumes()
 	SettingsManager.setting_changed.connect(_on_setting_changed)
+
+
+## Android yaşam döngüsü ve ses odağı: uygulama arka plana atılınca (ana ekran, başka uygulama, gelen arama) `PAUSED`/`FOCUS_OUT`
+## gelir, geri dönünce `RESUMED`/`FOCUS_IN`. İşletim sistemi kendi ses odağını yönetir (arama sırasında oyunun sesini keser);
+## burada oyunun kendi tarafı yapılır: oynatıcıları duraklat (kaldığı yerden sürsün, müzik baştan başlamasın), arka planda
+## yeni ses başlatma. Gerçek cihazda doğrulama: oyun sırasında arama gelmesi / başka uygulamaya geçiş (docs/RELEASE_ROADMAP.md).
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		suspend()
+	elif what == NOTIFICATION_APPLICATION_RESUMED or what == NOTIFICATION_APPLICATION_FOCUS_IN:
+		resume()
+
+
+func is_suspended() -> bool:
+	return _suspended
+
+
+## Tüm oynatıcıları duraklatır (testte telefon aramasını simüle etmek için de çağrılabilir).
+func suspend() -> void:
+	_suspended = true
+	for player: AudioStreamPlayer in _all_players():
+		player.stream_paused = true
+
+
+## Duraklatılanları sürdürür; ses seviyeleri ayarlardan yeniden uygulanır.
+func resume() -> void:
+	_suspended = false
+	for player: AudioStreamPlayer in _all_players():
+		player.stream_paused = false
+	_apply_volumes()
+
+
+func _all_players() -> Array[AudioStreamPlayer]:
+	var players: Array[AudioStreamPlayer] = []
+	players.assign(_sfx_players + _tracks + [_music_player, _ambient_player])
+	return players
 
 
 ## Tüm sesleri durdurur ve akışları bırakır. Kapanmadan önce çağrılmalı; ses sunucusu
@@ -119,6 +157,7 @@ func play_ambient(stream: AudioStream) -> void:
 	if DisplayServer.get_name() == "headless" or (_ambient_player.stream == stream and _ambient_player.playing):
 		return
 	_ambient_player.stream = stream
+	_ambient_player.stream_paused = _suspended
 	_ambient_player.play()
 
 
@@ -151,6 +190,7 @@ func play_track(track: String, fade := 1.4) -> void:
 	_track_slot = 1 - _track_slot
 	incoming.stream = stream
 	incoming.volume_db = -60.0
+	incoming.stream_paused = _suspended
 	incoming.play()
 	if _fade_tween != null and _fade_tween.is_valid():
 		_fade_tween.kill()
@@ -180,6 +220,7 @@ func play_music(stream: AudioStream) -> void:
 	if _music_player.stream == stream and _music_player.playing:
 		return
 	_music_player.stream = stream
+	_music_player.stream_paused = _suspended
 	_music_player.play()
 
 
@@ -191,7 +232,7 @@ func stop_music() -> void:
 func play_sfx(stream: AudioStream, pitch_scale := 1.0) -> void:
 	# Ekransız (test/CI) çalıştırmada ses sürücüsü sahte; oynatıcılar serbest kalmıyor ve
 	# çıkışta "kaynak hâlâ kullanımda" hatası veriyor. Orada ses çalmaya gerek yok.
-	if DisplayServer.get_name() == "headless":
+	if DisplayServer.get_name() == "headless" or _suspended:
 		return
 	for player in _sfx_players:
 		if not player.playing:

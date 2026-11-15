@@ -108,6 +108,7 @@ var _warm_resources: Array[Resource] = []
 
 
 func _ready() -> void:
+	SaveManager.lifecycle_flush_requested.connect(_on_lifecycle_flush)
 	set_process(false)
 	if Feel.instant or DisplayServer.get_name() == "headless":
 		return
@@ -152,14 +153,22 @@ func new_game() -> void:
 	save()
 
 
-## Kayıttan devam eder; kayıt yoksa false.
+## Kayıttan devam eder; kayıt yoksa ya da kariyer bloğu okunamayacak kadar bozuksa false (bozuksa sabah anlık görüntüsü denenir).
 func continue_game() -> bool:
 	if not has_save():
 		return false
+	var block: Dictionary = Career.migrate_dict(SaveManager.data[SAVE_KEY])
+	if not Career.is_valid_dict(block):
+		var snapshot: Variant = block.get("morning_snapshot")
+		if snapshot is Dictionary and Career.is_valid_dict(snapshot):
+			block = Career.migrate_dict(snapshot)
+		else:
+			push_warning("GameSession: kariyer kaydı okunamadı.")
+			return false
 	career = Career.load_default("story")
 	career.story_enabled = story_enabled
 	career.office_enabled = office_enabled
-	career.load_dict(SaveManager.data[SAVE_KEY])
+	career.load_dict(block)
 	shift = null
 	return true
 
@@ -168,6 +177,15 @@ func save() -> void:
 	if career != null:
 		SaveManager.data[SAVE_KEY] = career.to_dict()
 		SaveManager.save_game()
+
+
+## Uygulama arka plana atılırken / kapanırken (SaveManager.flush): bellekteki hikaye kariyerini kayda yaz.
+## Vardiya ortasında yazılan durum sabah durumuyla aynıdır (hane ancak akşam değişir), yani geri dönüşte o günün sabahı gelir.
+## Yazılmaz: mod koşusunda (kariyer hikayeye ait değil), akşam başlamışken (`pending_report` dolu: nakit işlendi ama rapor
+## kayda girmez, yazmak çift sayıma yol açar; son güvenli kayıt zaten sabah/akşam sonu yazılmıştır).
+func _on_lifecycle_flush() -> void:
+	if career != null and mode == null and career.pending_report.is_empty():
+		SaveManager.data[SAVE_KEY] = career.to_dict()
 
 
 func clear() -> void:

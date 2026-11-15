@@ -9,6 +9,7 @@ cd "$(dirname "$0")/.."
 LOG_DIR="tests/results"
 mkdir -p "$LOG_DIR"
 status=0
+# Gerçek oyuncu kayıt/ayar dosyalarına dokunulmasın: betiksiz adımlar da sandbox'ta çalışır (JsonIO.is_sandboxed).
 
 scan() {  # $1 = adım adı, $2 = log dosyası
   if grep -E "SCRIPT ERROR|^ERROR:|Parse Error|Failed to load script" "$2" | grep -v -E "adb|tcp:5037" > /dev/null; then
@@ -22,10 +23,10 @@ scan() {  # $1 = adım adı, $2 = log dosyası
 
 echo "== Godot: $("$GODOT" --headless --version)"
 
-"$GODOT" --headless --path . --import > "$LOG_DIR/import.log" 2>&1
+DV_SANDBOX=1 "$GODOT" --headless --path . --import > "$LOG_DIR/import.log" 2>&1
 scan "içe aktarma" "$LOG_DIR/import.log"
 
-"$GODOT" --headless --path . --quit-after 10 > "$LOG_DIR/boot.log" 2>&1
+DV_SANDBOX=1 "$GODOT" --headless --path . --quit-after 10 > "$LOG_DIR/boot.log" 2>&1
 scan "açılış (10 kare)" "$LOG_DIR/boot.log"
 
 "$GODOT" --headless --path . -s res://tests/run_tests.gd "$@" > "$LOG_DIR/tests.log" 2>&1
