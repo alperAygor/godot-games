@@ -27,7 +27,7 @@ func setup(note_index: int, note: Banknote, pixels_per_mm: float, lamp: bool, le
 	view.setup(note, pixels_per_mm, lamp, false, lens)
 	box.add_child(view)
 	_badge = Label.new()
-	_badge.theme_type_variation = &"SmallLabel"
+	_badge.theme_type_variation = &"GoalLabel"  # telefonda okunsun (SmallLabel çok küçük)
 	_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(_badge)

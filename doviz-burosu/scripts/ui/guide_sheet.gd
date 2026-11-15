@@ -1,7 +1,9 @@
 class_name GuideSheet
 extends Control
-## "Nasıl oynanır" rehberi: ilk yeni oyunda otomatik, sonra ana menüdeki (?) düğmesinden açılır. Sayfalı, ikonlu, kısa metinli.
-## Atla / Geri / İleri / Başla; kapanınca `finished` yayılır. Metinler strings.csv (GUIDE_*).
+## "Nasıl oynanır" rehberi. İlk yeni oyunda (rehber henüz görülmediyse) yalnızca tek bir karşılama sayfası çıkar
+## (`FIRST_RUN_PAGES`: işi ilk mesaideki etkileşimli öğretici öğretir; "hayali para, finansal tavsiye değil" ibaresi);
+## tam sayfalar (`PAGES`) ana menüdeki (?) düğmesinden açılır ve orada "Öğreticiyi yeniden oynat" düğmesi vardır.
+## Atla / Geri / İleri / Başla; kapanınca `finished` yayılır. Metinler strings.csv (GUIDE_*, TUT_*).
 
 signal finished
 
@@ -16,8 +18,15 @@ const PAGES := [
 	{"icon": "house", "n": 6, "chips": [["wallet", "GUIDE_CHIP_PAY"], ["coin", "GUIDE_CHIP_SAVE"], ["heart", "GUIDE_CHIP_FAMILY"]]},
 	{"icon": "heart", "n": 7, "chips": []},
 ]
+## İlk yeni oyunun kısa karşılaması (başlık/metin anahtarı doğrudan verilir).
+const FIRST_RUN_PAGES := [
+	{"icon": "stamp", "title": "TUT_WELCOME_T", "body": "TUT_WELCOME_B", "chips": [["check", "DECISION_COMPLETE"], ["close", "DECISION_REJECT"], ["siren", "DECISION_POLICE"]]},
+]
 
 var page := 0
+## Bu açılışta gösterilen sayfalar: ilk yeni oyunda `FIRST_RUN_PAGES`, sonra `PAGES`.
+var pages: Array = PAGES
+var first_run := false
 
 var _title: Label
 var _body: Label
@@ -29,6 +38,8 @@ var _next_button: Button
 
 
 func _init() -> void:
+	first_run = SettingsManager.get_value("game", "guide_seen") != true
+	pages = FIRST_RUN_PAGES if first_run else PAGES
 	name = "GuideSheet"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	z_index = 50
@@ -70,6 +81,13 @@ func _init() -> void:
 	_chips.add_theme_constant_override("separation", 26)
 	column.add_child(_chips)
 	column.add_child(_spacer())
+	if not first_run:
+		var replay := UiKit.icon_button("back", tr("TUT_REPLAY"), "GuideReplayTutorial", true, true, 88.0)
+		replay.pressed.connect(func() -> void:
+			DeskTutorial.request_replay()
+			replay.text = tr("TUT_REPLAY_SET")
+			replay.disabled = true)
+		column.add_child(replay)
 	_dots = HBoxContainer.new()
 	_dots.alignment = BoxContainer.ALIGNMENT_CENTER
 	_dots.add_theme_constant_override("separation", 10)
@@ -108,22 +126,23 @@ func _spacer() -> Control:
 
 
 func _advance() -> void:
-	if page >= PAGES.size() - 1:
+	if page >= pages.size() - 1:
 		_finish()
 	else:
 		_show(page + 1)
 
 
 func _show(index: int) -> void:
-	page = clampi(index, 0, PAGES.size() - 1)
-	var data: Dictionary = PAGES[page]
+	page = clampi(index, 0, pages.size() - 1)
+	var data: Dictionary = pages[page]
 	_icon.icon = str(data["icon"])
 	var text_id := int(data.get("n", page + 1))
-	_title.text = tr("GUIDE_T%d" % text_id)
-	_body.text = tr("GUIDE_B%d" % text_id)
-	(find_child("GuideProgress", true, false) as Label).text = tr("GUIDE_PAGE") % [page + 1, PAGES.size()]
+	_title.text = tr(str(data.get("title", "GUIDE_T%d" % text_id)))
+	_body.text = tr(str(data.get("body", "GUIDE_B%d" % text_id)))
+	(find_child("GuideProgress", true, false) as Label).text = tr("GUIDE_PAGE") % [page + 1, pages.size()]
+	(find_child("GuideProgress", true, false) as Label).visible = pages.size() > 1
 	_back_button.visible = page > 0
-	_next_button.text = tr("GUIDE_START") if page == PAGES.size() - 1 else tr("GUIDE_NEXT")
+	_next_button.text = tr("GUIDE_START") if page == pages.size() - 1 else tr("GUIDE_NEXT")
 	UiKit.clear(_chips)
 	for chip: Array in data["chips"]:
 		var holder := VBoxContainer.new()
@@ -137,7 +156,8 @@ func _show(index: int) -> void:
 		holder.add_child(caption)
 		_chips.add_child(holder)
 	UiKit.clear(_dots)
-	for i in PAGES.size():
+	_dots.visible = pages.size() > 1
+	for i in pages.size():
 		var dot := ColorRect.new()
 		dot.custom_minimum_size = Vector2(28 if i == page else 10, 10)
 		dot.color = Color("FFC857") if i == page else Color(1, 1, 1, 0.25)
