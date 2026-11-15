@@ -1,0 +1,18 @@
+{
+  "scoring": {
+    "combo_window": 2.6,
+    "combo_step": 0.15,
+    "combo_max": 6,
+    "milestones": [
+      10,
+      25,
+      50,
+      100
+    ]
+  },
+  "leveling": {
+    "base_xp": 70,
+    "growth": 1.3,
+    "cards": 3
+  }
+}

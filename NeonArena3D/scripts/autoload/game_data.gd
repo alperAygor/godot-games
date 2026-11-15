@@ -1,7 +1,9 @@
 extends Node
-## data/*.json yükler; denge, kartlar ve haritalar erişilebilir olur.
+## data/*.json yükler ve açılışta doğrular; denge, kartlar ve haritalar erişilebilir olur.
+## Denge verisi `data/balance/*.json` dosyalarına bölünmüştür (BalanceData birleştirir; `value("a.b")` yolu aynıdır).
+## Doğrulama hataları `push_error` ile tek tek basılır ve `errors` içinde tutulur (açılış kapısı bunları yakalar).
 
-const BALANCE_PATH := "res://data/balance.json"
+const BALANCE_DIR := BalanceData.DIR
 const CARDS_PATH := "res://data/cards.json"
 const MAPS_PATH := "res://data/maps.json"
 const SHIPS_PATH := "res://data/ships.json"
@@ -24,21 +26,28 @@ var cards: Array = []
 var maps: Array = []
 var ships: Array = []
 var upgrades: Array = []
+## Oynanış sabitleri (combat.json + sık okunan player alanları), açılışta bir kez okunur.
+var tuning: GameTuning = GameTuning.new()
+var errors := PackedStringArray()
 
 func _ready() -> void:
-	balance = _load_dict(BALANCE_PATH)
+	load_all()
+	_register_actions()
+
+func load_all() -> void:
+	## Tüm veri dosyalarını okur + doğrular (testler bunu yeni bir örnek üzerinde de çağırır).
+	errors = PackedStringArray()
+	var loaded := BalanceData.load_dir(BALANCE_DIR)
+	balance = loaded["data"]
+	errors.append_array(loaded["errors"])
 	cards = _load_array(CARDS_PATH)
 	maps = _load_array(MAPS_PATH)
 	ships = _load_array(SHIPS_PATH) if FileAccess.file_exists(SHIPS_PATH) else []
 	upgrades = _load_array(UPGRADES_PATH) if FileAccess.file_exists(UPGRADES_PATH) else []
-	_register_actions()
-
-func _load_dict(path: String) -> Dictionary:
-	var parsed = JSON.parse_string(FileAccess.get_file_as_string(path))
-	if typeof(parsed) != TYPE_DICTIONARY:
-		push_error("JSON sözlük okunamadı: " + path)
-		return {}
-	return parsed
+	errors.append_array(ContentValidation.validate(cards, ships, upgrades, maps, balance))
+	tuning = GameTuning.from_balance(balance)
+	for e in errors:
+		push_error("veri doğrulama: " + e)
 
 func _load_array(path: String) -> Array:
 	var parsed = JSON.parse_string(FileAccess.get_file_as_string(path))

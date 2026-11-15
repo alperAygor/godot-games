@@ -1,0 +1,10 @@
+{
+  "pickups": {
+    "drop_chance": 0.15,
+    "heal_amount": 22,
+    "overdrive_time": 6,
+    "overdrive_rate": 0.5,
+    "shield_weight": 0.16,
+    "overdrive_weight": 0.26
+  }
+}

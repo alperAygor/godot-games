@@ -88,7 +88,7 @@ Veriler: `data/upgrades.json`.
 | Kızıl Sektör | KIZIL DEV | yere uyarı daireleri + patlama, boşluklu şok dalgası, alev yelpazesi, (öfke) sıçrama, bombacı çağırma |
 | Buz Terminali | BUZ HÜKÜMDARI | dönen lazer ışınları (önce uyarı çizgisi), buz kristali yelpazesi, ışınlanma, (öfke) 3 ışın + dörtlü sarmal |
 
-Döngü tamamlanınca bosslar "MK-2" olarak daha güçlü döner. Değerler: `data/balance.json` → `boss_kinds`.
+Döngü tamamlanınca bosslar "MK-2" olarak daha güçlü döner. Değerler: `data/balance/bosses.json` → `boss_kinds`.
 
 ## Sinerjiler
 
@@ -133,8 +133,11 @@ scripts/autoload/   settings (kayıt + kalıcı ilerleme), game_data, i18n, fx, 
 scripts/core/       run_state, loadout (kartlar + sinerjiler), meta_progress (çekirdek/atölye/gemi), arena_space
 scripts/entities3d/ player3d (gemi değişimi), enemy3d (7 tür + elit), boss3d (3 tür, 2 faz), pickup3d
 scripts/world/      map_builder, sparks (MultiMesh efektler), bullet_field (MultiMesh mermiler), model_cache
-scripts/ui/         game3d (döngü), hud, menus (menü/hangar/atölye/ayarlar/kartlar), touch_controls, ui_kit
-data/               balance · cards · maps · ships · upgrades · lang_en (.json)
+scripts/game/       oynanış modülleri: run_flow, player_control, autopilot, combat, weapons, spawner, boss_events,
+                    cards_flow, camera_rig, feedback, hud_bridge + saf yardımcılar (bkz. docs/ARCHITECTURE.md)
+scripts/ui/         game3d (ince orkestratör, kare sırası), hud, menus (menü/hangar/atölye/ayarlar/kartlar), touch_controls, ui_kit
+data/balance/       player · enemies · bosses · waves · scoring · pickups · combat (.json; açılışta doğrulanır)
+data/               cards · maps · ships · upgrades · lang_en (.json)
 assets/             models (20 glb) · audio (48 wav) · fonts (Oxanium, Exo 2 — OFL) · shaders · icons
 tests/unit/         49 test
 tools/              verify.sh · smoke_test.gd · screenshot.gd · make_audio.py · audio_report.py · blender/ · dev/
@@ -153,7 +156,8 @@ godot --path . --resolution 1280x720 -s res://tools/screenshot.gd -- --demo --wa
 
 Oyun argümanları (`--` sonrası): `--demo` (bot oynar, kayıt tutmaz), `--wave=N`, `--map=N`, `--ship=ID`,
 `--boss=sentinel|titan|frost`, `--give=kart1,kart2`, `--cards`, `--nova`, `--die=T`, `--lang=tr|en`,
-`--touch`, `--quality=0..2`, `--no-save`, `--screen=settings|howto`.
+`--touch`, `--quality=0..2`, `--no-save`, `--screen=settings|howto`, `--seed=N` (tohumlu koşu; `--fixed-fps 60` ile
+birlikte kare kare belirlenimli, bkz. `tools/sim/scene_probe.gd`).
 `screenshot.gd` ayrıca `--press=ESC@4`, `--click=X,Y@T`, `--touch/--move/--lift=X,Y@T` alır.
 
 ## Doğrulama

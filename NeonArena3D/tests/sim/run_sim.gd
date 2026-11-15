@@ -12,7 +12,7 @@ class_name RunSim
 
 const VERSION := 1
 const DATA_PATHS := {
-	"balance": "res://data/balance.json", "cards": "res://data/cards.json", "ships": "res://data/ships.json",
+	"balance": BalanceData.DIR, "cards": "res://data/cards.json", "ships": "res://data/ships.json",
 	"upgrades": "res://data/upgrades.json", "maps": "res://data/maps.json", "model": "res://tests/sim/sim_model.json",
 }
 const WAVE_MARKS := [30, 60, 120, 180, 240, 480]
@@ -52,6 +52,13 @@ static func load_data() -> Dictionary:
 	## Veri dosyalarını okur (otoyük gerektirmez); eksik/bozuksa boş sözlük döner.
 	var out := {}
 	for key in DATA_PATHS:
+		if key == "balance":
+			# F2: denge verisi data/balance/*.json'a bölündü; BalanceData eski tek dosyayla aynı sözlüğü birleştirir.
+			var loaded := BalanceData.load_dir(DATA_PATHS[key])
+			if not (loaded["errors"] as PackedStringArray).is_empty():
+				return {}
+			out[key] = loaded["data"]
+			continue
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(DATA_PATHS[key]))
 		if parsed == null:
 			return {}

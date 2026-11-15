@@ -1,0 +1,23 @@
+{
+  "waves": {
+    "base_count": 6,
+    "growth": 1.9,
+    "spawn_interval": 0.5,
+    "interval_decay": 0.02,
+    "min_interval": 0.14,
+    "max_alive": 44,
+    "intermission": 2.2,
+    "boss_every": 5,
+    "boss_wave_count": 3,
+    "boss_break": 3.2,
+    "clear_bonus": 60,
+    "spawn_radius_min": 620,
+    "spawn_radius_max": 980
+  },
+  "difficulty": {
+    "hp_per_wave": 0.12,
+    "damage_per_wave": 0.07,
+    "speed_per_wave": 0.014,
+    "speed_cap": 1.45
+  }
+}
