@@ -24,7 +24,7 @@ func test_finishing_the_guide_continues_to_the_first_morning_and_is_remembered()
 	await scenes.goto(Scenes.MAIN)
 	await tap("NewGameButton")
 	await tree.process_frame
-	for i in GuideSheet.PAGES.size():
+	for i in GuideSheet.FIRST_RUN_PAGES.size():
 		await tap("GuideNext")
 		await tree.process_frame
 	await tree.create_timer(0.3).timeout
@@ -108,3 +108,32 @@ func test_the_android_back_key_walks_the_guide_back_then_closes_it() -> void:
 	await tree.process_frame
 	assert_true(node("GuideSheet") == null)
 	assert_eq(scenes.current_path(), Scenes.MAIN)
+
+
+func test_the_first_new_game_shows_only_a_short_welcome_with_the_fiction_notice() -> void:
+	settings.set_value("game", "guide_seen", false, false)
+	await scenes.goto(Scenes.MAIN)
+	await tap("NewGameButton")
+	await tree.process_frame
+	var guide: GuideSheet = node("GuideSheet")
+	assert_true(guide.first_run)
+	assert_eq(guide.pages.size(), 1, "işi masadaki öğretici öğretir; metin sayfası tek")
+	for locale in ["tr", "en"]:
+		TranslationServer.set_locale(locale)
+		assert_ne(tr("TUT_WELCOME_B"), "TUT_WELCOME_B")
+	TranslationServer.set_locale("tr")
+	assert_true((node("GuideText") as Label).text.contains("finansal tavsiye"), "hayali para / tavsiye değil ibaresi")
+	assert_true(node("GuideReplayTutorial") == null, "ilk açılışta yeniden oynat yok")
+	assert_eq((node("GuideNext") as Button).text, tr("GUIDE_START"))
+
+
+func test_the_menu_guide_can_rearm_the_tutorial_for_the_next_shift() -> void:
+	await scenes.goto(Scenes.MAIN)
+	await tap("HelpButton")
+	await tree.process_frame
+	assert_false(bool(DeskTutorial.read_state()["replay"]))
+	await tap("GuideReplayTutorial")
+	assert_true(bool(DeskTutorial.read_state()["replay"]), "öğretici yeniden istendi")
+	assert_true(DeskTutorial.wanted(7), "bir sonraki hikaye vardiyasında (hangi gün olursa) kurulur")
+	assert_true((node("GuideReplayTutorial") as Button).disabled)
+	assert_eq((node("GuideReplayTutorial") as Button).text, tr("TUT_REPLAY_SET"))

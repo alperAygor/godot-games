@@ -18,7 +18,7 @@ func setup(document_kind: String, title: String, line_one: String, line_two: Str
 	var box := VBoxContainer.new()
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(box)
-	for pair in [[title, &"DocTitle"], [line_one, &"DocLine"], [line_two, &"DocDetail"]]:
+	for pair in [[title, &"DocLine"], [line_one, &"DocLine"], [line_two, &"DocLine"]]:  # telefonda okunsun: hepsi >= 29 px
 		var label := Label.new()
 		label.text = pair[0]
 		label.theme_type_variation = pair[1]

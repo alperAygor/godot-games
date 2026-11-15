@@ -27,6 +27,9 @@ func before_each() -> void:
 	tree.root.get_node("SettingsManager").set_value("game", "consent_asked", true, false)  # gizlilik penceresi testlerde engellemesin
 	_original_guide = tree.root.get_node("SettingsManager").get_value("game", "guide_seen")
 	tree.root.get_node("SettingsManager").set_value("game", "guide_seen", true, false)
+	# Gün 1 öğreticisi testlerde kapalı (masa akışı testleri onu beklemez); öğretici testleri kendisi açar.
+	# Durum dosyası betikli çalışmada sandbox'tadır (JsonIO.user_file); gerçek dosyaya dokunulmaz.
+	DeskTutorial.write_state(true, false)
 	_original_path = save_manager.save_path
 	_original_data = save_manager.data.duplicate(true)
 	save_manager.save_path = SESSION_TEST_PATH
@@ -54,6 +57,8 @@ func after_each() -> void:
 	session.office_enabled = true
 	tree.root.get_node("SettingsManager").set_value("game", "consent_asked", _original_consent, false)
 	tree.root.get_node("SettingsManager").set_value("game", "guide_seen", _original_guide, false)
+	if JsonIO.is_sandboxed():
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(JsonIO.user_file(DeskTutorial.STATE_FILE)))
 	for suffix in ["", ".bak", ".tmp"]:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(SESSION_TEST_PATH + suffix))
 

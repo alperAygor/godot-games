@@ -1,6 +1,7 @@
 extends Control
 ## Sabah gazetesi: manşet, kurlar, yeni kural, bülten, aile. İçeriği Newspaper üretir; burası sadece çizer.
-## Ekran açılınca oyun kaydedilir (her sabah otomatik kayıt).
+## Ekran açılınca oyun kaydedilir (her sabah otomatik kayıt). Üstte kaydırılmayan tek satırlık "bugün yeni" özeti,
+## altta her zaman görünen "Mesaiye başla" (gazete uzasa da kaydırma alanı ikisinin arasında kalır).
 
 var _leave_sheet: Control = null
 
@@ -16,6 +17,7 @@ func _ready() -> void:
 	var paper := Newspaper.build(career)
 
 	var column := UiKit.screen_column(self, 10)
+	column.add_child(_today_summary(paper, career))
 	var list := UiKit.scroll_box()
 	column.add_child(list.get_meta("scroll"))
 	_build_paper(list, paper, career)
@@ -32,6 +34,29 @@ func handle_back() -> bool:
 		return true
 	_open_leave()
 	return true
+
+
+## "Bugün yeni: UV kuralı, UV lamba, Merkez talimatı" — okumadan önce ne değiştiğini söyler.
+func _today_summary(paper: Dictionary, career: Career) -> Control:
+	var parts: PackedStringArray = []
+	for rule_id: Variant in paper["new_rules"]:
+		parts.append(tr("RULE_%s" % rule_id))
+	for tool_id: Variant in paper["new_tools"]:
+		parts.append(tr("TOOL_%s" % str(tool_id).to_upper()))
+	if not (paper["directive"] as Dictionary).is_empty():
+		parts.append(tr("DIR_TITLE"))
+	if not (paper["stolen"] as Array).is_empty() or not (paper["wanted_faces"] as Array).is_empty():
+		parts.append(tr("MORNING_BULLETIN"))
+	var text := tr("TUT_MORNING_NOTHING")
+	if career.day == 1 and DeskTutorial.wanted(1):
+		text = tr("TUT_MORNING_FIRST")
+	elif not parts.is_empty():
+		text = tr("TUT_MORNING_NEW") % ", ".join(parts)
+	var panel := PanelContainer.new()
+	panel.name = "TodaySummary"
+	panel.theme_type_variation = &"SlipPanel"
+	panel.add_child(UiKit.wrapped(text, &"SlipTitle", "TodaySummaryText"))
+	return panel
 
 
 func _build_paper(list: VBoxContainer, paper: Dictionary, career: Career) -> void:

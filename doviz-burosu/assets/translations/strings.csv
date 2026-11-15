@@ -437,3 +437,27 @@ MARKET_CONNECTING,Connecting to the store...,Mağazaya bağlanılıyor...
 MARKET_BUY_NOPRICE,Buy,Satın al
 MARKET_PENDING,Your payment is pending. Ads are removed as soon as Google Play confirms it.,Ödemen beklemede. Google Play onaylar onaylamaz reklamlar kaldırılır.
 MARKET_RESTORE_FAILED,Could not reach the store. Try again later.,Mağazaya ulaşılamadı. Sonra tekrar dene.
+TUT_REQUEST,Your first customer! They want to change %s into %s.,İlk müşterin! %s bozdurup %s almak istiyor.
+TUT_INSPECT,Tap a banknote to look at it closely.,Yakından bakmak için bir banknota dokun.
+TUT_INSPECT_CLOSE,"Looks genuine, so it stays on the counter. Close this page.","Gerçek görünüyor, tezgâhta kalsın. Bu sayfayı kapat."
+TUT_RATES,Now tap Rules to see today's rate.,Şimdi Kurallar'a dokunup günün kurunu gör.
+TUT_RATES_CLOSE,BUY rate: %s %s = 1 %s. Close this page.,ALIŞ kuru: %s %s = 1 %s. Bu sayfayı kapat.
+TUT_PAY,"Work it out: %s × %s, rounded down to 5 PL = %s. Tap the receipt.","Hesapla: %s × %s, 5 PL'ye aşağı yuvarla = %s. Fişe dokun."
+TUT_PAY_TYPE,Type %s and press OK.,%s yaz ve Tamam'a bas.
+TUT_PAY_FIX,Not quite: it should be %s. Tap the receipt to fix it.,Tam değil: %s olmalı. Düzeltmek için fişe dokun.
+TUT_STAMP,All correct: stamp COMPLETE to hand over the money.,Her şey doğru: parayı vermek için TAMAMLA damgasını bas.
+TUT_CLOSE_OTHER,Close this page to go on with the lesson.,Derse devam etmek için bu sayfayı kapat.
+TUT_RESULT_OK,Correct! Every right deal earns a bonus.,Doğru! Her doğru işlem prim kazandırır.
+TUT_RESULT_BAD,"A mistake: the slip says why. %d free warnings a day, then fines.","Hata: fiş nedenini yazar. Günde %d cezasız uyarı, sonrası ceza."
+TUT_OUTRO,Something wrong? REJECT and pick why; fakes mean POLICE. New rules come each morning.,Bir sorun mu var? REDDET ve nedenini seç; sahteye POLİS. Her sabah yeni kural gelir.
+TUT_OK,Got it,Anladım
+TUT_DONE,Start the day,Güne başla
+TUT_SKIP,Skip tutorial,Öğreticiyi geç
+TUT_PROGRESS,Lesson %d / %d,Ders %d / %d
+TUT_REPLAY,Replay the tutorial,Öğreticiyi yeniden oynat
+TUT_REPLAY_SET,It starts on your next shift,Sonraki mesainde başlar
+TUT_WELCOME_T,Welcome to the exchange desk,Döviz bürosuna hoş geldin
+TUT_WELCOME_B,"Your first shift shows you the job step by step. All money in Pahalistan is made up: this is a game, not financial advice.","İlk mesain işi adım adım gösterir. Pahalistan'daki bütün paralar hayalidir: bu bir oyundur, finansal tavsiye değildir."
+TUT_MORNING_NEW,New today: %s,Bugün yeni: %s
+TUT_MORNING_NOTHING,Nothing new today: same rules as yesterday.,Bugün yeni bir şey yok: kurallar dünkü gibi.
+TUT_MORNING_FIRST,First day: only the exchange rule. The desk will show you how.,İlk gün: yalnızca bozdurma kuralı. Masada nasıl yapılacağı gösterilecek.
