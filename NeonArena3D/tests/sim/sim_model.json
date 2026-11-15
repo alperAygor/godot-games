@@ -1,0 +1,280 @@
+{
+  "_comment": "Denge simülasyonunun (tests/sim/run_sim.gd) soyut dövüş modeli sabitleri: botun isabet/kaçınma davranışının istatistiksel yaklaşığı. Oyun formülleri (hasar, atış aralığı, kartlar, düşman/boss kuralları) run_sim.gd'de birebir; burada yalnız ölçülemeyen davranış sabitleri var. Kalibrasyon kanıtı: tools/sim/baseline/scene_probe_samples.json. Sabitleri değiştirirsen yeni baseline üret.",
+  "dt": 0.1,
+  "max_time": 2400.0,
+  "arena_player_radius": 13.0,
+  "approach": {
+    "base": 0.5,
+    "ref_speed": 360.0,
+    "speed_exp": 0.5,
+    "min": 0.3,
+    "max": 1.0
+  },
+  "contact": {
+    "base": 0.04,
+    "crowd_k": 0.008,
+    "crowd_radius": 300.0,
+    "max": 0.9,
+    "touch_cd": 0.6
+  },
+  "dash_invuln": 0.25,
+  "accuracy": {
+    "blaster": 0.55,
+    "scatter": 0.62,
+    "rail": 0.6,
+    "rocket": 0.75,
+    "boss": 0.7,
+    "drone": 0.6
+  },
+  "line_prob": 0.4,
+  "bullet_hit": {
+    "default": 0.08,
+    "sniper": 0.12,
+    "boss_default": 0.04
+  },
+  "bullet_dmg_mult": 0.8,
+  "bomber_hit": 0.5,
+  "pickup": {
+    "collect": 0.65,
+    "magnet_gain": 0.1,
+    "collect_max": 0.95
+  },
+  "fortress_bullets_hit": 5,
+  "dash_damage_targets": 3,
+  "scatter_range_falloff": 0.3,
+  "boss_hold_distance": 300.0,
+  "boss_pattern_hit_scale": 0.2,
+  "boss_patterns": {
+    "sentinel": [
+      {
+        "name": "radial",
+        "interval_key": "radial_interval",
+        "interval": 2.9,
+        "p2_mult": 0.75,
+        "bullets_key": "radial_count",
+        "bullets": 12,
+        "p2_bonus": 5,
+        "dmg": 0.5,
+        "hit": 0.03
+      },
+      {
+        "name": "aimed",
+        "interval": 1.15,
+        "p2_interval": 0.9,
+        "bullets": 3,
+        "dmg": 0.6,
+        "hit": 0.1
+      },
+      {
+        "name": "charge",
+        "interval_key": "charge_interval",
+        "interval": 6.0,
+        "p1_mult": 1.25,
+        "p2_mult": 0.8,
+        "bullets": 1,
+        "dmg": 1.4,
+        "hit": 0.2
+      },
+      {
+        "name": "spiral",
+        "interval_key": "spiral_interval",
+        "interval": 5.5,
+        "phase": 2,
+        "bullets": 66,
+        "dmg": 0.45,
+        "hit": 0.012
+      }
+    ],
+    "titan": [
+      {
+        "name": "slam",
+        "interval_key": "slam_interval",
+        "interval": 3.4,
+        "p2_mult": 0.8,
+        "bullets_key": "slam_zones",
+        "bullets": 3,
+        "p2_bonus": 2,
+        "dmg": 0.9,
+        "hit": 0.09
+      },
+      {
+        "name": "wave",
+        "interval_key": "wave_interval",
+        "interval": 4.4,
+        "p2_mult": 0.8,
+        "bullets_key": "wave_count",
+        "bullets": 26,
+        "dmg": 0.5,
+        "hit": 0.025
+      },
+      {
+        "name": "fan",
+        "interval_key": "fan_interval",
+        "interval": 2.8,
+        "bullets_key": "fan_count",
+        "bullets": 7,
+        "volleys": 2,
+        "p2_volleys": 3,
+        "dmg": 0.45,
+        "hit": 0.07
+      },
+      {
+        "name": "leap",
+        "interval_key": "leap_interval",
+        "interval": 7.0,
+        "phase": 2,
+        "bullets": 1,
+        "dmg": 1.2,
+        "hit": 0.14
+      }
+    ],
+    "frost": [
+      {
+        "name": "beam",
+        "interval_key": "beam_interval",
+        "interval": 6.0,
+        "p2_mult": 0.75,
+        "bullets_key": "beam_count",
+        "bullets": 2,
+        "p2_bonus": 1,
+        "scale_key": "beam_time",
+        "scale_default": 3.2,
+        "scale_div": 0.7,
+        "dmg_key": "beam_damage",
+        "dmg": 0.42,
+        "hit": 0.12
+      },
+      {
+        "name": "shard",
+        "interval_key": "shard_interval",
+        "interval": 2.5,
+        "p2_mult": 0.8,
+        "bullets_key": "shard_count",
+        "bullets": 5,
+        "p2_bonus": 2,
+        "dmg": 0.45,
+        "hit": 0.07
+      },
+      {
+        "name": "spiral",
+        "interval_key": "spiral_interval",
+        "interval": 5.0,
+        "phase": 2,
+        "bullets": 72,
+        "dmg": 0.45,
+        "hit": 0.012
+      }
+    ]
+  },
+  "boss_summons": {
+    "sentinel": {
+      "interval": 7.0,
+      "kind1": "swarmer",
+      "count1": 3,
+      "kind2": "chaser",
+      "count2": 4,
+      "phase_mult2": 1.0
+    },
+    "titan": {
+      "interval": 7.0,
+      "kind1": "",
+      "count1": 0,
+      "kind2": "bomber",
+      "count2": 2,
+      "phase_mult2": 1.4
+    },
+    "frost": {
+      "interval": 7.0,
+      "kind1": "",
+      "count1": 0,
+      "kind2": "orbiter",
+      "count2": 2,
+      "phase_mult2": 1.3
+    }
+  },
+  "policies": {
+    "random": {},
+    "greedy": {
+      "weights": {
+        "damage_mult": 6.0,
+        "fire_rate_mult": 6.0,
+        "speed_mult": 1.5,
+        "max_hp_bonus": 0.06,
+        "dash_cd_mult": -2.0,
+        "magnet": 0.5,
+        "bullet_size": 1.0,
+        "projectiles": 3.0,
+        "pierce": 1.2,
+        "vampire": 0.25,
+        "crit": 4.0,
+        "regen": 0.8,
+        "thorns": 0.05,
+        "drones": 2.0,
+        "chain": 1.5,
+        "dash_damage": 0.03,
+        "nova_rate_mult": 1.0,
+        "explosive": 1.5,
+        "shield_regen": 2.0,
+        "revive": 3.0,
+        "storm": 3.0,
+        "harvest": 2.0,
+        "doom_nova": 3.0,
+        "blitz": 2.0,
+        "hive": 3.0,
+        "fortress": 3.0
+      },
+      "synergy_bonus": 4.0
+    }
+  },
+  "career": {
+    "max_runs": 160,
+    "explore": 0.2,
+    "budget_policy": "ship_first"
+  },
+  "tiers": {
+    "fresh": {
+      "fraction": 0.0
+    },
+    "mid": {
+      "fraction": 0.5
+    },
+    "maxed": {
+      "fraction": 1.0
+    }
+  },
+  "builds": {
+    "none": [],
+    "tank": [
+      "zirh",
+      "zirh",
+      "kalkan",
+      "yenilenme"
+    ],
+    "glass": [
+      "guc",
+      "guc",
+      "tetik",
+      "kritik"
+    ],
+    "storm": [
+      "zincir",
+      "kritik",
+      "s_firtina"
+    ],
+    "hive": [
+      "drone",
+      "coklu",
+      "s_kovan"
+    ]
+  },
+  "career_run_cap": 900.0,
+  "boss_intro": 2.5,
+  "chase_reach": {
+    "scatter": 1.8
+  },
+  "_calibration": {
+    "hedef (gerçek sahne, otopilot, rastgele kart, 12 örnek)": "5. dalgaya 37-80 sn; 180 sn'de 9-10. dalga; ilk boss'ta ölüm ~%25 (2/8); boss başına kaybedilen can ~17-105 (ölenlerde 105-160); 600 sn'de 25-31. dalga (4 örnekten 2'si hayatta), 700-1000 öldürme, 50-80 bin puan",
+    "ayarlanan sabitler": "contact.*, bullet_hit.*, boss_pattern_hit_scale, accuracy.*, approach.*, scatter_range_falloff, chase_reach",
+    "bilinen sınır": "Model yalnız ~25. dalgaya kadar gerçek örneklerle karşılaştırıldı; sonrası (özellikle greedy politikada 40+) doğrulanmadı. Gerçek sahne tohumlanamaz, bu yüzden kalibrasyon yaklaşıktır."
+  }
+}
