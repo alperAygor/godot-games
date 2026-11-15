@@ -11,7 +11,7 @@ extends SceneTree
 ## NOT: `-s` betiği autoload'lardan ÖNCE derlenir; autoload'a değen UI sınıfları tür olarak anılmaz
 ## (bkz. play_probe.gd). Düğümler `Node`/`Control` olarak tutulur, `call`/`emit_signal` ile sürülür.
 
-const WATCHDOG_SECONDS: float = 120.0
+const WATCHDOG_SECONDS: float = 170.0
 const WAIT_SECONDS: float = 15.0
 const SETTLE_FRAMES: int = 6
 const PLAYER_LEVEL: int = 12
@@ -97,8 +97,7 @@ func _language_pass(code: String) -> void:
 	# Game (ilerleme noktaları dolu)
 	_open_scene(GAME_SCENE)
 	await _frames(SETTLE_FRAMES)
-	current_scene.call("_on_tap_pressed")
-	current_scene.call("_on_tap_pressed")
+	await _plug_one(current_scene)
 	await _frames(SETTLE_FRAMES)
 	_inspect(current_scene, "%s/game" % code)
 	current_scene.call("_on_pause_requested")
@@ -107,9 +106,7 @@ func _language_pass(code: String) -> void:
 	# Kazanma sayfası + 2x sonrası
 	_open_scene(GAME_SCENE)
 	await _frames(SETTLE_FRAMES)
-	var target: int = int((current_scene.get("_run") as PlaceholderRun).target)
-	for _tap: int in range(target):
-		current_scene.call("_on_tap_pressed")
+	await _solve(current_scene)
 	if await _until(func() -> bool: return current_scene.get("_overlay") != null):
 		var sheet: Control = current_scene.get("_overlay") as Control
 		await _frames(SETTLE_FRAMES)
@@ -120,11 +117,10 @@ func _language_pass(code: String) -> void:
 		_inspect(current_scene, "%s/kazanma+2x" % code)
 	else:
 		_check(false, "%s: kazanma sayfası çıkmadı" % code)
-	# Kayıp sayfası (üç sigorta atar)
+	# Kayıp sayfası (gün kipi kancası; düz kipte oyun kaybettirmez)
 	_open_scene(GAME_SCENE)
 	await _frames(SETTLE_FRAMES)
-	for _fuse: int in range(3):
-		current_scene.call("_on_lose_pressed")
+	current_scene.call("_show_lose")
 	if await _until(func() -> bool: return current_scene.get("_overlay") != null):
 		await _frames(SETTLE_FRAMES)
 		_inspect(current_scene, "%s/kayip" % code)
@@ -139,6 +135,26 @@ func _language_pass(code: String) -> void:
 	_inspect(online, "%s/baglanti" % code)
 	online.queue_free()
 	await _frames(2)
+
+
+## Kesitte bir cihazı gerçek giriş yolundan takar (oyun ekranı dolu görünsün).
+func _plug_one(game: Node) -> void:
+	var slice: SliceGame = game.get_node("Slice") as SliceGame
+	var plan: Dictionary = PrizSolver.new().first_solution(slice.state.level, PrizContent.load_default().registry)
+	var id: String = str(plan.keys()[0])
+	slice.drag_device_to_socket(id, str(plan[id]))
+	await _until(func() -> bool: return slice.all_settled())
+
+
+## Seviyeyi çözer ve kazanma sahnesini atlar (sonuç sayfası çıksın).
+func _solve(game: Node) -> void:
+	var slice: SliceGame = game.get_node("Slice") as SliceGame
+	var plan: Dictionary = PrizSolver.new().first_solution(slice.state.level, PrizContent.load_default().registry)
+	for id: Variant in plan.keys():
+		slice.drag_device_to_socket(str(id), str(plan[id]))
+		await _until(func() -> bool: return slice.all_settled())
+	await _until(func() -> bool: return slice.mode == SliceGame.Mode.WIN)
+	slice.skip_win()
 
 
 ## Koşul sağlanana dek (gerçek zamanlı en çok WAIT_SECONDS) kare bekler.

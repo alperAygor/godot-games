@@ -10,7 +10,8 @@ Her aşama çalışan bir yapı bırakır. Durum: [ ] bekliyor, [~] sürüyor, [
 - [~] `p2-art` (Opus): Blender hattı, tek oda dioraması, 8 cihaz, dört dilim ışığı, görünüm sahnesi.
 - [x] `p2-shell`: şablon altyapısının projeye taşınması (kayıt, dil, ses servisi, arayüz takımı, reklam politikası, rakamsız arayüz, `digit_probe`). Ayrıntı: `DECISIONS.md` "Aşama 2 — kabuk", `docs/ARCHITECTURE.md`.
 - [ ] `p2-sfx`: ElevenLabs ile fiş, tık, sigorta, cihaz döngüleri, uğultu, kazanma müziği.
-- [ ] `p2-slice`: sürükle-bırak, mıknatıs, fiziksel kablo, sigorta kutusu arayüzü, düz kip seviyeleri.
+- [x] `p2-slice`: sürükle-bırak, mıknatıs, fiziksel kablo, sigorta kutusu arayüzü, düz kip seviyeleri (7 kesit seviyesi,
+      `tools/slice_probe.gd`, `tools/slice_shot.gd`; ayrıntı `DECISIONS.md` "Aşama 2 — dikey kesit").
 - [ ] Ekran görüntüsü ve video ile kullanıcıya göster; "rakam yok" kapsamını sor.
 
 ## Aşama 3 — gün döngüsü, test, sigorta, kazanma/kaybetme akışı

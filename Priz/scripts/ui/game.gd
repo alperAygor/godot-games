@@ -1,160 +1,98 @@
 extends Control
 
-## Oyun ekranı. BU DOSYADAKİ "YER TUTUCU" BÖLÜMLER gerçek oyunla DEĞİŞTİRİLİR; akış iskeleti
-## (HUD, duraklatma, kazanma/kayıp sayfası, reklam, jeton, tekrar) olduğu gibi kalır.
-##
-## Yer tutucu oyun: "Dokun" düğmesine N kez bas -> kazan; "Kaybet" -> bir sigorta hakkı gider, haklar
-## bitince kaybet (bitince "Bir hak daha" = ödüllü `extra_fuse`). Ekranda RAKAM YOK: ilerleme ve haklar noktalarla.
-## Akış: _start_level -> (kazan/kaybet) -> kısa bekleme -> ResultSheet -> Devam / Tekrar / Ana ekran.
-## Tur kuralı saf `PlaceholderRun`dadır (sahnesiz, birim testli); burası yalnız gösterir.
+## Oyun ekranı (kabuk tarafı): dikey kesitin 3B oyun sahnesini (`SliceGame`) kurar ve kabuk sözleşmesine
+## bağlar (docs/ARCHITECTURE.md "Game ↔ kabuk sözleşmesi"): seviye başı → `RunFlow.on_level_start`,
+## kazanma sahnesi bitince → `RunFlow.on_win` + `ResultSheet.win` → Devam → (geçiş reklamı) → sıradaki seviye.
+## Düz kipte (seviye 1-14) kayıp yoktur; kayıp/ek hak yolu gün kipi (aşama 3) için `SliceGame.level_lost`
+## sinyaline bağlı bekler. Ekranda RAKAM ve yazı yok: HUD noktaları + dünya içi sigorta kutusu.
 
-const BUTTON_WIDTH: float = 620.0
-const CENTER_OFFSET_Y: float = -80.0
-const BLOCK_GAP: float = UiKit.SPACE_XXL
-const DEFAULT_TAPS: int = 5
+const FADE_COLOR: Color = Color(0.06, 0.06, 0.08)
+const FADE_SECONDS: float = 0.55
+## Seviyeler arası gün geçişi (gece → yeni seviyenin dilimi).
+const NEXT_LEVEL_TRANSITION: float = 1.8
 
-var _run: PlaceholderRun = null
 var _flow: RunFlow = null
 var _hud: GameHud = null
+var _slice: SliceGame = null
 var _overlay: ResultSheet = null
 var _pause: Sheet = null
+var _fade: ColorRect = null
 var _level_number: int = 1
-## Bu turda "Devam et" (ödüllü) kullanıldı mı: tur başına bir kez.
 var _revived: bool = false
 ## Kazanma sayfasındaki ödenen jeton (2x için taban) ve 2x alındı mı.
 var _reward: int = 0
 var _doubled: bool = false
-var _tap_pips: UiPips = null
-var _fuse_pips: UiPips = null
-var _tap_button: Button = null
-var _lose_button: Button = null
+var _won: bool = false
+var _lost: bool = false
 
 
 func _ready() -> void:
 	GameManager.set_phase(GameManager.Phase.GAME)
 	GameManager.back_requested.connect(_on_pause_requested)
+	set_anchors_preset(Control.PRESET_FULL_RECT)
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_flow = RunFlow.new()
 	add_child(_flow)
-	_build_ui()
-	_level_number = Progress.level()
-	_start_level()
-	modulate.a = 0.0
-	create_tween().tween_property(self, "modulate:a", 1.0, Motion.SCREEN_FADE_SECONDS)\
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_slice = SliceGame.new()
+	_slice.name = "Slice"
+	add_child(_slice)
+	var layer: Control = Control.new()
+	layer.name = "WorldOverlay"
+	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(layer)
+	_slice.set_overlay(layer)
+	_slice.level_won.connect(_on_level_won)
+	_hud = GameHud.new()
+	_hud.pause_requested.connect(_on_pause_requested)
+	add_child(_hud)
+	_fade = ColorRect.new()
+	_fade.name = "Fade"
+	_fade.color = FADE_COLOR
+	_fade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_fade)
+	_start_level(0.0)
+	# Açılış: ısıtma kareleri (parçacık, gölgelendirici) karartmanın arkasında çizilir.
+	var t: Tween = create_tween()
+	t.tween_interval(0.12)
+	t.tween_property(_fade, "color:a", 0.0, FADE_SECONDS).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	t.tween_callback(func() -> void: _fade.visible = false)
 
 
 func _exit_tree() -> void:
 	if GameManager.back_requested.is_connected(_on_pause_requested):
 		GameManager.back_requested.disconnect(_on_pause_requested)
+	AudioService.stop_music(0.4)
+	AudioService.stop_ambience()
 
 
-func _build_ui() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
-	var back: ColorRect = ColorRect.new()
-	back.color = UiTokens.C_BACKGROUND
-	back.set_anchors_preset(Control.PRESET_FULL_RECT)
-	back.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(back)
-	# --- YER TUTUCU oyun alanı ---
-	var center: CenterContainer = CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(center)
-	var column: VBoxContainer = VBoxContainer.new()
-	column.custom_minimum_size = Vector2(BUTTON_WIDTH, 0.0)
-	column.position.y = CENTER_OFFSET_Y
-	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	center.add_child(column)
-	_tap_pips = UiPips.new()
-	_tap_pips.name = "TapPips"
-	column.add_child(_tap_pips)
-	column.add_child(UiKit.spacer(UiKit.SPACE_LG))
-	_fuse_pips = UiPips.new()
-	_fuse_pips.name = "FusePips"
-	_fuse_pips.color = UiKit.FLAME
-	column.add_child(_fuse_pips)
-	column.add_child(UiKit.spacer(BLOCK_GAP))
-	_tap_button = UiKit.button(UiStrings.placeholder_tap(), &"", "", UiKit.HEIGHT_PRIMARY)
-	_tap_button.name = "TapButton"
-	_tap_button.pressed.connect(_on_tap_pressed)
-	column.add_child(_tap_button)
-	column.add_child(UiKit.spacer(UiKit.SPACE_LG))
-	_lose_button = UiKit.button(UiStrings.placeholder_lose(), &"SecondaryButton", "", UiKit.HEIGHT_SECONDARY)
-	_lose_button.name = "LoseButton"
-	_lose_button.pressed.connect(_on_lose_pressed)
-	column.add_child(_lose_button)
-	# --- Kalıcı iskelet: HUD ---
-	_hud = GameHud.new()
-	_hud.pause_requested.connect(_on_pause_requested)
-	add_child(_hud)
-
-
-## Yeni tur (ilk tur, "Devam", "Tekrar dene", duraklatmada "yeniden başlat").
-func _start_level() -> void:
+## Yeni tur (ilk açılış, "Devam", duraklatmada "yeniden başlat").
+func _start_level(transition: float = NEXT_LEVEL_TRANSITION) -> void:
 	_hide_overlay()
 	_level_number = Progress.level()
 	_revived = false
 	_doubled = false
-	_run = PlaceholderRun.new(_taps_to_win())
+	_won = false
+	_lost = false
 	Progress.begin_level_fuses()
+	_slice.start_level(_slice.data.index_for_progress(_level_number), transition)
+	_slice.set_input_enabled(true)
 	_flow.on_level_start(_level_number)
 	_hud.set_level(_level_number)
-	_set_buttons_enabled(true)
-	_refresh_view()
 
 
-## Yer tutucu: kaç dokunuşta kazanılır (data/balance.json -> placeholder.taps_to_win).
-func _taps_to_win() -> int:
-	var block: Variant = GameData.value("balance", "placeholder", {})
-	if block is Dictionary:
-		return ProgressData.to_count((block as Dictionary).get("taps_to_win"), DEFAULT_TAPS)
-	return DEFAULT_TAPS
+func _on_level_won() -> void:
+	_won = true
+	_show_win()
 
 
-func _refresh_view() -> void:
-	_tap_pips.set_state(_run.target, _run.taps)
-	_fuse_pips.set_state(_fuse_total(), Progress.fuses_left())
-
-
-## Seviye başındaki hak sayısı (balance.json `fuses_per_level`) — nokta sırasının uzunluğu.
-func _fuse_total() -> int:
-	return maxi(ProgressData.to_count(Progress.balance_table().get("fuses_per_level"), 3), Progress.fuses_left())
-
-
-func _set_buttons_enabled(enabled: bool) -> void:
-	UiKit.set_enabled(_tap_button, enabled)
-	UiKit.set_enabled(_lose_button, enabled)
-
-
-func _on_tap_pressed() -> void:
-	if not _run.tap():
-		return
-	Haptics.tick()
-	_refresh_view()
-	if _run.is_won():
-		_set_buttons_enabled(false)
-		get_tree().create_timer(Motion.WIN_DELAY_SECONDS).timeout.connect(_show_win)
-
-
-func _on_lose_pressed() -> void:
-	if not _run.is_playing():
-		return
-	# Sigorta atar: bir hak gider; haklar bitince seviye kaybedilir.
-	Haptics.thud()
-	if Progress.lose_fuse() > 0:
-		_refresh_view()
-		return
-	_run.lose()
-	_refresh_view()
-	_set_buttons_enabled(false)
-	get_tree().create_timer(Motion.LOSE_DELAY_SECONDS).timeout.connect(_show_lose)
-
-
-# --- Tur sonu (iskelet: oyun değişse de kalır) -----------------------------------------------
+# --- Tur sonu (iskelet) ----------------------------------------------------------------------
 
 func _show_win() -> void:
-	if not is_inside_tree() or not _run.is_won() or _overlay != null:
+	if not is_inside_tree() or not _won or _overlay != null:
 		return
+	_slice.set_input_enabled(false)
 	var result: Dictionary = _flow.on_win(_level_number, _win_stars())
 	result["won"] = true
 	GameManager.finish_run(result)
@@ -166,9 +104,12 @@ func _show_win() -> void:
 	_overlay.double_pressed.connect(_on_double_pressed)
 
 
+## Gün kipi (aşama 3) için: sigortalar bitince kayıp sayfası. Düz kipte çağrılmaz.
 func _show_lose() -> void:
-	if not is_inside_tree() or not _run.is_lost() or _overlay != null:
+	if not is_inside_tree() or _overlay != null:
 		return
+	_lost = true
+	_slice.set_input_enabled(false)
 	_flow.on_lose(_level_number)
 	GameManager.finish_run({"won": false})
 	_overlay = ResultSheet.lose(self, not _revived and _flow.can_watch(AdManager.Placement.EXTRA_FUSE))
@@ -176,19 +117,18 @@ func _show_lose() -> void:
 	_overlay.retry_pressed.connect(_on_retry_pressed)
 
 
-## Yer tutucu: kazanılan yıldız (balance.json `win_stars`); gerçek oyun kendi ölçütünü kullanır.
+## Kazanılan yıldız (balance.json `win_stars`).
 func _win_stars() -> int:
 	return ProgressData.to_count(Progress.balance_table().get("win_stars"), 1)
 
 
-## Devam: sayfa kapanır, (gerekirse) geçiş reklamı gösterilir, sonra sıradaki tur başlar.
-## Geçiş reklamı kararı BİTİRİLEN seviyeye (`_level_number`) göre verilir.
+## Devam: sayfa kapanır, (gerekirse) geçiş reklamı, sonra sıradaki seviye. Karar BİTİRİLEN seviyeye göre.
 func _on_continue_pressed() -> void:
 	_hide_overlay()
 	_flow.maybe_interstitial(_level_number, _start_level)
 
 
-## 2x jeton: yalnız ödüllü reklam başarılıysa fazlalık eklenir (ödül reklamdan ÖNCE verilmez).
+## 2x jeton: yalnız ödüllü reklam başarılıysa fazlalık eklenir.
 func _on_double_pressed() -> void:
 	if _doubled:
 		return
@@ -204,19 +144,18 @@ func _grant_double() -> void:
 	_overlay.show_doubled(_reward + bonus)
 
 
-## Kayıpta devam: yalnız ödüllü reklamla, tur başına bir kez. Tur kaldığı yerden sürer.
 func _on_revive_pressed() -> void:
 	_flow.watch(AdManager.Placement.EXTRA_FUSE, _grant_revive)
 
 
 func _grant_revive() -> void:
-	if _revived or not _run.revive():
+	if _revived or not _lost:
 		return
 	_revived = true
+	_lost = false
 	Progress.grant_extra_fuse()
 	_hide_overlay()
-	_set_buttons_enabled(true)
-	_refresh_view()
+	_slice.set_input_enabled(true)
 
 
 func _on_retry_pressed() -> void:
@@ -232,10 +171,17 @@ func _hide_overlay() -> void:
 # --- Duraklatma ------------------------------------------------------------------------------
 
 func _on_pause_requested() -> void:
-	# Sonuç sayfası açıkken ya da zaten duraklatılmışken geri tuşu yeni sayfa açmaz.
 	if _overlay != null or (_pause != null and is_instance_valid(_pause)):
 		return
+	_slice.set_input_enabled(false)
 	var sheet: PauseSheet = PauseSheet.open(self)
-	sheet.restart_pressed.connect(_start_level)
+	sheet.restart_pressed.connect(_start_level.bind(0.6))
 	sheet.home_pressed.connect(GameManager.goto_scene.bind(&"home"))
+	sheet.tree_exited.connect(_on_pause_closed)
 	_pause = sheet
+
+
+func _on_pause_closed() -> void:
+	_pause = null
+	if _overlay == null and is_inside_tree():
+		_slice.set_input_enabled(true)

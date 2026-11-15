@@ -123,11 +123,11 @@ else
     echo "  - atlandi (python3 ya da build_theme.py yok)"
 fi
 
-echo "== 5/5 probelar (oynanis + dil + rakam) =="
+echo "== 5/5 probelar (oynanis + dil + rakam + kesit) =="
 if [ "${VERIFY_SKIP_PROBES:-0}" = "1" ]; then
     echo "  - atlandi (VERIFY_SKIP_PROBES=1)"
 else
-    for probe in play_probe lang_probe digit_probe; do
+    for probe in play_probe lang_probe digit_probe slice_probe; do
         if [ ! -f "$PROJECT_DIR/tools/$probe.gd" ]; then
             echo "  - $probe yok, atlandi"
             continue

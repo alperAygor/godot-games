@@ -139,7 +139,7 @@ func _game_flow() -> void:
 	current_scene.call("_on_pause_requested")
 	await _frames(SETTLE_FRAMES)
 	_check(_has_text(current_scene, Loc.t("PAUSED")) and Loc.t("PAUSED") == "En pausa", "duraklatma sayfası es olmalı")
-	_check(_has_text(current_scene, "Toca"), "es: yer tutucu düğme Toca")
+	# p2-slice: oyun ekranında yazı yok (yer tutucu "Toca" düğmesi kalktı); dil denetimi duraklatma sayfasıyla yapılır.
 	# Oyunun içinde dil değişir: sahne yeni dille yeniden kurulur.
 	Loc.set_language(Loc.LANG_EN)
 	var before: Node = current_scene
@@ -150,7 +150,6 @@ func _game_flow() -> void:
 	await _frames(SETTLE_FRAMES)
 	_check(_has_text(current_scene, "Paused") and not _has_text(current_scene, "En pausa"),
 		"oyun içi dil değişimi: duraklatma en olmalı")
-	_check(_has_text(current_scene, "Tap"), "en: yer tutucu düğme Tap")
 	print("PROBE oyun içinde dil değişimi: sahne yeniden kuruldu, metinler yeni dilde")
 
 

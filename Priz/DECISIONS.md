@@ -141,3 +141,34 @@ Her aşamada buraya eklenir. Biçim: tarih, karar, neden, geri dönüş yolu.
 - **Kimlikler:** `music_main` / `ambience_main` (otomatik başlayanlar) KASITLI olarak yok; sahne `play_music("music_plan")` ve
   `play_ambience("ambience_*")` çağırır. Kazanma parçası döngüsüz: `play_jingle("music_win")`.
 - **Açık:** `hum_mains` ~105 Hz çıktı (50 Hz değil); telefon hoparlöründe daha iyi duyulduğu için tutuldu, insan kulağı onaylamalı.
+
+## Aşama 2 — dikey kesit (2026-11-15, `p2-slice`)
+
+- **Kesit seviye seti ayrı:** `data/levels_slice/slice_001..007.json` (çekirdek JSON biçimi, düz kip, tek oda `living`, 2-3 hat,
+  yalnız modellenmiş sekiz tür, aynı cihaz iki kez yok). Üretici çekirdeğe dokunmadan bu odaya kısıtlanamadığı için elle yazıldı;
+  her biri `tests/unit/test_slice_levels.gd` ile çözücüden geçer (ilk çözüm tahtada kazandırır). `data/levels/` (60 seviye) değişmedi.
+- **Oda eşlemesi veri:** `data/slice/room.json` — seviye `anchor` ("living_N") → `Socket_0N`; hat rengi → oda hattı (kırmızı 1,
+  mavi 2, sarı 3). 2 hatlı seviyeler kırmızı+mavi kullanır (sigorta kutusu modülleri 1..n sırayla görünür; test zorlar).
+  Şekiller sanatla aynı (mavi üçgen, sarı kare); çekirdeğin renk↔şekil sırası yalnız bilgi alanı.
+- **Cihaz fabrikası veri:** `data/slice/appliances.json` (tür → Fx betiği, oda yeri, döngü sesi, tepsi ölçeği). Katalog kimliği
+  `washing_machine` → `washer_fx.gd`.
+- **Kesit döngüsü:** oyuncu seviyesi N → kesit `(N-1) mod 7`; kesit bitince başa sarar (kabuk ilerlemesi, reklam ritmi aynen çalışır).
+- **Gün dilimi:** seviyeler sabah/öğle/akşam başlar (`levels.json time`), kazanma her zaman geceye kayar; sonraki seviye geceden kendi
+  dilimine 1.8 sn'de geçer ("yeni gün").
+- **Başparmak bölgesi aynı 3B dünyada:** tepsi (keçe kaplı ceviz altlıklar) ve BÜYÜK sigorta kutusu ekran koordinatından kamera
+  önüne izdüşürülür. Neden: duvardaki kutu telefonda ~90 px, göstergeleri okunmuyor; ayrı SubViewport ek çizim geçişi ister ve
+  sürükleme iki dünya arasında kopardı. Bedel: kazanma geri çekilmesinde ve paralakste onlar da hafifçe oynar (dünyanın parçası).
+  Duvardaki kutu da aynı bilgiyi gösterir.
+- **Blok boyu sabit gösterge:** oyun, sigorta göstergelerine kendi gölgelendiricisini takar (`scenes/game/slice_gauge.gdshader`,
+  6 yuva; kapasite kadarı blok, üstü boş yuva). Cihazın tepsideki yük blokları aynı gölgelendiriciyle aynı ekran boyunda çizilir:
+  "bu kadar blok" ↔ "o göstergede bu kadar boşluk" birebir. Hayalet bloklar (önizleme), sığmayanlar kırmızı, ret parlaması burada.
+- **Ana şalter düz kipte boşta** (kapalı durur); gün kipi `SliceGame.Phase.DAY` + `start_day_requested` ile eklenecek.
+  Kayıp yolu kabukta (`game.gd _show_lose`) duruyor; düz kipte çağrılmaz, `play_probe` kancayı doğrudan sınar.
+- **Takılı cihazın kablosu** odada cihazdan prize sarkık kalır (fiziksel; mobilyadan geçebilir — kabul edildi, aşağıda zayıf nokta).
+- **Fiş derinliği:** sürüklenen fiş odanın zemin/arka/sol duvar düzlemlerinin önünde tutulur (dioramaya gömülmesin).
+- **Öğretim:** seviye 1 hayalet parmak (çizim, yazı yok) ilk takmaya dek döner; 2-3'te 2.5 sn boşta ipucu nabzı; sonra 6 sn boşta
+  `PrizSolver.hint` (PLACE: tepsideki cihaz zıplar + hedef priz parlar; MOVE: yanlış takılı cihaz söner + prizi parlar).
+- **Ses:** `AudioService.stop_music(fade)` eklendi (kazanma ve çıkış); oyun sahnesi çıkışta katmanları, müziği ve ortamı kısar.
+- **Ertelenen / zayıf:** çizim çağrısı oyun sahnesinde 164 (büyük kutu + tepsi + bloklar + haleler; sanatın 100'üne eklendi), gerçek
+  cihazda ölçülmeli; tepsideki fan ince, TV siyah levha gibi okunuyor; odadaki fiş küçük, priz haleleri asıl işaret; takılı kablolar
+  mobilyadan geçebilir; video pencere çözünürlüğünde (540x960).
