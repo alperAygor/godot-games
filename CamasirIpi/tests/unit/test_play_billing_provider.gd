@@ -252,3 +252,41 @@ func test_purchase_ids_helpers() -> void:
 	assert_eq(PlayBillingProvider.purchase_product_ids({"product_ids": ["a", "b"]}), PackedStringArray(["a", "b"]))
 	assert_eq(PlayBillingProvider.tokens_to_acknowledge([_purchase(1, false, "a"), _purchase(1, true, "b"),
 		_purchase(2, false, "c"), _purchase(1, false, "a")]), PackedStringArray(["a"]))
+
+
+## GERÇEK eklenti betiği (addons/GodotGooglePlayBilling/BillingClient.gd): sağlayıcının kullandığı her sinyal,
+## yöntem ve enum değeri orada bulunmalı. Masaüstünde tekil nesne yoktur; sınıf yine de güvenle kurulur (no-op).
+func test_real_plugin_script_matches_provider_assumptions() -> void:
+	var script: GDScript = PlayBillingProvider._client_script()
+	assert_not_null(script, "BillingClient global sınıfı bulunmalı (eklenti kurulu)")
+	if script == null:
+		return
+	assert_eq(script.resource_path, "res://addons/GodotGooglePlayBilling/BillingClient.gd")
+	var client: Object = script.new() as Object
+	assert_not_null(client)
+	for signal_name: String in ["connected", "disconnected", "connect_error", "query_product_details_response",
+			"query_purchases_response", "on_purchase_updated", "acknowledge_purchase_response"]:
+		assert_true(client.has_signal(signal_name), "gerçek sinyal: %s" % signal_name)
+	for method_name: String in ["start_connection", "is_ready", "query_product_details", "query_purchases",
+			"purchase", "acknowledge_purchase"]:
+		assert_true(client.has_method(method_name), "gerçek yöntem: %s" % method_name)
+	var constants: Dictionary = script.get_script_constant_map()
+	var codes: Dictionary = constants.get("BillingResponseCode", {}) as Dictionary
+	assert_eq(int(codes.get("OK", -99)), PlayBillingProvider.RESPONSE_OK)
+	assert_eq(int(codes.get("USER_CANCELED", -99)), PlayBillingProvider.RESPONSE_USER_CANCELED)
+	assert_eq(int(codes.get("ITEM_ALREADY_OWNED", -99)), PlayBillingProvider.RESPONSE_ITEM_ALREADY_OWNED)
+	assert_eq(int(codes.get("SERVICE_DISCONNECTED", -99)), PlayBillingProvider.RESPONSE_SERVICE_DISCONNECTED)
+	assert_eq(int((constants.get("ProductType", {}) as Dictionary).get("INAPP", -99)), PlayBillingProvider.PRODUCT_TYPE_INAPP)
+	var states: Dictionary = constants.get("PurchaseState", {}) as Dictionary
+	assert_eq(int(states.get("PURCHASED", -99)), PlayBillingProvider.PURCHASE_STATE_PURCHASED)
+	assert_eq(int(states.get("PENDING", -99)), PlayBillingProvider.PURCHASE_STATE_PENDING)
+	# Gerçek istemciyle sağlayıcı masaüstünde sessiz kalır: bağlantı yok, hata yok.
+	var provider: PlayBillingProvider = PlayBillingProvider.new(client)
+	provider.initialize()
+	assert_true(provider.is_available())
+	var restored: Array[bool] = []
+	provider.restore_finished.connect(func(_ids: PackedStringArray, ok: bool) -> void: restored.append(ok))
+	provider.restore()
+	assert_eq(restored.size(), 0, "bağlantı kurulamadı: yanıt beklenir, sahte sahiplik verilmez")
+	if client is Node:
+		(client as Node).free()

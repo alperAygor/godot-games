@@ -180,6 +180,7 @@ SHOP_RESTORED,Geri yüklendi,Restored,Restaurado,Restaurado,Wiederhergestellt,�
 SHOP_NOTHING_TO_RESTORE,Geri yüklenecek bir şey yok,Nothing to restore,No hay nada que restaurar,Nada para restaurar,Nichts wiederherzustellen,復元できるものはありません,복원할 항목이 없어요
 SHOP_STORE_UNAVAILABLE,Mağaza şu an kullanılamıyor,Store unavailable right now,La tienda no está disponible ahora,Loja indisponível no momento,Shop gerade nicht verfügbar,ただいまショップを利用できません,지금은 상점을 이용할 수 없어요
 SHOP_PURCHASE_FAILED,Satın alma tamamlanmadı,Purchase did not go through,La compra no se completó,A compra não foi concluída,Kauf nicht abgeschlossen,購入が完了しませんでした,구매가 완료되지 않았어요
+SHOP_PURCHASE_PENDING,Ödeme beklemede. Tamamlanınca reklamlar kalkar,Payment pending. Ads go away once it clears,Pago pendiente. Los anuncios se quitan al completarse,Pagamento pendente. Os anúncios saem quando concluir,Zahlung ausstehend. Werbung verschwindet nach Abschluss,お支払いが保留中です。完了すると広告が消えます,결제가 보류 중이에요. 완료되면 광고가 사라져요
 SHOP_FREE_ONE,+1 bedava,+1 free,+1 gratis,+1 grátis,+1 gratis,+1 無料,+1 무료
 SHOP_NO_PRICE,Mağazaya bağlanıyor,Connecting to the store,Conectando con la tienda,Conectando à loja,Verbinde mit dem Shop,ショップに接続中,상점에 연결 중
 SHOP_AD_UNAVAILABLE,Reklam şu an hazır değil,Ad not available right now,Anuncio no disponible por ahora,Anúncio indisponível no momento,Werbung gerade nicht verfügbar,ただいま広告を表示できません,지금은 광고를 볼 수 없어요

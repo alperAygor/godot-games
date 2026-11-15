@@ -66,6 +66,11 @@ static func purchase_failed() -> String:
 	return Loc.t("SHOP_PURCHASE_FAILED")
 
 
+## Ödeme Play'de beklemede (PENDING): sahiplik yok, Play tamamlanınca bildirir.
+static func purchase_pending() -> String:
+	return Loc.t("SHOP_PURCHASE_PENDING")
+
+
 static func free_one() -> String:
 	return Loc.t("SHOP_FREE_ONE")
 

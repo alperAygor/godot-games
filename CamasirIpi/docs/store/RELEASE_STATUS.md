@@ -27,7 +27,7 @@ Durumlar: **TAMAM** (kodda/yapılandırmada kanıtlı), **ONAY** (sahibin onayı
 | B9 | Yayın ön ayarı | **TAMAM** | paket, sürüm, SDK, izinler (yalnız INTERNET + ACCESS_NETWORK_STATE + kitaplıklarınki), kenardan kenara, dikey, appCategory=game |
 | İzinler | Birleşik manifest | **TAMAM** | AD_ID ×2, READ_BASIC_PHONE_STATE, WAKE_LOCK, FOREGROUND_SERVICE kitaplıklardan (kaynakları `ReleaseGuard`/MONETIZATION §3.5); Play Console'da "Reklam kimliği: evet" beyanı SAHİP. WAKE_LOCK/FOREGROUND_SERVICE'i `tools:node="remove"` ile atmak mümkün ama SDK'nın arka plan işini bozabilir → karar sahibin. |
 | B4 | İmza | **SAHİP** | Yükleme anahtarı üretilecek: `docs/store/SIGNING.md`. Anahtarsız release dışa aktarım reddedilir (denendi). Debug AAB imzasız çıkıyor (DOĞRULANMADI: release imzası anahtarla denenecek). |
-| B1 | Billing eklentisi | **kod TAMAM / eklenti ONAY** | `play_billing_provider.gd` yeni `BillingClient` API'sine yeniden yazıldı, 20 testli (sahte istemci). Eklenti zip'i `docs/store/PENDING_APPROVALS.md` §1. CİHAZ: gerçek satın alma/geri yükleme. |
+| B1 | Billing eklentisi | **TAMAM (kurulu, derlemede kanıtlı) / CİHAZ** | Eklenti 3.3.0 kuruldu ve etkin (`PENDING_APPROVALS.md` §1, SHA-256 kayıtlı). Gerçek `BillingClient.gd` sağlayıcının varsayımlarıyla uyuşuyor (testle sabit). Debug AAB: birleşik manifestte `com.android.vending.BILLING`, billing kitaplığı + eklenti sınıfı dex'te, `BillingClient.gdc` pakette. CİHAZ: lisans-test hesabıyla satın alma/geri yükleme, boş `purchase_option_id`, acknowledge zamanlaması. |
 | B6 | AdMob kimlikleri | **SAHİP** | Konsol işi (OWNER_CHECKLIST). `release_check` placeholder/test kimliğiyle başarısız. |
 | UMP | Onay (AB/BK) | **kod TAMAM / CİHAZ** | Onay çözülmeden reklam isteği yok (SDK bile başlamaz); gizlilik seçenekleri girişi Ayarlar'da UMP gerektiriyorsa; testli (sahte köprü). Gerçek UMP formu cihazda AB test coğrafyasıyla denenecek. |
 | B7 | Gizlilik politikası | **kod TAMAM / SAHİP** | Ayarlar'da "Gizlilik politikası" düğmesi (`data/store.json`); URL'yi sahip barındırır. Yer tutucu yayın sürümünde gizli + `release_check` hatası. |
@@ -39,7 +39,7 @@ Durumlar: **TAMAM** (kodda/yapılandırmada kanıtlı), **ONAY** (sahibin onayı
 
 ## Derleme sonucu (bu makinede, hata ayıklama imzasız AAB, yayın ön ayarıyla)
 - Komut: `JAVA_HOME=<JDK17> godot --headless --path . --export-debug "Android (release)" build/release/camasiripi-debug.aab` (~1 dk, Gradle önbelleği sıcakken).
-- Çıktı: `build/release/camasiripi-debug.aab` — **63.0 MiB** (debug şablonu; release şablonu daha küçük olur, `docs/size/after.md` ≈ 48 MiB beklentisiyle karşılaştırma release AAB'de yapılacak).
+- Çıktı: `build/release/camasiripi-debug.aab` — **63.6 MiB** (Billing eklentisi sonrası; öncesi 62.9–63.0 MiB, fark ≈ +0.6 MiB: billing-ktx + eklenti AAR) (debug şablonu; release şablonu daha küçük olur, `docs/size/after.md` ≈ 48 MiB beklentisiyle karşılaştırma release AAB'de yapılacak).
 - Birleşik manifest: paket `com.clotheslinesort.game`, versionCode 1 / "1.0.0", min 24, target 36, `appCategory=game`, `isGame=true`, ikon `@mipmap/icon`
   (adaptif + tek renk katman dahil), etiket `@string/godot_project_name_string` (varsayılan "Clothesline Sort", tr "Çamaşır İpi" — `values-tr` ile doğrulandı),
   `APPLICATION_ID` = Google TEST kimliği (beklenen; `release_check` bunu yayında reddeder), izinler yukarıdaki liste.
@@ -69,12 +69,12 @@ Temiz klonda şablonu geri kurmak: `godot --headless --path . --install-android-
 2. Yükleme anahtarı (SIGNING.md) ve güvenli yedek.
 3. AdMob hesabı, uygulama, ödüllü + geçiş birimleri; `app-ads.txt` + geliştirici web sitesi; GDPR iletisi (AdMob > Gizlilik ve mesajlaşma).
 4. Gizlilik politikasını (taslak `PRIVACY_POLICY_DRAFT.md`) barındır, URL'yi `data/store.json`'a yaz.
-5. Billing eklentisi indirme onayı (PENDING §1); gerekirse NDK onayı (§2).
+5. (Billing eklentisi kuruldu — PENDING §1 TAMAM); gerekirse NDK onayı (§2).
 6. Play Console: Uygulama içeriği (veri güvenliği `DATA_SAFETY_ANSWERS.md`, Reklam kimliği beyanı, hedef kitle 13+, derecelendirme), `remove_ads` ürünü, ilan metni/grafikleri onayı.
 7. Cihaz testleri (Billing, UMP AB, çevrimdışı, 16 KB, geri hareketi, kenardan kenara).
 8. Kapalı test: ≥ 12 test kullanıcısı × 14 gün → üretim başvurusu.
 
 ## Doğrulanamayanlar (dürüst liste)
 Gerçek cihazda hiçbir şey çalıştırılmadı (AdMob/UMP/Billing native katmanı, geri hareketi, kenardan kenara, tablet davranışı); release imzası; bundletool 16K bayrağı;
-Billing `purchase_option_id` davranışı; ekran görüntüleri 1080x1920'ye büyütülmüş 810x1440 yakalamalardır (ekran yüksekliği gerçek 1920 pencereye izin vermedi).
+Billing `purchase_option_id` davranışı, acknowledge zamanlaması ve ürün ayrıntısı önkoşulu (gerçek `purchase_state` tamsayıları); ekran görüntüleri 1080x1920'ye büyütülmüş 810x1440 yakalamalardır (ekran yüksekliği gerçek 1920 pencereye izin vermedi).
 Oynanış akışı dosyalarına dokunulmadığı için `play_probe` çalıştırılmadı.

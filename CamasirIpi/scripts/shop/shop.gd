@@ -677,6 +677,9 @@ func _on_iap_failed(reason: String) -> void:
 	_pop_key = ""
 	if reason == IapProvider.REASON_CANCELED:
 		return
+	if reason == IapProvider.REASON_PENDING:
+		_show_toast(ShopStrings.purchase_pending())
+		return
 	_show_toast(ShopStrings.store_unavailable() if reason == IapProvider.REASON_UNAVAILABLE
 		else ShopStrings.purchase_failed())
 

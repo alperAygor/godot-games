@@ -117,6 +117,12 @@ static func _progress() -> Node:
 ## Kayıtlı dili uygular; ilk açılışta (kayıt yok) cihaz dilini seçip kaydeder.
 ## İlk ekran kurulmadan ÖNCE çağrılır (Boot), böylece hiçbir ekran yarım çevrilmiş açılmaz.
 static func apply_saved() -> void:
+	apply_saved_for(OS.get_locale())
+
+
+## `apply_saved`ın test edilebilir hali: cihaz yerel ayarı dışarıdan verilir. Sıra: oyuncunun kayıtlı seçimi
+## (her zaman kazanır) -> cihaz dili (desteklenen yediden biriyse) -> İngilizce.
+static func apply_saved_for(device_locale: String) -> void:
 	var progress: Node = _progress()
 	var saved: String = ""
 	if progress != null:
@@ -124,7 +130,7 @@ static func apply_saved() -> void:
 	if saved in LANGUAGES:
 		set_language(saved)
 		return
-	var code: String = detect_device_language()
+	var code: String = language_for_locale(device_locale)
 	set_language(code)
 	if progress != null:
 		progress.call("set_module_value", SETTINGS_SECTION, SETTINGS_KEY, code)
@@ -138,9 +144,9 @@ static func choose(code: String) -> void:
 		progress.call("set_module_value", SETTINGS_SECTION, SETTINGS_KEY, language())
 
 
-## Araçlar için: komut satırındaki `--lang=tr|en|es|pt|de|ja|ko` (yoksa kaynak dil tr). Kayda yazmaz.
+## Araçlar için: komut satırındaki `--lang=tr|en|es|pt|de|ja|ko` (yoksa varsayılan dil İngilizce). Kayda yazmaz.
 static func apply_from_args(args: PackedStringArray) -> void:
-	var code: String = LANG_TR
+	var code: String = DEFAULT_UNKNOWN
 	for arg: String in args:
 		if arg.begins_with("--lang="):
 			code = arg.split("=")[1]

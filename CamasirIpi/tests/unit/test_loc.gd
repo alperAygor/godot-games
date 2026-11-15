@@ -402,6 +402,33 @@ func test_language_for_locale_mapping() -> void:
 		assert_eq(Loc.language_for_locale(code), code)
 
 
+## İlk açılış kuralı: kayıt yoksa cihaz dili (yedi dilden biriyse), değilse İngilizce; oyuncunun seçimi her zaman kazanır.
+func test_first_run_language_rule() -> void:
+	var progress: Node = autoload_node("Progress")
+	var was_persist: Variant = progress.get("persist")
+	progress.set("persist", false)
+	var cases: Dictionary = {"fr_FR": "en", "tr_TR": "tr", "pt_BR": "pt", "": "en", "xx_YY": "en", "zh_Hans_CN": "en", "ko_KR": "ko"}
+	for locale: String in cases.keys():
+		progress.call("set_module_value", Loc.SETTINGS_SECTION, Loc.SETTINGS_KEY, "")
+		Loc.set_language(Loc.LANG_TR)
+		Loc.apply_saved_for(locale)
+		assert_eq(Loc.language(), String(cases[locale]), "ilk açılış, cihaz '%s'" % locale)
+		assert_eq(String(progress.call("module_value", Loc.SETTINGS_SECTION, Loc.SETTINGS_KEY, "")), String(cases[locale]), "ilk açılış dili kaydedilir: '%s'" % locale)
+	# Oyuncunun seçimi cihaz dilini ezer.
+	Loc.choose(Loc.LANG_DE)
+	Loc.set_language(Loc.LANG_TR)
+	Loc.apply_saved_for("tr_TR")
+	assert_eq(Loc.language(), "de", "kayıtlı seçim cihaz dilinden önce gelir")
+	# Geçersiz kayıt yok sayılır: cihaz diline, o da bilinmiyorsa İngilizceye düşer.
+	progress.call("set_module_value", Loc.SETTINGS_SECTION, Loc.SETTINGS_KEY, "xx")
+	Loc.apply_saved_for("fr_FR")
+	assert_eq(Loc.language(), "en", "geçersiz kayıt -> cihaz -> en")
+	assert_eq(String(ProjectSettings.get_setting("internationalization/locale/fallback", "")), "en", "motor yedek dili en")
+	progress.call("set_module_value", Loc.SETTINGS_SECTION, Loc.SETTINGS_KEY, "")
+	Loc.set_language(Loc.LANG_TR)
+	progress.set("persist", was_persist)
+
+
 ## Eksik anahtar önce İngilizceye, sonra Türkçeye düşer; hiçbirinde yoksa anahtarın kendisi döner.
 func test_missing_key_falls_back_to_english() -> void:
 	var extra: Translation = Translation.new()
