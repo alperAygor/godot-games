@@ -1,6 +1,7 @@
 extends SceneTree
 ## Görsel stil kontrolü: tüm ana ekranların 720x1280 görüntüsünü alır (geçici kayıt kullanır, gerçek kaydı bozmaz).
-## Kullanım: godot --resolution 720x1280 --path . -s res://tools/style_shots.gd -- [--prefix=ad] [--guide] [--simulate-safe-area=88,0,68,0]
+## Kullanım: godot --resolution 720x1280 --path . -s res://tools/style_shots.gd -- [--prefix=ad] [--guide] [--text-size=large] [--color-blind] [--simulate-safe-area=88,0,68,0]
+## (--text-size / --color-blind: erişilebilirlik ayarlarıyla çek; yalnızca bellekte uygulanır, diske yazılmaz.)
 ## Çıktı: tools/screenshots/style/<önek>_<ekran>.png (--headless ile çalışmaz).
 
 var _prefix := "style"
@@ -36,6 +37,13 @@ func _run() -> void:
 	save.data = {}
 	scenes.transition_time = 0.0
 	TranslationServer.set_locale("tr")
+	var settings := root.get_node("SettingsManager")
+	settings.persist = false
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--text-size="):
+			settings.set_value("access", "text_size", arg.trim_prefix("--text-size="), false)
+		elif arg == "--color-blind":
+			settings.set_value("access", "color_blind", true, false)
 
 	session.new_game()
 	var career: Career = session.career

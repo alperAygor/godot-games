@@ -1,18 +1,28 @@
-# Yayın durumu — "Döviz Bürosu", Google Play (T-R1 Android derleme/imza hattı)
+# Yayın durumu — "Döviz Bürosu", Google Play (T-R1 Android derleme/imza hattı; T-A2/T-S1 ile güncellendi)
 
-Tarih: 2026-11-15, dal `orch/dv-r1`. Kural: **tek-yerden-değişir** değerler ilk Play yüklemesine kadar değiştirilebilir ("Nerede" sütunu).
+Tarih: 2026-11-15, dallar `orch/dv-r1` (hat), `orch/dv-a2` (ayarlar/Hakkında/mağaza belgeleri). Kural: **tek-yerden-değişir** değerler ilk Play yüklemesine kadar değiştirilebilir ("Nerede" sütunu).
 
 ## Kararlar ve nerede değişir
 | Karar | Değer | Nerede |
 |---|---|---|
 | Uygulama kimliği | `com.dovizburosu.game` | `export_presets.cfg` her üç preset `package/unique_name` (yüklemeden sonra DEĞİŞMEZ) |
 | Uygulama adı (etiket) | "Döviz Bürosu" (İngilizce mağaza adı sahibin kararı) | `export_presets.cfg` `package/name` (3 preset) + `project.godot` `config/name` |
-| versionCode / versionName | 1 / "1.0.0" | `version/code`, `version/name` (3 preset); her yüklemeden sonra `tools/release_state.json` `last_uploaded_version_code` güncellenir. **`project.godot config/version` hâlâ "0.0.1": lider "1.0.0" yapmalı** (kapı `version_name_mismatch_project` ile bunu ister) |
+| versionCode / versionName | 1 / "1.0.0" | `version/code`, `version/name` (3 preset); her yüklemeden sonra `tools/release_state.json` `last_uploaded_version_code` güncellenir. `project.godot config/version` = "1.0.0" (preset ile aynı; kapı `version_name_mismatch_project` ile denetler; Hakkında ekranı bu değeri gösterir) |
 | min / target SDK | 24 / 36 | `gradle_build/min_sdk`, `gradle_build/target_sdk` |
 | Kategori / hedef kitle | Oyun (`package/app_category=2`) / 13+ | preset; Play Console |
-| Gizlilik politikası URL'si | boş | `tools/release_state.json` `privacy_policy_url` (https://, sahibin barındırdığı adres) |
+| Gizlilik politikası URL'si | yer tutucu (`https://example.com/...`) | **`data/ads_ids.json` `privacy_policy_url`** (https://, sahibin barındırdığı adres) — oyun içi bağlantı (Ayarlar > Gizlilik politikası; yer tutucuyken düğme gizli) ve yayın kapısı bu TEK alanı okur. `tools/release_state.json`'da artık yalnız `last_uploaded_version_code` vardır. Metin: `docs/PRIVACY_POLICY.md` (+`.tr.md`) |
 | AdMob/Billing | test; gerçek yok; `play_billing=false` | `data/ads_ids.json` (T-M1/sahip) + `python3 tools/sync_ads_config.py` |
 | İmza | yok (sahip üretecek) | ortam değişkenleri, `docs/store/SIGNING.md` |
+
+## T-A2 / T-S1 ile eklenenler (2026-11-15)
+| Madde | Durum | Not |
+|---|---|---|
+| Ayarlar (ana ses, yazı boyutu, renk körü, hareketi azalt, titreşim, dil, öğreticiyi yeniden oynat, gizlilik, politika, geri yükle) | **TAMAM (kod+test)** | `scripts/ui/settings_screen.gd`; `tests/unit/test_accessibility.gd`. Cihazda dokunma boyutu/okunabilirlik doğrulanmadı (CİHAZ) |
+| Hakkında + lisanslar + "simülasyondur" bildirimi | **TAMAM (kod+test)** | `scripts/ui/about_sheet.gd`, `data/licenses.json` (üreten: `tools/build_licenses.py`); metinler kaynak dosyalarla birebir (`test_about.gd`). AdMob eklentisinde LICENSE dosyası yok → metin plugin.cfg'deki telif satırı + standart MIT; **sahip yukarı akıştaki LICENSE ile değiştirmeli** |
+| Kullanılmayan yazı tipleri (`Baloo2.ttf`, `PixelifySans.ttf`) | **SAHİP ONAYI** | Silinmedi. Şu an pakete giriyor (`export_filter=all_resources`) → OFL gereği lisansları Hakkında'da listeli. Silinirse `tools/build_licenses.py` içinden kayıtlarını da çıkar |
+| Gizlilik politikası (EN + TR) | **TASLAK** | `docs/PRIVACY_POLICY.md`, `docs/PRIVACY_POLICY.tr.md`; sahip yer tutucuları doldurur, barındırır |
+| Play ilanı, Veri güvenliği/IARC/hedef kitle/finansal özellik cevapları, sahip listesi | **TASLAK** | `docs/store/PLAY_LISTING.md`, `DATA_SAFETY_ANSWERS.md`, `OWNER_CHECKLIST.md` |
+| Oyun içi onay metinleri (`MON_NOTICE_TEXT`/`MON_FORM_TEXT`) | **GÜNCELLENDİ** | Politika ve Veri güvenliği ile aynı üç olguyu söyler (reklam kimliği/IP/etkileşim AdMob; hesap yok; analitik yok) |
 
 ## Gereksinim bazında durum
 **TAMAM** = yapılandırmada/derlemede kanıtlı; **SAHİP** = hesap/konsol/karar; **CİHAZ** = gerçek cihaz gerekir; **ONAY** = indirme onayı (`PENDING_APPROVALS.md`).
@@ -51,7 +61,7 @@ Depoya girmeyen: `android/build/libs/` (godot-lib AAR ~206 MB), `android/build/b
 ## Release AAB nasıl üretilir (kimlikler ve anahtar gelince)
 1. Sahip: Play Console uygulaması (`com.dovizburosu.game`), AdMob uygulaması + ödüllü/geçiş birimleri, `no_ads` ürünü, gizlilik URL'si, yükleme anahtarı (SIGNING.md).
 2. `data/ads_ids.json`: `mode:"real"`, `android.real_*` dolu, `providers.play_billing:true` (T-M1/lider bayrağı) -> `python3 tools/sync_ads_config.py`.
-3. `tools/release_state.json` `privacy_policy_url`; `project.godot config/version` = preset `version/name`; `version/code` > `last_uploaded_version_code`.
+3. `data/ads_ids.json` `privacy_policy_url` (gerçek https adresi); `project.godot config/version` = preset `version/name`; `version/code` > `last_uploaded_version_code`.
 4. `export GODOT_ANDROID_KEYSTORE_RELEASE_{PATH,USER,PASSWORD}` (SIGNING.md) ve (gerekirse) `JAVA_HOME`.
 5. `tools/release_build.sh` -> kapı geçerse `build/release/doviz-burosu-release.aab`; boyut ve SHA-256 basılır. Yalnız denetim: `tools/release_check.sh [--latest|yol.aab]`.
 6. Yükleme sonrası `tools/release_state.json` güncellenir. Dahili test -> cihaz turu -> kapalı test (≥12 kişi × 14 gün, Play Console'daki güncel şarta bak) -> üretim.
@@ -61,8 +71,8 @@ Depoya girmeyen: `android/build/libs/` (godot-lib AAR ~206 MB), `android/build/b
 2. Yükleme anahtarı üret + yedekle (SIGNING.md).
 3. Paket kimliği (`com.dovizburosu.game`) ve İngilizce mağaza adı kararını onayla (ilk yüklemeden sonra değişmez).
 4. AdMob hesabı, uygulama, ödüllü + geçiş birimleri -> `data/ads_ids.json` `real_*` (T-M1 ile); Play Console `no_ads` ürünü.
-5. Gizlilik politikasını (T-S1) barındır, URL'yi `tools/release_state.json`'a yaz.
-6. Play Console: Uygulama içeriği (Reklam kimliği: evet, Veri güvenliği, hedef kitle 13+, IARC), **Finansal özellikler beyanı** (finansal özellik yok; kategori Oyun), mağaza metni/grafikleri (T-S1/T-R2).
+5. Gizlilik politikasını (T-S1: `docs/PRIVACY_POLICY.md`, TR: `.tr.md`) barındır, URL'yi `data/ads_ids.json` `privacy_policy_url` alanına yaz (`tools/release_state.json` değil).
+6. Play Console: Uygulama içeriği (Reklam kimliği: evet, Veri güvenliği, hedef kitle 13+, IARC), **Finansal özellikler beyanı** (finansal özellik yok; kategori Oyun) — cevaplar `docs/store/DATA_SAFETY_ANSWERS.md`; mağaza metni `docs/store/PLAY_LISTING.md`; grafikler T-R2. Tam sahip listesi: `docs/store/OWNER_CHECKLIST.md`.
 7. Gerçek cihaz turu: titreşim, kenardan kenara/çentik, geri tuşu, 16 KB cihazda açılış, test reklamı, lisans testçisiyle satın alma.
 8. Gerekirse NDK/bundletool onayı (PENDING_APPROVALS.md).
 9. Kapalı test -> üretim başvurusu -> aşamalı yayın.

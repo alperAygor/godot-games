@@ -13,6 +13,8 @@ const LANGUAGES_PATH := "res://data/languages.json"
 const DEFAULTS := {
 	"audio": {"master": 1.0, "music": 0.8, "sfx": 1.0},
 	"game": {"vibration": true, "pixel_filter": true, "language": "", "ads_personalized": false, "consent_asked": false, "guide_seen": false},
+	# Erişilebilirlik (T-A2): text_size "normal"/"large" (Accessibility.TEXT_SIZES), renk körü paleti + işaretler, hareketi azalt.
+	"access": {"text_size": "normal", "color_blind": false, "reduced_motion": false},
 }
 
 ## Testler/araçlar değiştirebilir. Varsayılan: gerçek kullanıcı dosyası (betikli çalışmada sandbox).
@@ -25,6 +27,7 @@ var _config := ConfigFile.new()
 func _ready() -> void:
 	load_settings()
 	apply_language()
+	apply_accessibility()
 
 
 ## { "en": "English", "tr": "Türkçe" } — dil kodu → kendi dilindeki adı.
@@ -42,6 +45,13 @@ func apply_language() -> String:
 		chosen = JsonIO.read_dict(LANGUAGES_PATH).get("default", "en")
 	TranslationServer.set_locale(chosen)
 	return chosen
+
+
+## Yazı boyutu ve renk körü paletini kök temaya uygular (ayarlar değişince `set_value` de çağırır). Ağaçta değilse (testteki
+## serbest örnekler) bir şey yapmaz.
+func apply_accessibility() -> void:
+	if is_inside_tree():
+		A11y.apply(get_tree())
 
 
 func load_settings() -> void:
@@ -98,6 +108,8 @@ func _sanitize() -> void:
 				continue
 			if not _same_kind(_config.get_value(section, key), DEFAULTS[section][key]):
 				_config.erase_section_key(section, key)
+	if _config.has_section_key("access", "text_size") and not Accessibility.TEXT_SIZES.has(str(_config.get_value("access", "text_size"))):
+		_config.erase_section_key("access", "text_size")
 	# Ses seviyeleri 0..1 dışına taşmasın.
 	for key: String in DEFAULTS["audio"]:
 		if _config.has_section_key("audio", key):
@@ -130,6 +142,8 @@ func set_value(section: String, key: String, value: Variant, save_now := true) -
 	_config.set_value(section, key, value)
 	if section == "game" and key == "language":
 		apply_language()
+	elif section == "access" and key in ["text_size", "color_blind"]:
+		apply_accessibility()
 	setting_changed.emit(section, key, value)
 	if save_now:
 		save_settings()

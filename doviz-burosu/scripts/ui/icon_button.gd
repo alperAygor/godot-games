@@ -49,8 +49,14 @@ func _ready() -> void:
 	if inline_layout and fit_minimum:
 		# Metin kırpıldığı için düğme kendiliğinden genişlemez: kısa metinler tam görünsün diye (uzunlar küçülür) alt sınır koy.
 		var shown := label_text if not label_text.is_empty() else text
-		var natural := get_theme_default_font().get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x + 34.0 + 12.0 + 44.0
+		var natural := get_theme_default_font().get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, A11y.scaled(26)).x + 34.0 + 12.0 + 44.0
 		custom_minimum_size.x = maxf(custom_minimum_size.x, minf(natural, 320.0))
+
+
+## Yazı boyutu/tema değişince (Ayarlar > Yazı boyutu) etiket yeniden çizilir.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_THEME_CHANGED:
+		queue_redraw()
 
 
 func _text_color() -> Color:
@@ -66,8 +72,8 @@ func _draw() -> void:
 	if inline_layout:
 		var icon_size := minf(size.y * 0.5, 34.0)
 		var gap := 12.0
-		var font_size := 32
-		while font_size > 20 and font.get_string_size(shown_label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > size.x - icon_size - gap - 36.0:
+		var font_size := A11y.scaled(32)
+		while font_size > A11y.scaled(20) and font.get_string_size(shown_label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > size.x - icon_size - gap - 36.0:
 			font_size -= 1
 		var text_width := font.get_string_size(shown_label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 		var total := icon_size + gap + text_width
@@ -82,7 +88,11 @@ func _draw() -> void:
 		draw_string(font, Vector2(left + icon_size + gap, size.y / 2.0 + font_size * 0.35), shown_label, HORIZONTAL_ALIGNMENT_LEFT, text_width + 4.0, font_size, color)
 		_draw_badge(font)
 		return
-	var diameter := minf(size.x, size.y - (22.0 if not shown_label.is_empty() else 0.0)) * 0.86
+	# Dikey düzen etiketi: VT323 piksel yazısı tema ölçeğinde (build_theme.py FONT_SCALE) çizilir; 24 px telefonda fazla küçüktü.
+	var label_size := A11y.scaled(30)
+	while label_size > 18 and not shown_label.is_empty() and font.get_string_size(shown_label, HORIZONTAL_ALIGNMENT_LEFT, -1, label_size).x > size.x - 2.0:
+		label_size -= 1
+	var diameter := minf(size.x, size.y - (float(label_size) - 2.0 if not shown_label.is_empty() else 0.0)) * 0.86
 	var center := Vector2(size.x / 2.0, diameter / 2.0 + 4.0)
 	if round_frame:  # (adı eski; şimdi keskin kare çerçeve: piksel görünümü)
 		var frame := Rect2(center - Vector2(diameter, diameter) / 2.0, Vector2(diameter, diameter))
@@ -97,7 +107,6 @@ func _draw() -> void:
 	if locked:
 		Icons.draw_on(self, "lock", Rect2(center + Vector2(diameter, diameter) * 0.16, Vector2(diameter, diameter) * 0.34), Color(ink, 0.8), 1.8)
 	if not shown_label.is_empty():
-		var label_size := 24
 		draw_string(font, Vector2(0, size.y - 4.0), shown_label, HORIZONTAL_ALIGNMENT_CENTER, size.x, label_size, color)
 	_draw_badge(font)
 
