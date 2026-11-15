@@ -21,10 +21,13 @@
 		"interstitial_seconds": 90
 	},
 	"free_retry": {
-		"_comment": "KARAR BEKLİYOR (O8 -> T-B1): 'Günü tekrar oyna' için ücretsiz yol. enabled: ücretsiz yol var mı. available_when: 'ad_unavailable' = yalnızca reklam gösterilemiyorsa (hazır değil/zaman aşımı/başarısız) çıkar; 'always' = reklam varken de çıkar. cost: ücretsiz yolun bedeli; kind 'none' | 'cash_pl' (sabah nakdinden düşülecek PL) | ...; bunu UYGULAYAN T-B1'dir (Monetization.take_free_retry bedeli yalnızca döndürür). Aşağıdaki değerler ŞİMDİLİK varsayılandır (decision_pending=true): bedelsiz ve yalnızca reklam yokken.",
+		"_comment": "KARAR VERİLDİ (O8, T-B1; kural: scripts/core/day_retry.gd, docs/MONETIZATION.md §4). Kovulan/oyunu biten oyuncu asla çıkmaza düşmez, ilerleme asla reklama bağlı değildir. free_per_day: her hikaye günü için bedelsiz 'günü tekrar oyna' hakkı (sabah anlık görüntüsüne döner, hikaye durumu aynı). Hak bitince: ya oyun içi bedel (cost: kurgusal PL, dönülen sabahın nakdinden düşülür; cash_floor_pl altına indirmez) ya da reklam hazırsa ödüllü reklamla bedelsiz tekrar. no_ads_free: Reklamları Kaldır sahibi reklam izlemeden bedelsiz tekrar eder. available_when=always: bedelli/ücretsiz yol reklam olsa da olmasa da hep vardır (Monetization.retry_day_options).",
 		"enabled": true,
-		"available_when": "ad_unavailable",
-		"decision_pending": true,
-		"cost": {"kind": "none", "value": 0}
+		"available_when": "always",
+		"decision_pending": false,
+		"free_per_day": 1,
+		"no_ads_free": true,
+		"cash_floor_pl": 150,
+		"cost": {"kind": "cash_pl", "value": 120}
 	}
 }

@@ -6,9 +6,9 @@
 		"open_minute": 540,
 		"close_minute": 1020,
 		"arrival_gap_seconds": 2,
-		"base_salary_pl": 305,
+		"base_salary_pl": 315,
 		"bonus_pl": 15,
-		"fine_pl": 30,
+		"fine_pl": 50,
 		"fire_mistakes": 8,
 		"skim_pl": 5,
 		"overtime_seconds": 45
@@ -71,5 +71,21 @@
 		"inspector_max_percent": 90,
 		"inspector_tilki_helped_percent": 40,
 		"inspector_tilki_money_percent": 20
+	},
+	"targets": {
+		"_comment": "Denge hedefleri (T-B1; tools/balance_targets.gd denetler, test_bot_balance.gd ve balance_sim.gd --table --assert kullanır). Gerçek oyun koşulu: hikaye + ofis açık, kovulunca reklamsız tekrar. perfect_edge_rent_fraction: mükemmel oyuncunun en düşük akşam nakdi ilk kiranın bu oranından az olmalı (kenarda ama hayatta). perfect_swing_rents: en yüksek - en düşük nakit en az bu kadar kira (en düşük nokta kira akşamı olduğu için ~1 kira). careless_max_share_above_perfect: dikkatsiz botun (nakit - kira borcu) aynı tohumdaki mükemmeli geçtiği tohumların en çok bu oranı (şanslı tohum); ortalaması her zaman düşük olmalı. bribe_cushion_ratio: rüşvet günü teklif >= oran x dürüst oyuncunun o akşamki nakdi (cazip). heavy_day_loss_pl: bir günde ceza + talimat kesintisi bu kadarsa (ya da kovulmaya 1 hata kaldıysa) 'ağır gün'. cheater_*: hilekar 13. günde önde ve müfettiş riski en az bu yüzde. must_finish: dürüst hikaye botları tekrarsız bitirmeli.",
+		"perfect_edge_rent_fraction": 0.3,
+		"perfect_swing_rents": 0.9,
+		"bribe_cushion_ratio": 0.45,
+		"heavy_day_loss_pl": 100,
+		"careless_min_heavy_days": 1,
+		"careless_max_share_above_perfect": 0.2,
+		"cheater_ahead_on_day": 13,
+		"cheater_min_inspector_percent": 20,
+		"must_finish": [
+			"ally",
+			"merciful"
+		],
+		"sim_max_retries_per_day": 3
 	}
 }

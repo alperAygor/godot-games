@@ -15,7 +15,7 @@ func _ids(due: Array[Dictionary]) -> Array:
 
 
 func test_starting_state() -> void:
-	assert_eq(home.cash_minor, Money.units(300))
+	assert_eq(home.cash_minor, Money.units(int(JsonIO.read_dict(Household.DEFAULT_PATH)["start_cash_pl"])))
 	assert_eq(home.mood, 100)
 	assert_eq(home.rent_missed, 0)
 	assert_eq(home.game_over_reason(), "")
@@ -23,14 +23,14 @@ func test_starting_state() -> void:
 
 func test_inflation_index_compounds_daily() -> void:
 	assert_eq(home.inflation_index(1), 10000)
-	assert_eq(home.inflation_index(2), 10150)
-	assert_eq(home.inflation_index(3), 10302)
-	assert_true(home.inflation_index(15) > 12000 and home.inflation_index(15) < 12500)
+	assert_eq(home.inflation_index(2), 10170)
+	assert_eq(home.inflation_index(3), 10342)
+	assert_true(home.inflation_index(15) > 12400 and home.inflation_index(15) < 12800)
 
 
 func test_expense_amounts_grow_with_inflation_and_round_up_to_five_pl() -> void:
 	assert_eq(home.amount_minor("food", 1), Money.units(110))
-	assert_eq(home.amount_minor("food", 2), Money.units(115), "111,65 -> 115")
+	assert_eq(home.amount_minor("food", 2), Money.units(115), "111,87 -> 115")
 	for day in range(1, 16):
 		for expense in ["food", "heating", "medicine", "rent"]:
 			assert_eq(home.amount_minor(expense, day) % 500, 0, "%s gün %d 5 PL'nin katı" % [expense, day])
@@ -39,8 +39,8 @@ func test_expense_amounts_grow_with_inflation_and_round_up_to_five_pl() -> void:
 
 
 func test_due_expenses_by_day_and_flag() -> void:
-	assert_eq(_ids(home.due_expenses(1)), ["food"])
-	assert_eq(_ids(home.due_expenses(2)), ["food"])
+	assert_eq(_ids(home.due_expenses(1)), ["food", "heating"], "ısınma ilk günden (T-B1: ilk kira gerilimi)")
+	assert_eq(_ids(home.due_expenses(2)), ["food", "heating"])
 	assert_eq(_ids(home.due_expenses(3)), ["food", "heating"])
 	assert_eq(_ids(home.due_expenses(5)), ["rent", "food", "heating"], "öncelik sırası: kira önce")
 	assert_eq(_ids(home.due_expenses(6)), ["food", "heating"], "anne hasta değil")

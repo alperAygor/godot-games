@@ -19,7 +19,7 @@ func _close_day(paid: Array = []) -> Dictionary:
 func test_new_career_starts_with_basic_tools_and_cash() -> void:
 	assert_eq(career.day, 1)
 	assert_eq(career.tools, ["calculator", "catalog"] as Array[String])
-	assert_eq(career.household.cash_minor, Money.units(300))
+	assert_eq(career.household.cash_minor, Money.units(int(JsonIO.read_dict(Household.DEFAULT_PATH)["start_cash_pl"])), "başlangıç nakdi veriden")
 	assert_false(career.is_over())
 
 
@@ -156,7 +156,7 @@ func test_buying_tools() -> void:
 	career.household.cash_minor = Money.units(10)
 	career.day = 9
 	assert_false(career.buy_tool("rate_calc"), "nakit yetmiyor")
-	assert_eq(career.tool_price_minor("rate_calc"), Money.units(200))
+	assert_eq(career.tool_price_minor("rate_calc"), Money.units(150))
 	assert_eq(career.tool_price_minor("yok"), -1)
 
 

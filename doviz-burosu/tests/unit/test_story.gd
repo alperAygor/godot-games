@@ -344,6 +344,7 @@ func test_every_ending_has_texts_and_is_listed() -> void:
 
 func _play(profile: String, salt: String) -> Dictionary:
 	var career := _career(1, salt)
+	career.office_enabled = true  # gerçek oyun koşulu: Merkez talimatları da açık (denge T-B1 buna göre ayarlı)
 	var bot := ClerkBot.new(profile, salt)
 	var reports := bot.play_career(career, 15)
 	var ending := Endings.resolve(career, db)

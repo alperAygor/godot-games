@@ -95,7 +95,7 @@ func test_morning_paper_content_on_day_one() -> void:
 	assert_true(node("NewRule_R_EXCHANGE") != null)
 	assert_true(node("BulletinCard") == null, "bülten 7. günde")
 	assert_true(node("FamilyLine") != null)
-	assert_true((node("CashLine") as Label).text.contains("300"))
+	assert_true((node("CashLine") as Label).text.contains(UiKit.money(Money.units(int(JsonIO.read_dict(Household.DEFAULT_PATH)["start_cash_pl"])), "PL")))
 
 
 func test_morning_paper_content_on_special_days() -> void:
@@ -165,7 +165,8 @@ func test_evening_summary_expenses_and_go_home() -> void:
 	await _open_evening(1)
 	assert_eq(_label_text("EveningTitle"), "Gün 1 akşamı")
 	assert_true(node("SummaryCard") != null)
-	assert_true(_label_text("NetPay").contains("305"), "hiç müşteri işlenmedi: yalnızca maaş")
+	var salary := Money.units(int(JsonIO.read_dict("res://data/balance.json")["shift"]["base_salary_pl"]))
+	assert_true(_label_text("NetPay").contains(UiKit.money(salary, "PL")), "hiç müşteri işlenmedi: yalnızca maaş")
 	var food: Button = node("Expense_food")
 	assert_true(food.button_pressed, "yetiyorsa varsayılan olarak seçili")
 	assert_false(node("WarnLabel").visible, "her şey ödeniyor: uyarı yok")
@@ -222,7 +223,7 @@ func test_evening_buttons_are_disabled_when_cash_is_short() -> void:
 
 func test_evening_shop_sells_the_tools_of_the_day() -> void:
 	await _open_evening(3, 1000)
-	assert_true(node("NoTools") != null, "3. günde dükkan boş")
+	assert_true(node("ShopCard") == null, "3. günde dükkan boş: kart hiç görünmez (sade akşam)")
 	await _open_evening(4, 1000)
 	assert_true(node("BuyTool_counter") != null)
 	assert_true(node("BuyTool_rate_calc") != null)

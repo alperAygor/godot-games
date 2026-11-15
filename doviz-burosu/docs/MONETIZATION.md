@@ -29,14 +29,15 @@ Metin T-S1 ile mutabık olmalı: `MON_NOTICE_TEXT` / `MON_FORM_TEXT` (strings.cs
 - **Geçiş reklamı** (değişmedi, `AdPolicy` testli): yalnızca gün sonu/mod sonucu, hikaye günü ≥ 3, ≥ 2 oyun birimi, ≥ 180 sn herhangi reklamdan sonra, ≥ 120 sn oturum, ≥ 2. açılış, `no_ads` sahibine hiç; masa ortasında ve ilk oturumda asla. Banner yok.
 - Test kimlikleri varsayılan (`mode=test`); test kimliği başka hiçbir dosyada bulunamaz (`sync_ads_config.py` sızıntı taraması).
 
-## 4. Kovulma çıkmazı: ücretsiz yol (kanca hazır, **karar bekliyor**)
+## 4. Kovulma çıkmazı: ücretsiz yol (**KARAR VERİLDİ**, O8 → T-B1)
 Sorun: "Günü tekrar oyna" yalnızca ödüllü reklamla mümkündü; reklam yoksa tek yol "Yeni oyun" (15 günlük kayıp) — kötü deneyim ve politika riski (ilerleme reklama bağlı).
-Mekanizma (`Monetization`, UI'sız):
-- `retry_day_options()` → `{"ad": {visible, enabled}, "free": {available, reason, cost_kind, cost_value, decision_pending}}`.
-- `take_free_retry()` → uygunsa `{"ok": true, cost_kind, cost_value}` (analitik olayı `retry_day_free`); **bedeli uygulamak ve `Career.restore_morning()` çağırmak çağıranındır** (T-B1, `game_over_screen.gd`).
-- Ücretsiz yol şu varsayılanla **reklam gösterilemediğinde** açılır: reklam hazır değil (`ad_not_ready`) ya da bu oturumda istek zaman aşımına/hazır-değil'e düştü (`ad_failed`). Oyuncunun reklamı kendi isteğiyle erken kapatması açmaz.
-- Ayar: `data/ads.json free_retry` (`enabled`, `available_when`: `ad_unavailable` | `always`, `cost {kind, value}`, `decision_pending`).
-**Karar gereken (O8 → T-B1):** (a) ücretsiz yolun bedeli — varsayılan şimdilik **bedelsiz** (`cost.kind="none"`); seçenekler: bedelsiz, sabah nakdinden PL kesintisi (`cash_pl`), günün ilerlemesini yarıya indirme, günde/oyunda en fazla N kez; (b) reklam çalışırken de gösterilsin mi (`available_when="always"`); (c) `no_ads` sahibi için ek ayrıcalık. **Bağlanmadığı sürece** `game_over_screen.gd` (T-B1'in) hâlâ yalnızca reklam düğmesini gösterir → çıkmaz T-B1 arayüzü bağlayana dek sürer. Metin anahtarı hazır: `MON_RETRY_FREE`.
+**Kural (lider kararı, uygulama T-B1):** kovulan/oyunu biten oyuncu asla çıkmaza düşmez, ilerleme asla reklama bağlı değildir. Saf kural `scripts/core/day_retry.gd` (`DayRetry.quote/apply`), sayılar `data/ads.json free_retry`, arayüz `scripts/ui/game_over_screen.gd`, testler `tests/unit/test_fail_flow.gd`.
+- Her hikaye günü için **`free_per_day` = 1 ücretsiz tekrar**: o günün sabah anlık görüntüsüne bedelsiz döner; hikaye durumu sabahki gibi. Kullanılan haklar `Career.retries` ("gün" → adet) kayıtla gider, sabaha dönünce sıfırlanmaz (uygulamayı oyun bitti ekranında kapatmak hak yakmaz da kazandırmaz da).
+- Hak bitince iki yol, ikisi de seçimden ÖNCE bedeliyle yazılı: (a) **oyun içi bedel** `cost` = `cash_pl` **120 PL** (kurgusal para), dönülen sabahın nakdinden düşer; nakdi **`cash_floor_pl` = 150 PL** altına indirmez (tabanın altındaki oyuncudan bedel alınmaz → oyun kazanılamaz hale gelmez); bedel birikmez (her tekrar aynı sabahtan bir kez düşer). (b) **ödüllü reklam** hazırsa bedelsiz tekrar (isteğe bağlı; reklam yokken düğme pasif "Reklam şu an yok" + "bedelli tekrar her zaman var" notu).
+- **`no_ads_free`**: Reklamları Kaldır sahibi reklam izlemeden bedelsiz tekrar eder (reklam düğmesi hiç çıkmaz).
+- "Yeni oyun" her zaman vardır ama tek çıkış değildir (altında "1. günden başlar; bulunan sonlar kalır" notu).
+- Sözleşme: `available_when = "always"` (reklamsız yol reklam olsa da olmasa da açık), `decision_pending = false`. Arayüz reklamsız yolda `Monetization.take_free_retry()` çağırır (analitik + bedel `cost_kind/cost_value`), bedeli `DayRetry` uygular; reklam yolunda `request_reward("retry_day")` → `DayRetry.apply(..., via_ad=true)`. `RetryPolicy`'nin `ad_unavailable` kipi hâlâ desteklenir (testli) ama gönderilen ayar kullanmaz.
+- Neden 120 PL / 150 PL: T-B1 dengesinde mükemmel oyuncunun akşam tamponu ~150–600 PL, bir günlük yemek+ısınma ~170–220 PL; 120 PL hissedilir ama kirayı tek başına kaçırtmaz; 150 PL taban bir günlük zorunlu gideri korur. Denge simülasyonu (`balance_sim.gd --table`) kovulan botlarda bu yolu (reklamsız, en kötü durum) kullanır.
 
 ## 5. Satın alma (`no_ads`)
 - Eklenti: `addons/GodotGooglePlayBilling` **3.3.0** (Billing Library 9.1.0; 2026-07-27, GitHub `godot-sdk-integrations/godot-google-play-billing` Godot 4 hattının **güncel** sürümü; "1.4.0" etiketi Godot 3 hattıdır). `BillingClient.gd` imzaları sağlayıcıyla uyumlu → **eklenti güncellemesi gerekmiyor, onay bekleyen indirme yok.**
@@ -47,7 +48,7 @@ Mekanizma (`Monetization`, UI'sız):
 ## 6. Bekleyen onaylar / sahibe kalanlar
 - **İndirme/eklenti onayı: yok** (AdMob v7.0 ve Billing 3.3.0 güncel; ağ yalnız GitHub release listesi okumak için kullanıldı).
 - Eklentide UMP "gizlilik seçenekleri formu" API'si yok (v7.0). Yeniden onay sıfırlama yolu cihazda doğrulanmalı; yetmezse AdMob eklentisinin sonraki sürümü beklenir ya da özel köprü yazılır (onay gerekir).
-- Sahip: gerçek AdMob kimlikleri → `ads_ids.json` + `python3 tools/sync_ads_config.py`; Play Console `no_ads` ürünü + lisans test hesapları; gizlilik politikası URL'si → `privacy_policy_url`; "Reklam kimliği" beyanı = **Evet**; O8 kararı (§4).
+- Sahip: gerçek AdMob kimlikleri → `ads_ids.json` + `python3 tools/sync_ads_config.py`; Play Console `no_ads` ürünü + lisans test hesapları; gizlilik politikası URL'si → `privacy_policy_url`; "Reklam kimliği" beyanı = **Evet**; O8 kararı verildi (§4).
 
 ## 7. Gerçek cihaz test listesi (test reklamı + lisans test satın alması)
 Ön koşul: `mode=test`, debug veya imzalı iç test AAB'si; cihaz Play Store'a lisans test hesabıyla girmiş; test cihazı kaydı `adb shell setprop` değil, AdMob test kimlikleri (Google'ın herkese açık) yeterli.

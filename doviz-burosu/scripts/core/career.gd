@@ -21,6 +21,8 @@ var history: Array[Dictionary] = []
 var game_over := ""
 ## Sabah anlık görüntüsü ("günü tekrar oyna" bu duruma döner).
 var morning_snapshot: Dictionary = {}
+## Gün başına kullanılan "günü tekrar oyna" hakları ("gün" -> adet; DayRetry). Sabaha dönünce SİLİNMEZ (kayıtla gider).
+var retries: Dictionary = {}
 ## Akşam başladı ama henüz bitmedi: vardiya raporu (kaydedilmez).
 var pending_report: Dictionary = {}
 ## Hikaye olayları (patron, Tilki, müfettiş...) vardiyalara karışsın mı? Oyun oturumu açar; denge ölçümleri ve eski testler kapalı kullanır.
@@ -282,6 +284,7 @@ func to_dict() -> Dictionary:
 	var data := {
 		"version": SAVE_VERSION, "day": day, "salt": salt, "household": household.to_dict(), "story": story.to_dict(),
 		"tools": tools.duplicate(), "ads_used": ads_used.duplicate(), "history": history.duplicate(true), "game_over": game_over,
+		"retries": retries.duplicate(),
 	}
 	if not morning_snapshot.is_empty():
 		data["morning_snapshot"] = morning_snapshot.duplicate(true)
@@ -314,6 +317,8 @@ static func is_valid_dict(data: Variant) -> bool:
 	for key in ["tools", "ads_used", "history"]:
 		if block.has(key) and not (block[key] is Array):
 			return false
+	if block.has("retries") and not (block["retries"] is Dictionary):
+		return false
 	return not block.has("morning_snapshot") or block["morning_snapshot"] is Dictionary
 
 
@@ -332,6 +337,11 @@ func load_dict(data: Dictionary) -> void:
 	for entry: Variant in data.get("history", []):
 		history.append(entry)
 	game_over = str(data.get("game_over", ""))
+	retries = {}
+	var saved_retries: Variant = data.get("retries", {})
+	if saved_retries is Dictionary:
+		for key: Variant in (saved_retries as Dictionary).keys():
+			retries[str(key)] = int(saved_retries[key])
 	morning_snapshot = (data.get("morning_snapshot", {}) as Dictionary).duplicate(true)
 	pending_report = {}
 
@@ -341,6 +351,23 @@ func restore_morning() -> bool:
 	if morning_snapshot.is_empty():
 		return false
 	var snapshot := morning_snapshot.duplicate(true)
+	var kept_retries := retries.duplicate()
 	load_dict(snapshot)
 	morning_snapshot = snapshot
+	retries = kept_retries
+	return true
+
+
+## Bu günde (ya da `for_day`) kullanılmış tekrar hakkı sayısı.
+func retries_used(for_day := -1) -> int:
+	return int(retries.get(str(day if for_day < 0 else for_day), 0))
+
+
+## DayRetry'ın uyguladığı tekrar: sabaha döner, hakkı sayar ve `cost_minor` bedelini dönülen sabahın nakdinden düşer.
+## Anlık görüntü yoksa false. Bedel nakdi eksiye indirmez (DayRetry zaten taban uygular).
+func retry_day(cost_minor := 0) -> bool:
+	if not restore_morning():
+		return false
+	retries[str(day)] = retries_used() + 1
+	household.cash_minor = maxi(0, household.cash_minor - maxi(0, cost_minor))
 	return true

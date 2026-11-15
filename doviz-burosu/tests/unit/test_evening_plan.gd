@@ -27,9 +27,9 @@ func test_evening_adds_the_days_pay_exactly_once() -> void:
 	shift.start()
 	shift.advance(400.0)
 	var plan := EveningPlan.new(career, shift)
-	assert_eq(plan.cash_minor(), before + Money.units(305))
+	assert_eq(plan.cash_minor(), before + Money.units(int(JsonIO.read_dict("res://data/balance.json")["shift"]["base_salary_pl"])))
 	var again := EveningPlan.new(career, shift)
-	assert_eq(again.cash_minor(), before + Money.units(305), "ikinci plan maaşı tekrar eklemez")
+	assert_eq(again.cash_minor(), before + Money.units(int(JsonIO.read_dict("res://data/balance.json")["shift"]["base_salary_pl"])), "ikinci plan maaşı tekrar eklemez")
 
 
 func test_default_selection_pays_everything_affordable_in_priority_order() -> void:
@@ -120,7 +120,7 @@ func test_shop_lists_tools_with_prices_and_buying_trims_the_selection() -> void:
 	var selected_before := plan.selected.size()
 	var cash_before := plan.cash_minor()
 	assert_true(plan.buy_tool("rate_calc"))
-	assert_eq(plan.cash_minor(), cash_before - Money.units(200))
+	assert_eq(plan.cash_minor(), cash_before - career.tool_price_minor("rate_calc"))
 	assert_true(plan.selected_total() <= plan.cash_minor(), "seçili giderler yeni nakde sığmalı")
 	assert_true(plan.selected.size() <= selected_before)
 	assert_false(plan.buy_tool("rate_calc"), "aynı araç ikinci kez alınmaz")
