@@ -4,7 +4,8 @@ Godot 4.7, GDScript (C# yok), `gl_compatibility`, dikey 1080x1920, mobil (Androi
 Bu dosya projenin anayasasıdır; kural ile sezgi çatışırsa kural kazanır.
 Bu proje `studio-kit/template-mobile` şablonundan üretildi; şablon boş bir iskelettir
 (Boot → Home → Game → sonuç sayfası, kayıt, jeton, reklam sahte sağlayıcısı, dil, ayarlar).
-Oyun mekaniği YOKTUR: `PlaceholderRun` ve `scripts/ui/game.gd` içindeki "YER TUTUCU" bölümler gerçek oyunla değiştirilir.
+Kabuk hazır (seviye haritası, HUD, sonuç, reklam ve satın alma akışı); saha `LevelSession` sözleşmesiyle bağlanır
+(`scripts/ui/game.gd` içindeki KANCA; görünüm gelene kadar `StubSession`). Jeton ekonomisi ve yer tutucu oyun kaldırıldı.
 
 ## 0. Sabit kurallar (kullanıcı kararları, değişmez)
 

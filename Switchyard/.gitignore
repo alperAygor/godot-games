@@ -34,3 +34,6 @@ tests/results/
 
 # Python önbelleği
 __pycache__/
+
+# build/ Godot tarafından içe aktarılmasın (ekran görüntüleri pakete sızmasın)
+!/build/.gdignore
