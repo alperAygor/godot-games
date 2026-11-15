@@ -1,0 +1,5 @@
+{
+  "coin": "res://assets/audio/sfx/coin.wav",
+  "ui_soft": "res://assets/audio/sfx/ui_soft.wav",
+  "win": "res://assets/audio/sfx/win.wav"
+}

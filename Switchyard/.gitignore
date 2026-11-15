@@ -1,0 +1,36 @@
+# Godot önbelleği ve üretilen dosyalar
+.godot/
+*.translation
+.import/
+export_credentials.cfg
+
+# Android şablonu (her makinede yeniden kurulur) ve build çıktıları
+/android/
+/build/*
+*.apk
+*.aab
+*.pck
+*.zip
+
+# Sırlar — asla commit edilmez
+.env
+.env.*
+*.keystore
+*.jks
+google-services.json
+service-account.json
+
+# Blender kaynak yedeği
+*.blend1
+*.blend2
+
+# İşletim sistemi / editör
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+tests/results/
+
+# Python önbelleği
+__pycache__/

@@ -1,0 +1,21 @@
+{
+  "lucide/check": "res://assets/icons/lucide/check.svg",
+  "lucide/coins": "res://assets/icons/lucide/coins.svg",
+  "lucide/heart": "res://assets/icons/lucide/heart.svg",
+  "lucide/house": "res://assets/icons/lucide/house.svg",
+  "lucide/lock": "res://assets/icons/lucide/lock.svg",
+  "lucide/music": "res://assets/icons/lucide/music.svg",
+  "lucide/pause": "res://assets/icons/lucide/pause.svg",
+  "lucide/play": "res://assets/icons/lucide/play.svg",
+  "lucide/plus": "res://assets/icons/lucide/plus.svg",
+  "lucide/rotate-ccw": "res://assets/icons/lucide/rotate-ccw.svg",
+  "lucide/settings": "res://assets/icons/lucide/settings.svg",
+  "lucide/star": "res://assets/icons/lucide/star.svg",
+  "lucide/trophy": "res://assets/icons/lucide/trophy.svg",
+  "lucide/vibrate": "res://assets/icons/lucide/vibrate.svg",
+  "lucide/video": "res://assets/icons/lucide/video.svg",
+  "lucide/volume-2": "res://assets/icons/lucide/volume-2.svg",
+  "lucide/wifi-off": "res://assets/icons/lucide/wifi-off.svg",
+  "lucide/wind": "res://assets/icons/lucide/wind.svg",
+  "lucide/x": "res://assets/icons/lucide/x.svg"
+}

@@ -1,0 +1,53 @@
+{
+ "_not": "YER TUTUCU: çekirdek işçisi gerçek seviyelerle değiştirir (docs/CORE_API.md §1).",
+ "levels": [
+  {
+   "id": "w1-001",
+   "world": 1,
+   "par": 3,
+   "difficulty": 1
+  },
+  {
+   "id": "w1-002",
+   "world": 1,
+   "par": 4,
+   "difficulty": 2
+  },
+  {
+   "id": "w1-003",
+   "world": 1,
+   "par": 5,
+   "difficulty": 2
+  },
+  {
+   "id": "w1-004",
+   "world": 1,
+   "par": 6,
+   "difficulty": 3
+  },
+  {
+   "id": "w1-005",
+   "world": 1,
+   "par": 7,
+   "difficulty": 3
+  },
+  {
+   "id": "w1-006",
+   "world": 1,
+   "par": 8,
+   "difficulty": 4
+  },
+  {
+   "id": "w1-007",
+   "world": 1,
+   "par": 9,
+   "difficulty": 4
+  },
+  {
+   "id": "w1-008",
+   "world": 1,
+   "par": 10,
+   "difficulty": 5
+  }
+ ]
+}
