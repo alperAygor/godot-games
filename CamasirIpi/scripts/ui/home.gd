@@ -47,6 +47,8 @@ var _sheet: Sheet = null
 var _skins: SkinLook = SkinLook.new()
 var _rope_canvas: RopeCanvas = null
 var _garment_views: Array[GarmentView] = []
+## HomeLayout.compute sonucu (kullanılabilir alandan oranlarla).
+var _layout: Dictionary = {}
 
 
 const SIDE_BUTTON_STEP: float = 132.0
@@ -67,14 +69,21 @@ func _ready() -> void:
 	GameManager.back_requested.connect(_on_back)
 	var view: Vector2 = get_viewport_rect().size
 	var insets: Vector4 = UiKit.safe_insets(view)
+	# Yerleşim kullanılabilir alandan hesaplanır (HomeLayout): alt çubuğun boyu önce ölçülür, çubuk
+	# yine en son eklenir (çizim sırası: en üstte).
+	var bar: PanelContainer = _make_tabs()
+	var streak_chip: PanelContainer = _make_streak()
+	_layout = HomeLayout.compute(view, insets, bar.get_combined_minimum_size().y, PLAY_HEIGHT,
+		streak_chip.get_combined_minimum_size().y, TITLE_SIZE * 1.4)
 	_build_backdrop(view)
 	_build_garments(view)
 	_build_title(view)
 	_build_counters(view, insets)
-	_build_play(view)
-	_build_tabs(view, insets)
+	_build_play(view, streak_chip)
+	_place_tabs(bar)
 	# Oyuncu tutma: görevler / ödül yolu / haftalık etkinlik satırı ve varsa tek bir karşılama sayfası.
-	RetentionHub.build_entry_row(self)
+	var entry: Control = RetentionHub.build_entry_row(self)
+	entry.position.y = float(_layout["entry_y"])
 	RetentionHub.on_home_shown(self)
 	UiData.connect_changed(_refresh)
 	_refresh()
@@ -108,7 +117,7 @@ func _build_backdrop(view: Vector2) -> void:
 	add_child(garden_layer)
 	var backdrop: GardenBackdrop = GardenBackdrop.new()
 	garden_layer.add_child(backdrop)
-	backdrop.setup(view, BACKDROP_RACK_Y)
+	backdrop.setup(view, float(_layout.get("rack_y", BACKDROP_RACK_Y)))
 
 
 ## Boş ipte birkaç renkli çamaşır asılı durur: sahneye canlılık, oyunun diliyle aynı görsel.
@@ -122,7 +131,7 @@ func _build_garments(view: Vector2) -> void:
 	for index: int in range(GARMENT_KINDS.size()):
 		var garment: GarmentView = GarmentView.new()
 		garment.setup(index, GARMENT_COLORS[index], GARMENT_SIZE, GARMENT_KINDS[index], 0)
-		garment.position = Vector2(view.x * 0.5 + (float(index) - 2.0) * GARMENT_SPACING, ROPE_Y)
+		garment.position = Vector2(view.x * 0.5 + (float(index) - 2.0) * GARMENT_SPACING, _rope_y())
 		garment.set_open(true)
 		world.add_child(garment)
 		_garment_views.append(garment)
@@ -132,14 +141,14 @@ func _build_garments(view: Vector2) -> void:
 ## Seçili mandal + ip kaplamasını ana ekrandaki süs ipine uygular.
 func _apply_skins(view: Vector2) -> void:
 	_skins.reload()
-	_rope_canvas.setup(ROPE_INSET, view.x - ROPE_INSET, ROPE_Y - 6.0, ROPE_SAG, _skins.rope_style)
+	_rope_canvas.setup(ROPE_INSET, view.x - ROPE_INSET, _rope_y() - 6.0, ROPE_SAG, _skins.rope_style)
 	for garment: GarmentView in _garment_views:
 		_skins.apply_pin(garment)
 
 
 func _build_title(view: Vector2) -> void:
 	var title: Label = UiKit.label(UiStrings.game_title(), TITLE_SIZE)
-	title.position = Vector2(0.0, TITLE_Y)
+	title.position = Vector2(0.0, float(_layout.get("title_top", TITLE_Y)))
 	title.size = Vector2(view.x, TITLE_SIZE * 1.4)
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	add_child(title)
@@ -199,8 +208,12 @@ func _side_button(icon: String, at: Vector2, action: Callable) -> UiIconButton:
 	return button
 
 
-func _build_play(view: Vector2) -> void:
-	# Seri göstergesi: üç alev; yananlar turuncu, sönükler soluk. Yarı saydam hapın içinde.
+func _rope_y() -> float:
+	return float(_layout.get("rope_y", ROPE_Y))
+
+
+## Seri göstergesi: üç alev; yananlar turuncu, sönükler soluk. Yarı saydam hapın içinde.
+func _make_streak() -> PanelContainer:
 	var streak_chip: PanelContainer = PanelContainer.new()
 	streak_chip.theme_type_variation = &"ChipPanel"
 	streak_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -213,21 +226,28 @@ func _build_play(view: Vector2) -> void:
 		flames.add_child(flame)
 		_flames.append(flame)
 	add_child(streak_chip)
+	return streak_chip
+
+
+func _build_play(view: Vector2, streak_chip: PanelContainer) -> void:
 	var streak_size: Vector2 = streak_chip.get_combined_minimum_size()
 	streak_chip.size = streak_size
-	streak_chip.position = Vector2((view.x - streak_size.x) * 0.5, STREAK_CENTER_Y - streak_size.y * 0.5)
+	var play_center: Vector2 = _layout.get("play_center", Vector2(view.x * 0.5, PLAY_CENTER_Y)) as Vector2
+	var streak_y: float = float(_layout.get("streak_center_y", STREAK_CENTER_Y))
+	streak_chip.position = Vector2(play_center.x - streak_size.x * 0.5, streak_y - streak_size.y * 0.5)
 	_play_button = UiKit.button(UiStrings.level(1), &"", "lucide/play", PLAY_HEIGHT)
 	_play_button.size = Vector2(PLAY_WIDTH, PLAY_HEIGHT)
 	_play_button.custom_minimum_size = Vector2(PLAY_WIDTH, PLAY_HEIGHT)
-	var row_width: float = PLAY_WIDTH + MAP_GAP + UiKit.MIN_TOUCH
-	_play_button.position = Vector2((view.x - row_width) * 0.5, PLAY_CENTER_Y - PLAY_HEIGHT * 0.5)
+	# Oyna'nın KENDİSİ yatayda ortalıdır; harita diski sağına eklenir (eskiden ikisi birlikte ortalanıp
+	# Oyna sola kayıyordu).
+	_play_button.position = play_center - Vector2(PLAY_WIDTH, PLAY_HEIGHT) * 0.5
 	_play_button.pivot_offset = _play_button.size * 0.5
 	_play_button.pressed.connect(_on_play)
 	add_child(_play_button)
 	# [MAP] Seviye haritası: Oyna'nın yanında tek, sakin bir yuvarlak düğme (ana ekrana yeni yazı/kutu eklemez).
 	_map_button = MapDiscButton.new()
 	_map_button.setup("map", MAP_DISC)
-	_map_button.position = Vector2(_play_button.position.x + PLAY_WIDTH + MAP_GAP, PLAY_CENTER_Y - UiKit.MIN_TOUCH * 0.5)
+	_map_button.position = Vector2(_play_button.position.x + PLAY_WIDTH + MAP_GAP, play_center.y - UiKit.MIN_TOUCH * 0.5)
 	_map_button.pressed.connect(_open_map)
 	add_child(_map_button)
 	# Çok hafif "nefes": dikkat çeker ama sakin kalır.
@@ -238,7 +258,7 @@ func _build_play(view: Vector2) -> void:
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
-func _build_tabs(view: Vector2, insets: Vector4) -> void:
+func _make_tabs() -> PanelContainer:
 	var bar: PanelContainer = PanelContainer.new()
 	bar.theme_type_variation = &"ChipPanel"
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -255,10 +275,17 @@ func _build_tabs(view: Vector2, insets: Vector4) -> void:
 		tab.icon_color = UiKit.ACCENT if selected else UiKit.TEXT_MUTED
 		tab.pressed.connect(_on_tab.bind(index))
 		row.add_child(tab)
+	# Ölçü tema ile doğru çıksın diye ağaca hemen girer; `_place_tabs` en üste taşır.
 	add_child(bar)
+	return bar
+
+
+func _place_tabs(bar: PanelContainer) -> void:
+	move_child(bar, get_child_count() - 1)
 	var bar_size: Vector2 = bar.get_combined_minimum_size()
 	bar.size = bar_size
-	bar.position = Vector2((view.x - bar_size.x) * 0.5, view.y - insets.w - bar_size.y)
+	var usable: Rect2 = _layout["usable"] as Rect2
+	bar.position = Vector2(usable.get_center().x - bar_size.x * 0.5, float(_layout["bar_top"]))
 
 
 func _refresh() -> void:

@@ -8,6 +8,17 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/), sürümleme [Se
 - Tüm müzik ve sesler ElevenLabs Starter planıyla yeniden üretildi (`docs/AUDIO_LICENSE.md`); 5 müzik parçası (menü, bahçe, sahil, çatı, gece),
   seviye hedefleri ölçülü miks (`docs/AUDIO.md`), Master sınırlayıcı, bus'lar, çapraz geçiş, kısma, dönüş sonrası toparlama.
 - `MusicRouter` (saf mantık) + `tests/unit/test_music_router.gd`; `tools/audio_lib.py`, `tools/audio_report.py`.
+### Akış (orch/ci-flow) — hızlı oyun, seviye geçişi, Oyna düğmesi (`docs/perf/flow.md`)
+- Hızlı oyun animasyonla engellenmez: uçuşlar dokunuş anında başlar (yeni komut eski uçuşu yeniden
+  hedefler), sepet tamamlanma/geliş dizileri sepet başına ayrı kanalda ve nesil etiketiyle oynar, süs
+  beklemeleri yeni dokunuşla biter; dokunma mantıksal yerden sınanır (`GarmentView.line_home`).
+- Uyarlanır tempo `Motion.pace` (sakin oyunda 1, hızlı oyunda 3x'e kadar; kayıtlı Tween'ler sürerken de
+  hızlanır); seviye sonu dizisi dokununca atlanır; `SoundGate` ses tekrarını/kesilmesini sınırlar.
+- Seviye geçişi: sonraki seviye geçiş reklamını beklemeden kurulur, reklam (kural aynı) üstünde gösterilir;
+  "Devam"dan oynanabilir kareye 1.2 sn -> 16-31 ms.
+- Ana ekran yerleşimi `HomeLayout` (kullanılabilir alandan oranla): Oyna her telefonda ortalı ve alt-ortada.
+- Araçlar: `tools/speed_probe.gd` (ölçüm + stres + görünüm==tahta denetimi; `verify.sh` kısa kipini koşar),
+  `tools/home_shot.gd`; testler `test_flow_layout.gd`, `test_flow_pace.gd`.
 
 ### Yerelleştirme (orch/ci-i18n) — Türkçe / İngilizce / İspanyolca
 - Tek kaynak tablo `data/i18n/strings.csv` (`keys,tr,en,es`; Godot CSV içe aktarımı -> `.translation`,

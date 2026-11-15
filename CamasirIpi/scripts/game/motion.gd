@@ -125,6 +125,77 @@ const STAIN_DRY_SECONDS: float = 0.45
 const ANNOUNCE_SECONDS: float = 1.1
 
 
+# --- Hızlı oyun temposu (görsel yetişme katmanı) ---
+## Kural tahtası her zaman öndedir; animasyon onun arkasından yetişir. Oyuncu sakin oynarken tempo 1
+## (yukarıdaki premium süreler aynen). Ekran hâlâ hareketliyken art arda dokunuldukça dokunuş aralığına
+## göre tempo yükselir: bu aralıkta ya da daha yavaş dokunuşta tempo 1 kalır...
+const PACE_CALM_MSEC: float = 650.0
+## ...bu aralıkta ya da daha hızlı dokunuşta en yüksek tempoya çıkar.
+const PACE_FAST_MSEC: float = 150.0
+const PACE_MAX: float = 3.0
+## Seviye sonu dokunuşla atlanınca her şey birkaç karede biter.
+const PACE_SKIP: float = 40.0
+## Dokunuş aralığı ölçümünün yumuşatması (tek bir yavaş/hızlı dokunuş tempoyu zıplatmasın).
+const PACE_TEMPO_BLEND: float = 0.5
+## Bu tempodan hızlıda yalnız süs olan iniş tozu atlanır, tamamlanma bekleyişi kısalır.
+const PACE_TRIM: float = 1.6
+
+## Geçerli tempo: `track` ile kaydedilen tüm Tween'lerin hız çarpanı.
+static var pace: float = 1.0
+static var _paced: Array[Tween] = []
+
+
+## Oynanış animasyonu Tween'ini tempoya bağlar: oluşturulduğu anda ve tempo her değiştiğinde (uçuş
+## sırasında bile) hız çarpanı güncellenir. Neden kayıt: Engine.time_scale tüm sahneyi (arayüz,
+## ortam, sonuç sayfası) hızlandırırdı; yalnız tahtanın görsel yetişmesi hızlanmalı.
+static func track(tween: Tween) -> Tween:
+	tween.set_speed_scale(pace)
+	if _paced.size() > 96:
+		_prune()
+	_paced.append(tween)
+	return tween
+
+
+static func set_pace(value: float) -> void:
+	if is_equal_approx(value, pace):
+		return
+	pace = value
+	_prune()
+	for tween: Tween in _paced:
+		tween.set_speed_scale(value)
+
+
+## Hâlâ süren (sonsuz döngü olmayan) kayıtlı Tween sayısı: prob "durulmuş ekran" denetimi için.
+static func running_tracked() -> int:
+	_prune()
+	var count: int = 0
+	for tween: Tween in _paced:
+		if tween.is_running():
+			count += 1
+	return count
+
+
+static func reset_pace() -> void:
+	pace = 1.0
+	_prune()
+	for tween: Tween in _paced:
+		tween.set_speed_scale(1.0)
+
+
+static func _prune() -> void:
+	var index: int = _paced.size() - 1
+	while index >= 0:
+		if _paced[index] == null or not _paced[index].is_valid():
+			_paced.remove_at(index)
+		index -= 1
+
+
+## Dokunuş aralığından (ms) tempo: sakin aralıkta 1, hızlı aralıkta PACE_MAX, arası doğrusal.
+static func pace_for_interval(interval_msec: float) -> float:
+	var t: float = clampf((PACE_CALM_MSEC - interval_msec) / (PACE_CALM_MSEC - PACE_FAST_MSEC), 0.0, 1.0)
+	return lerpf(1.0, PACE_MAX, t)
+
+
 ## Yumuşak başla-yumuşak bitir (kübik).
 static func ease_in_out(t: float) -> float:
 	var c: float = clampf(t, 0.0, 1.0)

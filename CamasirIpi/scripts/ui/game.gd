@@ -2,8 +2,13 @@ extends Node2D
 
 ## Oyun ekranı: ipler, bekleme askısı, sepetler ve sıradaki sepet kuyruğu.
 ## Kurallar `LaundryBoard` içindedir; bu betik yalnız gösterir ve canlandırır.
-## Dokunuşlar mantığa ANINDA işlenir, animasyonlar olay kuyruğundan sırayla oynar;
-## böylece hızlı oynayan oyuncu engellenmez (PROJECT_SPEC §2).
+## Dokunuşlar mantığa ANINDA işlenir; animasyon tahtanın arkasından yetişen görsel katmandır
+## (tasarım: docs/perf/flow.md). Olay kuyruğu sıralıdır ama hiçbir olay onu uzun süre tutmaz:
+##  * Uçuşlar hemen başlar; her çamaşırın tek uçuşu vardır, yeni komut eskisini yeniden hedefler.
+##  * Sepet tamamlanma/geliş dizileri sepet başına ayrı kanalda (`_basket_jobs`) sırayla oynar; o
+##    sırada inen parçalar sepette bekler (`BasketView.land`), kuyruk akmaya devam eder.
+##  * Süs beklemeleri (`_beat`) yeni dokunuş gelince biter; hızlı oyunda tempo (`Motion.pace`) yükselir.
+##  * Yalnız seviye sonu (kazanma/kayıp) bekler; dokununca o da atlanır.
 
 const COLORS: Array[Color] = [
 	Color("e5484d"), Color("3e8ef7"), Color("f5c02e"), Color("3dbb6e"),
@@ -78,7 +83,12 @@ var _basket_items: Array[Array] = []
 var _rack_points: Array[Vector2] = []
 var _line_ys: Array[float] = []
 var _events: Array[Dictionary] = []
-var _playing: bool = false
+## Ekranda süren görsel iş var mı (kuyruk, uçuş, sepet kanalı, sepet gelişi). Problar/öğretici okur.
+var _playing: bool:
+	get:
+		return _is_animating()
+## Kuyruk korutini çalışıyor mu (yeniden giriş kilidi).
+var _queue_running: bool = false
 var _center_x: float = 540.0
 var _sky: TextureRect = null
 var _sky_gradient: Gradient = Gradient.new()
@@ -99,7 +109,28 @@ var _wind_played: bool = false
 ## Seviye yeniden başlayınca eski olay korutinleri kendiliğinden çıksın diye sayaç.
 var _generation: int = 0
 var _line_views: Array[GarmentView] = []
-var _flights_end_msec: int = 0
+## Sepet başına sıralı görsel işler (tamamlanma, yeni sepet, joker rengi) ve çalışıyor bayrağı.
+var _basket_jobs: Array[Array] = []
+var _basket_running: Array[bool] = []
+## Sepet başına mantıksal nesil (her tamamlanmada artar): inen parça kendi neslinin sepetine girer.
+var _basket_gen: Array[int] = []
+## Kuyruktan bağımsız süren görsel korutinler (patron ekran geçişi).
+var _detached: int = 0
+## Her kabul edilen dokunuşta artar: süs beklemeleri yeni dokunuşu bununla fark edip kısalır.
+var _tap_serial: int = 0
+var _last_tap_msec: int = 0
+## Ekran meşgulken art arda dokunuşların yumuşatılmış aralığı (ms); tempo bundan çıkar.
+var _tempo_msec: float = Motion.PACE_CALM_MSEC
+var _pace: float = 1.0
+## Seviye bitti (kural), sonuç sayfası henüz yok: bir dokunuş seviye sonu dizisini atlatır.
+var _end_pending: bool = false
+var _skip_end: bool = false
+## Sepet tamamlanma sırası ve zincir hapının (HUD) sırası: paralel sepet kanalları sırasız bitebilir,
+## hap yine de tahtadaki zinciri göstersin.
+var _done_seq: int = 0
+var _break_seq: int = 0
+var _chain_shown: int = 0
+var _sound_gate: SoundGate = SoundGate.new()
 var _applied_sway: float = Motion.SWAY_CALM
 var _danger_blend: float = 0.0
 var _puffs: Array[CPUParticles2D] = []
@@ -170,6 +201,7 @@ func _process(delta: float) -> void:
 		_backdrop.storm = _sky_weight
 		_backdrop.danger = 1.0 if now_msec < _rack_refuse_until_msec else _danger
 	_update_sway()
+	_update_pace()
 	# Tehlike: askıda tek boş slot kalınca askı kırmızı nabız atar. Nabzın şiddeti
 	# yumuşakça açılıp kapanır (ani kırmızı parlama rahatsız eder).
 	var near_full: bool = _board != null and not _board.is_over() \
@@ -217,7 +249,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		position = (event as InputEventMouseButton).position
 	else:
 		return
-	if _board == null or _board.is_over():
+	if _board == null:
+		return
+	if _board.is_over():
+		# Seviye sonu dizisi (son uçuşlar, sepet kapanışı, bekleme) dokununca atlanır: sonuç hemen gelir.
+		if _end_pending and _overlay == null:
+			_skip_end = true
 		return
 	if _booster_intercepts(get_canvas_transform().affine_inverse() * position):
 		return
@@ -236,8 +273,9 @@ func _pick(point: Vector2) -> int:
 		if not _board.is_on_line(id):
 			continue
 		var view: GarmentView = _views[id]
+		# Mantıksal yer: kayma/rüzgâr/ekran geçişi sürerken de parmak hedef yerde sınanır.
 		var rect: Rect2 = view.hit_rect()
-		rect.position += view.position
+		rect.position += view.line_home
 		if rect.size.x < MIN_TOUCH:
 			rect = rect.grow((MIN_TOUCH - rect.size.x) * 0.5)
 		if rect.has_point(point) and view.layer > best_layer:
@@ -264,9 +302,69 @@ func _tap(id: int) -> void:
 		AudioService.play_variant("pin_click", SOUND_VARIANTS, randf_range(0.94, 1.08), 0.0)
 	if _zen != null:  # [ZEN] dokunuş listesi geri-al geçmişiyle eş tutulur (kurtarma için)
 		_zen.note_tap(id, _board)
+	_enqueue(events)
+
+
+## Dokunuşun olayları kuyruğa: tempo güncellenir, olaylar dokunuş numarasıyla işaretlenir (aynı
+## dokunuşun uçuşları arasında küçük sıra aralığı kalır, yeni dokunuş süs beklemelerini bitirir).
+func _enqueue(events: Array[Dictionary]) -> void:
+	var now: int = Time.get_ticks_msec()
+	if _is_animating():
+		var interval: float = float(now - _last_tap_msec)
+		_tempo_msec = lerpf(minf(_tempo_msec, Motion.PACE_CALM_MSEC), interval, Motion.PACE_TEMPO_BLEND)
+	else:
+		_tempo_msec = Motion.PACE_CALM_MSEC
+	_last_tap_msec = now
+	_tap_serial += 1
+	for event: Dictionary in events:
+		event["_tap"] = _tap_serial
 	_events.append_array(events)
+	if _board.is_over():
+		_end_pending = true
+	_update_pace()
 	_refresh_open()
 	_run_events()
+
+
+## Tempo: ekran durulunca 1 (sakin, premium); meşgulken dokunuş aralığından; seviye sonu atlanırken çok hızlı.
+func _update_pace() -> void:
+	var target: float = 1.0
+	if _skip_end:
+		target = Motion.PACE_SKIP
+	elif _is_animating():
+		target = Motion.pace_for_interval(_tempo_msec)
+	else:
+		_tempo_msec = Motion.PACE_CALM_MSEC
+	_pace = target
+	Motion.set_pace(target)
+
+
+## Görsel iş sürüyor mu: kuyruk, uçan çamaşır, sepet kanalı/gelişi, bağımsız korutin.
+func _is_animating() -> bool:
+	if _queue_running or not _events.is_empty() or _detached > 0:
+		return true
+	for running: bool in _basket_running:
+		if running:
+			return true
+	if _any_flight():
+		return true
+	for basket: BasketView in _baskets:
+		if is_instance_valid(basket) and not basket.is_settled():
+			return true
+	return false
+
+
+## Kapılı ses (hızlı oyunda tekrar/kesilme olmasın; yalnız AudioService API'si).
+func _sfx(sound_name: String, pitch: float, volume_db: float = 0.0) -> void:
+	var gate: Vector2 = _sound_gate.admit(sound_name, Time.get_ticks_msec())
+	if gate != Vector2.ZERO:
+		AudioService.play_pitched(sound_name, pitch * gate.x, volume_db + gate.y)
+
+
+func _sfx_variant(base_name: String, pitch: float, volume_db: float) -> void:
+	var gate: Vector2 = _sound_gate.admit(base_name, Time.get_ticks_msec())
+	if gate != Vector2.ZERO:
+		AudioService.play_variant(base_name, SOUND_VARIANTS, pitch * gate.x, volume_db + gate.y)
 
 
 func _refresh_open() -> void:
@@ -277,9 +375,9 @@ func _refresh_open() -> void:
 
 
 func _run_events() -> void:
-	if _playing:
+	if _queue_running:
 		return
-	_playing = true
+	_queue_running = true
 	var generation: int = _generation
 	while not _events.is_empty():
 		var event: Dictionary = _events.pop_front()
@@ -287,55 +385,118 @@ func _run_events() -> void:
 		# Seviye yeniden başladıysa bu korutin eskidir: kuyruğa/duruma dokunmadan çık.
 		if generation != _generation:
 			return
-	_playing = false
+	_queue_running = false
 
 
-## Zamanlayıcı bekler; seviye bu arada yenilendiyse false döner (çağıran çıkmalı).
-func _wait(seconds: float) -> bool:
+## Tempolu bekleme (tempo değişirse kalan süre de hızlanır). Seviye yenilendiyse false.
+func _paced(seconds: float) -> bool:
 	var generation: int = _generation
-	await get_tree().create_timer(seconds).timeout
+	var left: float = seconds
+	while left > 0.0:
+		await get_tree().process_frame
+		if generation != _generation:
+			return false
+		if _skip_end:
+			return true
+		if not get_tree().paused:  # duraklatma sayfası açıkken Tween'ler de durur
+			left -= get_process_delta_time() * _pace
 	return generation == _generation
 
 
-## Havadaki son çamaşır oturana kadar bekler (sepet kapanışı/kazanma bundan sonra başlar).
-func _wait_flights() -> bool:
-	var remaining: float = float(_flights_end_msec - Time.get_ticks_msec()) / MS_PER_SECOND
-	if remaining <= 0.0:
-		return true
-	return await _wait(remaining)
+## Süs beklemesi: tempolu ve YENİ BİR DOKUNUŞ gelince hemen biter (yeni komut eskisini bitirir).
+func _beat(seconds: float) -> bool:
+	var generation: int = _generation
+	var serial: int = _tap_serial
+	var left: float = seconds
+	while left > 0.0:
+		await get_tree().process_frame
+		if generation != _generation:
+			return false
+		if serial != _tap_serial or _skip_end:
+			return true
+		if not get_tree().paused:  # duraklatma sayfası açıkken Tween'ler de durur
+			left -= get_process_delta_time() * _pace
+	return generation == _generation
+
+
+## Havadaki tüm çamaşırlar inene dek (yalnız seviye sonu ve patron ekran geçişi bekler).
+func _await_landed() -> bool:
+	var generation: int = _generation
+	while _any_flight():
+		await get_tree().process_frame
+		if generation != _generation:
+			return false
+	return true
+
+
+func _any_flight() -> bool:
+	# Tamamlanan sepetin parçaları serbest bırakılır ama sözlükte kalır: tipli döngü değişkeni kullanılmaz.
+	for value: Variant in _views.values():
+		if is_instance_valid(value) and (value as GarmentView).in_flight:
+			return true
+	return false
+
+
+## Seviye sonu: tüm uçuşlar inmiş ve sepet kanalları bitmiş olmalı (son sepetin kapanışı görünsün).
+func _await_settled_end() -> bool:
+	var generation: int = _generation
+	while true:
+		var busy: bool = _any_flight() or _detached > 0
+		for running: bool in _basket_running:
+			busy = busy or running
+		if not busy:
+			return true
+		await get_tree().process_frame
+		if generation != _generation:
+			return false
+	return true
+
+
+## Aynı dokunuşun bir sonraki olayı da uçuşsa (askıdan zincirleme geçiş) küçük bir sıra aralığı.
+func _stagger_after(event: Dictionary) -> void:
+	if _events.is_empty():
+		return
+	var next: Dictionary = _events[0]
+	if int(next.get("_tap", -1)) != int(event.get("_tap", -2)) or not FLIGHT_EVENTS.has(String(next["type"])):
+		return
+	await _beat(Motion.stagger(_events.size()))
 
 
 func _play_event(event: Dictionary) -> void:
 	match String(event["type"]):
 		LaundryBoard.EVENT_BLOCKED:
-			AudioService.play_pitched("blocked", randf_range(0.95, 1.05), -6.0)
-			_views[int(event["id"])].wobble()
+			_sfx("blocked", randf_range(0.95, 1.05), -6.0)
+			if _live(int(event["id"])):
+				_views[int(event["id"])].wobble()
 			for blocker: Variant in event["by"] as Array:
-				_views[int(blocker)].flash()
+				if _live(int(blocker)) and not _views[int(blocker)].in_flight:
+					_views[int(blocker)].flash()
 		LaundryBoard.EVENT_RACK_FULL:
 			# Askı dolu: parça alınamaz. Çamaşır sallanır, askı kısa bir an kırmızıya döner.
-			AudioService.play_pitched("blocked", randf_range(0.85, 0.95), -5.0)
-			_views[int(event["id"])].wobble()
+			_sfx("blocked", randf_range(0.85, 0.95), -5.0)
+			if _live(int(event["id"])):
+				_views[int(event["id"])].wobble()
 			_rack_refuse_until_msec = Time.get_ticks_msec() + RACK_REFUSE_MSEC
 		LaundryBoard.EVENT_LOCKED:
-			AudioService.play_pitched("lock_rattle", randf_range(0.95, 1.05), -5.0)
-			_views[int(event["id"])].wobble()
+			_sfx("lock_rattle", randf_range(0.95, 1.05), -5.0)
+			if _live(int(event["id"])):
+				_views[int(event["id"])].wobble()
 			# Hangi sepetin beklendiğini göster: o renkteki aktif sepet yumuşakça şişer.
 			for basket: BasketView in _baskets:
 				if basket.visible and basket.color.is_equal_approx(COLORS[int(event["color"]) % COLORS.size()]):
 					basket.hop()
 		LaundryBoard.EVENT_WRING:
 			_views[int(event["id"])].wring()
-			AudioService.play_pitched("wring", randf_range(0.95, 1.05))
+			_sfx("wring", randf_range(0.95, 1.05))
 		LaundryBoard.EVENT_UNLOCK:
 			_views[int(event["id"])].unlock()
-			AudioService.play_pitched("unlock", 1.0, -4.0)
+			_sfx("unlock", 1.0, -4.0)
 		LaundryBoard.EVENT_TO_RACK:
 			var view: GarmentView = _views[int(event["id"])]
 			_leave_line(view)
 			_fly(view, _rack_points[int(event["slot"])], RACK_GARMENT_SCALE, 0.0, 0.0)
 			view.landed.connect(_on_rack_landed.bind(view), CONNECT_ONE_SHOT)
-			await _wait(Motion.stagger(_events.size()))
+			await _stagger_after(event)
 		LaundryBoard.EVENT_TO_BASKET, LaundryBoard.EVENT_RACK_TO_BASKET:
 			var index: int = int(event["basket"])
 			var stack_index: int = int(event["index"])
@@ -348,31 +509,41 @@ func _play_event(event: Dictionary) -> void:
 			flying.modulate = Color.WHITE.darkened(Motion.STACK_SHADE * float(2 - stack_index))
 			var tilt: float = Motion.STACK_TILT_DEGREES * (1.0 if stack_index % 2 == 0 else -1.0)
 			_fly(flying, _baskets[index].slot_position(stack_index), 1.0, _baskets[index].folded_width(), tilt)
-			flying.landed.connect(_on_basket_landed.bind(index, stack_index, flying), CONNECT_ONE_SHOT)
-			await _wait(Motion.stagger(_events.size()))
+			flying.landed.connect(_on_basket_landed.bind(index, stack_index, flying, _basket_gen[index]), CONNECT_ONE_SHOT)
+			await _stagger_after(event)
 		LaundryBoard.EVENT_BASKET_DONE:
+			var done_index: int = int(event["basket"])
+			# Bu neslin parçaları ayrılır: sonraki TO_BASKET olayları yeni sepete (yeni nesle) yazılır.
+			var pieces: Array = _basket_items[done_index]
+			_basket_items[done_index] = []
+			_basket_gen[done_index] += 1
 			if _zen == null:  # [ZEN] zen görev/etkinlik sayacına işlemez
-				RetentionHooks.basket_done(event, _basket_items[int(event["basket"])].size())  # [RETENTION]
-			await _complete_basket(int(event["basket"]), int(event.get(RunStats.EVENT_CHAIN_KEY, 1)))
+				RetentionHooks.basket_done(event, pieces.size())  # [RETENTION]
+			_done_seq += 1
+			event["_seq"] = _done_seq
+			event["_pieces"] = pieces
+			_push_basket_job(done_index, event)
 		RunStats.EVENT_CHAIN_BREAK:
+			_break_seq = _done_seq
+			_chain_shown = 0
 			_hud.fade_chain()
 		LaundryBoard.EVENT_BASKET_NEW:
-			_baskets[int(event["basket"])].enter(_basket_tint(event), int(event.get("cap", LaundryBoard.BASKET_CAPACITY)), bool(event.get("joker", false)))
-			_on_basket_new(event)
+			event["_gen"] = _basket_gen[int(event["basket"])]
+			_push_basket_job(int(event["basket"]), event)
 		LaundryBoard.EVENT_WIN:
-			if await _wait_flights():
-				await _wait(Motion.WIN_DELAY_SECONDS)
-				_show_win()
+			if await _await_settled_end():
+				if await _paced(Motion.WIN_DELAY_SECONDS):
+					_show_win()
 		LaundryBoard.EVENT_LOSE:
 			if _zen != null:  # [ZEN] kayıp yok: sakin kurtarma (bir adım geri + ipucu / askı)
 				await _zen_rescue()
 				return
 			_announce_lose(event)
 			UiData.vibrate(300)
-			AudioService.play_pitched("wind", 1.0, -3.0)
-			if await _wait_flights():
-				await _wait(Motion.LOSE_DELAY_SECONDS)
-				_show_lose(int(event.get("remaining", 0)))
+			_sfx("wind", 1.0, -3.0)
+			if await _await_settled_end():
+				if await _paced(Motion.LOSE_DELAY_SECONDS):
+					_show_lose(int(event.get("remaining", 0)))
 		_:
 			await _play_obstacle_event(event)
 
@@ -396,60 +567,116 @@ func _leave_line(view: GarmentView) -> void:
 func _fly(view: GarmentView, target: Vector2, target_scale: float, folded_width: float, tilt: float) -> void:
 	view.set_open(true)
 	view.z_index = maxi(view.z_index, 50)
+	# Yeni komut eskisini geçersiz kılar: önceki uçuşun iniş tepkisi (askı sesi, makineye giriş) artık
+	# gerçekleşmeyecek bir hedefe aittir; bağlantılar koparılır, uçuş mevcut yerinden yeniden başlar.
+	for connection: Dictionary in view.landed.get_connections():
+		view.landed.disconnect(connection["callable"] as Callable)
 	view.fly_to(target, target_scale, folded_width, tilt)
-	_flights_end_msec = maxi(_flights_end_msec,
-		Time.get_ticks_msec() + int(Motion.total_fly_seconds() * MS_PER_SECOND))
-	get_tree().create_timer(Motion.ANTICIPATE_SECONDS).timeout.connect(
-		AudioService.play_variant.bind("cloth", SOUND_VARIANTS, randf_range(0.9, 1.1), -6.0))
+	get_tree().create_timer(Motion.ANTICIPATE_SECONDS / _pace).timeout.connect(
+		_sfx_variant.bind("cloth", randf_range(0.9, 1.1), -6.0))
 
 
 func _on_rack_landed(view: GarmentView) -> void:
 	if is_instance_valid(view):
-		AudioService.play_pitched("rack_hang", randf_range(0.94, 1.06), -5.0)
+		_sfx("rack_hang", randf_range(0.94, 1.06), -5.0)
 
 
-func _on_basket_landed(index: int, stack_index: int, view: GarmentView) -> void:
+func _on_basket_landed(index: int, stack_index: int, view: GarmentView, gen: int) -> void:
 	if index >= _baskets.size():
 		return
 	var basket: BasketView = _baskets[index]
-	basket.receive(1.0 - 0.2 * float(stack_index))
-	basket.set_filled(stack_index + 1)
 	if is_instance_valid(view):
-		_puff(view.global_position)
-		# [sepet kancası] Parça sepetin yığınına geçer: ön duvarın arkasında, sepetle birlikte hareket eder.
-		basket.adopt(view, stack_index)
-	AudioService.play_pitched("fold_puff", randf_range(1.0, 1.12), LAND_SOUND_DB)
+		if _pace < Motion.PACE_TRIM:
+			_puff(view.global_position)
+		# [sepet kancası] Parça sepetin yığınına geçer (sepet yerinde değilse yeni sepet gelince).
+		basket.land(view, stack_index, gen)
+	_sfx("fold_puff", randf_range(1.0, 1.12), LAND_SOUND_DB)
+
+
+## Sepet kanalı: aynı sepetin tamamlanma -> yeni sepet -> joker rengi işleri sırayla, kuyruğu bekletmeden.
+func _push_basket_job(index: int, event: Dictionary) -> void:
+	if index < 0 or index >= _baskets.size():
+		return
+	_basket_jobs[index].append(event)
+	if not _basket_running[index]:
+		_run_basket_jobs(index)
+
+
+func _run_basket_jobs(index: int) -> void:
+	_basket_running[index] = true
+	var generation: int = _generation
+	while not _basket_jobs[index].is_empty():
+		var job: Dictionary = _basket_jobs[index].pop_front()
+		match String(job["type"]):
+			LaundryBoard.EVENT_BASKET_DONE:
+				await _complete_basket(index, int(job.get(RunStats.EVENT_CHAIN_KEY, 1)), job["_pieces"] as Array,
+					int(job["_seq"]))
+			LaundryBoard.EVENT_BASKET_NEW:
+				_baskets[index].enter(_basket_tint(job), int(job.get("cap", LaundryBoard.BASKET_CAPACITY)),
+					bool(job.get("joker", false)), int(job.get("_gen", -1)))
+				_on_basket_new(job)
+			LaundryBoard.EVENT_JOKER_FIX:
+				_baskets[index].fix_joker(COLORS[int(job["color"]) % COLORS.size()])
+				_sfx("unlock", 1.15, -5.0)
+		if generation != _generation:
+			return
+	_basket_running[index] = false
+
+
+## Bu neslin tüm parçaları inip yığına girdi mi (ve sepet yerinde mi).
+func _pieces_in(basket: BasketView, pieces: Array) -> bool:
+	if not basket.is_settled():
+		return false
+	for piece: Variant in pieces:
+		if is_instance_valid(piece) and ((piece as GarmentView).in_flight or not basket.holds(piece as GarmentView)):
+			return false
+	return true
 
 
 ## Sepet doldu: yığın aşağı basılır, parıltı patlar, bant nabız atar, parçalar sepete
-## karışır; sonra sepet kayıp gider ve yenisi gelir (kayma beklenmez, kuyruk akmaya devam eder).
-func _complete_basket(index: int, chain_step: int = 1) -> void:
-	if not await _wait_flights():
-		return
+## karışır; sonra sepet kayıp gider ve yenisi gelir. Sepet kanalında oynar: kuyruk akmaya devam eder.
+func _complete_basket(index: int, chain_step: int, pieces: Array, seq: int) -> void:
+	var generation: int = _generation
 	var basket: BasketView = _baskets[index]
-	var pieces: Array = _basket_items[index]
+	var waited: float = 0.0
+	while not _pieces_in(basket, pieces):
+		await get_tree().process_frame
+		if generation != _generation:
+			return
+		waited += get_process_delta_time()
+		if waited > COMPLETE_WAIT_LIMIT:
+			# Güvenlik ağı: beklenen iniş hiç gelmediyse parçalar yerine oturtulur, dizi kilitlenmez.
+			push_warning("game: sepet %d tamamlanma beklemesi aşıldı, parçalar oturtuldu" % index)
+			for piece: Variant in pieces:
+				if is_instance_valid(piece):
+					(piece as GarmentView).finish_flight()
+			basket.force_settle()
+			waited = 0.0
+	basket.begin_close()
 	# 1) Yığın basar: parçalar birbirine yaklaşır, sepet çöker.
 	# [sepet kancası] Parçalar sepetin yığın düğümünde: sıkışmayı sepet kendi yığınıyla yapar.
 	basket.press(Motion.COMPLETE_PRESS_SECONDS)
-	if not await _wait(Motion.COMPLETE_PRESS_SECONDS + Motion.COMPLETE_HOLD_SECONDS):
+	var hold: float = Motion.COMPLETE_HOLD_SECONDS if _pace < Motion.PACE_TRIM else 0.0
+	if not await _paced(Motion.COMPLETE_PRESS_SECONDS + hold):
 		return
 	# 2) Parıltı + bant nabzı + sesler.
 	UiData.vibrate(40)
 	# Perde artık zamana değil ZİNCİRE bağlı (RunStats tek kaynak): zincir adımı n ise n-1 yarım ton.
 	_combo = maxi(chain_step - 1, 0)
-	if chain_step >= RunStats.MIN_VISIBLE_CHAIN:
+	# Sepet kanalları sırasız bitebilir: hap yalnız kopmadan sonraki EN BÜYÜK adımı gösterir.
+	if chain_step >= RunStats.MIN_VISIBLE_CHAIN and seq > _break_seq and chain_step > _chain_shown:
+		_chain_shown = chain_step
 		_hud.show_chain(chain_step)
-	AudioService.play_pitched("fold_puff", randf_range(0.96, 1.04))
-	AudioService.play_pitched("note", pow(COMBO_SEMITONE, float(mini(_combo, COMBO_MAX_STEPS)) * 2.0), -5.0)
+	_sfx("fold_puff", randf_range(0.96, 1.04))
+	_sfx("note", pow(COMBO_SEMITONE, float(mini(_combo, COMBO_MAX_STEPS)) * 2.0), -5.0)
 	_sparkle(basket.rest_position + Vector2(0.0, -BASKET_SIZE * 0.3), basket.color)
 	basket.pulse_band()
 	# 3) Parçalar sepetin içine çöker (ön duvarın arkasına iner).
 	# [sepet kancası] Solup silinmezler: sepet yığını içinde taşıyarak gider, gidince serbest bırakır.
 	basket.sink_pile(Motion.COMPLETE_ABSORB_SECONDS)
-	if not await _wait(Motion.COMPLETE_ABSORB_SECONDS):
+	if not await _paced(Motion.COMPLETE_ABSORB_SECONDS):
 		return
-	pieces.clear()
-	# 4) Sepet yavaşça kayıp gider; yenisi (BASKET_NEW) kayma bitince gelir.
+	# 4) Sepet yavaşça kayıp gider; yenisi (BASKET_NEW, kanalda sıradaki iş) kayma bitince gelir.
 	basket.leave()
 
 
@@ -461,6 +688,7 @@ func _sparkle(at: Vector2, tint: Color) -> void:
 		var burst: CPUParticles2D = _sparkles[_sparkle_next]
 		_sparkle_next = (_sparkle_next + 1) % _sparkles.size()
 		burst.color = layer_color
+		burst.speed_scale = _pace
 		burst.global_position = at
 		burst.restart()
 		burst.emitting = true
@@ -539,10 +767,7 @@ func _start_level() -> void:
 	if _world != null:
 		_world.queue_free()
 	_hide_overlay()
-	_generation += 1
-	_playing = false
-	_flights_end_msec = 0
-	_applied_sway = Motion.SWAY_CALM
+	_reset_flow()
 	_line_views.clear()
 	_events.clear()
 	_views.clear()
@@ -599,6 +824,26 @@ func _start_level() -> void:
 		LevelPrefetch.request_level(_level_number + 1)
 
 
+## Yeni seviye / geri al: eski korutinler `_generation` ile çıkar; akış durumu sıfırlanır.
+func _reset_flow() -> void:
+	_generation += 1
+	_queue_running = false
+	_applied_sway = Motion.SWAY_CALM
+	_basket_jobs.clear()
+	_basket_running.clear()
+	_basket_gen.clear()
+	_detached = 0
+	_end_pending = false
+	_skip_end = false
+	_tempo_msec = Motion.PACE_CALM_MSEC
+	_pace = 1.0
+	_done_seq = 0
+	_break_seq = 0
+	_chain_shown = 0
+	_sound_gate.reset()
+	Motion.reset_pace()
+
+
 func _build_lines() -> void:
 	var items: Array = _level["items"] as Array
 	var lines: int = 1
@@ -636,6 +881,7 @@ func _build_lines() -> void:
 		if item.has("lock"):
 			view.set_lock(COLORS[int(item["lock"]) % COLORS.size()])
 		_decorate_view(view, item, spacing_x, spacing_y)
+		view.line_home = view.position
 
 
 func _build_rack() -> void:
@@ -658,6 +904,9 @@ func _build_baskets() -> void:
 		_world.add_child(basket)
 		_baskets.append(basket)
 		_basket_items.append([])
+		_basket_jobs.append([])
+		_basket_running.append(false)
+		_basket_gen.append(0)
 		if states[index].is_empty():
 			basket.visible = false
 		else:
@@ -978,12 +1227,7 @@ func _revive() -> void:
 	_board.add_rack_slot()
 	queue_redraw()
 	_refresh_rules_views()
-	_rack_points.clear()
-	_build_rack()
-	var rack: Array[int] = _board.rack()
-	for slot: int in range(rack.size()):
-		if rack[slot] != LaundryBoard.EMPTY:
-			_views[rack[slot]].global_position = _rack_points[slot]
+	_rebuild_rack_points()
 	_hide_overlay()
 
 
@@ -1068,8 +1312,8 @@ func _play_obstacle_event(event: Dictionary) -> void:
 			_views[id].recolor(COLORS[int(event["color"]) % COLORS.size()])
 			if _live(target):
 				_views[target].recolor(COLORS[int(event["target_color"]) % COLORS.size()])
-			AudioService.play_pitched("wring", 0.8, -4.0)
-			await _wait(GarmentView.RECOLOR_SECONDS)
+			_sfx("wring", 0.8, -4.0)
+			await _beat(GarmentView.RECOLOR_SECONDS)
 		LaundryBoard.EVENT_PIN_REMOVED:
 			_views[id].release_pins()
 			AudioService.play_pitched("unlock", 1.2, -4.0)
@@ -1137,9 +1381,8 @@ func _booster_intercepts(point: Vector2) -> bool:
 		if Boosters.pin_succeeded(events):
 			_booster_bar.spend(Boosters.PIN_REMOVER)
 			Input.vibrate_handheld(20)
-		_events.append_array(events)
-		_refresh_open()
-		_run_events()
+		if not events.is_empty():
+			_enqueue(events)
 	_refresh_booster_bar()
 	return true
 
@@ -1152,8 +1395,9 @@ func _pick_pin_target(point: Vector2) -> int:
 		if not Boosters.is_pin_target(_board, id):
 			continue
 		var view: GarmentView = _views[id]
+		# Mantıksal yer: kayma/rüzgâr/ekran geçişi sürerken de parmak hedef yerde sınanır.
 		var rect: Rect2 = view.hit_rect()
-		rect.position += view.position
+		rect.position += view.line_home
 		if rect.size.x < MIN_TOUCH:
 			rect = rect.grow((MIN_TOUCH - rect.size.x) * 0.5)
 		if rect.has_point(point) and view.layer > best_layer:
@@ -1167,8 +1411,9 @@ func _rebuild_rack_points() -> void:
 	_build_rack()
 	var rack: Array[int] = _board.rack()
 	for slot: int in range(rack.size()):
-		if rack[slot] != LaundryBoard.EMPTY and _views.has(rack[slot]):
-			_views[rack[slot]].global_position = _rack_points[slot]
+		if rack[slot] != LaundryBoard.EMPTY and _live(rack[slot]):
+			# Askıya doğru uçmaktaysa yay yeni kancaya kıvrılır (uçuş eski kancaya inmesin).
+			_views[rack[slot]].retarget(_rack_points[slot])
 
 
 ## Geri al sonrası: dünya tahtanın o anki durumundan yeniden kurulur. Neden baştan kurmak:
@@ -1177,10 +1422,7 @@ func _rebuild_rack_points() -> void:
 func _rebuild_from_board() -> void:
 	if _world != null:
 		_world.queue_free()
-	_generation += 1
-	_playing = false
-	_flights_end_msec = 0
-	_applied_sway = Motion.SWAY_CALM
+	_reset_flow()
 	_line_views.clear()
 	_events.clear()
 	_views.clear()
@@ -1240,6 +1482,12 @@ func _rebuild_from_board() -> void:
 			_basket_items[index].append(folded)
 		_baskets[index].set_filled(contents.size())
 	_refresh_open()
+	# Geri al yarıda kalan sepet kanallarını düşürür: zincir hapı istatistikle eşitlenir.
+	_chain_shown = _run_stats.chain() if _run_stats.chain() >= RunStats.MIN_VISIBLE_CHAIN else 0
+	if _chain_shown > 0:
+		_hud.show_chain(_chain_shown)
+	else:
+		_hud.fade_chain()
 	AudioService.play_pitched("cloth", 0.9, -6.0)
 
 
@@ -1394,10 +1642,8 @@ func _play_rules_event(event: Dictionary) -> bool:
 	var id: int = int(event.get("id", LaundryBoard.EMPTY))
 	match String(event["type"]):
 		LaundryBoard.EVENT_JOKER_FIX:
-			var index: int = int(event["basket"])
-			if index < _baskets.size():
-				_baskets[index].fix_joker(COLORS[int(event["color"]) % COLORS.size()])
-				AudioService.play_pitched("unlock", 1.15, -5.0)
+			# Sepet kanalında: önceki neslin kapanışından ve yeni sepetin gelişinden sonra uygulanır.
+			_push_basket_job(int(event["basket"]), event)
 		LaundryBoard.EVENT_STAIN_WAIT:
 			if _live(id):
 				_views[id].set_drying(true)
@@ -1417,14 +1663,15 @@ func _play_rules_event(event: Dictionary) -> bool:
 			if _live(id):
 				_views[id].clear_wind()
 				if bool(event["effective"]) and _live(int(event["target"])):
-					_views[id].blow_over(_views[int(event["target"])].position, _views[int(event["target"])].z_index)
-					AudioService.play_pitched("wind", 1.3, -8.0)
-					await _wait(Motion.WIND_FLIP_SECONDS)
+					_views[id].blow_over(_views[int(event["target"])].line_home, _views[int(event["target"])].z_index)
+					_sfx("wind", 1.3, -8.0)
+					await _beat(Motion.WIND_FLIP_SECONDS)
 		LaundryBoard.EVENT_ORDER_DONE, LaundryBoard.EVENT_ORDER_BROKEN:
 			if _rules_hud != null:
 				(_rules_hud.mode_pill() as RulesHud.Pill).pulse()
 		LaundryBoard.EVENT_SCREEN:
-			await _slide_in_screen(int(event["screen"]))
+			# Kuyruğu bekletmez: ikinci ekranın parçaları kaymaya başlayınca dokunulabilir olur.
+			_slide_in_screen(int(event["screen"]))
 		_:
 			return false
 	return true
@@ -1439,20 +1686,24 @@ func _live(id: int) -> bool:
 
 ## Patron: ilk ekran boşaldı; ikinci ekranın çamaşırları sağdan kayarak yerine gelir.
 func _slide_in_screen(screen: int) -> void:
-	if not await _wait_flights():
+	_detached += 1
+	var generation: int = _generation
+	var ok: bool = await _await_landed()
+	if ok:
+		ok = await _beat(Motion.SCREEN_SLIDE_DELAY)
+	if generation != _generation:
 		return
-	if not await _wait(Motion.SCREEN_SLIDE_DELAY):
+	_detached -= 1
+	if not ok:
 		return
 	var width: float = get_viewport_rect().size.x
-	AudioService.play_pitched("wind", 0.9, -6.0)
+	_sfx("wind", 0.9, -6.0)
 	for id: int in _views.keys():
-		if _board.screen_of(id) != screen or not _board.is_on_line(id):
+		if _board.screen_of(id) != screen or not _board.is_on_line(id) or not _live(id):
 			continue
 		var view: GarmentView = _views[id]
-		var slide: Tween = view.create_tween()
-		slide.tween_property(view, "position:x", view.position.x - width, Motion.SCREEN_SLIDE_SECONDS)\
-			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	await _wait(Motion.SCREEN_SLIDE_SECONDS)
+		view.move_on_line(view.line_home - Vector2(width, 0.0), Motion.SCREEN_SLIDE_SECONDS,
+			Tween.TRANS_CUBIC, Tween.EASE_OUT)
 
 
 ## Kayıp nedeni hamle bittiyse sonuç sayfasından önce kısa, açık bir duyuru.
@@ -1539,9 +1790,8 @@ func _play_slide_event(event: Dictionary) -> bool:
 					continue
 				var view: GarmentView = raw as GarmentView
 				var home: Vector2 = _slide_home[id] as Vector2
-				var tween: Tween = view.create_tween()
-				tween.tween_property(view, "position:x", home.x + home.y * _slide_spacing_x * phase, SLIDE_SECONDS)\
-					.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+				view.move_on_line(Vector2(home.x + home.y * _slide_spacing_x * phase, view.line_home.y), SLIDE_SECONDS,
+					Tween.TRANS_SINE, Tween.EASE_IN_OUT)
 				view.nudge(Motion.NEIGHBOUR_KICK)
 				moved = true
 			if moved:
@@ -1744,9 +1994,7 @@ func _tap_guest(id: int) -> void:
 		return
 	_tutorial.on_tap(id, events)
 	UiData.vibrate(8)
-	_events.append_array(events)
-	_refresh_open()
-	_run_events()
+	_enqueue(events)
 
 
 ## `_play_obstacle_event` kancası. Döndürür: olay burada işlendi mi.
@@ -1755,9 +2003,9 @@ func _play_extras_event(event: Dictionary) -> bool:
 	match String(event["type"]):
 		LaundryBoard.EVENT_TO_MACHINE:
 			_send_to_machine(id, int(event["machine"]), int(event["slot"]))
-			AudioService.play_pitched("machine_door", randf_range(0.95, 1.05), -5.0)
-			AudioService.play_pitched("machine_tumble" if int(event["machine"]) == 0 else "dryer_tumble", 1.0, -12.0)
-			await _wait(Motion.stagger(_events.size()))
+			_sfx("machine_door", randf_range(0.95, 1.05), -5.0)
+			_sfx("machine_tumble" if int(event["machine"]) == 0 else "dryer_tumble", 1.0, -12.0)
+			await _stagger_after(event)
 		LaundryBoard.EVENT_MACHINE_FULL:
 			var full: MachineView = _machine_views[int(event["machine"])]
 			if full != null:
@@ -1777,7 +2025,7 @@ func _play_extras_event(event: Dictionary) -> bool:
 			if String(event["type"]) == LaundryBoard.EVENT_MACHINE_READY:
 				AudioService.play_pitched("machine_done", 1.0, -7.0)
 		LaundryBoard.EVENT_MACHINE_OUT:
-			await _machine_out(id, int(event["machine"]), int(event["slot"]))
+			_machine_out(id, int(event["machine"]), int(event["slot"]))
 		LaundryBoard.EVENT_MACHINE_RUSH:
 			if _machine_views[int(event["machine"])] != null:
 				_machine_views[int(event["machine"])].bounce()
@@ -1811,11 +2059,12 @@ func _play_extras_event(event: Dictionary) -> bool:
 			var line: int = int(event["line"])
 			if _cloud != null and line >= 0 and line < _line_ys.size():
 				_cloud.pour(_line_ys[line])
-			AudioService.play_pitched("rain_patter", 1.0, -5.0)
-			if not await _wait(RainCloudView.POUR_SECONDS * 0.5):
+			_sfx("rain_patter", 1.0, -5.0)
+			if not await _beat(RainCloudView.POUR_SECONDS * 0.5):
 				return true
+			# Bekleme sırasında tahta ilerlemiş olabilir (parça sıkıldı/alındı): GÜNCEL tahtaya göre ıslatılır.
 			for wet: Variant in event["ids"] as Array:
-				if _live(int(wet)):
+				if _live(int(wet)) and _board.is_on_line(int(wet)) and _board.is_wet(int(wet)):
 					_views[int(wet)].set_wet(true)
 			_show_cloud()
 		LaundryBoard.EVENT_CAT_LAND:
@@ -1864,8 +2113,6 @@ func _on_machine_landed(id: int, machine: int, slot: int) -> void:
 
 ## Temiz çıktı: kapakta yeniden belirir; ardından gelen TO_BASKET/TO_RACK olayı onu uçurur.
 func _machine_out(id: int, machine: int, slot: int) -> void:
-	if not await _wait_flights():
-		return
 	_machine_held.erase(id)
 	var view: MachineView = _machine_views[machine]
 	if view != null:
@@ -1874,6 +2121,10 @@ func _machine_out(id: int, machine: int, slot: int) -> void:
 	if not _live(id):
 		return
 	var garment: GarmentView = _views[id]
+	# Kapıya hâlâ uçuyorsa uçuş kesilir: parça kapıdan çıkar, ardından gelen uçuş oradan başlar.
+	garment.stop_flight()
+	for connection: Dictionary in garment.landed.get_connections():
+		garment.landed.disconnect(connection["callable"] as Callable)
 	garment.visible = true
 	garment.modulate = Color.WHITE
 	garment.wash_clean()
@@ -2087,6 +2338,12 @@ func _q_pollen_puff(line: int) -> void:
 		if _board.is_dusty(view_id) and _live(view_id):
 			_views[view_id].set_dusty(true)
 
+
+## Uçuşa sayılan olaylar (aynı dokunuşun art arda uçuşları arasında sıra aralığı bırakılır).
+const FLIGHT_EVENTS: Array[String] = [LaundryBoard.EVENT_TO_RACK, LaundryBoard.EVENT_TO_BASKET,
+	LaundryBoard.EVENT_RACK_TO_BASKET, LaundryBoard.EVENT_TO_MACHINE]
+## Sepet tamamlanmasının parçaların inişini bekleme sınırı (s): aşılırsa parçalar oturtulur.
+const COMPLETE_WAIT_LIMIT: float = 4.0
 
 ## Üst gösterge satırı ile kural hapları arasındaki ek boşluk.
 const RULES_HUD_CLEARANCE: float = 12.0

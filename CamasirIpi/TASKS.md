@@ -70,8 +70,9 @@ Mevsimler seviye bantlarıyla: ör. 1-30 yaz, 31-60 sonbahar, 61-90 kış, 91-12
 
 Yayın adı: **"Clothesline Sort"** (alt başlık: "Laundry Color Puzzle"). Hedef: Google Play.
 Sıra (kullanıcı): önce oynanış düzeltmeleri, sonra mağaza hazırlığı.
-- [~] `ci-flow` (Opus): hızlı oynayınca animasyonların oyunu yavaşlatması; ana menüde Oyna düğmesinin telefonda
-      ortalanması; seviye geçişinin hızlanması.
+- [x] `ci-flow` (Opus): hızlı oynayınca animasyonların oyunu yavaşlatması; ana menüde Oyna düğmesinin telefonda
+      ortalanması; seviye geçişinin hızlanması. Tasarım + ölçümler `docs/perf/flow.md`; stres probu
+      `tools/speed_probe.gd`. Gerçek telefonda kalan kontroller aynı belgenin sonunda.
 - [~] `ci-i18n` (Sonnet): Portekizce, Almanca, Japonca, Korece.
 - [~] `ci-play` (Sonnet): Google Play yayın şartlarının araştırması ve denetim listesi (yalnız belge).
 - [x] `ci-audio`: müzik (5 parça), ses seti ücretli planla yeniden, ölçülü miks ve AudioService cilası (`docs/AUDIO.md`). Kulakla dinleme bekliyor.
