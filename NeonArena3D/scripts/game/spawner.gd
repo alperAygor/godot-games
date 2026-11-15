@@ -31,14 +31,16 @@ func tick_pacing(delta: float) -> void:
 func _hunt_stragglers() -> void:
 	var enemies := ctx.enemies
 	var sparks := ctx.sparks
+	var moved := 0
 	for e in enemies:
 		if not is_instance_valid(e) or e.dead:
 			continue
+		moved += 1
 		sparks.burst(e.position, e.color(), 10, 5.0, 0.4, 0.9)
 		e.pos2 = spawn_point()
 		e.position = ArenaSpace.to_world(e.pos2, 0.9)
 		sparks.burst(e.position, e.color(), 12, 6.0, 0.45, 1.0)
-	if not enemies.is_empty():
+	if moved > 0:   # liste yalnız ölü düşman tutuyorsa (henüz biçilmemiş) "yaklaşıyor" uyarısı yanlış olurdu
 		ctx.hud.toast(tr("AV MODU — kalan düşmanlar yaklaşıyor"), KIT.RED, 1.8)
 		Sound.play("elite", -4.0, 1.2)
 

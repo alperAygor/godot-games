@@ -1,0 +1,9 @@
+{
+  "_note": "Reklam akisinin oyun tarafi sayilari (oyuncuya gorunen akis). Reklam KURALLARI (limitler, geçiş reklamı pacing) data/ads.json'da. min_completed_runs: bu kadar koşu bitmeden hiçbir reklam arayüzü yok (ilk koşu temiz). revive_offer_seconds: 'izle ve canlan' teklifinin geri sayımı. daily_bonus_cores: günlük reklam bonusu (ortalama bir koşu ≈ 60-80 çekirdek; atölye+gemi ≈ 5150). double_cores_multiplier: koşu çekirdeği çarpanı (2 = bir kez +%100). reroll_grant: reklamla verilen yenileme. reroll_offer_at_or_below: yenileme sayısı bu değerin altına inince teklif.",
+  "min_completed_runs": 1,
+  "revive_offer_seconds": 5.0,
+  "daily_bonus_cores": 50,
+  "double_cores_multiplier": 2,
+  "reroll_grant": 1,
+  "reroll_offer_at_or_below": 0
+}

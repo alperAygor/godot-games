@@ -16,7 +16,7 @@ func _run() -> void:
 	await process_frame
 	scene = load("res://scenes/main.tscn").instantiate()
 	root.add_child(scene)
-	Engine.time_scale = 3.0
+	root.get_node("Fx").set_base_scale(3.0)
 	var t := 0.0
 	var last_print := -5.0
 	var max_alive := 0
@@ -44,7 +44,7 @@ func _run() -> void:
 			print("t=%4.0f  dalga=%d  öldürme=%d  puan=%d  seviye=%d  can=%.0f  canlı=%d  nova=%.0f  durum=%s" % [
 				t, scene.run.wave, scene.run.kills, scene.run.score, scene.run.level,
 				scene.player.hp, scene.run.alive, scene.nova, scene.state])
-	Engine.time_scale = 1.0
+	root.get_node("Fx").set_base_scale(1.0)
 	if not is_instance_valid(scene) or scene.run == null:
 		printerr("Oyun sahnesi yüklenemedi")
 		quit(1)

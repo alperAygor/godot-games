@@ -131,7 +131,7 @@ func show_privacy_options(on_done: Callable) -> void:
 	if provider == null or not privacy_options_required():
 		_call(on_done)
 		return
-	provider.show_privacy_options(on_done)
+	provider.show_privacy_options(on_done if on_done.is_valid() else func() -> void: pass)
 
 
 ## Bu yerleşim şu anda sunulabilir mi (düğme gösterilsin mi)? Sağlayıcı hazır + onay çözülmüş + sınırlar içinde.
@@ -154,6 +154,11 @@ func can_show(placement: int) -> bool:
 		if env.daily_date() == env.today_key():
 			return false
 	return true
+
+
+## Bir reklam isteği sürüyor mu (gösterim istendi, sonuç gelmedi)? Oyun tarafı duraklatma bekçisi için.
+func is_ad_pending() -> bool:
+	return _pending != -1
 
 
 func used_in_run(placement: int) -> int:

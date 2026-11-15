@@ -129,6 +129,7 @@ func _make_modules() -> void:
 	ctx.spawner = _module(Spawner.new(), "Spawner")
 	ctx.bosses = _module(BossEvents.new(), "BossEvents")
 	ctx.cards = _module(CardsFlow.new(), "CardsFlow")
+	ctx.hooks = _module(MonetizationHooks.new(), "MonetizationHooks")
 	ctx.feedback = _module(Feedback.new(), "Feedback")
 	ctx.camera = _module(CameraRig.new(), "CameraRig")
 	ctx.hud_bridge = _module(HudBridge.new(), "HudBridge")
@@ -168,19 +169,22 @@ func _build_scene() -> void:
 	ctx.touch = TouchScript.new()
 	hud_layer.add_child(ctx.touch)
 	ctx.touch.set_enabled(false)
-	ctx.touch.pause_pressed.connect(ctx.flow.pause)
+	ctx.touch.pause_pressed.connect(ctx.hooks.on_pause_requested)
 	var m: MenusScript = MenusScript.new()
 	ctx.menus = m
 	hud_layer.add_child(m)
-	m.play_pressed.connect(ctx.flow.start_game)
-	m.resume_pressed.connect(ctx.flow.resume)
-	m.restart_pressed.connect(ctx.flow.start_game)
-	m.menu_pressed.connect(ctx.flow.enter_menu)
-	m.pause_requested.connect(ctx.flow.pause)
-	m.card_picked.connect(ctx.cards.pick)
-	m.reroll_pressed.connect(ctx.cards.reroll)
+	# Menü eylemleri reklam akışından (MonetizationHooks) geçer: reklam sürerken yok sayılır; TEKRAR OYNA / ANA MENÜ
+	# koşu sonunda önce geçiş reklamı kararını verir (reklam yoksa doğrudan RunFlow'a düşer).
+	m.play_pressed.connect(ctx.hooks.on_play)
+	m.resume_pressed.connect(ctx.hooks.on_resume)
+	m.restart_pressed.connect(ctx.hooks.on_restart)
+	m.menu_pressed.connect(ctx.hooks.on_menu)
+	m.pause_requested.connect(ctx.hooks.on_pause_requested)
+	m.card_picked.connect(ctx.hooks.on_card_picked)
+	m.reroll_pressed.connect(ctx.hooks.on_reroll)
 	m.quality_changed.connect(ctx.flow.apply_quality)
 	m.ship_preview.connect(func(id: String): ctx.player.set_ship(Settings.meta.ship_def(id)))
+	ctx.hooks.build(self)
 
 # --- Kare -------------------------------------------------------------------------
 func _process(delta: float) -> void:

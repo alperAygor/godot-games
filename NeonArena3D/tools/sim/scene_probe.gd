@@ -40,7 +40,7 @@ func _run() -> void:
 	await process_frame
 	var scene = load("res://scenes/main.tscn").instantiate()
 	root.add_child(scene)
-	Engine.time_scale = SPEED
+	root.get_node("Fx").set_base_scale(SPEED)
 	var t := 0.0
 	var last_hp := -1.0
 	var hp_lost := 0.0
@@ -92,7 +92,7 @@ func _run() -> void:
 	var frame_ms := _frame_us
 	var frames := Engine.get_process_frames() - frames_start
 	var wall_s := float(Time.get_ticks_usec() - wall_start) / 1000000.0
-	Engine.time_scale = 1.0
+	root.get_node("Fx").set_base_scale(1.0)
 	var r = scene.run
 	var out := {
 		"ship": _arg("ship", "default"), "game_seconds": snappedf(t, 0.1), "wave": r.wave, "kills": r.kills, "score": r.score,

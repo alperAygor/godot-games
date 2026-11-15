@@ -1,7 +1,7 @@
 extends MenuScreen
 ## Oyun sonu: sonuç, puan sayacı, istatistikler, çekirdek kazancı, kart şeridi, TEKRAR OYNA / ANA MENÜ.
 ##
-## EKLENECEK YERLER (reklam görevi C8):
+## REKLAM (C8, MonetizationHooks bağlar):
 ##  * "İZLE: ÇEKİRDEKLER ×2" düğmesi -> `add_reward_action(düğme)`: çekirdek satırının hemen altına girer
 ##    (görünürlük `Ads.can_show(DOUBLE_CORES)`; ödül verilince `set_cores(...)` ile rozet güncellenir).
 ##  * Başka eylem düğmeleri (ör. paylaş, mağaza) -> `buttons_row` (TEKRAR OYNA / ANA MENÜ yanında).

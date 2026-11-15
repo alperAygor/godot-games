@@ -24,6 +24,11 @@ static func _manager() -> Node:
 	return tree.root.get_node_or_null(MANAGER_NAME) if tree != null else null
 
 
+## Yöneticinin kendisi (sinyallere bağlanmak için: ad_started / rewarded_finished / availability_changed); yoksa null.
+static func manager() -> Node:
+	return _manager()
+
+
 static func available() -> bool:
 	return _manager() != null
 

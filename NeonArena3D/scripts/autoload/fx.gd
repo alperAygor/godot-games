@@ -3,8 +3,7 @@ extends Node
 
 var shake_amount := 0.0
 var kick := Vector2.ZERO
-var _stopping := false
-var _base_scale := 1.0
+var time := TimeScale.new()   ## oyun hızının tek sahibi: Engine.time_scale'e YALNIZ buradan yazılır
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -29,14 +28,34 @@ func offset() -> Vector2:
 	return out
 
 func hitstop(duration := 0.045, slow := 0.12) -> void:
-	if _stopping:
+	var ticket := time.begin_hit(slow)
+	if ticket < 0:
 		return
-	_stopping = true
-	_base_scale = Engine.time_scale
-	Engine.time_scale = _base_scale * slow
+	_apply_time()
 	await get_tree().create_timer(duration, true, false, true).timeout
-	Engine.time_scale = _base_scale
-	_stopping = false
+	time.end_hit(ticket)   # eski/geçersiz bilet etkisiz: yavaş çekim ya da duraklatma araya girdiyse bayat değer yazılmaz
+	_apply_time()
+
+func slow_motion(scale: float, duration: float) -> void:
+	## Mutlak yavaş çekim (ölüm): `duration` (gerçek sn) sonra kendiliğinden biter; araya giren settle() bunu iptal eder.
+	var ticket := time.begin_override(scale)
+	_apply_time()
+	await get_tree().create_timer(duration, true, false, true).timeout
+	time.end_override(ticket)
+	_apply_time()
+
+func set_base_scale(scale: float) -> void:
+	## Araçlar (scene_probe, smoke_test) oyunu hızlandırmak için Engine.time_scale yerine bunu kullanır.
+	time.set_base(scale)
+	_apply_time()
+
+func settle_time() -> void:
+	## Geçici hız katmanlarını kapatır (duraklatma, devam, kart ekranı, reklam, yeni koşu).
+	time.settle()
+	_apply_time()
+
+func _apply_time() -> void:
+	Engine.time_scale = time.current()
 
 func vibrate(ms: int) -> void:
 	if Settings.touch and Settings.vibration and OS.has_feature("mobile"):
@@ -45,5 +64,4 @@ func vibrate(ms: int) -> void:
 func reset() -> void:
 	shake_amount = 0.0
 	kick = Vector2.ZERO
-	Engine.time_scale = 1.0
-	_stopping = false
+	settle_time()

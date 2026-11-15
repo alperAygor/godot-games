@@ -59,6 +59,8 @@ const POOL_SIZE := 22
 const AUDIO_DIR := "res://assets/audio/"
 
 var muted := false
+## Reklam gösterilirken geçici sessizlik: kullanıcının M/sessiz tercihine (`muted`) dokunmaz; reklam bitince geri alınır.
+var ad_muted := false
 var _headless := false
 var _streams: Dictionary = {}
 var _music_streams: Dictionary = {}
@@ -132,9 +134,10 @@ func _setup_buses() -> void:
 		_filter = AudioServer.get_bus_effect(music, 0) as AudioEffectLowPassFilter
 
 func apply_volumes() -> void:
-	_set_bus("Music", 0.0 if muted else Settings.music)
-	_set_bus("SFX", 0.0 if muted else Settings.sfx)
-	_set_bus("UI", 0.0 if muted else Settings.sfx)
+	var silent := muted or ad_muted
+	_set_bus("Music", 0.0 if silent else Settings.music)
+	_set_bus("SFX", 0.0 if silent else Settings.sfx)
+	_set_bus("UI", 0.0 if silent else Settings.sfx)
 
 func _set_bus(bus_name: String, linear: float) -> void:
 	var idx := AudioServer.get_bus_index(bus_name)
@@ -144,7 +147,7 @@ func _set_bus(bus_name: String, linear: float) -> void:
 	AudioServer.set_bus_volume_db(idx, linear_to_db(clampf(linear, 0.005, 1.0)))
 
 func play(id: String, volume_offset := 0.0, pitch := 1.0) -> void:
-	if muted or _headless or not _streams.has(id):
+	if muted or ad_muted or _headless or not _streams.has(id):
 		return
 	var def: Array = SFX[id]
 	var now := Time.get_ticks_msec() / 1000.0
@@ -208,6 +211,10 @@ func set_muffled(on: bool, time := 0.35) -> void:
 		_filter_tween.kill()
 	_filter_tween = create_tween()
 	_filter_tween.tween_property(_filter, "cutoff_hz", 700.0 if on else 20000.0, time).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT if on else Tween.EASE_IN)
+
+func set_ad_muted(on: bool) -> void:
+	ad_muted = on
+	apply_volumes()
 
 func toggle_mute() -> bool:
 	muted = not muted

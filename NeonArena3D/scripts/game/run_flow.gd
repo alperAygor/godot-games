@@ -80,6 +80,8 @@ func enter_menu() -> void:
 	ctx.menus.show_main()
 	Sound.music("menu")
 	Sound.set_muffled(false)
+	if ctx.hooks != null:
+		ctx.hooks.on_menu_shown()
 
 func reseed() -> void:
 	## Tohumlu koşuda (`--seed=N`) her başlangıç aynı rastgele akışla başlar: global randf (dövüş, efekt),
@@ -164,6 +166,7 @@ func pause() -> void:
 	if ctx.state != "playing" or ctx.host.get_tree().paused:
 		return
 	ctx.host.get_tree().paused = true
+	Fx.settle_time()
 	ctx.touch.release_all()
 	ctx.hud.dimmed = true
 	Sound.set_muffled(true)
@@ -176,6 +179,7 @@ func resume() -> void:
 	ctx.menus.hide_all()
 	ctx.hud.dimmed = false
 	ctx.host.get_tree().paused = false
+	Fx.settle_time()
 	Sound.set_muffled(false)
 
 # --- Kare adımları ----------------------------------------------------------------
@@ -215,16 +219,22 @@ func _summary() -> Dictionary:
 
 # --- Ölüm -------------------------------------------------------------------------
 func on_player_died() -> void:
-	var player := ctx.player
-	var run := ctx.run
 	var revive_card: bool = ctx.loadout.i("revive") > revives_used
 	ctx.events.player_died.emit(revive_card)
 	if revive_card:
 		revives_used += 1
 		revive("card")
 		return
-	# SEAM(ads: revive): reklamla diriltme teklifi burada araya girer (C8): ölüm sekansını beklet, ödül gelirse
-	# revive("ad") çağır ve dön; gelmezse aşağıdaki akış aynen sürer.
+	# SEAM(ads: revive): kart diriltmesi yoksa reklamla diriltme teklifi (MonetizationHooks): oyun duraklar, ölüm
+	# sekansı BEKLER. Ödül gelirse hooks `revive("ad")` çağırır; vazgeçilir/başarısız olursa `finish_death()` çalışır.
+	if ctx.hooks != null and ctx.hooks.offer_revive():
+		return
+	finish_death()
+
+func finish_death() -> void:
+	## Ölümün asıl akışı: durum "dead", ödül hesabı + kayıt, ölüm efektleri, koşu sonu olayı.
+	var player := ctx.player
+	var run := ctx.run
 	ctx.state = "dead"
 	player.visible = false
 	ctx.camera.aim_marker.visible = false
@@ -242,17 +252,14 @@ func on_player_died() -> void:
 	Fx.shake(22.0)
 	Fx.vibrate(250)
 	ctx.feedback.hurt_fx = 1.0
-	Engine.time_scale = 0.3
-	var tween := ctx.host.create_tween()
-	tween.set_ignore_time_scale(true)
-	tween.tween_interval(0.9)
-	tween.tween_callback(func(): Engine.time_scale = 1.0)
+	Fx.slow_motion(0.3, 0.9)   # tek hız sahibi: araya giren vuruş donması bayat 0.3 bırakamaz
 	var sparks := ctx.sparks
 	sparks.burst(player.position, Color(0.6, 0.95, 1.0), 70, 15.0, 1.3, 1.7)
 	sparks.burst(player.position, Color(1.0, 0.85, 0.5), 30, 10.0, 0.9, 1.3)
 	sparks.ring(player.position, Color(0.6, 0.95, 1.0), 0.5, 11.0, 0.8, 0.14, 1.0)
 	sparks.flash(player.position, Color(0.6, 0.9, 1.0), 12.0, 16.0, 0.5)
-	# SEAM(ads: interstitial): koşu sonu; geçiş reklamı run_ended dinleyicisinden (oyun sonu ekranından önce).
+	# SEAM(ads: interstitial): koşu sonu; geçiş reklamı oyun sonu ekranındaki TEKRAR OYNA / ANA MENÜ basışında
+	# (MonetizationHooks.on_restart / on_menu) gösterilir, burada değil. run_ended dinleyicileri düğmeleri hazırlar.
 	ctx.events.run_ended.emit(_summary())
 
 func revive(source: String) -> void:
