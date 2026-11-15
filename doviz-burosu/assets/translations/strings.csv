@@ -7,7 +7,7 @@ SETTINGS_VIBRATION,Vibration,Titreşim
 SETTINGS_LANGUAGE,Language,Dil
 COMMON_BACK,Back,Geri
 COMMON_CLOSE,Close,Kapat
-APP_TITLE,Exchange Desk,Döviz Bürosu
+APP_TITLE,Pahalistan Exchange Desk,Döviz Bürosu
 APP_TAGLINE,Spot the fakes. Pay the right rate.,Sahteyi bul. Doğru kuru öde.
 MENU_STORY,Story,Hikaye
 MENU_DAILY,Daily Rate,Günün Kuru
@@ -311,7 +311,7 @@ GUIDE_B5,"The first two mistakes each day are only warnings, after that every on
 GUIDE_T6,Evenings are for the household,Akşam eve dönüş
 GUIDE_B6,"Pay rent, food, heating and medicine from your pay; unpaid bills upset the family, and rent missed twice means eviction. Prices rise every day, so turning cash into FED protects it.","Maaşından kira, yemek, ısınma ve ilacı öde; ödenmeyen gider ailenin moralini bozar, kira iki kez ödenmezse evden atılırsın. Fiyatlar her gün artar; nakdi FED'e çevirmek paranı korur."
 GUIDE_T7,Your choices write the story,Seçimlerin hikayeyi yazar
-GUIDE_B7,"Some visitors offer easy money to bend the rules. It pays fast, but an inspector is coming. There are six different endings.",Bazı ziyaretçiler kuralı eğmen için kolay para önerir. Hızlı kazandırır ama müfettiş yolda. Altı farklı son var.
+GUIDE_B7,"Some visitors offer easy money to bend the rules. It pays fast, but an inspector is coming. There are seven different endings.",Bazı ziyaretçiler kuralı eğmen için kolay para önerir. Hızlı kazandırır ama müfettiş yolda. Yedi farklı son var.
 TOOL_BOOK_SHORT,Rules,Kurallar
 TOOL_CALC_SHORT,Calc,Hesap
 TOOL_CATALOG_SHORT,Catalog,Katalog
@@ -502,3 +502,10 @@ ACC_ABOUT_GOOGLE,"Google Mobile Ads SDK, User Messaging Platform and Google Play
 ACC_LICENSE_BY,%s · %s,%s · %s
 ACC_LICENSE_NO_TEXT,The licence text is available at the source address.,Lisans metni kaynak adresinde bulunur.
 ACC_LICENSE_ENGINE_PARTS,Godot Engine also includes third-party components:,Godot Engine ayrıca üçüncü taraf bileşenler içerir:
+FAKEAD_TITLE,TEST AD,TEST REKLAMI
+FAKEAD_NOTE,"%s
+(Not a real ad; the release build uses AdMob.)","%s
+(Gerçek reklam değil; yayın sürümünde AdMob gelir.)"
+FAKEAD_REWARD,Claim reward,Ödülü al
+FAKEAD_CANCEL,Cancel (no reward),İptal (ödülsüz)
+FAKEAD_CLOSE,Close,Kapat

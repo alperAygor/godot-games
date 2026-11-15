@@ -25,7 +25,7 @@ func _shot(shot_name: String, wait := 0.6) -> void:
 
 
 func _run() -> void:
-	var locale := "tr"
+	var locale := "en"
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--prefix="):
 			_prefix = arg.trim_prefix("--prefix=")

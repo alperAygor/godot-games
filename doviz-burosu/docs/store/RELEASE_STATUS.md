@@ -6,7 +6,7 @@ Tarih: 2026-11-15, dallar `orch/dv-r1` (hat), `orch/dv-a2` (ayarlar/Hakkında/ma
 | Karar | Değer | Nerede |
 |---|---|---|
 | Uygulama kimliği | `com.dovizburosu.game` | `export_presets.cfg` her üç preset `package/unique_name` (yüklemeden sonra DEĞİŞMEZ) |
-| Uygulama adı (etiket) | "Döviz Bürosu" (İngilizce mağaza adı sahibin kararı) | `export_presets.cfg` `package/name` (3 preset) + `project.godot` `config/name` |
+| Uygulama adı (etiket) | EN (varsayılan) "Pahalistan Exchange Desk", TR "Döviz Bürosu" (sahip kararı: adı lider seçti, ilan taslağıyla aynı) | `project.godot` `config/name` + `config/name_localized`; `export_presets.cfg` `package/name` BOŞ (3 preset; Godot proje adını/yerelleştirilmişini kullanır); oyun içi: `strings.csv` `APP_TITLE`. Uygulama kimliği aynı. Ad müsaitlik/marka taraması hâlâ sahipte (`OWNER_CHECKLIST.md`). |
 | versionCode / versionName | 1 / "1.0.0" | `version/code`, `version/name` (3 preset); her yüklemeden sonra `tools/release_state.json` `last_uploaded_version_code` güncellenir. `project.godot config/version` = "1.0.0" (preset ile aynı; kapı `version_name_mismatch_project` ile denetler; Hakkında ekranı bu değeri gösterir) |
 | min / target SDK | 24 / 36 | `gradle_build/min_sdk`, `gradle_build/target_sdk` |
 | Kategori / hedef kitle | Oyun (`package/app_category=2`) / 13+ | preset; Play Console |

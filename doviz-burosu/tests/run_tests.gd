@@ -19,6 +19,13 @@ func _run() -> void:
 	# Autoload'ların _ready() çağrılarının bitmesi için bir kare bekle.
 	await process_frame
 
+	# Metin testleri Türkçe metinleri bekler; makinenin diline bağlı olmasın: dil sandbox ayarında "tr" olarak sabitlenir.
+	# (Varsayılan dil kuralı tests/unit/test_language.gd'de ayrıca sınanır.)
+	var settings := root.get_node_or_null("SettingsManager")
+	if settings != null:
+		settings.persist = false
+		settings.set_value("game", "language", "tr", false)
+
 	var filter := ""
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--filter="):

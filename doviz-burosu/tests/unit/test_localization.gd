@@ -110,5 +110,8 @@ func test_unsupported_language_falls_back_to_default() -> void:
 	var settings := tree.root.get_node("SettingsManager")
 	var original: String = settings.get_value("game", "language")
 	settings.set_value("game", "language", "xx", false)
+	# Desteklenmeyen kayıtlı dil "seçilmemiş" sayılır: cihaz dili (destekleniyorsa), değilse İngilizce.
+	assert_eq(settings.apply_language(), LanguagePick.resolve("", OS.get_locale(), settings.available_languages().keys()))
+	settings.set_value("game", "language", "en", false)
 	assert_eq(settings.apply_language(), "en")
 	settings.set_value("game", "language", original, false)

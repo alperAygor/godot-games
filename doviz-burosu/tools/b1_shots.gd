@@ -38,7 +38,7 @@ func _run() -> void:
 	save.save_path = "user://b1_shots_save.json"
 	save.data = {}
 	scenes.transition_time = 0.0
-	TranslationServer.set_locale("tr")
+	TranslationServer.set_locale("en")
 
 	# Akşam (6. gün, ilaç + yemek + ısınma; birkaç müşteri işlenmiş).
 	session.new_game()
