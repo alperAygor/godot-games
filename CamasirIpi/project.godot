@@ -15,9 +15,19 @@ general/ios/enabled=false
 [application]
 
 config/name="Çamaşır İpi"
-config/version="0.1.0"
+config/name_localized={
+"de": "Clothesline Sort",
+"en": "Clothesline Sort",
+"es": "Clothesline Sort",
+"ja": "Clothesline Sort",
+"ko": "Clothesline Sort",
+"pt": "Clothesline Sort",
+"tr": "Çamaşır İpi"
+}
+config/version="1.0.0"
 run/main_scene="res://scenes/Boot.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
+config/icon="res://assets/icons/app/icon.png"
 
 [autoload]
 

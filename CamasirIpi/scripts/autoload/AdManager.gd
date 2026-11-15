@@ -126,6 +126,17 @@ func preload_ads() -> void:
 		provider.preload_ads()
 
 
+## Ayarlar sayfasındaki "Gizlilik seçenekleri" düğmesi: UMP bunu zorunlu kılıyorsa (AB/BK) görünür.
+func privacy_options_available() -> bool:
+	return provider != null and provider.privacy_options_required()
+
+
+## UMP gizlilik seçenekleri formunu açar; kullanıcı onayını sonradan değiştirebilsin (politika zorunluluğu).
+func show_privacy_options() -> void:
+	if provider != null:
+		provider.show_privacy_options()
+
+
 func reset_run_limits() -> void:
 	_used_run.clear()
 	_pending = -1

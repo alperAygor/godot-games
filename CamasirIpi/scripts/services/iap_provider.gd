@@ -15,6 +15,8 @@ const REASON_UNAVAILABLE: String = "unavailable"
 const REASON_CANCELED: String = "canceled"
 const REASON_ERROR: String = "error"
 const REASON_NOT_CONNECTED: String = "not_connected"
+## Ödeme beklemede (ör. nakit/onay gerekli): sahiplik VERİLMEZ; Play ödeme tamamlanınca bir sonraki sorguda bildirir.
+const REASON_PENDING: String = "pending"
 
 signal purchase_succeeded(product_id: String)
 signal purchase_failed(product_id: String, reason: String)

@@ -36,3 +36,13 @@ func show(_placement: int) -> void:
 ## Sıradaki reklamı önceden yükletir (varsa). Gösterimden sonra sağlayıcı kendi de çağırır.
 func preload_ads() -> void:
 	pass
+
+
+## UMP "gizlilik seçenekleri" girişi gerekli mi? (yalnız AdMob sağlayıcısı true dönebilir)
+func privacy_options_required() -> bool:
+	return false
+
+
+## Gizlilik seçenekleri formunu açar (gerekmiyorsa hiçbir şey yapmaz).
+func show_privacy_options() -> void:
+	pass

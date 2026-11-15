@@ -4,6 +4,15 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/), sürümleme [Se
 
 ## [Unreleased]
 
+### Google Play yayın hazırlığı (orch/ci-release)
+- Gradle Android şablonu (`android/`, 4.7.2.stable; AGP 8.6.1, hedef/derleme API 36, min 24); yayın ön ayarı: `com.clotheslinesort.game`, 1 / "1.0.0",
+  AAB arm64, kenardan kenara, yalnız INTERNET + ACCESS_NETWORK_STATE; uygulama simgesi (adaptif + tek renk) `tools/make_app_icons.py`; debug AAB üretimi kanıtlandı.
+- `ReleaseGuard` + `tools/release_check.sh` + `tools/aab_inspect.py`: yer tutucu/test AdMob kimliği, test modu, debug imza, sürüm kodu, izin, 16 KB ELF hizası, AAB manifest taraması.
+- Reklam: UMP onayı çözülmeden reklam isteği/SDK başlatma yok (zaman aşımı artık başlatmaz); Ayarlar'da gizlilik seçenekleri (UMP gerektiriyorsa) ve gizlilik politikası düğmesi (`data/store.json`);
+  `ConsentRules`, `StoreConfig`; yerleşim yapısal testi.
+- Billing: `PlayBillingProvider` resmi eklenti v3.x `BillingClient` API'sine yeniden yazıldı (acknowledge, geri yükleme, PENDING, hata eşleme) + sahte istemci testleri; `docs/MONETIZATION.md` güncellendi.
+- Belgeler: `docs/store/{RELEASE_STATUS,PENDING_APPROVALS,SIGNING}.md`; mağaza görselleri `docs/store/assets/`, `tools/store_shots.sh`.
+
 ### Ses yeniden yapımı (orch/ci-audio)
 - Tüm müzik ve sesler ElevenLabs Starter planıyla yeniden üretildi (`docs/AUDIO_LICENSE.md`); 5 müzik parçası (menü, bahçe, sahil, çatı, gece),
   seviye hedefleri ölçülü miks (`docs/AUDIO.md`), Master sınırlayıcı, bus'lar, çapraz geçiş, kısma, dönüş sonrası toparlama.

@@ -1,0 +1,4 @@
+{
+  "_note": "Magaza/yayin ayarlari. privacy_policy_url: sahibin barindirdigi GIZLILIK POLITIKASI adresi (Play Console alani ile AYNI olmali). Asagidaki deger YER TUTUCUDUR (example.invalid): hata ayiklama surumunde dugme gorunur, yayin surumunde gizlenir ve tools/release_check.sh basarisiz olur. Gercek https adresini yalniz burada degistirin.",
+  "privacy_policy_url": "https://example.invalid/clothesline-sort/privacy"
+}

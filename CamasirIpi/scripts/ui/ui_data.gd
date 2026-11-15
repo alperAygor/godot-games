@@ -21,6 +21,7 @@ const SETTING_NOTIFICATIONS: String = "notifications"
 const SETTING_PATTERNS: String = "patterns"
 const COLOR_PATTERNS_PATH: String = "res://scripts/game/color_patterns.gd"
 const ADS_PRIVACY_METHOD: String = "show_privacy_options"
+const ADS_PRIVACY_AVAILABLE_METHOD: String = "privacy_options_available"
 const ADS_PATH: NodePath = ^"/root/AdManager"
 ## Progress yokken ayarların bellekteki yedeği (oturum boyunca korunur).
 static var _fallback_settings: Dictionary = {}
@@ -129,7 +130,10 @@ static func privacy_options_available() -> bool:
 	if loop == null:
 		return false
 	var ads: Node = loop.root.get_node_or_null(ADS_PATH)
-	return ads != null and ads.has_method(ADS_PRIVACY_METHOD)
+	if ads == null or not ads.has_method(ADS_PRIVACY_METHOD):
+		return false
+	# Yöntem varlığı yetmez: UMP gerçekten zorunlu kılıyorsa (AB/BK) görünür.
+	return not ads.has_method(ADS_PRIVACY_AVAILABLE_METHOD) or bool(ads.call(ADS_PRIVACY_AVAILABLE_METHOD))
 
 
 static func show_privacy_options() -> void:
