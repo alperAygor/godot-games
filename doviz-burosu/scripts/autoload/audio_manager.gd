@@ -79,14 +79,17 @@ func is_suspended() -> bool:
 func suspend() -> void:
 	_suspended = true
 	for player: AudioStreamPlayer in _all_players():
-		player.stream_paused = true
+		if is_instance_valid(player):
+			player.stream_paused = true
 
 
 ## Duraklatılanları sürdürür; ses seviyeleri ayarlardan yeniden uygulanır.
 func resume() -> void:
 	_suspended = false
 	for player: AudioStreamPlayer in _all_players():
-		player.stream_paused = false
+		# Oynatıcılar henüz kurulmamış olabilir (pencere odağı _ready'den önce gelebilir).
+		if is_instance_valid(player):
+			player.stream_paused = false
 	_apply_volumes()
 
 
