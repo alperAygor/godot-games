@@ -56,3 +56,11 @@ func set_value(value: int, animated: bool = true) -> void:
 func _set_shown(value: float) -> void:
 	_shown = value
 	_label.text = UiKit.fmt_int(roundi(value))
+
+
+## Sayı yerine serbest metin ("3 / 18"): animasyonsuz.
+func set_text_value(text: String) -> void:
+	_primed = true
+	if _tween != null and _tween.is_valid():
+		_tween.kill()
+	_label.text = text

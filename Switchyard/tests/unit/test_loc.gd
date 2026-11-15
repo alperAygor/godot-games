@@ -11,7 +11,7 @@ const KEY_PATTERN: String = "^[A-Z][A-Z0-9_]*$"
 const MIN_KEYS: int = 15
 ## Kodda anahtar gibi görünen (aile önekli) her sabit metin tabloda olmalı: sözlükte tutulan
 ## (`Loc.t(DEĞİŞKEN)` ile çözülen) anahtarlar da yakalansın. Yeni aile eklenince buraya da eklenir.
-const KEY_FAMILY_PATTERN: String = "\"((?:NET|UI|LOSE|WIN|SETTINGS|PH|BOOT|GAME|HOME|MAP|HUD|RESULT|AD|SKIP|SHOP)_[A-Z0-9_]+)\""
+const KEY_FAMILY_PATTERN: String = "\"((?:NET|UI|LOSE|WIN|SETTINGS|PH|BOOT|GAME|HOME|MAP|HUD|RESULT|AD|SKIP|SHOP|COACH)_[A-Z0-9_]+)\""
 ## Uzunluk bütçeleri (karakter): [anahtar deseni, en çok karakter]. İlk eşleşen geçerlidir;
 ## en uzun dil (tr/en/es) ölçülür. Düğmeler en katı: 1080 genişlikte tek satıra sığmalı.
 const LENGTH_BUDGETS: Array = [
@@ -19,9 +19,12 @@ const LENGTH_BUDGETS: Array = [
 	["^(HOME_LEVELS|RESULT_NEXT|RESULT_RETRY|SKIP_WATCH|SKIP_CANCEL|SHOP_REMOVE_ADS)$", 20],
 	["^(UI_PRIVACY_OPTIONS|SHOP_RESTORE)$", 26],
 	["^SETTINGS_[A-Z]+$", 16],
-	["^(HUD|MAP_TITLE|MAP_WORLD|RESULT_[0-9]|RESULT_BEST)", 14],
+	["^(HUD_MOVES|HUD_PAR|MAP_TITLE|MAP_WORLD|RESULT_[0-9]|RESULT_BEST)$", 14],
+	["^MAP_WORLD_[0-9]$", 18],
+	["^(HUD_|MAP_)", 44],
 	["^SKIP_BODY$", 70],
-	["^(NET|WIN|LOSE|PH|AD|SHOP|MAP|RESULT|SKIP)_", 50],
+	["^COACH_DISMISS$", 14],
+	["^(NET|WIN|LOSE|PH|AD|SHOP|MAP|RESULT|SKIP|COACH|HOME)_", 50],
 ]
 ## Şablondan kalan, artık kullanılmayan anahtarlar. strings.csv yalnız sona eklenir (merge=union), bu yüzden
 ## satırlar silinmez; kullanılmayan-anahtar denetiminden bilerek muaftır.

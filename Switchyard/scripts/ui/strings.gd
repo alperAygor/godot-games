@@ -1,6 +1,9 @@
 class_name UiStrings
 extends RefCounted
 
+## Yer adı verilmiş dünyalar (sıra = dünya numarası).
+const WORLD_KEYS: Array[String] = ["MAP_WORLD_1", "MAP_WORLD_2", "MAP_WORLD_3", "MAP_WORLD_4"]
+
 ## Arayüzün kullanıcıya görünen metinleri: `data/i18n/strings.csv` anahtarlarına ince sarmalayıcılar.
 ## NEDEN işlev (sabit değil): metin dil değişince yeniden çözülmeli; sabit yükleme anında donardı.
 ## Dile bağlı olmayan biçimler (sayı + işaret) sabit kalır.
@@ -100,6 +103,17 @@ static func ad_reason(reason: String) -> String:
 			return Loc.t("AD_NOT_READY")
 
 
+## Reklam sunulamama nedeninin ikonu (toast'ta metnin yanında).
+static func ad_reason_icon(reason: String) -> String:
+	match reason:
+		"offline":
+			return "lucide/wifi-off"
+		"timeout":
+			return "lucide/clock"
+		_:
+			return "lucide/video"
+
+
 static func skip_title() -> String:
 	return Loc.t("SKIP_TITLE")
 
@@ -143,3 +157,80 @@ static func shop_message(code: String) -> String:
 			return Loc.t("SHOP_UNAVAILABLE")
 		_:
 			return Loc.t("SHOP_FAILED")
+
+
+static func home_tagline() -> String:
+	return Loc.t("HOME_TAGLINE")
+
+
+static func home_empty() -> String:
+	return Loc.t("HOME_EMPTY")
+
+
+## Dünya adı (1-4 yer adı; sonrası genel "Dünya N").
+static func world_name(number: int) -> String:
+	if number >= 1 and number <= WORLD_KEYS.size():
+		return Loc.t(WORLD_KEYS[number - 1])
+	return world(number)
+
+
+static func map_empty() -> String:
+	return Loc.t("MAP_EMPTY")
+
+
+static func map_more() -> String:
+	return Loc.t("MAP_NEXT_WORLD")
+
+
+static func hold_restart() -> String:
+	return Loc.t("HUD_HOLD_RESTART")
+
+
+static func level_skipped() -> String:
+	return Loc.t("HUD_LEVEL_SKIPPED")
+
+
+static func coach(kind: String) -> String:
+	match kind:
+		"tap":
+			return Loc.t("COACH_TAP")
+		"switch":
+			return Loc.t("COACH_SWITCH")
+		_:
+			return Loc.t("COACH_DRAG")
+
+
+static func coach_dismiss() -> String:
+	return Loc.t("COACH_DISMISS")
+
+
+static func settings_feel() -> String:
+	return Loc.t("SETTINGS_FEEL")
+
+
+static func settings_language() -> String:
+	return Loc.t("SETTINGS_LANGUAGE")
+
+
+static func settings_store() -> String:
+	return Loc.t("SETTINGS_STORE")
+
+
+static func settings_privacy() -> String:
+	return Loc.t("SETTINGS_PRIVACY")
+
+
+static func reduced_motion() -> String:
+	return Loc.t("SETTINGS_REDUCED")
+
+
+static func shop_pending() -> String:
+	return Loc.t("SHOP_PENDING")
+
+
+static func shop_once() -> String:
+	return Loc.t("SHOP_PRICE_ONCE")
+
+
+static func net_lost() -> String:
+	return Loc.t("NET_LOST")

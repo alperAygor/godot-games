@@ -194,11 +194,14 @@ func _scroll_map_to_top() -> void:
 
 
 func _capture(shot_name: String) -> void:
+	# Pencere başka bir pencerenin arkasında kalırsa macOS çizimi durdurur: kareyi elle zorla.
+	RenderingServer.force_draw(false)
 	var image: Image = root.get_texture().get_image()
 	var file_name: String = "%s_%s_%s.png" % [shot_name, _lang, _tag] if not _tag.is_empty() else "%s_%s.png" % [shot_name, _lang]
 	var path: String = _out_dir.path_join(file_name)
 	image.save_png(path)
-	print("SHOT %s (%dx%d)" % [path, image.get_width(), image.get_height()])
+	print("SHOT %s (%dx%d) scene=%s frame=%d" % [path, image.get_width(), image.get_height(),
+		current_scene.name if current_scene != null else "-", Engine.get_frames_drawn()])
 
 
 func _press(node_name: String) -> void:

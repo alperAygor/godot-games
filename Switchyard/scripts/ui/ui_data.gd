@@ -11,6 +11,7 @@ const SETTING_MUSIC: String = "music"
 const SETTING_VIBRATION: String = "vibration"
 ## Ayar modülü (Progress.module_value): bayrak olmayan tercihler burada durur.
 const SETTINGS_MODULE: String = "settings"
+const SETTING_REDUCED_MOTION: String = "reduced_motion"
 const ADS_PRIVACY_METHOD: String = "show_privacy_options"
 const ADS_PATH: NodePath = ^"/root/AdManager"
 ## Progress yokken ayarların bellekteki yedeği (oturum boyunca korunur).
@@ -59,6 +60,26 @@ static func set_module_flag(key: String, value: bool) -> void:
 	var node: Node = progress()
 	if node != null and node.has_method("set_module_value"):
 		node.call("set_module_value", SETTINGS_MODULE, key, value)
+
+
+## "Görüldü" bayrağı (koç ipuçları gibi tek seferlik şeyler); Progress yoksa bellekte.
+static func progress_seen(flag: String) -> bool:
+	var node: Node = progress()
+	if node != null and node.has_method("seen"):
+		return bool(node.call("seen", flag))
+	return bool(_fallback_settings.get("seen_" + flag, false))
+
+
+static func mark_progress_seen(flag: String) -> void:
+	_fallback_settings["seen_" + flag] = true
+	var node: Node = progress()
+	if node != null and node.has_method("mark_seen"):
+		node.call("mark_seen", flag)
+
+
+## Az hareket tercihi (ayarlar sayfası): açıkken ekran geçişleri, yıldız sırası ve ana ekran animasyonu sakinleşir.
+static func reduced_motion() -> bool:
+	return module_flag(SETTING_REDUCED_MOTION, false)
 
 
 ## Reklam katmanında gizlilik seçenekleri formu varsa true (SDK işi başka yerde; burada yalnız kanca).

@@ -13,6 +13,14 @@ const BOTTOM_EXTRA: float = UiKit.SPACE_XL
 const BOARD_GAP: float = UiKit.SPACE_MD
 const TOAST_ABOVE_BAR: float = 56.0
 
+const COACH_LEVELS: int = 3
+const COACH_KINDS: Array[String] = ["drag", "tap", "switch"]
+const COACH_SEEN_PREFIX: String = "coach_"
+const COACH_DRAG_FROM: Vector2 = Vector2(0.5, 0.78)
+const COACH_DRAG_TO: Vector2 = Vector2(0.5, 0.52)
+
+var _content: Control = null
+var _coach: CoachOverlay = null
 var _flow: RunFlow = null
 var _hud: GameHud = null
 var _bar: GameBar = null
@@ -54,9 +62,7 @@ func _ready() -> void:
 	if _ids.is_empty() or not _load_level(wanted if _ids.has(wanted) else _ids[_progress.frontier(_ids)]):
 		GameManager.goto_scene.call_deferred(&"map")
 		return
-	modulate.a = 0.0
-	create_tween().tween_property(self, "modulate:a", 1.0, Motion.SCREEN_FADE_SECONDS)\
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	ScreenFx.fade_in(_content)
 
 
 func _exit_tree() -> void:
@@ -64,11 +70,9 @@ func _exit_tree() -> void:
 		GameManager.back_requested.disconnect(_on_back_requested)
 
 
-## Saha görünümünün TEK bağlandığı yer. Şimdilik kabuğun sahte sahası; gerçek görünüm geldiğinde
-## yalnız bu fonksiyonun gövdesi `return YardSession.new()` olur (başka hiçbir yere dokunulmaz).
-# KANCA: gerçek saha görünümü (YardSession) burada bağlanır
+## Oturum `SessionHook` üzerinden gelir (Home da aynı kancayı kullanır); gerçek görünüm orada bağlanır.
 func _create_session() -> LevelSession:
-	return StubSession.new()
+	return SessionHook.create()
 
 
 func _build_ui() -> void:
@@ -81,6 +85,11 @@ func _build_ui() -> void:
 	back.set_anchors_preset(Control.PRESET_FULL_RECT)
 	back.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(back)
+	_content = Control.new()
+	_content.name = "Content"
+	_content.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_content)
 	var safe: MarginContainer = MarginContainer.new()
 	safe.set_anchors_preset(Control.PRESET_FULL_RECT)
 	safe.add_theme_constant_override("margin_left", int(insets.x + UiKit.SIDE_MARGIN))
@@ -88,7 +97,7 @@ func _build_ui() -> void:
 	safe.add_theme_constant_override("margin_top", int(insets.y))
 	safe.add_theme_constant_override("margin_bottom", int(insets.w + BOTTOM_EXTRA))
 	safe.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(safe)
+	_content.add_child(safe)
 	var column: VBoxContainer = VBoxContainer.new()
 	column.add_theme_constant_override("separation", int(BOARD_GAP))
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -106,6 +115,7 @@ func _build_ui() -> void:
 	_bar = GameBar.new()
 	_bar.undo_pressed.connect(_on_undo_pressed)
 	_bar.restart_pressed.connect(_on_restart_pressed)
+	_bar.restart_tapped.connect(_on_restart_tapped)
 	_bar.hint_pressed.connect(_on_hint_pressed)
 	_bar.skip_pressed.connect(_on_skip_pressed)
 	column.add_child(_bar)
@@ -124,7 +134,10 @@ func _load_level(level_id: String) -> bool:
 	_ad_busy = false
 	_hint_showing = false
 	_flow.on_level_start(_level_number)
-	_hud.set_level(_level_number)
+	_hud.set_level(_level_number, int(LevelCatalog.entries()[index].get("difficulty", 1)))
+	_show_coach(_level_number)
+	if _progress.is_skipped(level_id):
+		UiToast.show_text(self, UiStrings.level_skipped(), _toast_bottom, "lucide/skip-forward")
 	_bar.set_rewarded_visible(_flow.rewarded_buttons_visible(_level_number))
 	_refresh_ad_buttons()
 	_session.set_input_enabled(true)
@@ -138,6 +151,9 @@ func _refresh_ad_buttons() -> void:
 
 func _on_moves_changed(moves: int, par: int) -> void:
 	_hud.set_moves(moves, par)
+	# İlk hamle ipucunu kendiliğinden kapatır (oyuncu zaten anladı).
+	if moves > 0 and _coach != null and is_instance_valid(_coach):
+		_coach.dismiss()
 
 
 func _on_undo_pressed() -> void:
@@ -150,6 +166,54 @@ func _on_restart_pressed() -> void:
 	if _input_blocked():
 		return
 	_session.restart()
+
+
+## Restart basılı tutmayı ister: kısa dokunuşta sakin ipucu (kaza ile sıfırlamayı önler).
+func _on_restart_tapped() -> void:
+	if _input_blocked():
+		return
+	UiToast.show_text(self, UiStrings.hold_restart(), _toast_bottom, "lucide/rotate-ccw")
+
+
+# --- Koç: 1-3. seviyede sözsüz ipucu (ENGELLEMEZ; ilk hamle ya da karta dokunuş kapatır) --------------------
+
+func _show_coach(number: int) -> void:
+	_clear_coach()
+	if number > COACH_LEVELS or UiData.progress_seen(COACH_SEEN_PREFIX + str(number)):
+		return
+	# Düzen oturunca (bir kare sonra) konumlanır: kurulum anında saha alanının boyu henüz 0.
+	get_tree().process_frame.connect(_place_coach.bind(number), CONNECT_ONE_SHOT)
+
+
+func _place_coach(number: int) -> void:
+	if number != _level_number or _coach != null or _overlay != null:
+		return
+	var board: Vector2 = _board.size
+	var focus: Vector2 = Vector2(board.x * COACH_DRAG_FROM.x, board.y * COACH_DRAG_FROM.y)
+	var target: Vector2 = Vector2(board.x * COACH_DRAG_TO.x, board.y * COACH_DRAG_TO.y)
+	var kind: String = COACH_KINDS[number - 1]
+	if kind != "drag":
+		# Gerçek görünüm kesin konum verir (`switch_point`/`focus_point`); yoksa sahanın ortası.
+		focus = board * 0.5
+		if kind == "switch" and _session.has_method("switch_point"):
+			focus = _session.call("switch_point") as Vector2
+		elif kind == "tap" and _session.has_method("focus_point"):
+			focus = _session.call("focus_point") as Vector2
+	_coach = CoachOverlay.new()
+	_coach.name = "Coach"
+	_board.add_child(_coach)
+	_coach.show_kind(kind, focus, target)
+	_coach.dismissed.connect(_on_coach_dismissed.bind(number))
+
+
+func _on_coach_dismissed(number: int) -> void:
+	UiData.mark_progress_seen(COACH_SEEN_PREFIX + str(number))
+
+
+func _clear_coach() -> void:
+	if _coach != null and is_instance_valid(_coach):
+		_coach.queue_free()
+	_coach = null
 
 
 ## Saha girdisi şu an kapalı mı (sonuç, duraklatma, onay sayfası ya da reklam).
@@ -230,7 +294,7 @@ func _end_ad() -> void:
 
 
 func _on_ad_unavailable(_placement: AdManager.Placement, reason: String) -> void:
-	UiToast.show_text(self, UiStrings.ad_reason(reason), _toast_bottom)
+	UiToast.show_text(self, UiStrings.ad_reason(reason), _toast_bottom, UiStrings.ad_reason_icon(reason))
 
 
 # --- Çözüm ve sonuç sayfası ---------------------------------------------------------------------
@@ -288,7 +352,11 @@ func _go_next() -> void:
 
 
 func _open_map() -> void:
-	GameManager.goto_scene(&"map")
+	ScreenFx.leave(_content, GameManager.goto_scene.bind(&"map"))
+
+
+func _open_home() -> void:
+	ScreenFx.leave(_content, GameManager.goto_scene.bind(&"home"))
 
 
 func _hide_overlay() -> void:
@@ -319,7 +387,7 @@ func _on_pause_requested() -> void:
 	_session.set_input_enabled(false)
 	var sheet: PauseSheet = PauseSheet.open(self)
 	sheet.levels_pressed.connect(_open_map)
-	sheet.home_pressed.connect(GameManager.goto_scene.bind(&"home"))
+	sheet.home_pressed.connect(_open_home)
 	sheet.closed.connect(_on_pause_closed)
 	_pause = sheet
 

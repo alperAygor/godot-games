@@ -3,6 +3,7 @@
   "lucide/ban": "res://assets/icons/lucide/ban.svg",
   "lucide/check": "res://assets/icons/lucide/check.svg",
   "lucide/chevron-right": "res://assets/icons/lucide/chevron-right.svg",
+  "lucide/clock": "res://assets/icons/lucide/clock.svg",
   "lucide/coins": "res://assets/icons/lucide/coins.svg",
   "lucide/grid-2x2": "res://assets/icons/lucide/grid-2x2.svg",
   "lucide/heart": "res://assets/icons/lucide/heart.svg",
@@ -15,8 +16,10 @@
   "lucide/plus": "res://assets/icons/lucide/plus.svg",
   "lucide/rotate-ccw": "res://assets/icons/lucide/rotate-ccw.svg",
   "lucide/settings": "res://assets/icons/lucide/settings.svg",
+  "lucide/shield": "res://assets/icons/lucide/shield.svg",
   "lucide/skip-forward": "res://assets/icons/lucide/skip-forward.svg",
   "lucide/star": "res://assets/icons/lucide/star.svg",
+  "lucide/triangle-alert": "res://assets/icons/lucide/triangle-alert.svg",
   "lucide/trophy": "res://assets/icons/lucide/trophy.svg",
   "lucide/undo-2": "res://assets/icons/lucide/undo-2.svg",
   "lucide/vibrate": "res://assets/icons/lucide/vibrate.svg",
@@ -25,5 +28,13 @@
   "lucide/wifi-off": "res://assets/icons/lucide/wifi-off.svg",
   "lucide/wind": "res://assets/icons/lucide/wind.svg",
   "lucide/x": "res://assets/icons/lucide/x.svg",
-  "shell/star-fill": "res://assets/icons/shell/star-fill.svg"
+  "shell/star-fill": "res://assets/icons/shell/star-fill.svg",
+  "ux/emblem-factory": "res://assets/icons/ux/emblem-factory.svg",
+  "ux/emblem-harbour": "res://assets/icons/ux/emblem-harbour.svg",
+  "ux/emblem-meadow": "res://assets/icons/ux/emblem-meadow.svg",
+  "ux/emblem-mountain": "res://assets/icons/ux/emblem-mountain.svg",
+  "ux/sym-circle": "res://assets/icons/ux/sym-circle.svg",
+  "ux/sym-diamond": "res://assets/icons/ux/sym-diamond.svg",
+  "ux/sym-square": "res://assets/icons/ux/sym-square.svg",
+  "ux/sym-triangle": "res://assets/icons/ux/sym-triangle.svg"
 }

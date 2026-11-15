@@ -162,7 +162,13 @@ def build_tokens(theme):
                           ("icon", "ICON")):
         for key, value in theme[group].items():
             out.append("const %s_%s: int = %d" % (prefix, key.upper(), int(value)))
-        out.append("")
+        # Ölçü/oran belirteçleri: tam sayılar int, kesirliler float.
+    for key, value in theme.get("size", {}).items():
+        if isinstance(value, float) and not float(value).is_integer():
+            out.append("const SIZE_%s: float = %s" % (key.upper(), repr(float(value))))
+        else:
+            out.append("const SIZE_%s: int = %d" % (key.upper(), int(value)))
+    out.append("")
     for key, value in theme["elevation"].items():
         out.append("const ELEV_%s: float = %s" % (key.upper(), repr(float(value))))
     out.append("")

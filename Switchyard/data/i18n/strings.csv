@@ -52,3 +52,25 @@ SHOP_RESTORED,Satın alım geri yüklendi,Purchase restored,Compra restaurada
 SHOP_NOTHING,Geri yüklenecek bir şey yok,Nothing to restore,No hay nada que restaurar
 SHOP_FAILED,Satın alma tamamlanamadı,The purchase didn't go through,No se pudo completar la compra
 SHOP_UNAVAILABLE,Mağaza şu an kullanılamıyor,The store isn't available,La tienda no está disponible
+HOME_TAGLINE,Manevra bulmacası,Shunting puzzle,Puzzle de maniobras
+HOME_EMPTY,Henüz seviye yok,No levels yet,Aún no hay niveles
+MAP_WORLD_1,Kır deposu,Country depot,Depósito rural
+MAP_WORLD_2,Liman,Harbour,Puerto
+MAP_WORLD_3,Dağ geçidi,Mountain pass,Paso de montaña
+MAP_WORLD_4,Fabrika,Factory,Fábrica
+MAP_EMPTY,Henüz seviye yok,No levels yet,Aún no hay niveles
+MAP_NEXT_WORLD,Bu dünya yeni seviyelerle genişliyor,More levels are on the way,Pronto habrá más niveles
+HUD_HOLD_RESTART,Baştan başlamak için basılı tut,Hold to restart,Mantén para reiniciar
+HUD_LEVEL_SKIPPED,Bu seviye atlandı,This level was skipped,Este nivel se saltó
+COACH_DRAG,Katarı sürükleyerek yürüt,Drag to drive the train,Arrastra para mover el tren
+COACH_TAP,Kancaya dokun: vagon ayrılır,Tap the coupling to uncouple,Toca el enganche para separar
+COACH_SWITCH,Çatalda yolu sen seç,Pick a track at the fork,Elige una vía en la bifurcación
+COACH_DISMISS,Anladım,Got it,Entendido
+SETTINGS_FEEL,Ses ve his,Sound & feel,Sonido y tacto
+SETTINGS_LANGUAGE,Dil,Language,Idioma
+SETTINGS_STORE,Mağaza,Store,Tienda
+SETTINGS_PRIVACY,Gizlilik,Privacy,Privacidad
+SETTINGS_REDUCED,Az hareket,Reduce motion,Menos movimiento
+SHOP_PENDING,Satın alma sürüyor,Purchase in progress,Compra en curso
+SHOP_PRICE_ONCE,Tek seferlik,One-time,Pago único
+NET_LOST,Bağlantı koptu,Connection lost,Conexión perdida
