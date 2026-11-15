@@ -9,7 +9,7 @@ signal setting_changed(section: String, key: String, value: Variant)
 ## Ayar dosyasının şema sürümü ([meta] version). Anahtar adı/anlamı değişirse artır ve `_migrate` içine adım ekle.
 const SETTINGS_VERSION := 1
 const LANGUAGES_PATH := "res://data/languages.json"
-## language "" = cihaz dili (destekleniyorsa), değilse data/languages.json'daki "default".
+## language "" = cihaz dili (destekleniyorsa), değilse İngilizce (`LanguagePick`).
 const DEFAULTS := {
 	"audio": {"master": 1.0, "music": 0.8, "sfx": 1.0},
 	"game": {"vibration": true, "pixel_filter": true, "language": "", "ads_personalized": false, "consent_asked": false, "guide_seen": false},
@@ -35,14 +35,11 @@ func available_languages() -> Dictionary:
 	return JsonIO.read_dict(LANGUAGES_PATH).get("languages", {})
 
 
-## Ayardaki dili (yoksa cihaz dilini) TranslationServer'a uygular ve uygulanan kodu döner.
+## Ayardaki dili (yoksa cihaz dilini, o da desteklenmiyorsa İngilizceyi) TranslationServer'a uygular ve uygulanan kodu döner.
+## Kural `LanguagePick` içinde: ayardaki dil her zaman kazanır; ilk açılışta cihaz dili (tr/en), diğer her şey İngilizce.
 func apply_language() -> String:
-	var languages := available_languages()
-	var chosen: String = get_value("game", "language")
-	if chosen.is_empty():
-		chosen = OS.get_locale_language()
-	if not languages.has(chosen):
-		chosen = JsonIO.read_dict(LANGUAGES_PATH).get("default", "en")
+	var supported: Array = available_languages().keys()
+	var chosen := LanguagePick.resolve(str(get_value("game", "language")), OS.get_locale(), supported)
 	TranslationServer.set_locale(chosen)
 	return chosen
 

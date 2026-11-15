@@ -20,23 +20,23 @@ func setup(title: String, rewarded: bool) -> void:
 	box.add_theme_constant_override("separation", 20)
 	box.custom_minimum_size = Vector2(560, 0)
 	center.add_child(box)
-	var heading := UiKit.label("TEST REKLAMI", &"TitleLabel", "FakeAdTitle")
+	var heading := UiKit.label(tr("FAKEAD_TITLE"), &"TitleLabel", "FakeAdTitle")
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	heading.add_theme_color_override("font_color", Color("F5EEDC"))
 	box.add_child(heading)
-	var note := UiKit.wrapped("%s\n(Gerçek reklam değil; yayın sürümünde AdMob gelir.)" % title, &"GoalLabel", "FakeAdNote")
+	var note := UiKit.wrapped(tr("FAKEAD_NOTE") % title, &"GoalLabel", "FakeAdNote")
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	note.add_theme_color_override("font_color", Color("F5EEDC"))
 	box.add_child(note)
 	if rewarded:
-		var give := UiKit.button("Ödülü al", "FakeAdRewardButton", &"", 92.0)
+		var give := UiKit.button(tr("FAKEAD_REWARD"), "FakeAdRewardButton", &"", 92.0)
 		give.pressed.connect(_finish.bind(true))
 		box.add_child(give)
-		var cancel := UiKit.button("İptal (ödülsüz)", "FakeAdCancelButton", &"GhostButton", 92.0)
+		var cancel := UiKit.button(tr("FAKEAD_CANCEL"), "FakeAdCancelButton", &"GhostButton", 92.0)
 		cancel.pressed.connect(_finish.bind(false))
 		box.add_child(cancel)
 	else:
-		var close := UiKit.button("Kapat", "FakeAdCloseButton", &"", 92.0)
+		var close := UiKit.button(tr("FAKEAD_CLOSE"), "FakeAdCloseButton", &"", 92.0)
 		close.pressed.connect(_finish.bind(false))
 		box.add_child(close)
 

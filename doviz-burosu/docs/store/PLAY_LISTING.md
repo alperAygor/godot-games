@@ -10,7 +10,7 @@ Oyuna özgü politika bölümü: aynı belge G2 (finans/döviz temalı oyunlar, 
 |---|---|
 | Mağaza başlığı (EN) | **Pahalistan Exchange Desk** (24/30) — gerekçe §1 |
 | Mağaza başlığı (TR) | **Döviz Bürosu: Damga ve Say** (26/30) |
-| Uygulama etiketi (cihazda) | "Döviz Bürosu" (`export_presets.cfg package/name`, mevcut karar); EN cihazda "Exchange Desk" için yerelleştirilmiş etiket T-R1/lider kararı |
+| Uygulama etiketi (cihazda) | **"Pahalistan Exchange Desk"** (varsayılan, EN); Türkçe cihazda **"Döviz Bürosu"** — tek yerde: `project.godot` `config/name` + `config/name_localized`; `export_presets.cfg` `package/name` boş (proje adını kullanır). Oyun içi başlık: `strings.csv` `APP_TITLE` (EN "Pahalistan Exchange Desk", TR "Döviz Bürosu"). Uygulama kimliği değişmedi. |
 | Tür / kategori | **Oyun › Simülasyon** (Finans DEĞİL) — gerekçe §6 |
 | Hedef kitle | 13+ (çocuklara yönelik değil) |
 | İlanda vurgulanacak 3 şey | kurgusal ülke/para; damga-incele-öde oyun döngüsü; 15 gün/7 son hikâye |

@@ -36,7 +36,7 @@ func _run() -> void:
 	save.save_path = "user://style_shots_save.json"
 	save.data = {}
 	scenes.transition_time = 0.0
-	TranslationServer.set_locale("tr")
+	TranslationServer.set_locale("en")
 	var settings := root.get_node("SettingsManager")
 	settings.persist = false
 	for arg in OS.get_cmdline_user_args():
