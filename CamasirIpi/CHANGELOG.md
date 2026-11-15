@@ -4,6 +4,11 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/), sürümleme [Se
 
 ## [Unreleased]
 
+### Ses yeniden yapımı (orch/ci-audio)
+- Tüm müzik ve sesler ElevenLabs Starter planıyla yeniden üretildi (`docs/AUDIO_LICENSE.md`); 5 müzik parçası (menü, bahçe, sahil, çatı, gece),
+  seviye hedefleri ölçülü miks (`docs/AUDIO.md`), Master sınırlayıcı, bus'lar, çapraz geçiş, kısma, dönüş sonrası toparlama.
+- `MusicRouter` (saf mantık) + `tests/unit/test_music_router.gd`; `tools/audio_lib.py`, `tools/audio_report.py`.
+
 ### Yerelleştirme (orch/ci-i18n) — Türkçe / İngilizce / İspanyolca
 - Tek kaynak tablo `data/i18n/strings.csv` (`keys,tr,en,es`; Godot CSV içe aktarımı -> `.translation`,
   `project.godot` `locale/translations`, `locale/fallback="tr"`). Anahtarlar sabit UPPER_SNAKE.

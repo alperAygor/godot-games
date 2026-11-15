@@ -74,5 +74,5 @@ Sıra (kullanıcı): önce oynanış düzeltmeleri, sonra mağaza hazırlığı.
       ortalanması; seviye geçişinin hızlanması.
 - [~] `ci-i18n` (Sonnet): Portekizce, Almanca, Japonca, Korece.
 - [~] `ci-play` (Sonnet): Google Play yayın şartlarının araştırması ve denetim listesi (yalnız belge).
-- [ ] `ci-audio`: müziğin iyileştirilmesi ve ses seviyeleri (ElevenLabs planı netleşince).
+- [x] `ci-audio`: müzik (5 parça), ses seti ücretli planla yeniden, ölçülü miks ve AudioService cilası (`docs/AUDIO.md`). Kulakla dinleme bekliyor.
 - [ ] `ci-release`: Gradle/AAB, AdMob, satın alma, mağaza görselleri ve metinleri.
