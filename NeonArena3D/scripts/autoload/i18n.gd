@@ -7,6 +7,7 @@ signal language_changed
 const LANGS := ["tr", "en"]
 const NAMES := {"tr": "TÜRKÇE", "en": "ENGLISH"}
 const EN_PATH := "res://data/lang_en.json"
+const EXTRA_DIR := "res://data/lang"
 
 var _en: Translation
 var keys: Dictionary = {}
@@ -20,6 +21,7 @@ func _ready() -> void:
 			_add(str(key), str(parsed[key]))
 	else:
 		push_error("Çeviri dosyası okunamadı: " + EN_PATH)
+	_load_extra_files()
 	for card in GameData.cards:
 		_add(str(card.get("name", "")), str(card.get("name_en", "")))
 		_add(str(card.get("desc", "")), str(card.get("desc_en", "")))
@@ -33,6 +35,27 @@ func _ready() -> void:
 			_add(str(entry.get("weapon_name", "")), str(entry.get("weapon_name_en", "")))
 	TranslationServer.add_translation(_en)
 	TranslationServer.set_locale(Settings.language)
+
+## Görev başına ek İngilizce dosyaları: `data/lang/en_<ad>.json` (Türkçe metin → İngilizce karşılık).
+## Paralel çalışan işçiler aynı dosyaya yazmasın diye her iş kendi dosyasını ekler; hepsi burada birleşir.
+func _load_extra_files() -> void:
+	var dir := DirAccess.open(EXTRA_DIR)
+	if dir == null:
+		return
+	var names: Array[String] = []
+	for file_name in dir.get_files():
+		if file_name.begins_with("en_") and file_name.ends_with(".json"):
+			names.append(file_name)
+	names.sort()
+	for file_name in names:
+		var path := EXTRA_DIR + "/" + file_name
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+		if parsed is Dictionary:
+			for key in parsed:
+				_add(str(key), str(parsed[key]))
+		else:
+			push_error("Çeviri dosyası okunamadı: " + path)
+
 
 func _add(key: String, value: String) -> void:
 	if key == "" or value == "":
