@@ -1,9 +1,5 @@
 {
   "_not": "Denge sayilari kodda degil burada. ProgressData.DEFAULT_BALANCE bu dosya okunamazsa kullanilan yedektir.",
-  "win_coins": 20,
-  "double_coins_multiplier": 2,
   "require_online": true,
-  "placeholder": {
-    "taps_to_win": 5
-  }
+  "three_star_slack": 0
 }

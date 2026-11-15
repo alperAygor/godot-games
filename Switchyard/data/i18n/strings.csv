@@ -23,3 +23,32 @@ PH_TAP,Dokun,Tap,Toca
 PH_LOSE,Kaybet,Lose,Perder
 PH_LEFT_ONE,%d dokunuş kaldı,%d tap left,Queda %d toque
 PH_LEFT_OTHER,%d dokunuş kaldı,%d taps left,Quedan %d toques
+HOME_LEVELS,Seviyeler,Levels,Niveles
+MAP_TITLE,Seviyeler,Levels,Niveles
+MAP_WORLD,Dünya %d,World %d,Mundo %d
+MAP_LOCKED,Önce önceki seviyeyi bitir,Finish the previous level first,Termina antes el nivel anterior
+HUD_MOVES,Hamle,Moves,Movimientos
+HUD_PAR,Par,Par,Par
+RESULT_3,Mükemmel,Perfect,Perfecto
+RESULT_2,Çok iyi,Well done,Muy bien
+RESULT_1,Çözüldü,Solved,Resuelto
+RESULT_MOVES,Hamle %d · Par %d,Moves %d · Par %d,Movimientos %d · Par %d
+RESULT_BEST,Yeni rekor,New best,Nuevo récord
+RESULT_NEXT,Sonraki,Next,Siguiente
+RESULT_RETRY,Tekrar,Retry,Repetir
+AD_NOT_READY,Şu an reklam yok,No ad available right now,No hay anuncios ahora
+AD_OFFLINE,Bağlantı yok. İnternetini kontrol et.,No connection. Check your internet.,Sin conexión. Revisa tu internet.
+AD_TIMEOUT,Reklam açılmadı. Tekrar dene.,The ad didn't load. Try again.,El anuncio no cargó. Inténtalo otra vez.
+AD_NOT_FINISHED,Ödül için videoyu sonuna kadar izle,Watch the whole video for the reward,Mira todo el video para el premio
+SKIP_TITLE,Seviye atlansın mı?,Skip this level?,¿Saltar este nivel?
+SKIP_BODY,Atlamak için kısa bir video izle. Yıldız kazanmazsın.,Watch a short video to skip it. A skipped level earns no stars.,Mira un video corto para saltarlo. Un nivel saltado no da estrellas.
+SKIP_WATCH,Videoyu izle,Watch video,Ver video
+SKIP_CANCEL,Şimdi değil,Not now,Ahora no
+SHOP_REMOVE_ADS,Reklamları kaldır,Remove ads,Quitar anuncios
+SHOP_ADS_REMOVED,Reklamlar kaldırıldı,Ads removed,Anuncios quitados
+SHOP_NOTE,Yalnız seviye arası reklamları kaldırır,Removes ads between levels only,Quita solo los anuncios entre niveles
+SHOP_RESTORE,Satın alımı geri yükle,Restore purchase,Restaurar compra
+SHOP_RESTORED,Satın alım geri yüklendi,Purchase restored,Compra restaurada
+SHOP_NOTHING,Geri yüklenecek bir şey yok,Nothing to restore,No hay nada que restaurar
+SHOP_FAILED,Satın alma tamamlanamadı,The purchase didn't go through,No se pudo completar la compra
+SHOP_UNAVAILABLE,Mağaza şu an kullanılamıyor,The store isn't available,La tienda no está disponible

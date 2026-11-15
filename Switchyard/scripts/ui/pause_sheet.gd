@@ -1,11 +1,12 @@
 class_name PauseSheet
 extends Sheet
 
-## Duraklatma sayfası: ses/müzik/titreşim, yeniden başlat, ana ekran ve büyük "Devam".
+## Duraklatma sayfası: ses/müzik/titreşim, seviye haritası, ana ekran ve büyük "Devam".
+## (Baştan başlat oyun içi alt çubukta olduğu için burada tekrarlanmaz.)
 ## Oyunu durdurur (Sheet.pause_tree); kapanınca devam eder.
 
 signal resume_pressed
-signal restart_pressed
+signal levels_pressed
 signal home_pressed
 
 const SECTION_GAP: float = UiKit.SPACE_XL
@@ -31,17 +32,20 @@ func _fill() -> void:
 	row.add_theme_constant_override("separation", ROW_SEPARATION)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(row)
-	var restart: UiIconButton = UiIconButton.new()
-	restart.setup("lucide/rotate-ccw")
-	restart.disc_color = UiKit.ACCENT_SOFT
-	restart.pressed.connect(_emit_after_close.bind(restart_pressed))
-	row.add_child(restart)
+	var levels: UiIconButton = UiIconButton.new()
+	levels.name = "LevelsButton"
+	levels.setup("lucide/grid-2x2")
+	levels.disc_color = UiKit.ACCENT_SOFT
+	levels.pressed.connect(_emit_after_close.bind(levels_pressed))
+	row.add_child(levels)
 	var home: UiIconButton = UiIconButton.new()
+	home.name = "HomeButton"
 	home.setup("lucide/house")
 	home.disc_color = UiKit.ACCENT_SOFT
 	home.pressed.connect(_emit_after_close.bind(home_pressed))
 	row.add_child(home)
 	var resume: Button = UiKit.button(UiStrings.resume(), &"", "lucide/play", RESUME_HEIGHT)
+	resume.name = "ResumeButton"
 	resume.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	resume.pressed.connect(_emit_after_close.bind(resume_pressed))
 	row.add_child(resume)

@@ -26,9 +26,9 @@ func test_ring_buffer_drops_oldest() -> void:
 
 
 func test_ad_event_helpers() -> void:
-	AnalyticsLog.rewarded_offered("CONTINUE")
-	AnalyticsLog.rewarded_watched("CONTINUE")
-	AnalyticsLog.rewarded_skipped("DOUBLE_COINS")
+	AnalyticsLog.rewarded_offered("HINT")
+	AnalyticsLog.rewarded_watched("HINT")
+	AnalyticsLog.rewarded_skipped("SKIP")
 	AnalyticsLog.interstitial_shown(5)
 	assert_eq(AnalyticsLog.count("rewarded_offered"), 1)
 	assert_eq(AnalyticsLog.count("rewarded_watched"), 1)

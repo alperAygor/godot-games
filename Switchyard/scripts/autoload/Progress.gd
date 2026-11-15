@@ -1,6 +1,6 @@
 extends Node
 
-## Oyuncu ilerlemesinin tek sahibi (autoload `Progress`): seviye, jeton, ayar, bayrak, modül verisi.
+## Oyuncu ilerlemesinin tek sahibi (autoload `Progress`): ayar, bayrak, modül verisi (seviye kayıtları dahil).
 ## Kurallar `ProgressData`'dadır; burası diske atomik yazar ve sinyal verir.
 ## Diğer sistemler YALNIZ bu genel API'yi kullanır.
 
@@ -28,33 +28,6 @@ func _ready() -> void:
 
 
 # --- Genel API (sözleşme: adlar/imzalar değişmez) ----------------------------
-
-func level() -> int:
-	return data.level
-
-
-func coins() -> int:
-	return data.coins
-
-
-func add_coins(amount: int) -> void:
-	data.add_coins(amount)
-	_commit()
-
-
-func spend_coins(amount: int) -> bool:
-	var ok: bool = data.spend_coins(amount)
-	if ok:
-		_commit()
-	return ok
-
-
-## Dönen: {"coins","level"}; coins BU seviyenin kazancı, level ilerlemiş yeni seviye.
-func complete_level() -> Dictionary:
-	var result: Dictionary = data.complete_level(_balance())
-	_commit()
-	return result
-
 
 func setting(key: String) -> bool:
 	return data.setting(key)
@@ -90,16 +63,10 @@ func set_module_value(section: String, key: String, value: Variant) -> void:
 	_commit()
 
 
-## Jetonla modül verisi alımı: jeton düşer + değer yazılır, TEK kayıt (arada çökme olursa
-## oyuncu jetonunu kaybedip ürünü alamamış olmasın).
-func purchase_module_value(price: int, section: String, key: String, value: Variant) -> bool:
-	if not data.spend_coins(price):
-		return false
-	if not data.modules.has(section):
-		data.modules[section] = {}
-	(data.modules[section] as Dictionary)[key] = value
-	_commit()
-	return true
+## Bir modül bölümünün kopyası (boşsa boş sözlük). Seviye kayıtları gibi toplu okumalar için.
+func module_section(section: String) -> Dictionary:
+	var entry: Variant = data.modules.get(section)
+	return (entry as Dictionary).duplicate(true) if entry is Dictionary else {}
 
 
 ## "Reklamları kaldır" satın alındı mı (geçiş reklamları kapanır; ödüllü reklam açık kalır).
@@ -119,9 +86,9 @@ func mark_rewarded_watched() -> void:
 	_commit()
 
 
-func mark_interstitial_shown() -> void:
-	data.last_interstitial_time = Time.get_unix_time_from_system()
-	data.levels_since_interstitial = 0
+## `at`: Unix saniyesi (probe/test sahte saat verir); negatifse sistem saati.
+func mark_interstitial_shown(at: float = -1.0) -> void:
+	data.last_interstitial_time = at if at >= 0.0 else Time.get_unix_time_from_system()
 	_commit()
 
 

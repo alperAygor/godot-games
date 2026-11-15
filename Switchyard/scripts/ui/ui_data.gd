@@ -24,21 +24,6 @@ static func progress() -> Node:
 	return loop.root.get_node_or_null(PROGRESS_PATH)
 
 
-static func _call_int(method: String, fallback: int) -> int:
-	var node: Node = progress()
-	if node != null and node.has_method(method):
-		return int(node.call(method))
-	return fallback
-
-
-static func level() -> int:
-	return maxi(_call_int("level", 1), 1)
-
-
-static func coins() -> int:
-	return maxi(_call_int("coins", 0), 0)
-
-
 ## Veri değişince haber veren sinyal (varsa). Yoksa bağlanmaz.
 static func connect_changed(callable: Callable) -> void:
 	var node: Node = progress()

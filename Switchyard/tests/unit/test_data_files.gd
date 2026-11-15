@@ -47,6 +47,6 @@ func test_icons_used_in_code_exist() -> void:
 func test_game_data_autoload_reads_tables() -> void:
 	var data: Node = autoload_node("GameData")
 	assert_true(bool(data.call("has_table", "balance")))
-	assert_eq(int(data.call("value", "balance", "win_coins", -1)), 20)
+	assert_eq(int(data.call("value", "balance", "three_star_slack", -1)), 0)
 	assert_eq(data.call("value", "balance", "yok_boyle_anahtar", "yedek"), "yedek")
 	assert_eq((data.call("table", "yok") as Dictionary).size(), 0)

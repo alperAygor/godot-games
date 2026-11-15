@@ -2,7 +2,7 @@ extends Node
 
 ## Oyun akışının tek sahibi: faz, sahne yönlendirme, tur sonucu, geri tuşu.
 ## Sahneler `change_scene_to_file` çağırmaz; hepsi buradan geçer.
-## Akış: Boot -> Home -> Game (sonuç sayfası Game üstünde açılır) -> Home / yeni tur.
+## Akış: Boot -> Home -> (Map) -> Game (sonuç sayfası Game üstünde açılır) -> sıradaki seviye / Map / Home.
 
 enum Phase { BOOT, HOME, GAME, RESULT }
 
@@ -10,6 +10,7 @@ enum Phase { BOOT, HOME, GAME, RESULT }
 const SCENES: Dictionary = {
 	&"boot": "res://scenes/Boot.tscn",
 	&"home": "res://scenes/Home.tscn",
+	&"map": "res://scenes/Map.tscn",
 	&"game": "res://scenes/Game.tscn",
 }
 
@@ -17,6 +18,8 @@ signal phase_changed(from: Phase, to: Phase)
 signal back_requested()
 
 var phase: Phase = Phase.BOOT
+## Oynanacak seviyenin kimliği (`start_level` yazar, Game sahnesi okur). Boşsa Game kayıttaki ilerlemeden seçer.
+var selected_level_id: String = ""
 ## Son turun sonucu (`finish_run`); sonuç sayfası ve araçlar buradan okur.
 var last_result: Dictionary = {}
 ## Arka planda (ResourceLoader iş parçacığı) yüklenmesi istenmiş sahne yolları. Neden: sahne ve
@@ -111,14 +114,15 @@ func finish_run(result: Dictionary) -> void:
 	set_phase(Phase.RESULT)
 
 
-## Oyun başlamadan önce çevrimiçi kapısı (`OnlineGate`): bağlantı yoksa sakin bir sayfa açılır ve
-## bağlantı gelene dek tur başlamaz. Kapı headless/editör/araçlarda kendiliğinden kapalıdır;
+## Verilen seviyeyi oynatır. Oyun başlamadan önce çevrimiçi kapısı (`OnlineGate`): bağlantı yoksa sakin bir
+## sayfa açılır ve bağlantı gelene dek seviye başlamaz. Kapı headless/editör/araçlarda kendiliğinden kapalıdır;
 ## "çevrimdışı oynamak yasak" varsayılanı data/balance.json `require_online` ile değişir.
-func start_game() -> void:
-	OnlineGate.guard(self, _enter_game)
+func start_level(level_id: String) -> void:
+	OnlineGate.guard(self, _enter_level.bind(level_id))
 
 
-func _enter_game() -> void:
+func _enter_level(level_id: String) -> void:
+	selected_level_id = level_id
 	last_result = {}
 	set_phase(Phase.GAME)
 	goto_scene(&"game")

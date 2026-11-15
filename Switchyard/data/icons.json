@@ -1,8 +1,13 @@
 {
+  "lucide/arrow-left": "res://assets/icons/lucide/arrow-left.svg",
+  "lucide/ban": "res://assets/icons/lucide/ban.svg",
   "lucide/check": "res://assets/icons/lucide/check.svg",
+  "lucide/chevron-right": "res://assets/icons/lucide/chevron-right.svg",
   "lucide/coins": "res://assets/icons/lucide/coins.svg",
+  "lucide/grid-2x2": "res://assets/icons/lucide/grid-2x2.svg",
   "lucide/heart": "res://assets/icons/lucide/heart.svg",
   "lucide/house": "res://assets/icons/lucide/house.svg",
+  "lucide/lightbulb": "res://assets/icons/lucide/lightbulb.svg",
   "lucide/lock": "res://assets/icons/lucide/lock.svg",
   "lucide/music": "res://assets/icons/lucide/music.svg",
   "lucide/pause": "res://assets/icons/lucide/pause.svg",
@@ -10,12 +15,15 @@
   "lucide/plus": "res://assets/icons/lucide/plus.svg",
   "lucide/rotate-ccw": "res://assets/icons/lucide/rotate-ccw.svg",
   "lucide/settings": "res://assets/icons/lucide/settings.svg",
+  "lucide/skip-forward": "res://assets/icons/lucide/skip-forward.svg",
   "lucide/star": "res://assets/icons/lucide/star.svg",
   "lucide/trophy": "res://assets/icons/lucide/trophy.svg",
+  "lucide/undo-2": "res://assets/icons/lucide/undo-2.svg",
   "lucide/vibrate": "res://assets/icons/lucide/vibrate.svg",
   "lucide/video": "res://assets/icons/lucide/video.svg",
   "lucide/volume-2": "res://assets/icons/lucide/volume-2.svg",
   "lucide/wifi-off": "res://assets/icons/lucide/wifi-off.svg",
   "lucide/wind": "res://assets/icons/lucide/wind.svg",
-  "lucide/x": "res://assets/icons/lucide/x.svg"
+  "lucide/x": "res://assets/icons/lucide/x.svg",
+  "shell/star-fill": "res://assets/icons/shell/star-fill.svg"
 }

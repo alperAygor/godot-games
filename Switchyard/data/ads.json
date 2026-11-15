@@ -1,13 +1,20 @@
 {
-  "CONTINUE": { "per_run": 1, "per_session": 30 },
-  "DOUBLE_COINS": { "per_run": 1, "per_session": 30 },
+  "HINT": { "per_run": 99, "per_session": 9999 },
+  "SKIP": { "per_run": 1, "per_session": 9999 },
   "INTERSTITIAL": { "per_run": 99, "per_session": 999 },
   "interstitial": {
-    "_note": "Gecis reklami: first_level ve sonrasi HER seviye gecisinde (oyun sirasinda asla). Reklamlari kaldir alindiysa ya da o gecista odullu reklam izlendiyse gosterilmez. Sahibi degistirebilir.",
-    "first_level": 4
+    "_note": "Gecis reklami (sahibinin karari 2026-11-15): ilk 3 seviyede yok; first_level = reklamin onunde gelebilecegi ILK seviye (3. seviye bitince 4'e gecerken), sonra her every_n seviyede bir (3, 6, 9, 12. seviye bitisleri). Yalniz seviye ARASINDA ve yalniz ilk kez tamamlanan seviyede. Reklamlari kaldir alindiysa, min_gap_seconds dolmadiysa ya da (suppress_after_rewarded) o seviyede odullu reklam izlendiyse gosterilmez.",
+    "first_level": 4,
+    "every_n": 3,
+    "min_gap_seconds": 60,
+    "suppress_after_rewarded": true
+  },
+  "rewarded": {
+    "_note": "Ipucu ve seviye atlama: her biri bir odullu reklam. buttons_from_level'den once dugmeler gorunmez (ogrenme seviyeleri).",
+    "buttons_from_level": 4
   },
   "settings": {
-    "_note": "show_start_timeout_seconds: gosterim istendikten sonra reklam bu surede ekrana gelmezse akis reklamsiz devam eder (Devam dugmesi asla takilmaz).",
+    "_note": "show_start_timeout_seconds: gosterim istendikten sonra reklam bu surede ekrana gelmezse akis reklamsiz devam eder (dugme asla takilmaz).",
     "show_start_timeout_seconds": 3.0
   },
   "admob": {

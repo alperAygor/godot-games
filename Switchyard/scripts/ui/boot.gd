@@ -11,11 +11,14 @@ func _ready() -> void:
 	GameManager.set_phase(GameManager.Phase.BOOT)
 	# Dil, ilk ekran kurulmadan önce uygulanır: hiçbir ekran yarım çevrilmiş açılmaz.
 	Loc.apply_saved()
+	# Satın alma servisi açılışta kurulur: sahiplik mağazadan sessizce yeniden doğrulanır.
+	IapService.ensure(get_tree())
 	(get_node("Center/Column/Sub") as Label).text = Loc.t("BOOT_LOADING")
 	(get_node("Center/Column/Title") as Label).text = Loc.t("GAME_TITLE")
 	# Ana ekran ve oyun sahnesi (betik derlemesiyle birlikte) beklemede iş parçacığında yüklenir:
 	# bekleme bitince ve ilk "Oyna"da ana iş parçacığı derleme için donmasın.
 	GameManager.preload_scene(&"home")
+	GameManager.preload_scene(&"map")
 	GameManager.preload_scene(&"game")
 	await get_tree().create_timer(HOLD_SECONDS).timeout
 	# Kayıtlı ses/müzik ayarı ilk sahneden önce uygulanır.

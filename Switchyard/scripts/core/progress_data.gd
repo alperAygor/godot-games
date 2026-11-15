@@ -1,14 +1,15 @@
 class_name ProgressData
 extends RefCounted
 
-## Oyuncu ilerlemesinin SAF mantığı (sahne/dosya yok): seviye, jeton, ayarlar, görülen bayraklar,
-## modül verisi ve reklam sıklığı sayaçları.
+## Oyuncu ilerlemesinin SAF mantığı (sahne/dosya yok): ayarlar, görülen bayraklar, modül verisi ve
+## reklam zaman damgaları. Jeton ekonomisi YOKTUR (sahibinin kararı); seviye ilerlemesi `LevelProgress`
+## tarafından "levels" modülünde tutulur.
 ## Disk işi `Progress` autoload'unda; bu sınıf yalnız kural ve (de)serileştirme bilir,
 ## böylece birim testi dosya sistemine dokunmadan kuralları sınar.
 ## Oyuna özgü kayıt (yıldız, envanter, koleksiyon...) bu sınıfa alan eklenerek DEĞİL,
 ## `modules` altında kendi bölümüyle tutulur (bkz. `Progress.set_module_value`).
 
-const SAVE_VERSION: int = 1
+const SAVE_VERSION: int = 2
 const BALANCE_PATH: String = "res://data/balance.json"
 ## Bozuk/devasa kayıt değerleri int taşmasına yol açmasın diye üst sınır.
 const MAX_VALUE: int = 1000000000
@@ -19,21 +20,17 @@ const SETTING_DEFAULT: bool = true
 
 ## balance.json okunamazsa kullanılan yedek; asıl değerler dosyadadır.
 const DEFAULT_BALANCE: Dictionary = {
-	"win_coins": 20,
-	"double_coins_multiplier": 2,
 	"require_online": true,
+	"three_star_slack": 0,
 }
 
-var level: int = 1
-var coins: int = 0
 var settings: Dictionary = {}
 var seen_flags: Dictionary = {}
-var levels_since_interstitial: int = 0
 var last_interstitial_time: float = 0.0
 var last_rewarded_time: float = 0.0
 ## Özellik modüllerinin kendi verisi: bölüm -> sözlük. Her modül yalnız KENDİ bölümünü yazar;
 ## böylece modüller bu dosyayı değiştirmeden kayıt tutar ve birbirinin alanına dokunmaz.
-## Hazır bölümler: "settings" (dil), "shop" (remove_ads sahipliği).
+## Hazır bölümler: "settings" (dil), "shop" (remove_ads sahipliği), "levels" (seviye kayıtları).
 var modules: Dictionary = {}
 
 
@@ -75,8 +72,6 @@ static func from_dict(source: Variant) -> ProgressData:
 	if not (source is Dictionary):
 		return data
 	var raw: Dictionary = source as Dictionary
-	data.level = maxi(to_count(raw.get("level"), 1), 1)
-	data.coins = to_count(raw.get("coins"))
 	var raw_settings: Variant = raw.get("settings")
 	if raw_settings is Dictionary:
 		for key: String in SETTING_KEYS:
@@ -87,7 +82,6 @@ static func from_dict(source: Variant) -> ProgressData:
 		for flag: Variant in raw_seen as Array:
 			if flag is String and not (flag as String).is_empty():
 				data.seen_flags[flag] = true
-	data.levels_since_interstitial = to_count(raw.get("levels_since_interstitial"))
 	data.last_interstitial_time = _to_time(raw.get("last_interstitial_time"))
 	data.last_rewarded_time = _to_time(raw.get("last_rewarded_time"))
 	var raw_modules: Variant = raw.get("modules")
@@ -106,10 +100,8 @@ func to_dict() -> Dictionary:
 	flags.sort()
 	return {
 		"version": SAVE_VERSION,
-		"level": level, "coins": coins,
 		"settings": settings.duplicate(),
 		"seen": flags,
-		"levels_since_interstitial": levels_since_interstitial,
 		"last_interstitial_time": last_interstitial_time,
 		"last_rewarded_time": last_rewarded_time,
 		"modules": modules.duplicate(true),
@@ -122,30 +114,6 @@ static func _to_time(value: Variant) -> float:
 		if not is_nan(number) and not is_inf(number) and number > 0.0:
 			return number
 	return 0.0
-
-
-# --- Jeton -------------------------------------------------------------------
-
-func add_coins(amount: int) -> void:
-	coins = clampi(coins + amount, 0, MAX_VALUE)
-
-
-func spend_coins(amount: int) -> bool:
-	if amount < 0 or amount > coins:
-		return false
-	coins -= amount
-	return true
-
-
-# --- Seviye ------------------------------------------------------------------
-
-## Kazanç: seviye ilerler, ödül eklenir. Dönen değerler BU seviyenin kazancıdır.
-func complete_level(balance: Dictionary) -> Dictionary:
-	var reward: int = to_count(balance.get("win_coins"))
-	add_coins(reward)
-	level = clampi(level + 1, 1, MAX_VALUE)
-	levels_since_interstitial = clampi(levels_since_interstitial + 1, 0, MAX_VALUE)
-	return {"coins": reward, "level": level}
 
 
 # --- Ayar / bayrak -----------------------------------------------------------

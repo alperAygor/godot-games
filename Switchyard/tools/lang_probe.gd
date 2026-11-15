@@ -15,7 +15,9 @@ const SETTLE_FRAMES: int = 6
 const HOME_SCENE: String = "res://scenes/Home.tscn"
 const GAME_SCENE: String = "res://scenes/Game.tscn"
 const CSV_PATH: String = "res://data/i18n/strings.csv"
-const PLAYER_LEVEL: int = 12
+## Oyuncu ilk 3 seviyeyi bitirmiş: ana ekran "Seviye 4" yazar.
+const SOLVED_LEVELS: int = 3
+const PLAYER_LEVEL: int = SOLVED_LEVELS + 1
 const WATCHDOG_SECONDS: float = 60.0
 
 var _progress: Node = null
@@ -48,7 +50,12 @@ func _run() -> void:
 	# Autoload `_ready`leri bu betiğin `_initialize`inden sonra çalışır: kayıt ilk kareden sonra sıfırlanır.
 	await process_frame
 	_progress.call("reset_state")
-	(_progress.get("data") as ProgressData).level = PLAYER_LEVEL
+	var entries: Array[Dictionary] = LevelCatalog.entries()
+	var finished: LevelProgress = LevelProgress.new()
+	for index: int in SOLVED_LEVELS:
+		var level_id: String = str(entries[index]["id"])
+		finished.record_solve(level_id, int(entries[index]["par"]), int(entries[index]["par"]), 0)
+		finished.save(level_id)
 	Loc.set_language(Loc.LANG_TR)
 	_check_all_keys_resolve()
 	await _home_flow()
@@ -139,7 +146,8 @@ func _game_flow() -> void:
 	current_scene.call("_on_pause_requested")
 	await _frames(SETTLE_FRAMES)
 	_check(_has_text(current_scene, Loc.t("PAUSED")) and Loc.t("PAUSED") == "En pausa", "duraklatma sayfası es olmalı")
-	_check(_has_text(current_scene, "Quedan 5 toques"), "es: çoğul sayaç Quedan 5 toques")
+	_check(_has_text(current_scene, "Movimientos") and _has_text(current_scene, "Nivel %d" % PLAYER_LEVEL),
+		"es: oyun ekranı HUD'u (Movimientos, Nivel %d)" % PLAYER_LEVEL)
 	# Oyunun içinde dil değişir: sahne yeni dille yeniden kurulur.
 	Loc.set_language(Loc.LANG_EN)
 	var before: Node = current_scene
@@ -150,7 +158,9 @@ func _game_flow() -> void:
 	await _frames(SETTLE_FRAMES)
 	_check(_has_text(current_scene, "Paused") and not _has_text(current_scene, "En pausa"),
 		"oyun içi dil değişimi: duraklatma en olmalı")
-	_check(_has_text(current_scene, "5 taps left"), "en: 5 taps left")
+	_check(_has_text(current_scene, "Moves") and _has_text(current_scene, "Level %d" % PLAYER_LEVEL),
+		"en: oyun ekranı HUD'u (Moves, Level %d)" % PLAYER_LEVEL)
+	_check(_has_text(current_scene, "Par"), "en: Par başlığı")
 	print("PROBE oyun içinde dil değişimi: sahne yeniden kuruldu, metinler yeni dilde")
 
 
