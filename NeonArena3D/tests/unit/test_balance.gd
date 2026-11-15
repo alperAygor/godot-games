@@ -175,3 +175,43 @@ func test_maps_define_a_boss() -> void:
 	for theme in maps:
 		check(theme.has("boss_name"), "boss adı eksik: " + str(theme.get("id", "?")))
 		check(Color.from_string(str(theme.get("boss_color", "")), Color.BLACK) != Color.BLACK, "boss rengi geçersiz: " + str(theme.get("id", "?")))
+
+# --- C2: yeni düşmanlar + elit ön ekleri (veri) -----------------------------------------------
+func test_c2_enemy_kinds_and_prefixes_in_shipped_data() -> void:
+	var data := _data()
+	for kind in ["charger", "shielder", "medic", "minelayer", "blinker", "brooder"]:
+		var stats: Dictionary = data["enemies"].get(kind, {})
+		check(not stats.is_empty(), "C2 türü yok: " + kind)
+		check(FileAccess.file_exists("res://assets/models/%s.glb" % kind), "C2 modeli yok: " + kind)
+		check(int(stats.get("unlock", 0)) >= 4, "C2 türü 1-3. dalgalarda görünmemeli (nazik başlangıç): " + kind)
+	eq((data["elite"]["prefixes"] as Dictionary).size(), 4, "4 elit ön eki")
+	eq(Array(EnemyData.validate(data["enemies"], data["elite"])), [], "C2 veri doğrulaması temiz")
+
+func test_c2_validation_catches_mistakes() -> void:
+	var data := _data()
+	var bad: Dictionary = data["enemies"].duplicate(true)
+	bad["charger"]["windup"] = 0.3
+	var joined := " ".join(EnemyData.validate(bad, data["elite"]))
+	check("windup" in joined, "çok kısa uyarı süresi yakalanmalı: " + joined)
+	bad = data["enemies"].duplicate(true)
+	bad["medic"].erase("heal_radius")
+	check("heal_radius" in " ".join(EnemyData.validate(bad, data["elite"])), "eksik davranış alanı yakalanmalı")
+	bad = data["enemies"].duplicate(true)
+	bad["blinker"]["fallback"] = "yok_boyle_tur"
+	check("fallback" in " ".join(EnemyData.validate(bad, data["elite"])), "geçersiz yedek tür yakalanmalı")
+	var elite: Dictionary = data["elite"].duplicate(true)
+	elite["prefixes"]["swift"]["exclude"] = ["yok_boyle_tur"]
+	elite["prefixes"]["armored"]["damage_taken_mult"] = 0.0
+	var joined2 := " ".join(EnemyData.validate(data["enemies"], elite))
+	check("bilinmeyen tür" in joined2 and "damage_taken_mult" in joined2, "elit ön eki hataları yakalanmalı: " + joined2)
+
+func test_c2_english_strings_complete() -> void:
+	var en: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/lang/en_c2.json"))
+	var data := _data()
+	for kind in data["enemies"]:
+		var stats: Dictionary = data["enemies"][kind]
+		for field in ["name", "hint"]:
+			if stats.has(field):
+				check(en.has(str(stats[field])) and str(en[str(stats[field])]) != "", "en_c2.json çevirisi yok: %s.%s" % [kind, field])
+	for id in data["elite"]["prefixes"]:
+		check(en.has(str(data["elite"]["prefixes"][id]["name"])), "en_c2.json elit ön eki çevirisi yok: " + str(id))

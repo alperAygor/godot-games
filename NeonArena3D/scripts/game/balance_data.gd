@@ -123,6 +123,7 @@ static func validate(data: Dictionary) -> PackedStringArray:
 				break
 			prev = int(m)
 	errors.append_array(GameTuning.validate(data["combat"]))
+	errors.append_array(EnemyData.validate(enemies, data["elite"]))   # C2: yeni tür davranış alanları + elit ön ekleri
 	return errors
 
 static func _numbers(errors: PackedStringArray, label: String, section: Dictionary, fields: Array) -> void:

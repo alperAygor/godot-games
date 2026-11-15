@@ -167,7 +167,7 @@ func play(opts: Dictionary) -> Dictionary:
 	nova = clampf(loadout.m("nova_start"), 0.0, 100.0)
 	res = {
 		"seed": seed_value, "ship": str(sdef["id"]), "policy": policy,
-		"damage_taken": {}, "kills_by_kind": {}, "picks": [], "peak_alive": 0, "nova_uses": 0,
+		"damage_taken": {}, "damage_normal": {}, "ttk": {}, "kills_by_kind": {}, "picks": [], "peak_alive": 0, "nova_uses": 0,
 		"hp_lost": 0.0, "hp_lost_boss": 0.0, "boss_time": 0.0, "wave_at": {}, "rerolls_unused": 2 + loadout.i("rerolls"), "revived": 0, "boss_kills": {},
 		"mode": run.mode, "gates": [], "gate_errors": [], "won": false, "continued": false, "sectors_cleared": 0,
 	}
@@ -319,6 +319,9 @@ func _hurt(amount: float, cause: String) -> bool:
 		res["hp_lost_boss"] = float(res["hp_lost_boss"]) + amount
 	var taken: Dictionary = res["damage_taken"]
 	taken[cause] = float(taken.get(cause, 0.0)) + amount
+	if boss.is_empty():   # C2: boss yokken (normal dalga) alınan hasar kaynağa göre
+		var taken_n: Dictionary = res["damage_normal"]
+		taken_n[cause] = float(taken_n.get(cause, 0.0)) + amount
 	if loadout.i("fortress") > 0 and hp > 0.0:
 		var dmg := float(bal["player"]["damage"]) * loadout.m("damage_mult") * 1.4
 		var hits := int(model.get("fortress_bullets_hit", 5))
@@ -354,7 +357,12 @@ func _on_map_cleared(_index: int) -> void:
 
 # --- Düşmanlar ------------------------------------------------------------------
 func _on_spawn_due(kind: String) -> void:
-	_spawn(kind, true, -1.0)
+	# C2: Spawner.resolve_kind ile aynı kural (sektör uygunluğu + eşzamanlı üst sınır → yedek tür)
+	var counts := {}
+	for other in enemies:
+		if not other["dead"]:
+			counts[other["kind"]] = int(counts.get(other["kind"], 0)) + 1
+	_spawn(EnemyData.resolve_kind(bal["enemies"], kind, run.map_index % maxi(1, maps.size()), counts), true, -1.0)
 
 func _spawn(kind: String, allow_elite: bool, near_dist: float) -> void:
 	var st: Dictionary = (bal["enemies"] as Dictionary)[kind]
@@ -363,18 +371,33 @@ func _spawn(kind: String, allow_elite: bool, near_dist: float) -> void:
 	if allow_elite and kind != "swarmer" and not ed.is_empty() and run.wave >= int(ed.get("from_wave", 4)) and not run.is_boss_wave(run.wave):
 		var chance := minf(float(ed.get("chance_max", 0.16)), float(ed.get("chance", 0.05)) + float(ed.get("chance_per_wave", 0.006)) * float(run.wave))
 		elite = rng.randf() < chance
+	var prefix := ""
+	var pd: Dictionary = {}
+	if elite:
+		prefix = EnemyData.pick_prefix(ed, kind, run.wave, rng.randf())
+		if prefix != "":
+			pd = ed["prefixes"][prefix]
 	var w: Dictionary = bal["waves"]
 	var dist := near_dist if near_dist > 0.0 else rng.randf_range(float(w["spawn_radius_min"]), float(w["spawn_radius_max"]))
+	var hp_m := float(pd.get("hp_mult", ed.get("hp_mult", 3.0))) if elite else 1.0
+	var dm_m := float(pd.get("damage_mult", ed.get("damage_mult", 1.3))) if elite else 1.0
+	var sc_m := float(pd.get("scale", ed.get("scale", 1.3))) if elite else 1.0
+	var pt_m := float(pd.get("points_mult", ed.get("points_mult", 3))) if elite else 1.0
 	var e := {
-		"kind": kind, "elite": elite,
-		"hp": float(st["hp"]) * run.hp_scale() * (float(ed.get("hp_mult", 3.0)) if elite else 1.0),
-		"dmg": float(st["damage"]) * run.damage_scale() * (float(ed.get("damage_mult", 1.3)) if elite else 1.0),
-		"speed": float(st["speed"]) * run.speed_scale(),
-		"rad": float(st["radius"]) * (float(ed.get("scale", 1.3)) if elite else 1.0),
+		"kind": kind, "elite": elite, "prefix": prefix, "take": float(pd.get("damage_taken_mult", 1.0)),
+		"lifesteal": float(pd.get("lifesteal_frac", 0.0)), "split": int(pd.get("split_count", 0)), "split_frac": float(pd.get("split_hp_frac", 0.5)),
+		"bonus": int(pd.get("bonus_pickups", 0)), "from_split": false,
+		"hp": float(st["hp"]) * run.hp_scale() * hp_m,
+		"dmg": float(st["damage"]) * run.damage_scale() * dm_m,
+		"speed": float(st["speed"]) * run.speed_scale() * float(pd.get("speed_mult", 1.0)),
+		"rad": float(st["radius"]) * sc_m,
 		"pos": Vector2.from_angle(rng.randf() * TAU) * dist,
 		"spawn": 0.5, "fire_cd": rng.randf_range(0.6, 1.6), "touch": 0.0, "charge": 0.0, "fuse": -1.0, "dead": false,
-		"pts": int(st["points"]) * (int(ed.get("points_mult", 3)) if elite else 1),
+		"pts": int(round(float(st["points"]) * pt_m)),
+		"ch": 0, "ct": 0.0, "cool": 1.0, "hatched": 0,
 	}
+	e["max_hp"] = e["hp"]
+	e["born"] = t
 	enemies.append(e)
 
 func _hunt_stragglers() -> void:
@@ -426,6 +449,12 @@ func _tick_enemies(dt: float) -> int:
 			"sniper":
 				hold = float(st.get("keep_distance", 470.0))
 				shoots = dist < 760.0
+			"medic", "brooder":
+				hold = float(st.get("keep_distance", 340.0))
+			"minelayer":
+				hold = float(st.get("orbit_radius", 390.0))
+		if kind == "charger" and _tick_charger(e, st, dt, dist):
+			continue
 		if hold > 0.0:
 			if dist > hold + 20.0:
 				pos += dir_in * minf(spd, dist - hold)
@@ -447,6 +476,9 @@ func _tick_enemies(dt: float) -> int:
 				if float(e["fire_cd"]) <= 0.0:
 					e["fire_cd"] = float(st.get("fire_interval", 1.9)) * rng.randf_range(0.85, 1.2)
 					_enemy_shot(e, float(hit_cfg.get("default", 0.14)))
+		if st.has("pulse_interval") or st.has("mine_interval") or st.has("blink_interval") or st.has("hatch_interval"):
+			_tick_special(e, st, dt, dist)
+			dist = (e["pos"] as Vector2).length()
 		if kind == "bomber":
 			if float(e["fuse"]) < 0.0 and dist < float(st.get("fuse_range", 105.0)):
 				e["fuse"] = float(st.get("fuse_time", 0.55))
@@ -461,6 +493,64 @@ func _tick_enemies(dt: float) -> int:
 			_contact(e, p_contact)
 	return crowd
 
+# --- C2: yeni türlerin soyut davranışı -------------------------------------------------------
+func _tick_charger(e: Dictionary, st: Dictionary, dt: float, dist: float) -> bool:
+	## Hücumcu: yaklaş → uyarı (hareketsiz, temas yok) → atılma (uyarılı: oyuncunun kaçma olasılığı model sabiti) → yorgunluk.
+	## true = bu tikte hareket/temas bu fonksiyonda işlendi.
+	var ch := int(e["ch"])
+	if ch == 0:
+		e["cool"] = float(e["cool"]) - dt
+		if float(e["cool"]) <= 0.0 and dist < float(st["trigger_range"]) and dist > float(st["min_range"]):
+			e["ch"] = 1
+			e["ct"] = float(st["windup"])
+		return false
+	e["ct"] = float(e["ct"]) - dt
+	if ch == 1 and float(e["ct"]) <= 0.0:
+		var hit := rng.randf() < float(model.get("charger_hit", 0.22))
+		var reach: float = minf(dist - float(e["rad"]) - float(model["arena_player_radius"]), float(st["dash_speed"]) * float(st["dash_time"]))
+		var pos: Vector2 = e["pos"]
+		e["pos"] = pos + (-pos / maxf(dist, 0.001)) * maxf(0.0, reach)
+		if hit and dist < float(st["dash_speed"]) * float(st["dash_time"]) + float(e["rad"]) + float(model["arena_player_radius"]):
+			_hurt(float(e["dmg"]) * float(st["dash_damage_mult"]), "dash:charger")
+		e["ch"] = 2
+		e["ct"] = float(st["recover"])
+	elif ch == 2 and float(e["ct"]) <= 0.0:
+		e["ch"] = 0
+		e["cool"] = float(st["cooldown"])
+	return true
+
+func _tick_special(e: Dictionary, st: Dictionary, dt: float, dist: float) -> void:
+	var kind: String = e["kind"]
+	e["cool"] = float(e["cool"]) - dt
+	if float(e["cool"]) > 0.0:
+		return
+	match kind:
+		"medic":
+			e["cool"] = float(st["pulse_interval"]) + float(st["pulse_charge"])
+			for o in enemies:
+				if o != e and not o["dead"] and o["spawn"] <= 0.0 and float(o["hp"]) < float(o["max_hp"]) * 0.92 \
+						and ((o["pos"] as Vector2) - (e["pos"] as Vector2)).length() <= float(st["heal_radius"]):
+					o["hp"] = minf(float(o["max_hp"]), float(o["hp"]) + float(o["max_hp"]) * float(st["heal_frac"]))
+		"minelayer":
+			e["cool"] = float(st["mine_interval"])
+			if dist < 900.0:
+				for k in int(st["mine_count"]):
+					if rng.randf() < float(model.get("mine_hit", 0.18)):
+						_hurt(float(e["dmg"]), "mine:minelayer")
+		"blinker":
+			e["cool"] = float(st["blink_interval"]) + float(st["blink_windup"])
+			e["pos"] = Vector2.from_angle(rng.randf() * TAU) * float(st["land_dist"])
+			if rng.randf() < float(model.get("strike_hit", 0.3)):
+				_hurt(float(e["dmg"]), "strike:blinker")
+		"brooder":
+			e["cool"] = float(st["hatch_interval"]) + float(st["hatch_charge"])
+			if int(e["hatched"]) < int(st["max_hatches"]):
+				e["hatched"] = int(e["hatched"]) + 1
+				var n := int(st["hatch_count"])
+				for k in n:
+					_spawn(str(st["hatch_kind"]), false, maxf(60.0, dist))
+				run.add_alive(n)
+
 func _enemy_shot(e: Dictionary, hit_p: float) -> void:
 	if rng.randf() < hit_p:
 		_hurt(float(e["dmg"]) * float(model["bullet_dmg_mult"]), "bullet:" + str(e["kind"]))
@@ -472,6 +562,8 @@ func _contact(e: Dictionary, p_contact: float) -> void:
 		_dash()
 		return
 	if _hurt(float(e["dmg"]), "contact:" + str(e["kind"])):
+		if float(e["lifesteal"]) > 0.0:
+			e["hp"] = minf(float(e["max_hp"]), float(e["hp"]) + float(e["max_hp"]) * float(e["lifesteal"]))
 		var thorns := loadout.m("thorns") * (3.0 if loadout.i("fortress") > 0 else 1.0)
 		if thorns > 0.0:
 			_damage_enemy(e, thorns, false)
@@ -707,6 +799,15 @@ func _chain_hit(source: Dictionary, dmg: float, crit: bool) -> void:
 func _damage_enemy(e: Dictionary, dmg: float, _crit: bool) -> void:
 	if e["dead"]:
 		return
+	var raw := dmg
+	dmg *= float(e["take"])
+	var kind: String = e["kind"]
+	if kind == "shielder":
+		var sst: Dictionary = bal["enemies"]["shielder"]
+		if raw < float(sst.get("shield_pierce_damage", 40.0)):
+			dmg *= 1.0 - float(model.get("shield_front_share", 0.65)) * (1.0 - float(sst.get("shield_block", 0.12)))
+	elif kind == "charger" and int(e["ch"]) == 2:
+		dmg *= float(bal["enemies"]["charger"].get("recover_taken_mult", 1.5))
 	e["hp"] = float(e["hp"]) - dmg
 	if float(e["hp"]) <= 0.0:
 		e["dead"] = true
@@ -777,6 +878,9 @@ func _reap() -> void:
 		var kbk: Dictionary = res["kills_by_kind"]
 		var kind: String = e["kind"]
 		kbk[kind] = int(kbk.get(kind, 0)) + 1
+		var tk: Array = res["ttk"].get(kind, [0.0, 0])   # C2: tür başına ölüm süresi (doğmadan ölüme sn) toplamı/adedi
+		tk = [float(tk[0]) + (t - float(e.get("born", t))), int(tk[1]) + 1]
+		res["ttk"][kind] = tk
 		run.enemy_died(int(e["pts"]))
 		var big: bool = bool(e["elite"])
 		nova = minf(100.0, nova + float(bal["player"]["nova_per_kill"]) * loadout.m("nova_rate_mult") * (3.0 if big else 1.0))
@@ -786,6 +890,17 @@ func _reap() -> void:
 			for k in 2:
 				_spawn("chaser", false, (e["pos"] as Vector2).length())
 			run.add_alive(2)
+		if int(e["split"]) > 0 and not bool(e["from_split"]):
+			for k in int(e["split"]):
+				_spawn(kind, false, (e["pos"] as Vector2).length())
+				var child: Dictionary = enemies[enemies.size() - 1]
+				child["hp"] = float(bal["enemies"][kind]["hp"]) * run.hp_scale() * float(e["split_frac"])
+				child["max_hp"] = child["hp"]
+				child["rad"] = float(child["rad"]) * 0.78
+				child["from_split"] = true
+			run.add_alive(int(e["split"]))
+		for k in int(e["bonus"]):
+			_pickup()
 		if kind == "bomber":
 			var st: Dictionary = bal["enemies"]["bomber"]
 			var r := float(st.get("explode_radius", 135.0))
