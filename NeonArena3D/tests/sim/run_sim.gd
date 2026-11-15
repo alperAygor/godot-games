@@ -10,7 +10,7 @@ class_name RunSim
 ## Bu bir DENGE TERMOMETRESİDİR, oynanış kopyası değildir; mutlak sayılar değil, sürümler arası farklar
 ## ve gemi/kart/zorluk arası oranlar anlamlıdır. Aynı tohum + aynı veri = aynı sonuç.
 
-const VERSION := 1
+const VERSION := 2   # 2: C1 koşu modları (standart/hızlı/sonsuz), sektör kapıları, zafer, ödül eğrisi
 const DATA_PATHS := {
 	"balance": BalanceData.DIR, "cards": "res://data/cards.json", "ships": "res://data/ships.json",
 	"upgrades": "res://data/upgrades.json", "maps": "res://data/maps.json", "model": "res://tests/sim/sim_model.json",
@@ -47,6 +47,8 @@ var last_cause := ""
 var res: Dictionary = {}
 var _death_cause := ""
 var _hunt_timer := 35.0
+var _gate_policy := "auto"
+var _continue := false
 
 static func load_data() -> Dictionary:
 	## Veri dosyalarını okur (otoyük gerektirmez); eksik/bozuksa boş sözlük döner.
@@ -117,7 +119,8 @@ func _num(d: Dictionary, key: String, fallback: float) -> float:
 
 # --- Koşu -----------------------------------------------------------------------
 func play(opts: Dictionary) -> Dictionary:
-	## opts: seed, ship (id), meta (MetaProgress, ops.), give (kart kimlikleri), start_map, policy, max_time
+	## opts: seed, ship (id), meta (MetaProgress, ops.), give (kart kimlikleri), start_map, policy, max_time,
+	##       mode (C1: standard|quick|endless; varsayılan endless = eski oyun), gate_policy (auto|safe|risky|random), continue (zaferde sonsuza devam)
 	var seed_value := int(opts.get("seed", 1))
 	rng.seed = (seed_value * 2654435761 + 12345) % 2147483647 + 1
 	var meta: MetaProgress = opts.get("meta", null)
@@ -127,6 +130,9 @@ func play(opts: Dictionary) -> Dictionary:
 	var policy := str(opts.get("policy", "random"))
 	var max_time := float(opts.get("max_time", model.get("max_time", 2400.0)))
 	var dt := float(model.get("dt", 0.1))
+	var mode := str(opts.get("mode", RunState.MODE_ENDLESS))
+	_gate_policy = str(opts.get("gate_policy", "auto"))
+	_continue = bool(opts.get("continue", false))
 
 	loadout = Loadout.new(cards)
 	loadout.apply_effects(meta.effects())
@@ -137,6 +143,7 @@ func play(opts: Dictionary) -> Dictionary:
 			if str(card.get("id", "")) == str(id):
 				loadout.apply(card)
 	run = RunState.new(bal, seed_value)
+	run.set_mode(mode)
 	run.spawn_due.connect(_on_spawn_due)
 	run.boss_due.connect(_on_boss_due)
 	run.wave_cleared.connect(_on_wave_cleared)
@@ -162,6 +169,7 @@ func play(opts: Dictionary) -> Dictionary:
 		"seed": seed_value, "ship": str(sdef["id"]), "policy": policy,
 		"damage_taken": {}, "kills_by_kind": {}, "picks": [], "peak_alive": 0, "nova_uses": 0,
 		"hp_lost": 0.0, "hp_lost_boss": 0.0, "boss_time": 0.0, "wave_at": {}, "rerolls_unused": 2 + loadout.i("rerolls"), "revived": 0, "boss_kills": {},
+		"mode": run.mode, "gates": [], "gate_errors": [], "won": false, "continued": false, "sectors_cleared": 0,
 	}
 	run.begin()
 	run.map_index = int(opts.get("start_map", 0))
@@ -179,7 +187,13 @@ func play(opts: Dictionary) -> Dictionary:
 	for m in marks:
 		res["wave_at"][str(int(m))] = run.wave
 	res["capped"] = capped
+	if run.won and not run.continued and not capped and _death_cause == "":
+		_death_cause = "victory"
 	res["death_cause"] = _death_cause
+	res["won"] = run.won
+	res["continued"] = run.continued
+	res["sectors_cleared"] = run.sectors_cleared
+	res["victory_time"] = snappedf(run.victory_time, 0.1)
 	res["time"] = snappedf(t, 0.1)
 	res["wave"] = run.wave
 	res["kills"] = run.kills
@@ -187,7 +201,7 @@ func play(opts: Dictionary) -> Dictionary:
 	res["level"] = run.level
 	res["bosses"] = run.bosses
 	res["max_combo"] = run.max_combo
-	res["cores"] = MetaProgress.run_reward(run.score, run.wave, run.bosses, loadout.m("core_mult"))
+	res["cores"] = run.reward_total(loadout.m("core_mult"))
 	res["map_index"] = run.map_index
 	res["cards"] = loadout.taken.duplicate()
 	res["max_hp"] = snappedf(max_hp, 0.1)
@@ -229,6 +243,56 @@ func _tick(dt: float, policy: String) -> void:
 		_level_up(policy)
 	if hp <= 0.0:
 		_on_death()
+	if run.phase == RunState.PHASE_GATE:
+		_resolve_gate()
+	elif run.phase == RunState.PHASE_VICTORY:
+		if not (_continue and run.continue_endless()):
+			run.finish_victory()
+
+# --- C1: sektör kapısı (oyundaki RunFlow._on_gate_closed ile aynı etkiler) ---------------------
+func _gate_error(msg: String) -> void:
+	(res["gate_errors"] as Array).append("dalga %d: %s" % [run.wave, msg])
+
+func _resolve_gate() -> void:
+	var ids: Array = Array(run.gate_options)
+	if ids.is_empty():
+		_gate_error("seçeneksiz kapı")
+	elif int(run.gate_def(str(ids[0])).get("risk", 0)) != 0:
+		_gate_error("ilk seçenek güvenli değil (çıkmaz riski)")
+	var pick := ""
+	if _gate_policy == "random":
+		pick = "" if ids.is_empty() else str(ids[run.gate_rng.randi() % ids.size()])
+	else:
+		pick = RunState.bot_gate_choice(ids, run.gate_defs(), hp / maxf(1.0, max_hp), _gate_policy)
+	var def := run.gate_def(pick)
+	if pick != "":
+		if float(def.get("heal_ratio", 0.0)) > 0.0:
+			_heal(max_hp * float(def["heal_ratio"]))
+		res["rerolls_unused"] = int(res["rerolls_unused"]) + int(def.get("rerolls", 0))
+		var card := {}
+		if def.has("card_tier"):
+			for c in cards:
+				if str(c.get("tier", "")) == str(def["card_tier"]):
+					card = c
+					break
+		var before := max_hp
+		if not card.is_empty():
+			loadout.apply(card)
+		elif def.has("effect"):
+			loadout.apply_effects(def["effect"])
+		max_hp = float(bal["player"]["max_health"]) + loadout.m("max_hp_bonus")
+		if max_hp > before:
+			hp += max_hp - before
+		hp = clampf(hp, 0.0, max_hp)
+	if not run.choose_gate(pick):
+		_gate_error("seçim reddedildi: " + pick)
+	(res["gates"] as Array).append(pick)
+	if max_hp < 1.0:
+		_gate_error("azami can < 1")
+	if hp <= 0.0:
+		_gate_error("kapıdan sonra can 0 (imkânsız durum)")
+	if run.phase != RunState.PHASE_BATTLE and run.phase != RunState.PHASE_BOSS:
+		_gate_error("kapıdan sonra savaşa dönülmedi")
 
 # --- Oyuncu hasarı / iyileşme -----------------------------------------------------
 func _heal(amount: float) -> void:
@@ -798,6 +862,9 @@ func play_career(opts: Dictionary) -> Dictionary:
 	var cfg: Dictionary = model["career"]
 	var max_runs := int(opts.get("max_runs", cfg["max_runs"]))
 	var run_cap := float(opts.get("run_cap", model.get("career_run_cap", 900.0)))
+	# C1: kariyer oyuncunun varsayılan modunu oynar; zaferde sonsuza DEVAM eder (ekonomi için en kötü durum).
+	var cmode := str(opts.get("mode", RunState.MODE_STANDARD))
+	var ccont := bool(opts.get("continue", true))
 	var meta := MetaProgress.new(upgrades, ships)
 	var crng := RandomNumberGenerator.new()
 	crng.seed = base_seed * 977 + 5
@@ -822,7 +889,7 @@ func play_career(opts: Dictionary) -> Dictionary:
 					best = v
 					pick = str(id)
 		meta.select_ship(pick)
-		var r := play({"seed": base_seed * 1000 + runs, "ship": pick, "meta": meta, "policy": policy, "max_time": run_cap})
+		var r := play({"seed": base_seed * 1000 + runs, "ship": pick, "meta": meta, "policy": policy, "max_time": run_cap, "mode": cmode, "continue": ccont})
 		runs += 1
 		minutes += float(r["time"]) / 60.0
 		plays[pick] = int(plays.get(pick, 0)) + 1
@@ -854,13 +921,14 @@ func play_career(opts: Dictionary) -> Dictionary:
 					if v2 > best2:
 						best2 = v2
 						pick2 = str(id)
-			var r2 := play({"seed": base_seed * 1000 + runs + k + 500, "ship": pick2, "meta": meta, "policy": policy, "max_time": run_cap})
+			var r2 := play({"seed": base_seed * 1000 + runs + k + 500, "ship": pick2, "meta": meta, "policy": policy, "max_time": run_cap, "mode": cmode, "continue": ccont})
 			end_plays[pick2] = int(end_plays.get(pick2, 0)) + 1
 			end_waves[pick2] = (end_waves.get(pick2, []) as Array) + [int(r2["wave"])]
 			var n2 := float(plays.get(pick2, 0)) + 1.0
 			plays[pick2] = int(n2)
 			mean_wave[pick2] = (float(mean_wave.get(pick2, 0.0)) * (n2 - 1.0) + float(r2["wave"])) / n2 if n2 > 1.0 else float(r2["wave"])
 	return {
+		"mode": cmode, "continue": ccont,
 		"endgame_plays": end_plays, "endgame_waves": end_waves,
 		"runs": runs, "exhausted": exhausted_at > 0, "minutes": snappedf(minutes, 0.1), "cores_earned": total_cores,
 		"ship_plays": plays, "purchases": log, "waves": waves, "capped_runs": capped_runs,

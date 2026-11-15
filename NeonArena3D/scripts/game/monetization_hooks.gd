@@ -155,7 +155,8 @@ func _leave_run(action: Callable) -> void:
 			_transition_pending = false
 			action.call()
 		# Settings.record_run ölümde zaten çalıştı (koşu sayacı biten koşuyu içerir). `done` her durumda TAM BİR KEZ.
-		Ads.maybe_interstitial({"died": true}, done)
+		# C1: zaferle biten koşu ölüm sayılmaz (pacing "her 2. ölüm" kuralı); diğer kurallar aynı.
+		Ads.maybe_interstitial({"died": ctx.flow.outcome != "victory"}, done)
 		return
 	action.call()
 

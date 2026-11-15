@@ -6,6 +6,8 @@ extends SceneTree
 ##
 ## Bayraklar: --seeds=N (20) --seed-base=K (1) --ships=a,b|all --tiers=fresh,mid,maxed --builds=none,tank|all
 ##            --policies=random,greedy --careers=N (3) --career-policies=random,greedy --out=yol --quick (4 tohum, 1 kariyer) --runs (çıktıya koşu listesini ekle)
+##            C1: --modes=standard,quick,endless (koşu modları) --gate-policy=auto|safe|risky|random --career-mode=standard|quick|endless
+##                --career-continue=1|0 (kariyerde zaferden sonra sonsuza devam; varsayılan 1 = ekonomi için en kötü durum)
 ## Çıkış kodu: doğrulama başarısızsa 1. Aynı bayrak + aynı veri = aynı JSON (süre bilgisi JSON'a girmez).
 
 const RunSimScript = preload("res://tests/sim/run_sim.gd")
@@ -41,6 +43,10 @@ func _run() -> void:
 	var tier_names: Array = Array(_arg("tiers", "fresh,mid,maxed").split(","))
 	var build_names: Array = (data["model"]["builds"] as Dictionary).keys() if _arg("builds", "none") == "all" else Array(_arg("builds", "none").split(","))
 	var policies: Array = Array(_arg("policies", "random").split(","))
+	var mode_names: Array = Array(_arg("modes", "standard,quick,endless").split(","))
+	var gate_policy := _arg("gate-policy", "auto")
+	var career_mode := _arg("career-mode", "standard")
+	var career_continue := _arg("career-continue", "1") == "1"
 	var out_path := _arg("out", "build/sim/balance_report.json")
 	# Bayrak doğrulaması: yanlış ad sessizce başka bir şeye düşmesin.
 	var bad: Array = []
@@ -56,39 +62,49 @@ func _run() -> void:
 	for pol in policies:
 		if not (data["model"]["policies"] as Dictionary).has(pol):
 			bad.append("politika:" + str(pol))
+	var known_modes: Dictionary = data["balance"].get("run", {}).get("modes", {})
+	for m in mode_names + [career_mode]:
+		if not known_modes.has(str(m)):
+			bad.append("mod:" + str(m))
+	if not (gate_policy in ["auto", "safe", "risky", "random"]):
+		bad.append("kapı politikası:" + gate_policy)
 	if seeds <= 0 or not bad.is_empty():
 		printerr("SIM HATA: geçersiz bayrak (%s)%s" % [", ".join(PackedStringArray(bad)), " seeds>=1 olmalı" if seeds <= 0 else ""])
 		quit(2)
 		return
 	var sim := RunSimScript.new(data)
 	var runs: Array = []
-	for ship in ships:
-		for tier in tier_names:
-			var frac := float((data["model"]["tiers"] as Dictionary).get(tier, {}).get("fraction", 0.0))
-			var meta := sim.meta_for_fraction(frac)
-			for build in build_names:
-				for policy in policies:
-					for k in seeds:
-						var seed_value := seed_base + k
-						var r := sim.play({"seed": seed_value, "ship": ship, "meta": meta, "give": data["model"]["builds"].get(build, []), "policy": policy})
-						r["tier"] = tier
-						r["build"] = build
-						runs.append(r.duplicate(true))
+	for mode in mode_names:
+		for ship in ships:
+			for tier in tier_names:
+				var frac := float((data["model"]["tiers"] as Dictionary).get(tier, {}).get("fraction", 0.0))
+				var meta := sim.meta_for_fraction(frac)
+				for build in build_names:
+					for policy in policies:
+						for k in seeds:
+							var seed_value := seed_base + k
+							var r := sim.play({"seed": seed_value, "ship": ship, "meta": meta, "give": data["model"]["builds"].get(build, []), "policy": policy,
+								"mode": mode, "gate_policy": gate_policy})
+							r["tier"] = tier
+							r["build"] = build
+							runs.append(r.duplicate(true))
 	var sim_ms := Time.get_ticks_msec() - started
 	var career_results := {}
 	var career_started := Time.get_ticks_msec()
 	for cp in Array(_arg("career-policies", "random,greedy").split(",")):
 		var list: Array = []
 		for c in careers:
-			list.append(sim.play_career({"seed": seed_base + c, "policy": cp}))
+			list.append(sim.play_career({"seed": seed_base + c, "policy": cp, "mode": career_mode, "continue": career_continue}))
 		career_results[cp] = list
 	var career_ms := Time.get_ticks_msec() - career_started
 	# Belirlenimlik öz-denetimi: aynı tohumla ilk koşuyu yeniden oyna.
 	var first: Dictionary = runs[0]
-	var again := sim.play({"seed": int(first["seed"]), "ship": first["ship"], "meta": sim.meta_for_fraction(float(data["model"]["tiers"][first["tier"]]["fraction"])), "give": data["model"]["builds"].get(first["build"], []), "policy": first["policy"]})
+	var again := sim.play({"seed": int(first["seed"]), "ship": first["ship"], "meta": sim.meta_for_fraction(float(data["model"]["tiers"][first["tier"]]["fraction"])), "give": data["model"]["builds"].get(first["build"], []), "policy": first["policy"],
+		"mode": first["mode"], "gate_policy": gate_policy})
 	var same := JSON.stringify(_strip(again), "", true) == JSON.stringify(_strip(first), "", true)
 	var report := _build_report(data, runs, career_results, {
 		"seeds": seeds, "seed_base": seed_base, "ships": ships, "tiers": tier_names, "builds": build_names, "policies": policies, "careers": careers,
+		"modes": mode_names, "gate_policy": gate_policy, "career_mode": career_mode, "career_continue": career_continue,
 	}, same)
 	var problems := SimReportScript.check(report, runs.size() >= 40)
 	report["assertions"] = {"failed": problems, "passed": problems.is_empty()}
@@ -127,13 +143,19 @@ func _build_report(data: Dictionary, runs: Array, career_results: Dictionary, me
 	var by_tier := {}
 	var by_build := {}
 	var by_policy := {}
+	var by_mode := {}
+	var by_mode_tier := {}
 	var bucket := {}
 	for r in runs:
 		var key := SimReportScript.group_key(r)
 		if not bucket.has(key):
 			bucket[key] = []
 		(bucket[key] as Array).append(r)
-		for pair in [[by_ship, r["ship"]], [by_tier, r["tier"]], [by_build, r["build"]], [by_policy, r["policy"]]]:
+		var mt := "%s|%s" % [r["mode"], r["tier"]]
+		if not by_mode_tier.has(mt):
+			by_mode_tier[mt] = []
+		(by_mode_tier[mt] as Array).append(r)
+		for pair in [[by_ship, r["ship"]], [by_tier, r["tier"]], [by_build, r["build"]], [by_policy, r["policy"]], [by_mode, r["mode"]]]:
 			var m: Dictionary = pair[0]
 			if not m.has(pair[1]):
 				m[pair[1]] = []
@@ -149,12 +171,24 @@ func _build_report(data: Dictionary, runs: Array, career_results: Dictionary, me
 	for r in runs:
 		if r["policy"] == "random":
 			random_runs.append(r)
+	# C1: sektörlü modlarda atölye düzeyi başına sektör temizleme oranları.
+	var sectors := {}
+	var modes_def: Dictionary = data["balance"].get("run", {}).get("modes", {})
+	for mt in by_mode_tier:
+		var mode := str(mt).get_slice("|", 0)
+		var n := int((modes_def.get(mode, {}) as Dictionary).get("sectors", 0))
+		if n <= 0:
+			continue
+		if not sectors.has(mode):
+			sectors[mode] = {}
+		sectors[mode][str(mt).get_slice("|", 1)] = SimReportScript.sector_table(by_mode_tier[mt], n)
 	var report := {
 		"meta": {"sim_version": RunSimScript.VERSION, "grid": meta, "runs": runs.size(), "max_capped_share": 0.25,
 			"note": "Soyut dövüş modeli (tests/sim/sim_model.json); mutlak değerler değil, sürümler arası fark ve gemi/kart oranları anlamlıdır."},
 		"overall": SimReportScript.summarize(runs),
 		"groups": groups,
 		"by_ship": _sum_map(by_ship), "by_tier": _sum_map(by_tier), "by_build": _sum_map(by_build), "by_policy": _sum_map(by_policy),
+		"by_mode": _sum_map(by_mode), "by_mode_tier": _sum_map(by_mode_tier), "sectors": sectors,
 		"cards": SimReportScript.card_stats(random_runs, card_ids, tiers),
 		"careers": _careers_by_policy(career_results),
 		"determinism": {"same": same},
@@ -184,6 +218,7 @@ func _career_summary(results: Array) -> Dictionary:
 	var minutes: Array = []
 	var cores: Array = []
 	var exhausted := 0
+	var per_run: Array = []
 	var plays := {}
 	var first_wave: Array = []
 	var last_wave: Array = []
@@ -195,6 +230,7 @@ func _career_summary(results: Array) -> Dictionary:
 			end_plays[k] = int(end_plays.get(k, 0)) + int(cr["endgame_plays"][k])
 			end_waves[k] = (end_waves.get(k, []) as Array) + (cr["endgame_waves"][k] as Array)
 		runs_needed.append(cr["runs"])
+		per_run.append(float(cr["cores_earned"]) / float(maxi(1, int(cr["runs"]))))
 		minutes.append(cr["minutes"])
 		cores.append(cr["cores_earned"])
 		if cr["exhausted"]:
@@ -229,7 +265,8 @@ func _career_summary(results: Array) -> Dictionary:
 		end_wave_mean[k] = SimReportScript._round(SimReportScript.mean(end_waves[k]))
 	return {
 		"endgame_ship_share": end_share, "endgame_ship_mean_wave": end_wave_mean,
-		"careers": results.size(), "exhausted": exhausted, "runs_to_exhaust": SimReportScript.dist(runs_needed),
+		"mode": results[0].get("mode", "endless"), "continue": results[0].get("continue", false),
+		"careers": results.size(), "exhausted": exhausted, "runs_to_exhaust": SimReportScript.dist(runs_needed), "cores_per_run": SimReportScript.dist(per_run),
 		"play_minutes": SimReportScript.dist(minutes), "cores_earned": SimReportScript.dist(cores),
 		"ship_usage_share": ship_runs, "ship_bought_at_run": ship_buy_run,
 		"mean_wave_first5_runs": SimReportScript._round(SimReportScript.mean(first_wave)),
@@ -247,9 +284,19 @@ func _print_headline(report: Dictionary) -> void:
 	for t in report["by_tier"]:
 		var g: Dictionary = report["by_tier"][t]
 		print("  atölye %-6s medyan dalga %5.1f" % [t, float(g["wave"]["median"])])
+	for m in report["by_mode"]:
+		var g: Dictionary = report["by_mode"][m]
+		print("  mod %-8s medyan dalga %5.1f · süre %5.0f sn · çekirdek/koşu ort %5.1f (medyan %5.1f, en çok %5.0f)" % [m, float(g["wave"]["median"]), float(g["time_s"]["median"]), float(g["cores"]["mean"]), float(g["cores"]["median"]), float(g["cores"]["max"])])
+	for m in report["sectors"]:
+		for t in report["sectors"][m]:
+			var st: Dictionary = report["sectors"][m][t]
+			var rates: Array = []
+			for v in st["clear_rate"]:
+				rates.append("%3.0f%%" % (float(v) * 100.0))
+			print("  sektör %-8s %-6s temizleme S1..S%d: %s · zafer %3.0f%% · medyan sektör %.0f · medyan çekirdek %5.1f · kapı hatası %d" % [m, t, (st["clear_rate"] as Array).size(), " ".join(PackedStringArray(rates)), float(st["victory_rate"]) * 100.0, float(st["sectors"]["median"]), float(st["cores"]["median"]), int(st["gate_errors"])])
 	for p in report["careers"]:
 		var cr: Dictionary = report["careers"][p]
-		print("kariyer (%s kart politikası): %d/%d atölye+gemi tükendi · koşu sayısı medyan %.0f · oyun süresi medyan %.0f dk" % [p, int(cr["exhausted"]), int(cr["careers"]), float(cr["runs_to_exhaust"]["median"]), float(cr["play_minutes"]["median"])])
+		print("kariyer (%s kart politikası, mod %s%s): %d/%d atölye+gemi tükendi · koşu sayısı medyan %.0f · oyun süresi medyan %.0f dk · çekirdek/koşu %.0f" % [p, str(cr["mode"]), " +devam" if bool(cr["continue"]) else "", int(cr["exhausted"]), int(cr["careers"]), float(cr["runs_to_exhaust"]["median"]), float(cr["play_minutes"]["median"]), float(cr["cores_per_run"]["median"])])
 
 func _protect_build_dir(abs_path: String) -> void:
 	## build/ altına yazılan çıktılar Godot tarafından kaynak sayılıp PCK'ya sızmasın: .gdignore koy.

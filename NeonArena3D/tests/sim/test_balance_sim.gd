@@ -116,3 +116,81 @@ func test_career_terminates_and_spends() -> void:
 	check(int(c["runs"]) >= 1 and int(c["runs"]) <= 12, "kariyer koşu sınırına uymalı")
 	gt(float(c["cores_earned"]), 0.0, "kariyer çekirdek kazanmalı")
 	check(not (c["purchases"] as Array).is_empty(), "kariyer bir şey satın almalı")
+
+# --- C1: koşu yapısı (sektörler, kapılar, zafer, ödül eğrisi) ---------------------------------------
+func test_finite_modes_always_end() -> void:
+	var sim := _sim()
+	for mode in ["standard", "quick"]:
+		for ship in sim.ships:
+			var r := sim.play({"seed": 3, "ship": str(ship["id"]), "mode": mode, "meta": sim.meta_for_fraction(1.0)})
+			check(not bool(r["capped"]), "%s koşusu bitmeli: %s" % [mode, ship["id"]])
+			check(str(r["death_cause"]) != "", "%s bitiş nedeni kaydedilmeli: %s" % [mode, ship["id"]])
+			check(int(r["wave"]) <= int(sim.bal["run"]["modes"][mode]["sectors"]) * int(sim.bal["run"]["modes"][mode]["waves_per_sector"]), "devamsız sonlu mod son dalgayı aşmaz: " + mode)
+
+func test_victory_reachable_with_developed_workshop() -> void:
+	var sim := _sim()
+	var meta := sim.meta_for_fraction(1.0)
+	var wins := 0
+	for s in 6:
+		var r := sim.play({"seed": 40 + s, "ship": "mizrak", "mode": "standard", "meta": meta})
+		if bool(r["won"]):
+			wins += 1
+			eq(str(r["death_cause"]), "victory", "zafer bitiş nedeni")
+			eq(int(r["sectors_cleared"]), 3, "zaferde 3 sektör")
+	gt(float(wins), 0.0, "tam atölyeyle zafer erişilebilir olmalı")
+
+func test_gates_never_produce_impossible_state() -> void:
+	var sim := _sim()
+	for policy in ["auto", "safe", "risky", "random"]:
+		for s in 4:
+			var r := sim.play({"seed": 60 + s, "ship": "vektor", "mode": "standard", "meta": sim.meta_for_fraction(0.6), "gate_policy": policy})
+			eq((r["gate_errors"] as Array).size(), 0, "kapı hatası olmamalı (%s, tohum %d): %s" % [policy, 60 + s, str(r["gate_errors"])])
+			check((r["gates"] as Array).size() <= 2, "standartta en fazla 2 kapı")
+
+func test_continue_after_victory_and_rewards_capped() -> void:
+	var sim := _sim()
+	var meta := sim.meta_for_fraction(1.0)
+	var cont: Dictionary = {}
+	for s in 8:
+		var r := sim.play({"seed": 80 + s, "ship": "mizrak", "mode": "standard", "meta": meta, "continue": true, "max_time": 900.0})
+		if bool(r["won"]):
+			cont = r
+			break
+	check(not cont.is_empty(), "zafer + devam eden koşu bulunmalı")
+	if not cont.is_empty():
+		check(bool(cont["continued"]) and int(cont["wave"]) > 15, "devamda 15. dalga aşılır")
+	var std: Dictionary = sim.bal["run"]["modes"]["standard"]["reward"]
+	var gates: Dictionary = sim.bal["run"]["gates"]["options"]
+	var max_mult := 1.0 + 2.0 * float(gates["overload"]["reward_mult"])
+	var core_mult := 1.0
+	for def in sim.upgrades:
+		if def["effect"].has("core_mult"):
+			core_mult *= pow(1.0 + float(def["effect"]["core_mult"]), float((def["costs"] as Array).size()))
+	var ceiling := (float(std["cap"]) + float(std["extra_cap"])) * max_mult * core_mult + 2.0 * float(gates["salvage"]["bank_cores"]) + 1.0
+	if not cont.is_empty():
+		check(float(cont["cores"]) <= ceiling, "standart ödülü üst sınırlı (%d ≤ %.0f)" % [int(cont["cores"]), ceiling])
+	var endless := sim.play({"seed": 5, "ship": "mizrak", "mode": "endless", "meta": meta, "max_time": 900.0})
+	check(float(endless["cores"]) <= float(sim.bal["run"]["modes"]["endless"]["reward"]["cap"]) * core_mult + 1.0, "sonsuz ödülü de sınırlı")
+
+func test_endless_mode_matches_legacy_sim() -> void:
+	## Sonsuz mod = eski oyun: aynı tohumla dalga/puan/öldürme eski (mod belirtilmeyen) koşuyla aynı.
+	var sim := _sim()
+	var a := sim.play({"seed": 9, "ship": "vektor"})
+	var b := sim.play({"seed": 9, "ship": "vektor", "mode": "endless"})
+	eq([a["wave"], a["score"], a["kills"], a["time"]], [b["wave"], b["score"], b["kills"], b["time"]], "sonsuz = eski akış")
+
+func test_sector_table_and_checks() -> void:
+	var runs: Array = []
+	for i in 10:
+		runs.append({"wave": 15 if i < 3 else 8, "cores": 100, "sectors_cleared": 3 if i < 3 else 1, "won": i < 3, "victory_time": 400.0, "gate_errors": [], "gates": ["repair"]})
+	var t := SimReportScript.sector_table(runs, 3)
+	near(float(t["victory_rate"]), 0.3, 0.0001, "zafer oranı")
+	near(float(t["clear_rate"][0]), 1.0, 0.0001, "S1 oranı")
+	near(float(t["clear_rate"][1]), 0.3, 0.0001, "S2 oranı")
+	var bad := {"overall": {"runs": 10, "capped": 0, "wave": {"median": 8.0}, "kills": {"median": 50.0}}, "meta": {},
+		"by_mode": {"standard": {"capped": 2}},
+		"sectors": {"standard": {"maxed": {"runs": 8, "victory_rate": 0.0, "gate_errors": 1}}}}
+	var problems := SimReportScript.check(bad, false)
+	check(problems.any(func(p): return "zaman sınırına" in str(p)), "sonlanmayan sonlu mod yakalanmalı")
+	check(problems.any(func(p): return "zafer erişilemez" in str(p)), "erişilemeyen zafer yakalanmalı")
+	check(problems.any(func(p): return "kapı hatası" in str(p)), "kapı hatası yakalanmalı")

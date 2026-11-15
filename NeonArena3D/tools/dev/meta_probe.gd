@@ -29,18 +29,24 @@ func _run() -> void:
 	_check(scene.rerolls == 3, "1 seviye şans: 3 yenileme (gelen %d)" % scene.rerolls)
 	_check(scene.player.shield == 1, "ön kalkan: başlangıçta kalkan var")
 	_check(is_equal_approx(scene.run.xp_mult, 1.08), "veri bankası: XP ×1.08 (gelen %.3f)" % scene.run.xp_mult)
-	var before: int = meta.cores
-	scene.run.score = 15000
-	scene.run.wave = 9
-	scene.run.bosses = 1
-	scene.player.invuln = 0.0
-	scene.player.shield = 0
-	scene.player.take_damage(99999.0, scene.player.pos2 + Vector2.UP)
-	for i in 4:
+	# C1: ödül koşu moduna göre (RunState.reward, veri: waves.json run.modes.<mod>.reward). Sonsuz = eski formül (sınırlı).
+	for mode in ["standard", "endless"]:
+		scene.ctx.options.run_mode = mode
+		settings.flags["run_counter"] = 0   # ilk koşu gibi: reklamla diriltme teklifi ölümü bekletmesin
+		scene._start_game()
 		await process_frame
-	var expected: int = MetaProgress.run_reward(15000, 9, 1, 1.1)
-	_check(scene.state == "dead", "ölüm durumuna geçildi")
-	_check(scene._cores_earned == expected, "ödül formülü + toplayıcı ×1.1: %d (gelen %d)" % [expected, scene._cores_earned])
-	_check(meta.cores == before + expected, "çekirdek bakiyeye eklendi (%d → %d)" % [before, meta.cores])
+		var before: int = meta.cores
+		scene.run.score = 15000
+		scene.run.wave = 9
+		scene.run.bosses = 1
+		scene.player.invuln = 0.0
+		scene.player.shield = 0
+		scene.player.take_damage(99999.0, scene.player.pos2 + Vector2.UP)
+		for i in 4:
+			await process_frame
+		var expected: int = MetaProgress.run_reward(15000, 9, 1, 1.1) if mode == "endless" else scene.run.reward_total(1.1)
+		_check(scene.state == "dead", "%s: ölüm durumuna geçildi" % mode)
+		_check(scene._cores_earned == expected and expected > 0, "%s: ödül eğrisi + toplayıcı ×1.1: %d (gelen %d)" % [mode, expected, scene._cores_earned])
+		_check(meta.cores == before + expected, "%s: çekirdek bakiyeye eklendi (%d → %d)" % [mode, before, meta.cores])
 	print("SONUÇ: %s" % ("geçti" if _fail == 0 else "%d hata" % _fail))
 	quit(0 if _fail == 0 else 1)
