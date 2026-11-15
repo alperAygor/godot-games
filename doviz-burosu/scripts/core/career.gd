@@ -4,6 +4,8 @@ extends RefCounted
 ## Gün döngüsü: new_shift() -> (vardiya oynanır) -> finish_day(shift, ödenecek_giderler) -> bir sonraki gün.
 ## Kasa her sabah data/balance.json'daki başlangıç sayımına döner; yabancı para stoğu gün İÇİNDE müşterilerle değişir.
 
+## Kariyer bloğunun (kaydın `data.career` kısmı) kendi şema sürümü. Dosya zarfının sürümü (`SaveManager.SAVE_VERSION`) ayrıdır;
+## kariyer alanları değişince BURAYI artır ve `migrate_dict` içine bir adım ekle. SaveManager'ın göçü bunu çağırır.
 const SAVE_VERSION := 1
 
 var day := 1
@@ -284,6 +286,35 @@ func to_dict() -> Dictionary:
 	if not morning_snapshot.is_empty():
 		data["morning_snapshot"] = morning_snapshot.duplicate(true)
 	return data
+
+
+## Eski sürümde yazılmış kariyer bloğunu bugünkü şemaya yükseltir (yeni sözlük döner, girdiye dokunmaz).
+## Sürümü olmayan (ilk günlerden kalma) blok v1 sayılır. `SAVE_VERSION`'dan yeni blok değişmeden döner: bilinmeyen alanlar korunur.
+static func migrate_dict(data: Dictionary) -> Dictionary:
+	var migrated := data.duplicate(true)
+	var version := int(migrated.get("version", 0))
+	if version < 1:
+		version = 1
+	# Gelecekte: if version == 1: ...alanları yükselt...; version = 2
+	if version <= SAVE_VERSION:
+		migrated["version"] = version
+	return migrated
+
+
+## Kariyer bloğu yüklenebilir mi? (elle bozulmuş/yarım kayıtta `load_dict` tip hatası vermesin diye kaba şema denetimi)
+static func is_valid_dict(data: Variant) -> bool:
+	if not (data is Dictionary):
+		return false
+	var block: Dictionary = data
+	if not (block.get("day", 1) is int or block.get("day", 1) is float) or int(block.get("day", 1)) < 1:
+		return false
+	for key in ["household", "story"]:
+		if block.has(key) and not (block[key] is Dictionary):
+			return false
+	for key in ["tools", "ads_used", "history"]:
+		if block.has(key) and not (block[key] is Array):
+			return false
+	return not block.has("morning_snapshot") or block["morning_snapshot"] is Dictionary
 
 
 func load_dict(data: Dictionary) -> void:

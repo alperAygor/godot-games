@@ -26,7 +26,8 @@ func after_each() -> void:
 	save_manager.data = _original_data
 	session.career = null
 	session.shift = null
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_PATH))
+	for suffix in ["", ".bak", ".tmp"]:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_PATH + suffix))
 
 
 func test_new_game_creates_a_career_and_saves_it() -> void:
@@ -110,3 +111,52 @@ func test_a_finished_day_saved_as_game_over_can_replay_the_morning() -> void:
 	assert_true(session.career.restore_morning())
 	assert_false(session.career.is_over())
 	assert_eq(session.career.day, 4)
+
+
+# --- Yaşam döngüsü kaydı ve bozuk kariyer bloğu ---------------------------------------------------------------
+
+func test_pause_writes_the_in_memory_career_to_disk() -> void:
+	session.new_game()
+	session.career.household.cash_minor = Money.units(555)
+	save_manager.notification(Node.NOTIFICATION_APPLICATION_PAUSED)
+	var on_disk: Dictionary = JsonIO.inspect(TEST_PATH)["data"]["data"]["career"]
+	assert_eq(int(on_disk["household"]["cash_minor"]), Money.units(555))
+
+
+func test_pause_during_the_evening_does_not_double_count_the_report() -> void:
+	session.new_game()
+	var before := Money.units(100)
+	session.career.household.cash_minor = before
+	session.save()
+	session.career.pending_report = {"net_minor": 5000}  # akşam başladı: nakit işlendi, rapor kayda girmez
+	session.career.household.cash_minor = before + 5000
+	save_manager.notification(Node.NOTIFICATION_APPLICATION_PAUSED)
+	var on_disk: Dictionary = JsonIO.inspect(TEST_PATH)["data"]["data"]["career"]
+	assert_eq(int(on_disk["household"]["cash_minor"]), before, "akşam ortasında son güvenli kayıt korunur")
+
+
+func test_pause_in_a_mode_run_does_not_replace_the_story_save() -> void:
+	session.new_game()
+	var story_cash := Money.units(42)
+	session.career.household.cash_minor = story_cash
+	session.save()
+	session.start_endless("lifecycle")
+	session.career.household.cash_minor = Money.units(9999)
+	save_manager.notification(Node.NOTIFICATION_APPLICATION_PAUSED)
+	var on_disk: Dictionary = JsonIO.inspect(TEST_PATH)["data"]["data"]["career"]
+	assert_eq(int(on_disk["household"]["cash_minor"]), story_cash)
+	session.abort_mode()
+
+
+func test_continue_game_survives_a_corrupt_career_block() -> void:
+	session.new_game()
+	save_manager.data[session.SAVE_KEY] = {"day": "bozuk", "household": 7}
+	assert_false(session.continue_game(), "okunamayan blok oyunu çökertmez")
+	var good := Career.load_default("story")
+	good.day = 3
+	var broken := good.to_dict()
+	broken["household"] = "bozuk"
+	broken["morning_snapshot"] = good.to_dict()
+	save_manager.data[session.SAVE_KEY] = broken
+	assert_true(session.continue_game(), "sabah anlık görüntüsüne düşer")
+	assert_eq(session.career.day, 3)
