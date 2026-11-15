@@ -1,0 +1,41 @@
+{
+  "_note": "Reklam kurallari. Sayilar kodda degil burada. Gecis reklami yalniz koşu bitiminde; ilk free_runs kosuda yok, son gecisten min_seconds, en fazla her every_n_deaths. olumde; odullu reklam izlendiyse o kosuda yok; 'reklamlari kaldir' alindiysa asla. Odullu reklamlar pacing'e tabi degil, yalniz asagidaki limitlere. Sahibi degistirebilir.",
+  "placements": {
+    "REVIVE": { "per_run": 1, "per_session": 999 },
+    "DOUBLE_CORES": { "per_run": 1, "per_session": 999 },
+    "REROLL": { "per_run": 2, "per_session": 999 },
+    "DAILY_BONUS": { "per_day": 1 }
+  },
+  "interstitial": {
+    "enabled": true,
+    "free_runs": 3,
+    "min_seconds": 180,
+    "every_n_deaths": 2,
+    "block_after_rewarded": true,
+    "moments": ["run_end"]
+  },
+  "settings": {
+    "_note": "show_start_timeout_seconds: gosterim istendikten sonra reklam bu surede ekrana gelmezse akis reklamsiz devam eder. max_ad_seconds: ekrandaki reklam bu surede bitmezse (SDK takildi) akis serbest birakilir.",
+    "show_start_timeout_seconds": 3.0,
+    "max_ad_seconds": 180.0
+  },
+  "admob": {
+    "_note": "mode=test iken Google'in RESMI TEST kimlikleri kullanilir. Yayin oncesi production blogundaki REPLACE_* alanlarini sahibin AdMob konsolundaki gercek kimliklerle doldurun ve mode'u production yapin. Hata ayiklama surumu ve REPLACE_ kaldiginda mode ne olursa olsun test kimlikleri kullanilir. Gercek kimlikler SAHIBINDIR; uydurulmaz.",
+    "mode": "test",
+    "request_consent": true,
+    "test_device_ids": [],
+    "consent_debug_geography": "",
+    "load_retry_seconds": 20.0,
+    "consent_timeout_seconds": 8.0,
+    "test": {
+      "app_id": "ca-app-pub-3940256099942544~3347511713",
+      "rewarded_unit_id": "ca-app-pub-3940256099942544/5224354917",
+      "interstitial_unit_id": "ca-app-pub-3940256099942544/1033173712"
+    },
+    "production": {
+      "app_id": "REPLACE_WITH_REAL_ADMOB_APP_ID",
+      "rewarded_unit_id": "REPLACE_WITH_REAL_REWARDED_UNIT_ID",
+      "interstitial_unit_id": "REPLACE_WITH_REAL_INTERSTITIAL_UNIT_ID"
+    }
+  }
+}

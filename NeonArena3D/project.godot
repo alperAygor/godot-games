@@ -21,6 +21,7 @@ Settings="*res://scripts/autoload/settings.gd"
 I18n="*res://scripts/autoload/i18n.gd"
 Fx="*res://scripts/autoload/fx.gd"
 Sound="*res://scripts/autoload/sound.gd"
+AdManager="*res://scripts/autoload/AdManager.gd"
 
 [display]
 
