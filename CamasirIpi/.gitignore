@@ -4,9 +4,9 @@
 .import/
 export_credentials.cfg
 
-# Build çıktıları
+# Build çıktıları (android/build Gradle şablonudur: aşağıda yeniden dahil edilir)
 build/
-android/build/
+!/android/build/
 *.apk
 *.aab
 *.pck
@@ -39,3 +39,17 @@ addons/admob/downloads/
 # Ekran görüntüleri depoya girmez (yerelde kalır)
 /docs/art/
 /docs/perf/shots/
+
+# Android Gradle şablonu (Godot 4.7.2.stable): kaynaklar depoda (docs/store/RELEASE_STATUS.md),
+# üretilenler ve 216 MB'lık godot-lib AAR'ları dışarıda. Şablonu geri kurmak için:
+#   godot --headless --path . --install-android-build-template --export-debug "Android (release)" build/x.aab
+/android/build/libs/
+/android/build/build/
+/android/build/.gradle/
+/android/build/local.properties
+/android/build/assetPackInstallTime/build/
+/android/build/assetPackInstallTime/src/
+/android/build/res/mipmap*/
+/android/build/res/drawable/splash_icon.webp
+/android/build/src/debug/
+/android/build/res/values*/godot_project_name_string.xml

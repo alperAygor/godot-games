@@ -21,8 +21,6 @@ const REQUIRED_SINGLETONS: Array[String] = ["PoingGodotAdMob", "PoingGodotAdMobR
 	"PoingGodotAdMobInterstitialAd"]
 ## UMP tekil nesneleri; yoksa onay adımı atlanır (reklamlar yine başlar).
 const CONSENT_SINGLETONS: Array[String] = ["PoingGodotAdMobUserMessagingPlatform", "PoingGodotAdMobConsentInformation"]
-## ConsentInformation.ConsentStatus.REQUIRED (sabit haritası okunamazsa yedek değer).
-const CONSENT_STATUS_REQUIRED_FALLBACK: int = 2
 ## DebugGeography.Values eşlemesi (yalnız hata ayıklama sürümünde `consent_debug_geography` ile).
 const DEBUG_GEOGRAPHY: Dictionary = {"eea": 1, "not_eea": 2}
 
@@ -69,36 +67,70 @@ func initialize(config: Dictionary, on_done: Callable) -> void:
 ## UMP (GDPR/ABD eyalet) onayı. Eklenti akışı (v5.1.0 örnek `Ump.gd`):
 ## `UserMessagingPlatform.consent_information.update(params, ok, fail)` -> form uygunsa
 ## `UserMessagingPlatform.load_consent_form(ok, fail)` -> durum REQUIRED ise `form.show(dismissed)`.
-## Her yol (hata, uygun değil, kapatıldı) `on_done`a düşer; eklenti/native yoksa hemen devam eder.
+## Her yol (hata, uygun değil, kapatıldı) sonunda GÜNCEL onay durumu okunur ve `ConsentRules.can_request_ads`
+## ile `on_done(can_request)`e verilir: onay alınmadan (REQUIRED/UNKNOWN) reklam istenmez. Güncelleme hatasında
+## önceki oturumdan kalan durum (OBTAINED/NOT_REQUIRED) geçerlidir (Google'ın canRequestAds davranışı).
+## Native UMP yoksa onay alınamaz: false (reklamsız devam; oyun takılmaz).
 func request_consent(config: Dictionary, on_done: Callable) -> void:
 	for singleton: String in CONSENT_SINGLETONS:
 		if not Engine.has_singleton(singleton):
-			on_done.call(true)
+			on_done.call(false)
 			return
 	var platform: GDScript = _script(&"UserMessagingPlatform")
 	var parameters: Object = _new(&"ConsentRequestParameters")
-	if platform == null or parameters == null:
-		on_done.call(true)
+	var info: Object = _consent_information()
+	if platform == null or parameters == null or info == null:
+		on_done.call(false)
 		return
-	var info: Variant = platform.get("consent_information")
-	if not (info is Object) or not (info as Object).has_method("update"):
-		on_done.call(true)
-		return
+	# 13+ hedef kitle: reşit olmayan işaretlenmez (varsayılan false); açıkça yazılır.
+	parameters.set("tag_for_under_age_of_consent", false)
 	var debug_settings: Object = _consent_debug_settings(config)
 	if debug_settings != null:
 		parameters.set("consent_debug_settings", debug_settings)
-	var finish: Callable = func(_error: Variant = null) -> void: on_done.call(true)
+	var finish: Callable = func(_error: Variant = null) -> void:
+		on_done.call(ConsentRules.can_request_ads(_status(info)))
 	var on_form_loaded: Callable = func(form: Object) -> void:
-		if form != null and int((info as Object).call("get_consent_status")) == _consent_required_value():
+		if form != null and ConsentRules.should_show_form(_status(info), true):
 			form.call("show", finish)
 		else:
-			on_done.call(true)
+			finish.call()
 	var on_updated: Callable = func() -> void:
-		if bool((info as Object).call("get_is_consent_form_available")):
+		if bool(info.call("get_is_consent_form_available")):
 			platform.call("load_consent_form", on_form_loaded, finish)
 		else:
-			on_done.call(true)
-	(info as Object).call("update", parameters, on_updated, finish)
+			finish.call()
+	info.call("update", parameters, on_updated, finish)
+
+
+## Gizlilik seçenekleri girişi: UMP `get_privacy_options_requirement_status() == REQUIRED` ise zorunlu.
+func privacy_options_required() -> bool:
+	var info: Object = _consent_information()
+	if info == null or not Engine.has_singleton(CONSENT_SINGLETONS[1]):
+		return false
+	return ConsentRules.privacy_options_visible(int(info.call("get_privacy_options_requirement_status")))
+
+
+## `UserMessagingPlatform.show_privacy_options_form(dismissed)` (v5.1.0 ump/api/UserMessagingPlatform.gd).
+func show_privacy_options(on_done: Callable) -> void:
+	var platform: GDScript = _script(&"UserMessagingPlatform")
+	if platform == null or not Engine.has_singleton(CONSENT_SINGLETONS[0]):
+		on_done.call()
+		return
+	platform.call("show_privacy_options_form", func(_error: Variant = null) -> void: on_done.call())
+
+
+func _consent_information() -> Object:
+	var platform: GDScript = _script(&"UserMessagingPlatform")
+	if platform == null:
+		return null
+	var info: Variant = platform.get("consent_information")
+	if info is Object and (info as Object).has_method("update"):
+		return info as Object
+	return null
+
+
+func _status(info: Object) -> int:
+	return int(info.call("get_consent_status"))
 
 
 func load_rewarded(unit_id: String, on_loaded: Callable, on_failed: Callable) -> void:
@@ -195,15 +227,6 @@ func _consent_debug_settings(config: Dictionary) -> Object:
 	settings.set("debug_geography", int(DEBUG_GEOGRAPHY[geography]))
 	settings.set("test_device_hashed_ids", _test_device_ids(config))
 	return settings
-
-
-func _consent_required_value() -> int:
-	var info_script: GDScript = _script(&"ConsentInformation")
-	if info_script != null:
-		var statuses: Variant = info_script.get_script_constant_map().get("ConsentStatus")
-		if statuses is Dictionary and (statuses as Dictionary).has("REQUIRED"):
-			return int((statuses as Dictionary)["REQUIRED"])
-	return CONSENT_STATUS_REQUIRED_FALLBACK
 
 
 func _error_text(error: Variant) -> String:

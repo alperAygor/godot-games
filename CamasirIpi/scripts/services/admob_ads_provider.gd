@@ -3,7 +3,8 @@ extends AdsProvider
 
 ## Google AdMob sağlayıcısı: durum makinesi burada, eklenti çağrıları `AdmobBridge`de.
 ## Davranış:
-##  * Açılışta (isteğe bağlı) UMP onayı -> MobileAds başlatma -> ödüllü + geçiş reklamı ÖN YÜKLENİR.
+##  * Açılışta UMP onayı -> (onay alındı/gerekmiyor ise) MobileAds başlatma -> ödüllü + geçiş reklamı ÖN YÜKLENİR.
+##    Onay çözülmeden HİÇBİR reklam isteği yapılmaz (MobileAds.initialize bile); onay verilmediyse oyun reklamsız sürer.
 ##  * Her gösterimden sonra bir sonraki reklam hemen yüklenir.
 ##  * Yükleme hatasında `load_retry_seconds` sonra yeniden denenir; yüklü değilse `is_ready` false
 ##    olur, yani oyun reklam düğmesini hiç sunmaz / geçişte reklamsız devam eder (asla takılmaz).
@@ -35,6 +36,8 @@ var _interstitial_loading: bool = false
 var _earned: bool = false
 var _showing: bool = false
 var _consent_done: bool = false
+## UMP sonucu: false ise SDK hiç başlatılmaz (AB/BK onay verilmedi ya da form alınamadı).
+var _can_request_ads: bool = false
 var _generation: int = 0
 
 
@@ -88,6 +91,7 @@ func initialize() -> void:
 		_start_consent(_generation)
 	else:
 		_consent_done = true
+		_can_request_ads = true
 		_start_sdk()
 
 
@@ -119,21 +123,49 @@ func show(placement: int) -> void:
 		bridge.show_rewarded(_on_shown, _on_earned, _on_rewarded_dismissed, _on_show_failed)
 
 
+## Ayarlar'daki "Gizlilik seçenekleri" girişi (UMP zorunlu kılıyorsa). Eklenti yoksa false.
+func privacy_options_required() -> bool:
+	return bridge.is_present() and bridge.privacy_options_required()
+
+
+func show_privacy_options() -> void:
+	if bridge.is_present():
+		bridge.show_privacy_options(func() -> void: pass)
+
+
+## Test/teşhis: onay çözüldü mü ve reklam istenebiliyor mu.
+func consent_resolved() -> bool:
+	return _consent_done
+
+
+func can_request_ads() -> bool:
+	return _can_request_ads
+
+
 # --- Başlatma ------------------------------------------------------------------------------
 
 func _start_consent(generation: int) -> void:
-	bridge.request_consent(_config, func(_can_request: bool) -> void: _on_consent_done(generation))
-	# Onay formu hiç yanıt vermezse (eklenti hatası) reklamlar yine de başlatılır: oyun takılmaz.
+	bridge.request_consent(_config, func(can_request: bool) -> void: _on_consent_done(generation, can_request))
+	# Onay çözülmeden reklam İSTENMEZ: zaman aşımı SDK'yı başlatmaz, yalnız uyarı yazar (oyun zaten
+	# beklemez; reklam düğmeleri `is_ready` false iken hiç sunulmaz). Geç gelen yanıt yine işlenir.
 	if _tree != null:
 		var timeout: float = float(_config.get("consent_timeout_seconds", DEFAULT_CONSENT_TIMEOUT))
-		_tree.create_timer(timeout, true, false, true).timeout.connect(_on_consent_done.bind(generation))
+		_tree.create_timer(timeout, true, false, true).timeout.connect(_on_consent_timeout.bind(generation))
 
 
-func _on_consent_done(generation: int) -> void:
+func _on_consent_timeout(generation: int) -> void:
+	if generation == _generation and not _consent_done:
+		push_warning("AdMob: UMP onayi %.0f sn icinde yanitlamadi; reklam istenmiyor (oyun reklamsiz suruyor)"
+			% float(_config.get("consent_timeout_seconds", DEFAULT_CONSENT_TIMEOUT)))
+
+
+func _on_consent_done(generation: int, can_request: bool) -> void:
 	if generation != _generation or _consent_done:
 		return
 	_consent_done = true
-	_start_sdk()
+	_can_request_ads = can_request
+	if can_request:
+		_start_sdk()
 
 
 func _start_sdk() -> void:

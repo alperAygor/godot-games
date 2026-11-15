@@ -38,7 +38,17 @@ func test_ump_consent_information_is_reachable() -> void:
 	assert_true((info as Object).has_method("get_is_consent_form_available"))
 	assert_true((info as Object).has_method("get_consent_status"))
 	assert_true(platform.has_method("load_consent_form"))
-	assert_eq(_bridge._consent_required_value(), 2, "ConsentStatus.REQUIRED")
+	# ConsentRules sabitleri eklentinin gerçek enum değerleriyle AYNI olmalı (eklenti güncellenirse bu test kırılır).
+	var info_script: GDScript = _bridge._script(&"ConsentInformation")
+	var status: Dictionary = info_script.get_script_constant_map().get("ConsentStatus") as Dictionary
+	assert_eq(int(status["UNKNOWN"]), ConsentRules.STATUS_UNKNOWN)
+	assert_eq(int(status["NOT_REQUIRED"]), ConsentRules.STATUS_NOT_REQUIRED)
+	assert_eq(int(status["REQUIRED"]), ConsentRules.STATUS_REQUIRED)
+	assert_eq(int(status["OBTAINED"]), ConsentRules.STATUS_OBTAINED)
+	var privacy: Dictionary = info_script.get_script_constant_map().get("PrivacyOptionsRequirementStatus") as Dictionary
+	assert_eq(int(privacy["REQUIRED"]), ConsentRules.PRIVACY_REQUIRED)
+	assert_true((info as Object).has_method("get_privacy_options_requirement_status"))
+	assert_true(platform.has_method("show_privacy_options_form"), "gizlilik seçenekleri formu")
 
 
 func test_request_configuration_accepts_typed_test_ids() -> void:
@@ -67,3 +77,15 @@ func test_load_without_native_plugin_does_not_hang() -> void:
 		return
 	_bridge.load_rewarded("x", func() -> void: pass, func(reason: String) -> void: failures.append(reason))
 	assert_eq(failures, ["no_plugin"] as Array[String])
+
+
+func test_desktop_consent_without_native_ump_denies_ads() -> void:
+	# Native UMP tekil nesneleri yokken onay alınamaz: reklam istenmez (false), oyun takılmaz.
+	var result: Array[bool] = []
+	_bridge.request_consent({}, func(can: bool) -> void: result.append(can))
+	assert_eq(result.size(), 1)
+	assert_false(result[0])
+	assert_false(_bridge.privacy_options_required())
+	var closed: Array[bool] = []
+	_bridge.show_privacy_options(func() -> void: closed.append(true))
+	assert_eq(closed.size(), 1, "eklenti yoksa hemen döner")

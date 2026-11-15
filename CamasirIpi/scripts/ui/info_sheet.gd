@@ -35,7 +35,15 @@ static func settings(parent: Node) -> InfoSheet:
 	var languages: UiLanguageRow = UiLanguageRow.new()
 	languages.language_changed.connect(sheet._on_language_changed)
 	column.add_child(languages)
-	# Gizlilik seçenekleri yalnız reklam katmanı sunuyorsa görünür (AB/ABD onay formu için kanca).
+	# Gizlilik politikası bağlantısı (Play politikası: uygulama içinde zorunlu). Adres tek yerde: data/store.json.
+	if StoreConfig.privacy_link_visible(StoreConfig.privacy_policy_url(), OS.is_debug_build()):
+		sheet.add_gap(SECTION_GAP)
+		var policy: Button = UiKit.button(Loc.t("UI_PRIVACY_POLICY"), &"SecondaryButton", "lucide/shield",
+			UiKit.HEIGHT_COMPACT)
+		policy.name = "PrivacyPolicy"
+		policy.pressed.connect(StoreConfig.open_privacy_policy)
+		column.add_child(policy)
+	# Gizlilik seçenekleri yalnız UMP zorunlu kılıyorsa görünür (AB/BK onay formu); AdManager.privacy_options_available.
 	if UiData.privacy_options_available():
 		sheet.add_gap(SECTION_GAP)
 		var privacy: Button = UiKit.button(Loc.t("UI_PRIVACY_OPTIONS"), &"SecondaryButton", "lucide/lock",

@@ -28,7 +28,7 @@ Karar fonksiyonu: `scripts/core/ad_pacing.gd` (saf, birim testli).
   AdMob eklentisi varsa `AdmobAdsProvider`; yoksa hata ayıklama sürümünde `MockAdsProvider`; yayın sürümünde `NoAdsProvider`.
 - `scripts/services/admob_ads_provider.gd` — durum makinesi (ön yükleme, yeniden deneme, ödül/kapanış). Eklentiden bağımsız, sahte köprüyle test edilir.
 - `scripts/services/poing_admob_bridge.gd` — **Poing Studios godot-admob-plugin** çağrıları (tek dosya; eklenti API'si değişirse yalnız burası güncellenir).
-- `scripts/services/iap_provider.gd` (arayüz), `mock_iap_provider.gd`, `play_billing_provider.gd` (**GodotGooglePlayBilling** tekil nesnesi), `iap_service.gd` (seçim + sahiplik + açılış doğrulaması).
+- `scripts/services/iap_provider.gd` (arayüz), `mock_iap_provider.gd`, `play_billing_provider.gd` (resmi eklenti v3.x `BillingClient` sınıfı; ayrıntı §4.1), `iap_service.gd` (seçim + sahiplik + açılış doğrulaması).
   Servis autoload değildir; `Boot` ve `ShopScreen` `IapService.ensure(get_tree())` çağırır.
 - Sahiplik: `Progress` modül `"shop"`, anahtar `"remove_ads"` (`Progress.remove_ads_owned()`). Mağaza hazırsa her açılışta Play'den yeniden doğrulanır; Play sorguyu başarıyla yanıtlayıp ürünü görmezse (iade) kayıt temizlenir.
 - Mağaza: `scenes/shop/Shop.tscn`, `scripts/shop/shop.gd` (`ShopScreen.open(parent)`), kurallar `scripts/shop/shop_logic.gd`.
@@ -100,24 +100,38 @@ AdMob uygulama kimliği olmadan uygulama açılışta çöker. v5.1.0'da kimlik 
 - Kendi cihazınızda test: `data/ads.json` → `admob.test_device_ids` listesine cihaz kimliğini ekleyin (logcat'te "Use RequestConfiguration.Builder().setTestDeviceIds" satırında yazar).
 
 ### 3.5 GDPR / UMP onayı
-`admob.request_consent` (varsayılan `true`) iken açılışta `PoingAdmobBridge.request_consent` çalışır. Akış eklentinin v5.1.0 örneğiyle aynıdır:
-`UserMessagingPlatform.consent_information.update()` → form uygunsa `UserMessagingPlatform.load_consent_form()` →
-durum `REQUIRED` ise `form.show()` → kapanınca SDK başlatılır. Her hata/“form yok”/“gerekmiyor” yolu da reklamları başlatır;
-UMP native tekil nesnesi yoksa ya da form `consent_timeout_seconds` (8 sn) içinde bitmezse oyun beklemeden devam eder.
+`admob.request_consent` (yayında `true` olmalı; `release_check` zorlar) iken açılışta `PoingAdmobBridge.request_consent` çalışır.
+Akış eklentinin v5.1.0 kaynağıyla aynıdır: `UserMessagingPlatform.consent_information.update()` → form uygunsa
+`load_consent_form()` → durum `REQUIRED` ise `form.show()` → kapanınca **güncel durum okunur** ve `ConsentRules.can_request_ads`
+(NOT_REQUIRED/OBTAINED) true ise SDK başlatılıp reklamlar yüklenir. **Onay çözülmeden hiçbir reklam isteği (MobileAds.initialize dahil)
+yapılmaz**; onay verilmedi/UMP yok/yanıt gelmedi ise oyun reklamsız sürer (zaman aşımı yalnız uyarı yazar, eski "yine de başlat" davranışı
+politika gereği KALDIRILDI). Eklentide `canRequestAds()` karşılığı yoktur; kural Google'ın tanımına göre durumdan türetilir.
+`tag_for_under_age_of_consent=false` açıkça yazılır (13+ hedef kitle; çocuklara yönelik muamele işaretlenmez).
+- **Gizlilik seçenekleri (YAPILDI):** `AdManager.privacy_options_available()` = bağlı köprü `get_privacy_options_requirement_status() == REQUIRED`;
+  Ayarlar sayfasındaki "Gizlilik seçenekleri" düğmesi yalnız o zaman görünür ve `UserMessagingPlatform.show_privacy_options_form()` açar
+  (`AdManager.show_privacy_options`). Gizlilik politikası düğmesi: `data/store.json` → `privacy_policy_url` (yer tutucu; yayın denetimi reddeder).
 - **Konsol:** AdMob > *Gizlilik ve mesajlaşma* > GDPR iletisi oluşturup uygulamaya bağlayıp yayınlayın; form yayınlanmadıkça cihazda görünmez.
 - **Formu AB dışında denemek (yalnız hata ayıklama sürümü):** `data/ads.json` → `admob.consent_debug_geography` = `"eea"` ve
   `test_device_ids`'e cihazın karma kimliğini (logcat: `addTestDeviceHashedId("…")`) yazın; deneme bitince alanı `""` yapın.
-- **Eksik (sonraki iş):** AB'de Google, oyuncuya onayı değiştirme yolu sunmanızı ister (`UserMessagingPlatform.show_privacy_options_form()`,
-  `consent_information.get_privacy_options_requirement_status() == REQUIRED` iken). Ayarlar ekranına bir “Gizlilik seçenekleri” düğmesi eklenmeli; köprüde henüz yok.
+- **Uygulama kimliği iki yerde, tutarlı olmalı:** `data/ads.json` `production.app_id` ve `project.godot` `[admob] general/android/app_id`
+  (manifeste bu yazılır). `tools/release_check.sh` ikisinin aynı olmasını ve üretilmiş AAB manifestindeki değeri doğrular.
+- **Birleşik manifest izinleri (2026-11-15 ölçüm):** INTERNET, ACCESS_NETWORK_STATE (önayar), `AD_ID` ×2 (Poing AAR + Next-Gen SDK 1.4.0),
+  `READ_BASIC_PHONE_STATE` (Next-Gen SDK), `WAKE_LOCK` + `FOREGROUND_SERVICE` (androidx.work 2.7.0, SDK'nın geçişli bağımlılığı),
+  `<paket>.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` (AndroidX, imza düzeyi). Play Console'da *Reklam kimliği* beyanı "evet" olmalı.
 
 ## 4. Google Play Faturalandırma — elle yapılacaklar
 
-### 4.1 Eklenti
-Godot'nun resmi **GodotGooglePlayBilling** (Godot 4 sürümü) eklentisini Godot dokümantasyonundaki
-"Integrating with Google Play Billing" sayfasındaki adımlarla kurun (AAR/eklenti dosyaları + Android build template +
-export ön ayarında eklentiyi işaretleme). Tekil nesne adı `GodotGooglePlayBilling`'dir; kod yalnız
-`Engine.has_singleton("GodotGooglePlayBilling")` doğruysa devreye girer.
-`AndroidManifest.xml`'e faturalandırma izni eklentiyle gelir (`com.android.vending.BILLING`); eklenti belgesini kontrol edin.
+### 4.1 Eklenti (resmi, v3.x — ESKİ tekil nesne API'si KALDIRILDI)
+Resmi eklenti **godot-sdk-integrations/godot-google-play-billing 3.3.0** (PBL 9.1.0, Godot ≥ 4.2): GDScript sınıfı **`BillingClient`** (Node,
+snake_case) + native tekil nesne `GodotGooglePlayBilling`. Eski camelCase API (`startConnection`, `purchases_updated`, `purchase_error`...) PBL ≤ 7
+içindi ve artık kabul edilmez. **Eklenti henüz kurulu DEĞİL** (indirme sahibin onayını bekliyor: `docs/store/PENDING_APPROVALS.md`).
+`PlayBillingProvider` kurulum olmadan da derlenir/çalışır: `plugin_present()` = Android + singleton + `BillingClient` global sınıfı.
+Akış: `start_connection` → `connected` → `query_product_details(["remove_ads"], INAPP)` (fiyat: `one_time_purchase_offer_details_list[0].formatted_price`)
++ `query_purchases(INAPP)` (**geri yükleme/yeniden kurulum buradan**) → `purchase("remove_ads")` → `on_purchase_updated` → yalnız `PURCHASED` sahiplik verir;
+`PENDING` vermez (`REASON_PENDING`); `is_acknowledged == false` ise `acknowledge_purchase(token)` **bir kez** (başarısızsa sonraki sorguda yeniden);
+kullanıcı iptali sessiz; bağlantı kodları `not_connected`; `ITEM_ALREADY_OWNED` → sahiplik sorgusu. Ürün ayrıntısı gelmeden satın alma başlatılmaz
+(Kotlin tarafı `DEVELOPER_ERROR` döner). Alan adlarının kaynak satırları `play_billing_provider.gd` başlığında; testler: `tests/unit/test_play_billing_provider.gd` (sahte istemci).
+`com.android.vending.BILLING` izni eklentinin AAR'ından gelir (kurulunca birleşik manifestte doğrulanacak).
 
 ### 4.2 Play Console'da ürün
 1. *Para kazanma > Ürünler > Uygulama içi ürünler > Ürün oluştur*.
@@ -125,7 +139,7 @@ export ön ayarında eklentiyi işaretleme). Tekil nesne adı `GodotGooglePlayBi
 3. Ad: "Reklamları kaldır"; fiyatı belirleyip **etkinleştirin**.
 4. Test için *Lisans testi* hesaplarını ekleyin; uygulamayı en az dahili test kanalına yükleyin (Play ürünleri yalnız yüklenmiş uygulamada görünür).
 
-Kod: satın alma sonrası `acknowledgePurchase` otomatik çağrılır (3 gün içinde onaylanmayan alımlar Google tarafından iade edilir).
+Kod: satın alma sonrası `acknowledge_purchase` otomatik çağrılır (3 gün içinde onaylanmayan alımlar Google tarafından iade edilir).
 
 ## 5. Test listesi
 
@@ -152,5 +166,6 @@ Kod: satın alma sonrası `acknowledgePurchase` otomatik çağrılır (3 gün i�
   ama gerçek native katman (AAR, UMP, Google SDK) cihazda **doğrulanmadı**. Eklentinin `skills/*.md` örnekleri (ör. `ConsentInformation.request_consent_info_update`, `OnConsentInfoUpdateListener`)
   v5.1.0 kaynağıyla UYUŞMUYOR; doğru API kaynak kodudur, köprü ona göre yazıldı.
 - Masaüstünde eklentinin kendi mock'u KULLANILMAZ (gerçek zamanlı 8 sn'lik sahte reklam penceresi açar; probe/testleri belirsizleştirir). Masaüstü = `MockAdsProvider`.
-- `PlayBillingProvider` gerçek eklenti olmadan doğrulanmadı.
+- `PlayBillingProvider` yeni API'ye göre yeniden yazıldı ve sahte istemciyle test edildi; gerçek eklenti/cihazla DOĞRULANMADI. `purchase_option_id` boş bırakma ve release zip düzeni cihazda denenecek.
+- `REASON_PENDING` arayüzde genel "satın alma tamamlanamadı" balonuyla gösterilir (özel metin yok).
 - Banner reklam yoktur (ileride eklenirse `AdPacing` ile aynı "reklamları kaldır" kuralına bağlanmalıdır).

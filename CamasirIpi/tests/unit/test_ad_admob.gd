@@ -19,13 +19,28 @@ class FakeBridge extends AdmobBridge:
 	var interstitial_handlers: Array[Callable] = []
 	var consent_calls: int = 0
 	var init_calls: int = 0
+	## Sahte UMP: true = onay alındı/gerekmiyor; false = verilmedi; consent_deferred = yanıt elle verilir.
+	var consent_result: bool = true
+	var consent_deferred: bool = false
+	var consent_callback: Callable = Callable()
+	var privacy_required: bool = false
+	var privacy_shown: int = 0
 
 	func is_present() -> bool:
 		return present
 
 	func request_consent(_config: Dictionary, on_done: Callable) -> void:
 		consent_calls += 1
-		on_done.call(true)
+		consent_callback = on_done
+		if not consent_deferred:
+			on_done.call(consent_result)
+
+	func privacy_options_required() -> bool:
+		return privacy_required
+
+	func show_privacy_options(on_done: Callable) -> void:
+		privacy_shown += 1
+		on_done.call()
 
 	func initialize(_config: Dictionary, on_done: Callable) -> void:
 		init_calls += 1
@@ -181,3 +196,61 @@ func test_load_failure_keeps_not_ready() -> void:
 	_provider.initialize()
 	_bridge.rewarded_load_failed.call("no_fill")
 	assert_false(_provider.is_ready(0))
+
+
+# --- UMP onay durumları: onay çözülmeden/verilmeden reklam isteği YOK ---------------------
+
+func test_no_ad_request_when_consent_denied() -> void:
+	_bridge.consent_result = false
+	var provider: AdmobAdsProvider = _make_provider({"request_consent": true})
+	provider.initialize()
+	assert_eq(_bridge.consent_calls, 1)
+	assert_true(provider.consent_resolved())
+	assert_false(provider.can_request_ads())
+	assert_eq(_bridge.init_calls, 0, "onay yoksa SDK başlatılmaz")
+	assert_eq(_bridge.load_rewarded_calls, 0)
+	assert_eq(_bridge.load_interstitial_calls, 0)
+	assert_false(provider.is_ready(AdsProvider.INTERSTITIAL_PLACEMENT))
+	assert_false(provider.is_ready(0))
+
+
+func test_no_ad_request_while_consent_pending_and_after_timeout() -> void:
+	_bridge.consent_deferred = true
+	var provider: AdmobAdsProvider = _make_provider({"request_consent": true, "consent_timeout_seconds": 0.05})
+	provider.initialize()
+	assert_false(provider.consent_resolved())
+	assert_eq(_bridge.init_calls, 0, "yanıt gelmeden başlatma yok")
+	assert_eq(_bridge.load_rewarded_calls, 0)
+	# Zaman aşımı SDK'yı başlatmaz (eski davranış: başlatıyordu; politika gereği kaldırıldı).
+	# (Test koşucusu eşzamanlı: gerçek zamanlayıcı beklemek yerine zaman aşımı işleyicisi doğrudan çağrılır.)
+	provider._on_consent_timeout(provider._generation)
+	assert_eq(_bridge.init_calls, 0, "zaman aşımı reklamı başlatmaz")
+	assert_eq(_bridge.load_rewarded_calls, 0)
+	assert_false(provider.is_ready(0))
+	# Geç gelen olumlu yanıt yine de işlenir.
+	_bridge.consent_callback.call(true)
+	assert_eq(_bridge.init_calls, 1)
+	assert_eq(_bridge.load_rewarded_calls, 1)
+
+
+func test_consent_obtained_starts_sdk_once() -> void:
+	_bridge.consent_deferred = true
+	var provider: AdmobAdsProvider = _make_provider({"request_consent": true})
+	provider.initialize()
+	_bridge.consent_callback.call(true)
+	_bridge.consent_callback.call(true)
+	assert_eq(_bridge.init_calls, 1, "ikinci yanıt yok sayılır")
+	assert_true(provider.can_request_ads())
+
+
+func test_privacy_options_follow_bridge_requirement() -> void:
+	var provider: AdmobAdsProvider = _make_provider({"request_consent": true})
+	assert_false(provider.privacy_options_required(), "UMP zorunlu kılmıyorsa giriş gizli")
+	_bridge.privacy_required = true
+	assert_true(provider.privacy_options_required())
+	provider.show_privacy_options()
+	assert_eq(_bridge.privacy_shown, 1)
+	_bridge.present = false
+	assert_false(provider.privacy_options_required(), "eklenti yoksa giriş yok")
+	provider.show_privacy_options()
+	assert_eq(_bridge.privacy_shown, 1, "eklenti yoksa form açılmaz")

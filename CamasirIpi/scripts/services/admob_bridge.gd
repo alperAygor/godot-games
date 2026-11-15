@@ -16,9 +16,20 @@ func initialize(_config: Dictionary, on_done: Callable) -> void:
 	on_done.call()
 
 
-## GDPR/UMP onay akışı. Bitince `on_done.call(can_request_ads: bool)`.
+## GDPR/UMP onay akışı. Bitince `on_done.call(can_request_ads: bool)`; false ise reklam İSTENMEZ.
+## Taban sınıf (eklenti yok) reklam sunmaz, bu yüzden true dönmesi zararsızdır.
 func request_consent(_config: Dictionary, on_done: Callable) -> void:
 	on_done.call(true)
+
+
+## UMP "gizlilik seçenekleri" girişi gerekli mi (AB/BK'de ayarlarda sunulmak zorundadır)?
+func privacy_options_required() -> bool:
+	return false
+
+
+## Gizlilik seçenekleri formunu açar; kapanınca `on_done.call()`.
+func show_privacy_options(on_done: Callable) -> void:
+	on_done.call()
 
 
 func load_rewarded(_unit_id: String, _on_loaded: Callable, on_failed: Callable) -> void:

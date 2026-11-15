@@ -120,21 +120,6 @@ func test_price_text_comes_from_provider() -> void:
 	assert_eq(_service.price_text(), "")
 
 
-func test_play_billing_parsers() -> void:
-	assert_eq(PlayBillingProvider.parse_price({"one_time_purchase_offer_details": {"formatted_price": "₺149,99"}}), "₺149,99")
-	assert_eq(PlayBillingProvider.parse_price({"price": "$2.99"}), "$2.99")
-	assert_eq(PlayBillingProvider.parse_price({}), "")
-	var purchases: Array = [
-		{"product_ids": ["remove_ads"], "purchase_state": 1, "is_acknowledged": false},
-		{"product_ids": ["other"], "purchase_state": 2},
-		{"sku": "legacy", "purchase_state": 1},
-	]
-	var owned: PackedStringArray = PlayBillingProvider.owned_ids(purchases)
-	assert_true(owned.has("remove_ads"))
-	assert_false(owned.has("other"), "beklemedeki ödeme sahiplik değildir")
-	assert_true(owned.has("legacy"))
-
-
 func test_default_provider_selection_has_no_plugin_here() -> void:
 	assert_false(PlayBillingProvider.plugin_present(), "masaüstünde eklenti yok")
 	var provider: IapProvider = IapService.make_default_provider()
