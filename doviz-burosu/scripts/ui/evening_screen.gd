@@ -1,5 +1,7 @@
 extends Control
 ## Akşam: günün özeti, ev giderleri (seçmeli), döviz birikimi, "Eve git". Mantık EveningPlan'da; burası sadece çizer.
+## Sade düzen (T-B1): özet iki satır + "Ödenen"; nakit, giderler ve aile ruh hali tek kartta (kararın verildiği yer);
+## dükkân yalnızca satılık araç varken görünür; tek birincil eylem "Eve git".
 ## Geri tuşu bu ekranda bir şey yapmaz (karar vermeden çıkış yok).
 
 const CONVERT_AMOUNTS_PL := [100, 500, 1000]
@@ -36,8 +38,8 @@ func _ready() -> void:
 		list.add_child(letter)
 	list.add_child(_expenses_card())
 	list.add_child(_savings_card())
-	list.add_child(_shop_card())
-	list.add_child(_family_card())
+	if not plan.shop().is_empty():
+		list.add_child(_shop_card())
 	var go := UiKit.button(tr("EVENING_GO_HOME"), "GoHomeButton", &"InkButton", 96.0)
 	go.pressed.connect(_go_home)
 	column.add_child(go)
@@ -54,11 +56,9 @@ func _summary_card() -> Control:
 	var report := plan.report
 	var box := UiKit.card(tr("EVENING_SUMMARY"), &"CardPanel", "SummaryCard", "document")
 	var lines: Array[String] = [
-		tr("END_SERVED") % [int(report["served"]), int(report["correct"])],
-		tr("END_MISTAKES") % int(report["mistake_transactions"]),
-		tr("END_SALARY") % UiKit.money(int(report["base_minor"]), "PL"),
-		tr("END_BONUS") % UiKit.money(int(report["bonus_minor"]), "PL"),
-		(tr("END_FINES") % UiKit.money(int(report["fines_minor"]), "PL")) if int(report["fines_minor"]) > 0 else tr("END_NO_FINES"),
+		tr("B1_EVENING_SERVED_LINE") % [int(report["served"]), int(report["correct"]), int(report["mistake_transactions"])],
+		tr("B1_EVENING_PAY_LINE") % [UiKit.money(int(report["base_minor"]), "PL"), UiKit.money(int(report["bonus_minor"]), "PL"),
+			UiKit.money(int(report["fines_minor"]), "PL")],
 	]
 	if int(report["skim_minor"]) > 0:
 		lines.append(tr("EVENING_SKIM") % UiKit.money(int(report["skim_minor"]), "PL"))
@@ -79,8 +79,6 @@ func _summary_card() -> Control:
 	_net_label = UiKit.label(tr("END_NET") % UiKit.money(int(report["net_minor"]), "PL"), &"GoalTitle", "NetPay")
 	box.add_child(_net_label)
 	_summary_box = box
-	_cash_label = UiKit.label("", &"BigNumber", "CashLabel")
-	box.add_child(_cash_label)
 	_add_double_pay_offer()
 	return box.get_meta("panel")
 
@@ -99,6 +97,8 @@ func _letter_card(career: Career) -> Control:
 
 func _expenses_card() -> Control:
 	var box := UiKit.card(tr("EVENING_EXPENSES"), &"CardPanel", "ExpensesCard", "wallet")
+	_cash_label = UiKit.label("", &"GoalTitle", "CashLabel")
+	box.add_child(_cash_label)
 	_expense_box = VBoxContainer.new()
 	_expense_box.add_theme_constant_override("separation", 6)
 	box.add_child(_expense_box)
@@ -106,6 +106,8 @@ func _expenses_card() -> Control:
 	box.add_child(_after_label)
 	_warn_label = UiKit.wrapped(tr("EVENING_WARN"), &"CardDetail", "WarnLabel")
 	box.add_child(_warn_label)
+	_mood_label = UiKit.label("", &"CardDetail", "MoodLabel")
+	box.add_child(_mood_label)
 	return box.get_meta("panel")
 
 
@@ -129,13 +131,6 @@ func _shop_card() -> Control:
 	return box.get_meta("panel")
 
 
-func _family_card() -> Control:
-	var box := UiKit.card("", &"CardPanel", "MoodCard")
-	_mood_label = UiKit.label("", &"GoalLabel", "MoodLabel")
-	box.add_child(_mood_label)
-	return box.get_meta("panel")
-
-
 ## Planın durumuna göre tüm değişken parçaları yeniden çizer.
 func _refresh() -> void:
 	_cash_label.text = tr("EVENING_CASH") % UiKit.money(plan.cash_minor(), "PL")
@@ -154,7 +149,7 @@ func _refresh() -> void:
 		toggle.text = "%s — %s   [%s]" % [tr("EXPENSE_%s" % expense_id.to_upper()), UiKit.money(int(expense["amount_minor"]), "PL"), status]
 		toggle.set_pressed_no_signal(plan.is_selected(expense_id))
 		toggle.disabled = not plan.can_toggle(expense_id)
-		toggle.custom_minimum_size.y = 84
+		toggle.custom_minimum_size.y = 76
 		toggle.pressed.connect(_on_expense_toggled.bind(expense_id))
 		_expense_box.add_child(toggle)
 		if not plan.is_selected(expense_id):
@@ -190,6 +185,8 @@ func _refresh_savings() -> void:
 
 
 func _refresh_shop() -> void:
+	if _shop_box == null:
+		return
 	UiKit.clear(_shop_box)
 	var items := plan.shop()
 	if items.is_empty():

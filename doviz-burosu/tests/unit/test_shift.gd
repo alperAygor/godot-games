@@ -120,21 +120,28 @@ func test_correct_move_earns_bonus_and_counts() -> void:
 	assert_eq(shift.stats["bonus_minor"], Money.units(15))
 
 
-func test_first_two_mistaken_transactions_are_free_then_fined() -> void:
+func _shift_cfg(key: String) -> int:
+	return int(JsonIO.read_dict("res://data/balance.json")["shift"][key])
+
+
+func test_first_free_mistaken_transactions_are_free_then_fined() -> void:
+	var free := _shift_cfg("free_mistakes")
 	var shift := _shift()
 	shift.start()
 	var fined: Array[bool] = []
-	for i in 4:
+	var expected: Array[bool] = []
+	for i in free + 2:
 		_next(shift)
 		var result := shift.submit(_wrong(shift))
 		assert_false(result["correct"])
 		fined.append(result["fined"])
+		expected.append(i >= free)
 		assert_eq(result["bonus_minor"], 0)
-	assert_eq(fined, [false, false, true, true] as Array[bool])
-	assert_eq(shift.stats["free_used"], 2)
+	assert_eq(fined, expected)
+	assert_eq(shift.stats["free_used"], free)
 	assert_eq(shift.stats["fined"], 2)
-	assert_eq(shift.stats["fines_minor"], 2 * Money.units(30))
-	assert_eq(shift.stats["mistake_transactions"], 4)
+	assert_eq(shift.stats["fines_minor"], 2 * Money.units(_shift_cfg("fine_pl")))
+	assert_eq(shift.stats["mistake_transactions"], free + 2)
 
 
 func test_several_mistakes_in_one_transaction_count_once() -> void:
@@ -158,10 +165,12 @@ func test_report_pays_salary_plus_bonus_minus_fines() -> void:
 		_next(shift)
 		shift.submit(_wrong(shift))
 	var report := shift.report()
-	assert_eq(report["base_minor"], Money.units(305))
-	assert_eq(report["bonus_minor"], 3 * Money.units(15))
-	assert_eq(report["fines_minor"], Money.units(30))
-	assert_eq(report["net_minor"], Money.units(305) + 3 * Money.units(15) - Money.units(30))
+	var salary := Money.units(_shift_cfg("base_salary_pl"))
+	var fines := maxi(0, 3 - _shift_cfg("free_mistakes")) * Money.units(_shift_cfg("fine_pl"))
+	assert_eq(report["base_minor"], salary)
+	assert_eq(report["bonus_minor"], 3 * Money.units(_shift_cfg("bonus_pl")))
+	assert_eq(report["fines_minor"], fines)
+	assert_eq(report["net_minor"], salary + 3 * Money.units(_shift_cfg("bonus_pl")) - fines)
 
 
 func test_net_pay_never_goes_negative() -> void:

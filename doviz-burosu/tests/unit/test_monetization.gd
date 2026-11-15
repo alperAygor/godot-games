@@ -252,11 +252,12 @@ func _evening_career(fines_pl := 0) -> Career:
 func test_double_pay_doubles_salary_and_bonus_but_not_fines() -> void:
 	var career := _evening_career(30)
 	var cash_before := career.household.cash_minor
-	assert_eq(int(career.pending_report["net_minor"]), Money.units(305 + 45 - 30))
-	assert_eq(career.double_pay_preview(), Money.units(305 + 45))
+	var salary := int(JsonIO.read_dict("res://data/balance.json")["shift"]["base_salary_pl"])
+	assert_eq(int(career.pending_report["net_minor"]), Money.units(salary + 45 - 30))
+	assert_eq(career.double_pay_preview(), Money.units(salary + 45))
 	var extra := career.double_pay()
-	assert_eq(extra, Money.units(305 + 45), "fark = maaş + prim")
-	assert_eq(int(career.pending_report["net_minor"]), Money.units(2 * (305 + 45) - 30), "ceza bir kez düşer")
+	assert_eq(extra, Money.units(salary + 45), "fark = maaş + prim")
+	assert_eq(int(career.pending_report["net_minor"]), Money.units(2 * (salary + 45) - 30), "ceza bir kez düşer")
 	assert_eq(career.household.cash_minor, cash_before + extra)
 	assert_eq(career.double_pay(), 0, "bir kez işler")
 	assert_eq(career.double_pay_preview(), 0)
@@ -410,34 +411,41 @@ func test_overtime_is_never_offered_in_mode_runs() -> void:
 
 # --- Oyun bitti, Günün Kuru, Sonsuz --------------------------------------------------------------------------------
 
-func test_retry_day_needs_the_ad_and_a_cancel_keeps_the_game_over_screen() -> void:
+func test_retry_day_ad_after_the_free_replay_and_a_cancel_keeps_the_game_over_screen() -> void:
 	session.new_game()
 	session.career.day = 6
+	session.career.household.cash_minor = Money.units(600)  # bedel alınabilecek kadar nakit: reklam bedeli siler
 	session.career.begin_day()
+	session.career.retries["6"] = 1  # günün ücretsiz hakkı harcandı: reklam bedeli silen alternatif olarak çıkar
 	session.career.game_over = "evicted"
 	session.save()
 	await scenes.goto(Scenes.GAME_OVER)
 	await tree.process_frame
+	var morning_cash := int(session.career.morning_snapshot["household"]["cash_minor"])
 	mock_ads.cancel_next = true
-	await tap("RetryDayButton")
+	await tap("RetryAdButton")
 	await _wait_frames()
 	assert_eq(scenes.current_path(), Scenes.GAME_OVER, "iptal: günü tekrar oynamak yok")
-	assert_false((node("RetryDayButton") as Button).disabled, "yeniden denenebilir")
-	await tap("RetryDayButton")
+	assert_false((node("RetryAdButton") as Button).disabled, "yeniden denenebilir")
+	await tap("RetryAdButton")
 	await wait_for_scene(Scenes.MORNING)
 	assert_false(session.career.is_over())
+	assert_eq(session.career.household.cash_minor, morning_cash, "reklamla tekrar bedelsiz")
 
 
-func test_retry_day_without_an_ad_shows_the_unavailable_text() -> void:
+func test_retry_day_without_an_ad_shows_the_unavailable_text_and_the_paid_path() -> void:
 	mock_ads.ready_state = false
 	session.new_game()
+	session.career.household.cash_minor = Money.units(600)
 	session.career.begin_day()
+	session.career.retries["1"] = 1
 	session.career.game_over = "fired"
 	await scenes.goto(Scenes.GAME_OVER)
 	await tree.process_frame
-	var button := node("RetryDayButton") as Button
+	var button := node("RetryAdButton") as Button
 	assert_true(button.disabled)
 	assert_eq(button.text, "Reklam şu an yok")
+	assert_false((node("RetryDayButton") as Button).disabled, "reklam yokken bedelli yol hep açık")
 
 
 func _finish_daily() -> void:
@@ -723,21 +731,21 @@ func test_an_interstitial_that_never_closes_still_lets_the_game_continue_exactly
 	monetization.interstitial_timeout_override = -1.0
 
 
-func test_free_retry_exists_whenever_the_ad_cannot_be_shown() -> void:
+func test_free_retry_exists_whether_or_not_the_ad_can_be_shown() -> void:
+	# O8 kararı (T-B1): available_when=always; bedel oyun içi PL (DayRetry günün ilk tekrarını bedelsiz yapar).
 	mock_ads.ready_state = true
 	var with_ad: Dictionary = monetization.retry_day_options()
 	assert_true(bool(with_ad["ad"]["enabled"]))
-	assert_false(bool(with_ad["free"]["available"]), "varsayılan: reklam varken ücretsiz yol çıkmaz (karar bekliyor)")
-	assert_false(bool(monetization.take_free_retry()["ok"]))
+	assert_true(bool(with_ad["free"]["available"]), "reklam varken de reklamsız yol var")
+	assert_eq(with_ad["free"]["reason"], RetryPolicy.REASON_ALWAYS)
 	mock_ads.ready_state = false
 	var no_ad: Dictionary = monetization.retry_day_options()
 	assert_false(bool(no_ad["ad"]["enabled"]))
 	assert_true(bool(no_ad["free"]["available"]), "reklam yoksa ilerleme reklama bağlı kalmaz")
-	assert_eq(no_ad["free"]["reason"], RetryPolicy.REASON_AD_NOT_READY)
 	var taken: Dictionary = monetization.take_free_retry()
 	assert_true(bool(taken["ok"]))
-	assert_eq(taken["cost_kind"], "none", "bedel şimdilik varsayılan: karar T-B1/O8")
-	assert_true(bool(no_ad["free"]["decision_pending"]))
+	assert_eq(taken["cost_kind"], "cash_pl", "bedel kurgusal PL (data/ads.json free_retry.cost)")
+	assert_false(bool(no_ad["free"]["decision_pending"]), "O8 karara bağlandı")
 	assert_true("retry_day_free" in _event_names())
 	mock_ads.ready_state = true
 
@@ -748,14 +756,17 @@ func test_free_retry_also_opens_after_the_ad_flow_failed() -> void:
 	monetization.request_reward("retry_day", func(_r: bool) -> void: pass)
 	await get_tree_timer(0.15)
 	tree.root.get_node("Ads").set_provider(mock_ads)  # reklam yeniden hazır görünse bile: son deneme başarısızdı
+	var adhoc := {"enabled": true, "available_when": "ad_unavailable", "cost": {"kind": "none", "value": 0}}
 	var options: Dictionary = monetization.retry_day_options()
 	assert_true(bool(options["ad"]["enabled"]))
-	assert_true(bool(options["free"]["available"]))
-	assert_eq(options["free"]["reason"], RetryPolicy.REASON_AD_FAILED)
+	assert_true(monetization._ad_failed.has("retry_day"), "zaman aşımı kaydedildi")
+	assert_true(bool(RetryPolicy.free_option(true, true, adhoc)["available"]), "başarısız reklam ücretsiz yolu açar (ad_unavailable kipi)")
+	assert_eq(RetryPolicy.free_option(true, true, adhoc)["reason"], RetryPolicy.REASON_AD_FAILED)
 	var got: Array = []
 	monetization.request_reward("retry_day", func(rewarded: bool) -> void: got.append(rewarded))
 	await _wait_frames()
-	assert_false(bool(monetization.retry_day_options()["free"]["available"]), "başarılı reklamdan sonra bayrak temizlenir")
+	assert_eq(got, [true])
+	assert_false(monetization._ad_failed.has("retry_day"), "başarılı reklamdan sonra bayrak temizlenir")
 	monetization.rewarded_timeout_override = -1.0
 
 
@@ -767,7 +778,8 @@ func test_retry_policy_follows_the_config() -> void:
 	var off := {"enabled": false, "available_when": "always", "cost": {"kind": "none", "value": 0}}
 	assert_false(bool(RetryPolicy.free_option(false, true, off)["available"]), "kapalıysa hiç çıkmaz")
 	var shipped := JsonIO.read_dict("res://data/ads.json").get("free_retry", {}) as Dictionary
-	assert_true(bool(shipped.get("enabled", false)) and bool(shipped.get("decision_pending", false)), "gönderilen varsayılan işaretli ve açık")
+	assert_true(bool(shipped.get("enabled", false)) and not bool(shipped.get("decision_pending", true)), "gönderilen ayar açık ve karara bağlı (O8)")
+	assert_eq(str(shipped.get("available_when", "")), RetryPolicy.WHEN_ALWAYS, "reklamsız yol her zaman var")
 
 
 func test_market_shows_connecting_then_refreshes_when_the_store_arrives_late() -> void:

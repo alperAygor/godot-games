@@ -437,3 +437,19 @@ MARKET_CONNECTING,Connecting to the store...,Mağazaya bağlanılıyor...
 MARKET_BUY_NOPRICE,Buy,Satın al
 MARKET_PENDING,Your payment is pending. Ads are removed as soon as Google Play confirms it.,Ödemen beklemede. Google Play onaylar onaylamaz reklamlar kaldırılır.
 MARKET_RESTORE_FAILED,Could not reach the store. Try again later.,Mağazaya ulaşılamadı. Sonra tekrar dene.
+B1_RETRY_TITLE,Replay day %d,%d. günü tekrar oyna
+B1_RETRY_KEEP,"You go back to the morning of day %d. You keep your story choices, your tools and that morning's cash (%s). Only that day's shift and evening are undone.","%d. günün sabahına dönersin. Hikâye seçimlerin, araçların ve o sabahki nakdin (%s) kalır. Yalnızca o günün vardiyası ve akşamı silinir."
+B1_RETRY_FREE,Replay the day: free,Günü tekrar oyna: ücretsiz
+B1_RETRY_FREE_NOTE,"Every day gives you one free replay. After that, a replay costs %s of your cash, or you can watch an ad instead.","Her gün için bir ücretsiz tekrar hakkın var. Sonrasında tekrar nakdinden %s tutar ya da yerine reklam izleyebilirsin."
+B1_RETRY_PAID,Replay the day: pay %s,Günü tekrar oyna: %s öde
+B1_RETRY_PAID_NOTE,"Free replay for this day already used. The cost comes out of that morning's cash: %s → %s.","Bu günün ücretsiz hakkı kullanıldı. Bedel o sabahki nakitten düşer: %s → %s."
+B1_RETRY_PAID_ZERO,Replay the day,Günü tekrar oyna
+B1_RETRY_PAID_ZERO_NOTE,"Free replay for this day already used, but your cash is too low to charge: this replay costs nothing.","Bu günün ücretsiz hakkı kullanıldı ama nakdin bedel alınamayacak kadar az: bu tekrar bedelsiz."
+B1_RETRY_AD,Watch an ad: replay at no cost,Reklam izle: bedelsiz tekrar oyna
+B1_RETRY_AD_NOTE,"Optional. Same morning, nothing taken from your cash.","İsteğe bağlı. Aynı sabah, nakdinden hiçbir şey düşülmez."
+B1_RETRY_AD_NONE,"No ad right now. The paid replay is always available.","Şu an reklam yok. Bedelli tekrar her zaman var."
+B1_RETRY_NOADS,Replay the day: free (ad-free),Günü tekrar oyna: ücretsiz (reklamsız)
+B1_RETRY_NOADS_NOTE,"You removed ads, so replays never cost you anything.","Reklamları kaldırdın; tekrarlar sana hiçbir şeye mal olmaz."
+B1_NEW_GAME_NOTE,"New game starts again from day 1. Endings you found stay.","Yeni oyun 1. günden yeniden başlar. Bulduğun sonlar kalır."
+B1_EVENING_SERVED_LINE,Customers: %d (correct: %d) · Mistakes: %d,Müşteri: %d (doğru: %d) · Hata: %d
+B1_EVENING_PAY_LINE,Salary %s + bonus %s − fines %s,Maaş %s + prim %s − ceza %s

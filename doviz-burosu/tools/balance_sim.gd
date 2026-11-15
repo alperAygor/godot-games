@@ -1,7 +1,12 @@
 extends SceneTree
 ## Denge simülasyonu: bir bot kariyer boyunca oynar, günlük gelir/gider tablosunu yazar.
 ## Kullanım: godot --headless --path . -s res://tools/balance_sim.gd -- [--days=15] [--bot=perfect|careless|cheater|ally|escaper|helper] [--seed=1] [--quiet] [--story]
+##        godot --headless --path . -s res://tools/balance_sim.gd -- --table [--seeds=5] [--no-story] [--no-office] [--assert]
+##        (--table: tüm botlar x tohumlar, hikaye+ofis açık, kovulunca reklamsız tekrar; --assert: data/balance.json `targets`
+##        tutmazsa çıkış kodu 1)
 ## Denge sayıları data/balance.json ve data/household.json içindedir; burada sadece ölçülür.
+
+const Targets := preload("res://tools/balance_targets.gd")
 
 
 func _init() -> void:
@@ -10,7 +15,21 @@ func _init() -> void:
 	var seed_key := "1"
 	var quiet := false
 	var story := false
+	var table := false
+	var seeds := 5
+	var office := true
+	var strict := false
 	for arg in OS.get_cmdline_user_args():
+		if arg == "--table":
+			table = true
+		elif arg.begins_with("--seeds="):
+			seeds = int(arg.trim_prefix("--seeds="))
+		elif arg == "--no-story":
+			pass
+		elif arg == "--no-office":
+			office = false
+		elif arg == "--assert":
+			strict = true
 		if arg.begins_with("--days="):
 			days = int(arg.trim_prefix("--days="))
 		elif arg.begins_with("--bot="):
@@ -21,6 +40,25 @@ func _init() -> void:
 			quiet = true
 		elif arg == "--story":
 			story = true
+	if table:
+		var story_on := not ("--no-story" in OS.get_cmdline_user_args())
+		var seed_list: Array = []
+		for i in seeds:
+			seed_list.append(str(i + 1))
+		var results := Targets.run_all(seed_list, days, story_on, office)
+		print("Denge tablosu: %d bot x %d tohum, %d gün, hikaye=%s ofis=%s (kovulunca: reklam yok, önce ücretsiz hak, sonra bedelli tekrar)" % [
+			Targets.BOTS.size(), seeds, days, story_on, office])
+		print(Targets.table(results))
+		var problems := Targets.check(results)
+		print("")
+		if problems.is_empty():
+			print("HEDEFLER: hepsi tuttu")
+		else:
+			print("HEDEFLER: %d tutmadı" % problems.size())
+			for line in problems:
+				print("  - " + line)
+		quit(1 if strict and not problems.is_empty() else 0)
+		return
 	if not ClerkBot.PROFILES.has(bot_name):
 		printerr("Bilinmeyen bot: %s (perfect, careless, cheater)" % bot_name)
 		quit(2)
