@@ -276,5 +276,10 @@
     "hedef (gerçek sahne, otopilot, rastgele kart, 12 örnek)": "5. dalgaya 37-80 sn; 180 sn'de 9-10. dalga; ilk boss'ta ölüm ~%25 (2/8); boss başına kaybedilen can ~17-105 (ölenlerde 105-160); 600 sn'de 25-31. dalga (4 örnekten 2'si hayatta), 700-1000 öldürme, 50-80 bin puan",
     "ayarlanan sabitler": "contact.*, bullet_hit.*, boss_pattern_hit_scale, accuracy.*, approach.*, scatter_range_falloff, chase_reach",
     "bilinen sınır": "Model yalnız ~25. dalgaya kadar gerçek örneklerle karşılaştırıldı; sonrası (özellikle greedy politikada 40+) doğrulanmadı. Gerçek sahne tohumlanamaz, bu yüzden kalibrasyon yaklaşıktır."
-  }
+  },
+  "shield_front_share": 0.65,
+  "charger_hit": 0.4,
+  "mine_hit": 0.1,
+  "strike_hit": 0.4,
+  "_c2": "C2 yeni tür sabitleri: shield_front_share = botun vuruşlarının kalkana önden gelen payı; charger_hit/mine_hit/strike_hit = uyarılı saldırının oyuncuyu bulma olasılığı (uyarı çizgisi/halka ≥0,6 sn → çoğu kaçılır)."
 }

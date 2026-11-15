@@ -1,0 +1,18 @@
+{
+  "HÜCUMCU": "CHARGER",
+  "KALKANCI": "SHIELDER",
+  "ONARICI": "MEDIC",
+  "MAYINCI": "MINELAYER",
+  "SIÇRAYICI": "BLINKER",
+  "KULUÇKA": "BROODER",
+  "HÜCUMCU — çizgiyi gör, yana kaç": "CHARGER — watch the line, sidestep",
+  "KALKANCI — önü zırhlı, yandan ya da arkadan vur": "SHIELDER — armoured front, hit it from the side or back",
+  "ONARICI — yeşil halkayı gör, önce onu vur": "MEDIC — see the green ring, kill it first",
+  "MAYINCI — kırmızı daireden çık": "MINELAYER — step out of the marked circle",
+  "SIÇRAYICI — yanına inecek, halkadan kaç": "BLINKER — it lands beside you, run from the ring",
+  "KULUÇKA — yavrulamadan önce vur": "BROODER — kill it before it hatches",
+  "ZIRHLI": "ARMOURED",
+  "ÇEVİK": "SWIFT",
+  "BÖLÜNEN": "SPLITTING",
+  "EMİCİ": "VAMPIRIC"
+}

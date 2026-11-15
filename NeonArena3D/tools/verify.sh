@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Doğrulama kapısı v2: içe aktarma (×2) + betik-hata taraması + birim testleri + açılış + probeler (meta, synergy, touch, ads = reklam akışı) + kısa bot oyunu
+# Doğrulama kapısı v2: içe aktarma (×2) + betik-hata taraması + birim testleri + açılış + probeler (meta, synergy, touch, ads = reklam akışı, enemy = C2 düşman davranışları) + kısa bot oyunu
 # + denge simülasyonu + PCK denetimi + oyuncu kaydının dokunulmadığının kanıtı. Herhangi biri kırmızıysa çıkış kodu 1.
 #
 #   tools/verify.sh                  # tam kapı (~1-2 dk)
@@ -115,7 +115,7 @@ fi
 
 # 4. Probeler (--no-save): SONUÇ: geçti satırı + çıkış kodu 0 + betik hatası yok
 echo "▸ 4. probeler"; t0=$SECONDS
-for probe in meta synergy touch ads; do
+for probe in meta synergy touch ads enemy; do
   if run_godot "$LOG/probe_$probe.log" "$STEP_TIMEOUT" "$GODOT" --headless --path . -s "res://tools/dev/${probe}_probe.gd" -- --no-save \
      && grep -q "SONUÇ: geçti" "$LOG/probe_$probe.log"; then
     ok "${probe}_probe"

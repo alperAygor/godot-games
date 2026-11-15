@@ -469,10 +469,172 @@ def make_boss_frost():
     export("boss_frost.glb")
 
 
+# =============================================================================
+# C2: yeni düşman modelleri (charger, shielder, medic, minelayer, blinker, brooder)
+# Yukarıdan okunur siluet + parlak vurgu; pürüzsüz gölgeli, pahlı formlar. Hepsi 2-3 malzeme (gövde + parlama [+ beyaz]) ve
+# mevcut düşmanlarla aynı üçgen bütçesi (<= ~1800). Küre/halka için düşük çözünürlüklü ama pürüzsüz gölgeli UV ilkelleri.
+# =============================================================================
+def usphere(radius, loc=(0, 0, 0), seg=12, rings=7, mat=None, scale=(1, 1, 1), name="usphere"):
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=radius, segments=seg, ring_count=rings, location=loc)
+    obj = bpy.context.object
+    obj.scale = scale
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    obj.name = name
+    return _finish(obj, mat, 0.0, shade_flat=False)
+
+
+def ring_t(major, minor, loc=(0, 0, 0), rot=(0, 0, 0), mat=None, seg=26, minor_seg=6, name="ring"):
+    bpy.ops.mesh.primitive_torus_add(major_radius=major, minor_radius=minor, major_segments=seg, minor_segments=minor_seg,
+                                     location=loc, rotation=rot)
+    obj = bpy.context.object
+    obj.name = name
+    return _finish(obj, mat, 0.0, shade_flat=False)
+
+
+def arc_wall(r_in, r_out, height, a0, a1, segs, loc=(0, 0, 0), mat=None, name="arc", bevel=True):
+    """Yay şeklinde kalın duvar (kalkan): a0..a1 derece (0 = +Y yönü), düzgün gölgeli, uçları kapalı."""
+    import bmesh
+    mesh = bpy.data.meshes.new(name)
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    bm = bmesh.new()
+    rings = []
+    for i in range(segs + 1):
+        a = math.radians(a0 + (a1 - a0) * i / segs)
+        dx, dy = math.sin(a), math.cos(a)
+        pts = [(dx * r_in, dy * r_in, -height / 2), (dx * r_out, dy * r_out, -height / 2),
+               (dx * (r_out - 0.03), dy * (r_out - 0.03), height / 2), (dx * (r_in + 0.03), dy * (r_in + 0.03), height / 2)]
+        rings.append([bm.verts.new((p[0] + loc[0], p[1] + loc[1], p[2] + loc[2])) for p in pts])
+    for i in range(segs):
+        for k in range(4):
+            bm.faces.new((rings[i][k], rings[i][(k + 1) % 4], rings[i + 1][(k + 1) % 4], rings[i + 1][k]))
+    bm.faces.new(list(reversed(rings[0])))
+    bm.faces.new(rings[-1])
+    bm.normal_update()
+    bm.to_mesh(mesh)
+    bm.free()
+    for poly in mesh.polygons:
+        poly.use_smooth = True
+    bpy.context.view_layer.objects.active = obj
+    obj.select_set(True)
+    if mat:
+        obj.data.materials.append(mat)
+    if bevel:
+        mod = obj.modifiers.new("bevel", "BEVEL")
+        mod.width = 0.02
+        mod.segments = 1
+        mod.limit_method = "ANGLE"
+    return obj
+
+
+# --- Hücumcu (sarı): ok başı / koç, üstte çizgili uyarı şeritleri ---------------------------
+def make_charger():
+    reset()
+    dark = material("charger_body", (0.20, 0.17, 0.05), 0.0, 0.22, 0.45)
+    glow = material("charger_glow", (1.0, 0.92, 0.12), 2.0, 0.2, 0.2)
+    box((0.78, 1.15, 0.36), (0, -0.12, 0), mat=dark, bevel=0.1, name="hull")
+    cone(0.52, 0.95, (0, 0.88, 0), (math.radians(-90), 0, math.radians(45)), 4, dark, name="ram")
+    cone(0.2, 0.42, (0, 1.4, 0.0), (math.radians(-90), 0, 0), 16, glow, name="ram_tip")
+    for y in (-0.38, -0.1, 0.18):
+        box((0.9, 0.1, 0.05), (0, y, 0.2), mat=glow, name="stripe")
+    for side in (-1, 1):
+        box((0.3, 0.9, 0.26), (side * 0.52, -0.2, -0.02), (0, 0, math.radians(side * -8)), mat=dark, bevel=0.07, name="flank")
+        cyl(0.13, 0.42, (side * 0.3, -0.78, 0), (math.radians(90), 0, 0), 16, glow, name="thruster")
+        sphere(0.11, (side * 0.62, 0.15, 0.1), 2, glow, name="lamp")
+    sphere(0.16, (0, 0.4, 0.22), 2, glow, scale=(1, 1.4, 0.7), name="eye")
+    export("charger.glb")
+
+
+# --- Kalkancı (mavi): yuvarlak gövde + önde kavisli kalkan ----------------------------------
+def make_shielder():
+    reset()
+    dark = material("shielder_body", (0.07, 0.15, 0.30), 0.0, 0.22, 0.45)
+    glow = material("shielder_glow", (0.25, 0.65, 1.0), 2.0, 0.2, 0.2)
+    plate = material("shielder_plate", (0.55, 0.78, 0.95), 0.9, 0.22, 0.25)
+    usphere(0.5, (0, -0.1, 0), 20, 10, dark, scale=(1.0, 1.0, 0.72), name="core")
+    ring_t(0.52, 0.035, (0, -0.1, 0.02), (0, 0, 0), glow, name="ring")
+    usphere(0.2, (0, -0.1, 0.22), 14, 8, glow, scale=(1, 1, 0.65), name="eye")
+    arc_wall(0.78, 1.0, 0.62, -68, 68, 20, (0, -0.1, 0), plate, "shield")
+    arc_wall(0.84, 0.92, 0.12, -68, 68, 20, (0, -0.1, 0.18), glow, "shield_glow", bevel=False)
+    for side in (-1, 1):
+        box((0.1, 0.5, 0.18), (side * 0.7, -0.45, 0), (0, 0, math.radians(side * 30)), mat=dark, bevel=0.0, name="strut")
+        cyl(0.1, 0.3, (side * 0.3, -0.72, 0), (math.radians(90), 0, 0), 14, glow, name="thruster")
+    export("shielder.glb")
+
+
+# --- Onarıcı (yeşil): beyaz-yeşil haç + disk ---------------------------------------------------
+def make_medic():
+    reset()
+    dark = material("medic_body", (0.08, 0.20, 0.07), 0.0, 0.22, 0.45)
+    glow = material("medic_glow", (0.45, 1.0, 0.25), 2.0, 0.2, 0.2)
+    white = material("medic_white", (0.92, 1.0, 0.88), 1.5, 0.2, 0.2)
+    cyl(0.62, 0.2, (0, 0, -0.08), (0, 0, 0), 28, dark, 0.0, name="disc")
+    ring_t(0.64, 0.04, (0, 0, -0.02), (0, 0, 0), glow, seg=28, name="rim")
+    box((0.3, 1.1, 0.2), (0, 0, 0.1), mat=white, bevel=0.06, name="cross_a")
+    box((1.1, 0.3, 0.2), (0, 0, 0.1), mat=white, bevel=0.06, name="cross_b")
+    usphere(0.17, (0, 0, 0.24), 14, 8, glow, scale=(1, 1, 0.7), name="core")
+    for i in range(4):
+        ang = math.radians(i * 90)
+        usphere(0.1, (math.sin(ang) * 0.62, math.cos(ang) * 0.62, 0.1), 10, 6, glow, name="tip")
+    cyl(0.2, 0.18, (0, 0, -0.26), (0, 0, 0), 14, glow, name="underglow")
+    export("medic.glb")
+
+
+# --- Mayıncı (macenta): kenarı mayınlı disk ---------------------------------------------------
+def make_minelayer():
+    reset()
+    dark = material("minelayer_body", (0.26, 0.07, 0.20), 0.0, 0.22, 0.45)
+    glow = material("minelayer_glow", (1.0, 0.30, 0.82), 2.0, 0.2, 0.2)
+    cyl(0.5, 0.3, (0, 0, 0), (0, 0, 0), 24, dark, 0.0, name="hull")
+    usphere(0.32, (0, 0, 0.14), 16, 8, dark, scale=(1, 1, 0.7), name="dome")
+    usphere(0.14, (0, 0, 0.3), 12, 7, glow, scale=(1, 1, 0.7), name="beacon")
+    for i in range(5):
+        ang = math.radians(i * 72 + 36)
+        x, y = math.sin(ang) * 0.74, math.cos(ang) * 0.74
+        usphere(0.17, (x, y, -0.02), 12, 7, dark, name="mine")
+        usphere(0.09, (x, y, 0.12), 8, 5, glow, name="mine_light")
+        box((0.1, 0.34, 0.05), (math.sin(ang) * 0.5, math.cos(ang) * 0.5, 0.0), (0, 0, -ang), mat=glow, name="arm")
+    export("minelayer.glb")
+
+
+# --- Sıçrayıcı (beyaz/buz): elmas çekirdek + eğik halkalar ------------------------------------
+def make_blinker():
+    reset()
+    dark = material("blinker_body", (0.20, 0.22, 0.34), 0.0, 0.22, 0.25)
+    glow = material("blinker_glow", (0.82, 0.88, 1.0), 2.2, 0.2, 0.15)
+    cone(0.5, 0.95, (0, 0, 0.45), (0, 0, math.radians(45)), 4, dark, name="top")
+    cone(0.5, 0.95, (0, 0, -0.45), (math.radians(180), 0, math.radians(45)), 4, dark, name="bottom")
+    usphere(0.22, (0, 0, 0), 16, 9, glow, name="core")
+    ring_t(0.78, 0.035, (0, 0, 0), (math.radians(65), 0, 0), glow, seg=30, name="ring_a")
+    ring_t(0.78, 0.035, (0, 0, 0), (math.radians(65), 0, math.radians(90)), glow, seg=30, name="ring_b")
+    for i in range(4):
+        ang = math.radians(i * 90)
+        usphere(0.09, (math.sin(ang) * 0.5, math.cos(ang) * 0.5, 0.0), 8, 5, glow, name="node")
+    export("blinker.glb")
+
+
+# --- Kuluçka (turuncu-kahve): yumurta keseli ana gemi -------------------------------------------
+def make_brooder():
+    reset()
+    dark = material("brooder_body", (0.28, 0.15, 0.06), 0.0, 0.22, 0.5)
+    glow = material("brooder_glow", (1.0, 0.58, 0.16), 2.0, 0.2, 0.2)
+    usphere(0.85, (0, -0.1, 0), 22, 11, dark, scale=(1.0, 1.15, 0.6), name="sac")
+    for i in range(5):
+        ang = math.radians(i * 72 + 10)
+        usphere(0.18, (math.sin(ang) * 0.54, -0.1 + math.cos(ang) * 0.54, 0.32), 12, 7, glow, scale=(1, 1, 0.9), name="egg")
+    usphere(0.3, (0, -0.1, 0.34), 16, 9, glow, scale=(1, 1, 0.7), name="queen_egg")
+    for side in (-1, 1):
+        cone(0.2, 0.85, (side * 0.4, 0.95, 0.0), (math.radians(-90), 0, math.radians(side * 12)), 12, dark, name="mandible")
+        usphere(0.1, (side * 0.46, 1.35, 0.0), 8, 5, glow, name="mandible_tip")
+        cyl(0.13, 0.3, (side * 0.45, -1.0, 0), (math.radians(90), 0, 0), 14, glow, name="thruster")
+    export("brooder.glb")
+
+
 ALL = [
     make_ship, make_chaser, make_shooter, make_tank, make_pillar, make_crate, make_dais, make_swarmer,
     make_bomber, make_sniper, make_orbiter, make_boss, make_crystal, make_obelisk, make_barrier,
     make_ship_storm, make_ship_lance, make_ship_hawk, make_boss_titan, make_boss_frost,
+    make_charger, make_shielder, make_medic, make_minelayer, make_blinker, make_brooder,
 ]
 
 
