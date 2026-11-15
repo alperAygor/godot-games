@@ -12,7 +12,7 @@ const LANGUAGES_PATH := "res://data/languages.json"
 ## language "" = cihaz dili (destekleniyorsa), değilse data/languages.json'daki "default".
 const DEFAULTS := {
 	"audio": {"master": 1.0, "music": 0.8, "sfx": 1.0},
-	"game": {"vibration": true, "pixel_filter": true, "language": "", "analytics_consent": false, "consent_asked": false, "guide_seen": false},
+	"game": {"vibration": true, "pixel_filter": true, "language": "", "ads_personalized": false, "consent_asked": false, "guide_seen": false},
 }
 
 ## Testler/araçlar değiştirebilir. Varsayılan: gerçek kullanıcı dosyası (betikli çalışmada sandbox).

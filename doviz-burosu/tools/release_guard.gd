@@ -117,7 +117,7 @@ const DESCRIPTIONS: Dictionary = {
 	E_PERMISSION_MISSING: "preset'te zorunlu izin yok (INTERNET, ACCESS_NETWORK_STATE, VIBRATE)",
 	E_NOT_AAB: "yayin on ayari AAB uretmiyor (export_format=1 olmali)",
 	E_ABI: "yayin on ayari yalniz arm64-v8a uretmiyor",
-	E_PRIVACY_URL: "gizlilik politikasi URL'si bos ya da yer tutucu (tools/release_state.json privacy_policy_url, https:// olmali)",
+	E_PRIVACY_URL: "gizlilik politikasi URL'si bos ya da yer tutucu (data/ads_ids.json privacy_policy_url, https:// olmali)",
 	E_AAB_PACKAGE: "AAB manifest paket adi on ayardakiyle ayni degil",
 	E_AAB_VERSION: "AAB versionCode/versionName on ayardakiyle ayni degil",
 	E_AAB_APP_ID: "AAB manifestindeki com.google.android.gms.ads.APPLICATION_ID gercek (real_app_id) kimlik degil",

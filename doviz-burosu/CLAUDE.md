@@ -67,7 +67,7 @@ Android'i hedefleyen, dikey (portrait) bir Godot mobil oyunu: Papers, Please tar
 - `SaveManager` — `data` sözlüğü, `save_game()`, `load_game()`, `reset_game()`. `user://save.json`, sürümlü, atomik yazma, arka plana geçince otomatik kayıt. Format değişirse `_migrate()` güncellenir ve `SAVE_VERSION` artırılır.
 - `AudioManager` — `play_music(stream)`, `play_sfx(stream)`, `set_bus_volume(bus, 0..1)`. `Music` ve `SFX` bus'ları.
 - `GameData` — `data/*.json` tabloları.
-- `Analytics` — `log_event(name, params)`; şimdilik no-op, onay (`set_consent`) olmadan göndermez.
+- `Analytics` — `log_event(name, params)`; yalnızca bellekte yerel günlük (son 50): analitik SDK'sı yok, hiçbir şey cihazdan çıkmaz, onay anahtarı yok (docs/MONETIZATION.md).
 - `Ads` — `show_rewarded(placement)` → `rewarded_finished(placement, rewarded)`. Varsayılan sağlayıcı reklam göstermez; geliştirmede `Ads.set_provider(MockAdsProvider.new())`.
 - `IAP` — `purchase(product_id)` → `purchase_finished(id, success, error)`. Ürünler `data/products.json`.
 

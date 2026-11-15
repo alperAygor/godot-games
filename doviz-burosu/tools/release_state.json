@@ -1,5 +1,4 @@
 {
-	"_note": "Yayın kapısı (tools/release_check.sh) için sahibin güncellediği tek dosya. last_uploaded_version_code: Play'e YÜKLENEN son versionCode (her yüklemeden sonra elle güncelle; henüz yükleme yok). privacy_policy_url: sahibin barındırdığı https:// gizlilik politikası adresi (T-S1 metni hazırlar). Gizli bilgi YAZMA.",
-	"last_uploaded_version_code": 0,
-	"privacy_policy_url": ""
+	"_note": "Yayın kapısı (tools/release_check.sh) için sahibin güncellediği tek dosya. last_uploaded_version_code: Play'e YÜKLENEN son versionCode (her yüklemeden sonra elle güncelle; henüz yükleme yok). Gizlilik politikası adresi artık BURADA DEĞİL: oyun içi bağlantı ile kapının okuduğu tek adres data/ads_ids.json `privacy_policy_url` alanıdır (T-M1). Gizli bilgi YAZMA.",
+	"last_uploaded_version_code": 0
 }

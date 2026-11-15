@@ -5,6 +5,10 @@ extends RefCounted
 
 signal purchase_finished(product_id: String, success: bool, error: String)
 signal purchases_restored(product_ids: PackedStringArray)
+## Geri yükleme yapılamadı (mağazaya bağlanılamadı vb.). "Geri yüklenecek bir şey yok" ile karıştırılmaz.
+signal restore_failed(reason: String)
+## Mağaza kullanılabilirliği (bağlantı) değişti; arayüz yeniden çizilir.
+signal availability_changed
 
 
 func initialize(_product_ids: PackedStringArray) -> void:
@@ -26,3 +30,8 @@ func purchase(product_id: String) -> void:
 
 func restore_purchases() -> void:
 	purchases_restored.emit.call_deferred(PackedStringArray())
+
+
+## Mağaza bağlantısı yoksa yeniden bağlanmayı dener (Market ekranı geç bağlanmada çağırır). Taban: yapacak bir şey yok.
+func reconnect() -> void:
+	pass

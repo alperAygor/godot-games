@@ -425,3 +425,15 @@ GUIDE_CHIP_PHONE,Phone,Telefon
 GUIDE_CHIP_PIN,Pin,İğne
 GUIDE_T8,Orders from above,Yukarıdan emirler
 GUIDE_B8,"Each morning Head Office sends a directive: a target with a bonus or a penalty. It never changes what is right, only what pays. During the day notes drop through the tube: urgent bulletins add stolen serials, some change the directive, and the phone asks for small favours. Pin the rules you keep forgetting to your desk from the Rulebook.","Her sabah Merkez bir talimat gönderir: prim ya da kesintili bir hedef. Neyin doğru olduğunu değiştirmez, yalnızca neyin kazandırdığını. Gün içinde tüple notlar düşer: acil bültenler çalıntı seri ekler, bazıları talimatı değiştirir, telefon küçük iyilikler ister. Unuttuğun kuralları Kılavuz'dan masana iğnele."
+MON_PRIVACY_TITLE,Privacy and ads,Gizlilik ve reklamlar
+MON_NOTICE_TEXT,"This game is free and shows ads. The ads come from Google AdMob, which may use your device's advertising ID. Choose whether the ads you see may be tailored to you. The game itself has no account, collects no personal data and sends no analytics. You can change this later in Settings > Privacy options.","Bu oyun ücretsizdir ve reklam gösterir. Reklamlar Google AdMob'dan gelir; AdMob cihazının reklam kimliğini kullanabilir. Gördüğün reklamların sana göre uyarlanıp uyarlanmayacağını seç. Oyunun kendisinde hesap yoktur, kişisel veri toplanmaz ve analitik gönderilmez. Bunu sonra Ayarlar > Gizlilik seçenekleri'nden değiştirebilirsin."
+MON_FORM_TEXT,"In your region Google asks for your ad choices in its own form. You can review or change them here at any time. The game itself has no account, collects no personal data and sends no analytics.","Bölgende reklam tercihlerini Google kendi formunda sorar. Buradan istediğin zaman gözden geçirip değiştirebilirsin. Oyunun kendisinde hesap yoktur, kişisel veri toplanmaz ve analitik gönderilmez."
+MON_PERSONAL,Personalised ads,Kişiselleştirilmiş reklamlar
+MON_NONPERSONAL,Non-personalised ads,Kişiselleştirilmemiş reklamlar
+MON_AD_CHOICES,Ad choices (Google form),Reklam seçenekleri (Google formu)
+MON_PRIVACY_POLICY,Privacy policy,Gizlilik politikası
+MON_RETRY_FREE,Replay the day,Günü tekrar oyna
+MARKET_CONNECTING,Connecting to the store...,Mağazaya bağlanılıyor...
+MARKET_BUY_NOPRICE,Buy,Satın al
+MARKET_PENDING,Your payment is pending. Ads are removed as soon as Google Play confirms it.,Ödemen beklemede. Google Play onaylar onaylamaz reklamlar kaldırılır.
+MARKET_RESTORE_FAILED,Could not reach the store. Try again later.,Mağazaya ulaşılamadı. Sonra tekrar dene.

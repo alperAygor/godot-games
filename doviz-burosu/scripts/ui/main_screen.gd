@@ -24,8 +24,7 @@ func _ready() -> void:
 	_continue_button.pressed.connect(_on_continue_pressed)
 	_new_game_button.pressed.connect(_on_new_game_pressed)
 	_setup_modes()
-	if Monetization.consent_needed():
-		add_child(ConsentSheet.new())
+	_show_privacy_notice_when_needed()
 	var market: IconButton = %MarketButton
 	market.text = tr("MENU_MARKET")
 	market.pressed.connect(func() -> void: SceneManager.push(Scenes.MARKET))
@@ -177,3 +176,16 @@ func _close_confirm() -> void:
 		remove_child(_confirm)
 		_confirm.queue_free()
 		_confirm = null
+
+
+## Reklam onayı: UMP gerekmeyen bölgede ilk açılışta kısa bilgi penceresi (UMP çözülünce; AB/UK'de yalnızca Google formu çıkar, bu pencere çıkmaz).
+func _show_privacy_notice_when_needed() -> void:
+	if Monetization.consent_needed():
+		add_child(ConsentSheet.new())
+	elif not Monetization.consent_resolved and not Monetization.notice_needed.is_connected(_on_notice_needed):
+		Monetization.notice_needed.connect(_on_notice_needed, CONNECT_ONE_SHOT)
+
+
+func _on_notice_needed() -> void:
+	if is_inside_tree() and get_node_or_null("ConsentSheet") == null and Monetization.consent_needed():
+		add_child(ConsentSheet.new())

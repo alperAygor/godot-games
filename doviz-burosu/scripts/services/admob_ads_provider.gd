@@ -4,10 +4,17 @@ extends AdsProvider
 ## - Reklam kimlikleri data/ads_ids.json'dan: mode=test iken Google'ın herkese açık TEST kimlikleri (eklentinin debug alanları).
 ## - Ödüllü ve geçiş reklamı önceden yüklenir; gösterilince bir sonraki yüklenir. Yükleme hatasında üstel beklemeyle yeniden denenir.
 ## - Ödül yalnızca `rewarded_ad_user_earned_reward` gelirse verilir; kapatılırsa/başarısız olursa `rewarded=false`.
-## - Onay: UMP (update_consent_info -> gerekiyorsa form) bitmeden SDK başlatılmaz.
+## - Onay: UMP (update_consent_info -> gerekiyorsa form) bitmeden SDK başlatılmaz. UMP gerekmeyen bölgede (NOTICE rejimi) SDK, oyunun kısa bilgi
+##   penceresi yanıtlanana kadar da bekler (`set_notice_answered`). Bkz. ConsentFlow.
+## - Yapılandırma: mode=real iken kimlik eksik/test ise SDK HİÇ başlatılmaz ve hata yazılır (sessizce test'e düşmez); bkz. AdsConfig.
+## - Zaman aşımı: gösterilen ödüllü/geçiş reklamı hiç kapanmazsa (`ads.show_timeout_seconds`) sağlayıcı kendini sıfırlar; oyun takılmaz.
 ## `admob` bir Admob düğümü ya da aynı sinyal/metotlara sahip sahte nesne olabilir (testler); verilmezse oluşturulur ve ağaca eklenir.
 
 const CONSENT_REQUIRED := "REQUIRED"
+
+## Yapılandırma hatası günlüğü. Varsayılan: yayın sürümünde push_error (yüksek sesle), hata ayıklamada push_warning.
+## Testler `initialize()`'dan önce bunu değiştirir (verify.sh `ERROR:` satırlarını başarısızlık sayar).
+var problem_logger: Callable = Callable()
 
 var admob: Node
 var config: Dictionary
@@ -22,6 +29,14 @@ var _personalization_allowed := true
 var _consent_started := false
 var _tree: SceneTree
 var _owns_node := false
+var _blocked := false
+var _regime := ConsentFlow.REGIME_UNKNOWN
+var _notice_answered := false
+var _sdk_started := false
+var _rewarded_token := 0
+var _interstitial_token := 0
+## Saniye; testlerde kısaltılır. <= 0 ise ads_ids.json `ads.show_timeout_seconds`.
+var show_timeout_override := -1.0
 
 
 func _init(ids_config: Dictionary = {}, existing_node: Node = null) -> void:
@@ -29,15 +44,26 @@ func _init(ids_config: Dictionary = {}, existing_node: Node = null) -> void:
 	admob = existing_node
 
 
-## Gerçek kimlikler kullanılacak mı: mode=real VE üç gerçek kimlik dolu. Aksi halde (boşsa sessizce) test.
+## Gerçek kimlikler kullanılacak mı: mode=real VE kimlikler tam/geçerli. mode=real ama eksikse sessizce test'e DÜŞMEZ: `config_problem()` dolar, SDK başlamaz.
 func uses_real_ids() -> bool:
-	var android: Dictionary = config.get("android", {})
-	return str(config.get("mode", "test")) == "real" and not str(android.get("real_app_id", "")).is_empty() \
-		and not str(android.get("real_rewarded_unit", "")).is_empty() and not str(android.get("real_interstitial_unit", "")).is_empty()
+	return AdsConfig.is_real(config)
+
+
+func config_problem() -> String:
+	return AdsConfig.problem(config)
+
+
+func consent_regime() -> String:
+	return ConsentFlow.REGIME_NONE if _blocked else _regime
 
 
 func initialize() -> void:
 	_tree = Engine.get_main_loop() as SceneTree
+	var problem := config_problem()
+	if not problem.is_empty():
+		_blocked = true
+		_report_problem("AdMob yapılandırma hatası (%s): data/ads_ids.json mode=%s. Reklam SDK'sı BAŞLATILMADI; test kimliğine düşülmedi." % [problem, str(config.get("mode", "?"))])
+		return
 	_owns_node = admob == null
 	if _owns_node:
 		admob = Admob.new()
@@ -85,18 +111,30 @@ func _connect_signals() -> void:
 # --- Onay ------------------------------------------------------------------------------
 
 func request_consent() -> void:
+	if _blocked:
+		consent_finished.emit.call_deferred()  # SDK yok: bekleyen kimse kalmasın
+		return
 	if _consent_started:
 		return
 	_consent_started = true
 	_when_node_ready(func() -> void: admob.call("update_consent_info"))
 
 
+## Ayarlar > "Gizlilik seçenekleri" (UMP rejimi): eklenti v7.0 UMP'nin "gizlilik seçenekleri formu" API'sini sunmaz; bu yüzden kayıtlı onay
+## sıfırlanıp form yeniden istenir (kullanıcı kararını yeniden verir). NOTICE rejiminde false döner: oyunun kendi penceresi tercihi sorar.
 func show_privacy_options() -> bool:
-	if admob == null:
+	if admob == null or _blocked or _regime != ConsentFlow.REGIME_FORM:
 		return false
 	_consent_started = true
-	_when_node_ready(func() -> void: admob.call("update_consent_info"))
+	_when_node_ready(func() -> void:
+		admob.call("reset_consent_info")
+		admob.call("update_consent_info"))
 	return true
+
+
+func set_notice_answered(answered: bool) -> void:
+	_notice_answered = answered
+	_maybe_start_sdk()
 
 
 ## Eklenti düğümü ağaçta ve hazır olmadan (tekil bağlanmadan) SDK çağrılamaz; kendi oluşturduğumuz düğüm hazır olunca `action` çalışır.
@@ -109,8 +147,9 @@ func _when_node_ready(action: Callable) -> void:
 
 func set_personalization(allowed: bool) -> void:
 	_personalization_allowed = allowed
-	if admob != null:
-		admob.call("set_personalization_state", 1 if allowed else 2)  # AdmobConfig.PersonalizationState.ENABLED / DISABLED
+	if admob != null and not _blocked:
+		var effective := ConsentFlow.personalization_for(_regime, allowed)  # UMP rejiminde karar UMP'nindir
+		admob.call("set_personalization_state", 1 if effective else 2)  # AdmobConfig.PersonalizationState.ENABLED / DISABLED
 		if initialized:
 			admob.call("set_request_configuration")  # başlatıldıktan sonra değişiklik SDK'ya yeniden uygulanır
 
@@ -118,6 +157,7 @@ func set_personalization(allowed: bool) -> void:
 func _on_consent_info_updated() -> void:
 	var consent: Variant = admob.call("get_consent_status")
 	var status_text := str(consent.to_status_string()) if consent != null else ""
+	_regime = ConsentFlow.regime_for_status(status_text)
 	if status_text == CONSENT_REQUIRED and bool(admob.call("is_consent_form_available")):
 		admob.call("load_consent_form")
 	else:
@@ -133,15 +173,27 @@ func _on_consent_dismissed(_error: Variant = null) -> void:
 
 
 func _on_consent_failed(_error: Variant = null) -> void:
-	_finish_consent()  # onay alınamadı: reklamlar yine de başlar (SDK kendi kısıtını uygular)
+	# UMP yanıt vermedi (ağ yok vb.): bölge bilinemedi. Dürüst varsayılan: oyunun bilgi penceresi; SDK kendi kısıtını (onaysız kişiselleştirme yok) uygular.
+	if _regime == ConsentFlow.REGIME_UNKNOWN:
+		_regime = ConsentFlow.REGIME_NOTICE
+	_finish_consent()
 
 
-## Onay adımı bitti: SDK'yı başlat (bir kez) ve onay sinyalini yay.
+## Onay adımı bitti: kişiselleştirmeyi uygula, onay sinyalini yay, SDK'yı (koşullar tamamsa, bir kez) başlat.
 func _finish_consent() -> void:
 	set_personalization(_personalization_allowed)
-	if not initialized:
-		admob.call("initialize")
 	consent_finished.emit()
+	_maybe_start_sdk()
+
+
+## SDK başlatma TEK yerde: onay çözülmüş ve ConsentFlow izin veriyorsa.
+func _maybe_start_sdk() -> void:
+	if _blocked or admob == null or initialized or _sdk_started:
+		return
+	if not ConsentFlow.sdk_may_start(_regime, _notice_answered):
+		return
+	_sdk_started = true
+	admob.call("initialize")
 
 
 func _on_initialized(_status: Variant = null) -> void:
@@ -164,6 +216,7 @@ func show_rewarded(placement: String) -> void:
 	_rewarded_placement = placement
 	_rewarded_earned = false
 	admob.call("show_rewarded_ad")
+	_arm_watchdog(true)
 
 
 func _on_reward_earned(_ad_info: Variant = null, _reward: Variant = null) -> void:
@@ -179,6 +232,7 @@ func _on_rewarded_show_failed(_ad_info: Variant = null, _error: Variant = null) 
 
 
 func _finish_rewarded(rewarded: bool) -> void:
+	_rewarded_token += 1
 	var placement := _rewarded_placement
 	_rewarded_placement = ""
 	_rewarded_earned = false
@@ -210,6 +264,7 @@ func show_interstitial(placement: String) -> void:
 		return
 	_interstitial_placement = placement
 	admob.call("show_interstitial_ad")
+	_arm_watchdog(false)
 
 
 func _on_interstitial_dismissed(_ad_info: Variant = null) -> void:
@@ -221,6 +276,7 @@ func _on_interstitial_show_failed(_ad_info: Variant = null, _error: Variant = nu
 
 
 func _finish_interstitial() -> void:
+	_interstitial_token += 1
 	var placement := _interstitial_placement
 	_interstitial_placement = ""
 	if not placement.is_empty():
@@ -254,3 +310,32 @@ func _retry_later(attempt: int, action: Callable) -> void:
 	if _tree == null:
 		return
 	_tree.create_timer(retry_delay(attempt)).timeout.connect(action)
+
+
+# --- Zaman aşımı ve günlük -----------------------------------------------------------------
+
+func show_timeout() -> float:
+	if show_timeout_override > 0.0:
+		return show_timeout_override
+	return float((config.get("ads", {}) as Dictionary).get("show_timeout_seconds", 120))
+
+
+## Gösterilen reklam hiç kapanmazsa (SDK takıldı) durumu sıfırlar: ödüllü "ödülsüz" biter, geçiş "kapandı" sayılır.
+func _arm_watchdog(rewarded: bool) -> void:
+	if _tree == null:
+		return
+	var token := _rewarded_token if rewarded else _interstitial_token
+	_tree.create_timer(show_timeout(), true, false, true).timeout.connect(func() -> void:
+		if rewarded and token == _rewarded_token and not _rewarded_placement.is_empty():
+			_finish_rewarded(false)
+		elif not rewarded and token == _interstitial_token and not _interstitial_placement.is_empty():
+			_finish_interstitial())
+
+
+func _report_problem(message: String) -> void:
+	if problem_logger.is_valid():
+		problem_logger.call(message)
+	elif OS.is_debug_build():
+		push_warning(message)
+	else:
+		push_error(message)

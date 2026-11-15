@@ -7,10 +7,20 @@ extends IapProvider
 var owned: PackedStringArray = []
 ## Testlerde bir sonraki satın almayı başarısız ettirmek için hata kodu ("" = başarılı).
 var fail_next := ""
+## Testlerde mağaza bağlantısını kesmek/getirmek için (gerçek mağaza geç bağlanabilir).
+var available := true
+## true ise bir sonraki satın alma "beklemede" biter (hata kodu "pending", sahiplik verilmez).
+var pending_next := false
+
+
+func set_available(value: bool) -> void:
+	if available != value:
+		available = value
+		availability_changed.emit()
 
 
 func is_available() -> bool:
-	return true
+	return available
 
 
 func get_price_text(product_id: String) -> String:
@@ -20,6 +30,13 @@ func get_price_text(product_id: String) -> String:
 
 
 func purchase(product_id: String) -> void:
+	if not available:
+		purchase_finished.emit.call_deferred(product_id, false, "store_unavailable")
+		return
+	if pending_next:
+		pending_next = false
+		purchase_finished.emit.call_deferred(product_id, false, "pending")
+		return
 	if not fail_next.is_empty():
 		var error := fail_next
 		fail_next = ""
@@ -31,4 +48,7 @@ func purchase(product_id: String) -> void:
 
 
 func restore_purchases() -> void:
+	if not available:
+		restore_failed.emit.call_deferred("store_unavailable")
+		return
 	purchases_restored.emit.call_deferred(owned.duplicate())
