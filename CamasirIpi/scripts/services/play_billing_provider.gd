@@ -6,26 +6,27 @@ extends IapProvider
 ## ile konuşur. Eklenti KURULU DEĞİLKEN bu dosya yine derlenir (sınıf adla DEĞİL, global sınıf listesinden
 ## dinamik bulunur); `plugin_present()` false döner ve IapService mock'a/boş mağazaya düşer. Kurulum: docs/store/PENDING_APPROVALS.md.
 ##
-## KAYNAKLAR (hepsi github.com/godot-sdk-integrations/godot-google-play-billing, `master`, 2026-11-15 okundu;
-## "BillingClient.gd:N" = godot-google-play-billing/export_scripts/BillingClient.gd satırı):
+## KAYNAKLAR: GERÇEK eklenti 3.3.0 (2026-11-15 kuruldu, SHA-256 20d75623...8568) — `addons/GodotGooglePlayBilling/`.
+## "BillingClient.gd:N" = o dizindeki gerçek dosyanın satırı; sözlük alan adları ise AAR'daki derlenmiş
+## `Utils.class` / `GodotGooglePlayBilling.class` sabit dizgelerinden doğrulandı (kaynak .kt dosyası pakette yoktur).
+##  * sınıf               `class_name BillingClient extends Node`, yol res://addons/GodotGooglePlayBilling/BillingClient.gd (zip'te export_scripts/ YOK);
+##                        `_init()` native tekil nesneyi (`Engine.get_singleton("GodotGooglePlayBilling")`) bulur, `initPlugin()` çağırır, sinyalleri aktarır
 ##  * sinyaller           BillingClient.gd:3-10  (connected, disconnected, connect_error(code,msg), query_product_details_response(dict),
 ##                        query_purchases_response(dict), on_purchase_updated(dict), consume_purchase_response, acknowledge_purchase_response(dict))
-##  * enum'lar            BillingClient.gd:13-27 BillingResponseCode, :37-40 ProductType {INAPP=0,SUBS=1}, :42-46 PurchaseState {UNSPECIFIED_STATE=0,PURCHASED=1,PENDING=2}
-##  * yöntemler           BillingClient.gd:60-125: start_connection, is_ready, query_product_details(PackedStringArray, ProductType),
-##                        query_purchases(ProductType), purchase(product_id, purchase_option_id="", offer_id="", is_offer_personalized=false) -> Dictionary,
-##                        acknowledge_purchase(token)
-##  * yanıt sözlükleri    src/main/java/.../Utils.kt:183-188 createResultDict -> {response_code:int, debug_message:String};
-##                        :63-94 ürün: {product_id,title,name,description,product_type,one_time_purchase_offer_details_list:Array|null,...};
-##                        :96-105 teklif: {formatted_price,price_amount_micros,price_currency_code,purchase_option_id,offer_id,offer_token,...};
-##                        :20-35 satın alma: {order_id,purchase_token,package_name,purchase_state,purchase_time,original_json,is_acknowledged,
-##                        is_auto_renewing,is_suspended,quantity,signature,product_ids}; GodotGooglePlayBilling.kt:115-119 yanıta
-##                        `product_details` + `unfetched_products`, :241-246 `purchases` (yalnız OK'de) eklenir.
-##  * satın alma önkoşulu GodotGooglePlayBilling.kt:163-166: ürün ayrıntısı ÖNCE sorgulanmamışsa purchase DEVELOPER_ERROR döner
-##    -> bu sağlayıcı ayrıntı yanıtı gelmeden satın almayı başlatmaz (bekletir).
+##  * enum'lar            BillingClient.gd:13 BillingResponseCode, :36 ProductType {INAPP=0,SUBS=1}, :41 PurchaseState {UNSPECIFIED_STATE=0,PURCHASED=1,PENDING=2}
+##  * yöntemler           BillingClient.gd:88-143: start_connection, is_ready, query_product_details(PackedStringArray, ProductType),
+##                        query_purchases(ProductType, include_suspended_subs=false), purchase(product_id, purchase_option_id="", offer_id="", is_offer_personalized=false) -> Dictionary,
+##                        acknowledge_purchase(token) (dönüş yok; sonuç acknowledge_purchase_response)
+##  * yanıt sözlükleri    AAR dizgeleri: {response_code, debug_message}; ürün: {product_id, product_type, one_time_purchase_offer_details_list[{formatted_price,
+##                        price_amount_micros, price_currency_code, purchase_option_id, offer_id, offer_token...}]}; satın alma: {order_id, purchase_token,
+##                        package_name, purchase_state, purchase_time, original_json, is_acknowledged, is_auto_renewing, is_suspended, product_ids...};
+##                        yanıta `product_details`/`unfetched_products` (ürün sorgusu), `purchases` (sorgu/güncelleme), ack yanıtına `token` eklenir.
+##  * satın alma önkoşulu GitHub kaynağı (GodotGooglePlayBilling.kt:163-166): ürün ayrıntısı ÖNCE sorgulanmamışsa purchase DEVELOPER_ERROR döner
+##    -> bu sağlayıcı ayrıntı yanıtı gelmeden satın almayı başlatmaz (bekletir). (AAR'da bu dizge görülmez; davranış cihazda doğrulanacak.)
 ##  * onaylama            docs/api/methods.md "acknowledge_purchase": her satın alma onaylanmalı, yoksa Google iade eder (3 gün).
-## DOĞRULANAMADI (cihazda denenmeli): `purchase_option_id` boş bırakmanın tek-seçenekli tek-seferlik üründe çalıştığı
-## (docs/api/methods.md "Used when the product have multiple purchase options" der; boş varsayılan belgeli);
-## release zip'inin tam dizin düzeni (BillingClient.gd'nin addons/GodotGooglePlayBilling/ altındaki yolu).
+## Pakete girme: export_filter=all_resources + exclude_filter'da addons/GodotGooglePlayBilling yok -> BillingClient.gd pck'ya girer (build kanıtı: docs/store/RELEASE_STATUS.md).
+## HÂLÂ CİHAZDA DOĞRULANACAK: `purchase_option_id` boş bırakmanın tek-seçenekli tek-seferlik üründe çalıştığı; acknowledge zamanlaması;
+## ürün ayrıntısı önkoşulunun davranışı; gerçek `purchase_state` tamsayı değerleri (enum ile aynı olduğu varsayılır).
 ##
 ## Akış: start_connection -> connected -> query_product_details(["remove_ads"], INAPP) + query_purchases(INAPP)
 ## purchase("remove_ads") -> on_purchase_updated -> (PURCHASED) acknowledge_purchase -> purchase_succeeded

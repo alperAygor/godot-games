@@ -76,4 +76,4 @@ Sıra (kullanıcı): önce oynanış düzeltmeleri, sonra mağaza hazırlığı.
 - [~] `ci-i18n` (Sonnet): Portekizce, Almanca, Japonca, Korece.
 - [~] `ci-play` (Sonnet): Google Play yayın şartlarının araştırması ve denetim listesi (yalnız belge).
 - [x] `ci-audio`: müzik (5 parça), ses seti ücretli planla yeniden, ölçülü miks ve AudioService cilası (`docs/AUDIO.md`). Kulakla dinleme bekliyor.
-- [~] `ci-release`: Gradle/AAB, AdMob, satın alma, mağaza görselleri ve metinleri. Kod/yapılandırma tamam (bkz. `docs/store/RELEASE_STATUS.md`); kalan: sahip hesapları (AdMob/Play/anahtar/URL), Billing eklentisi indirme onayı (`docs/store/PENDING_APPROVALS.md`), cihaz testleri.
+- [~] `ci-release`: Gradle/AAB, AdMob, satın alma, mağaza görselleri ve metinleri. Kod/yapılandırma tamam (bkz. `docs/store/RELEASE_STATUS.md`); kalan: sahip hesapları (AdMob/Play/anahtar/URL), cihaz testleri (Billing eklentisi 3.3.0 kuruldu: `docs/store/PENDING_APPROVALS.md` §1).

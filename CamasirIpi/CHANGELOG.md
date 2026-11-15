@@ -13,6 +13,11 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/), sürümleme [Se
 - Billing: `PlayBillingProvider` resmi eklenti v3.x `BillingClient` API'sine yeniden yazıldı (acknowledge, geri yükleme, PENDING, hata eşleme) + sahte istemci testleri; `docs/MONETIZATION.md` güncellendi.
 - Belgeler: `docs/store/{RELEASE_STATUS,PENDING_APPROVALS,SIGNING}.md`; mağaza görselleri `docs/store/assets/`, `tools/store_shots.sh`.
 
+### Billing eklentisi + İngilizce varsayılan (orch/ci-billing)
+- GodotGooglePlayBilling 3.3.0 kuruldu (sahip onaylı, SHA-256 `PENDING_APPROVALS.md` §1) ve etkinleştirildi; debug AAB: BILLING izni, billing-ktx, eklenti sınıfı, `BillingClient.gdc` doğrulandı (63.6 MiB).
+- `PlayBillingProvider` başlığı gerçek dosyaya göre düzeltildi; gerçek eklenti betiği testi; PENDING için özel mağaza metni (`SHOP_PURCHASE_PENDING`, 7 dil).
+- Varsayılan dil İngilizce: `Loc.apply_saved_for`, araç varsayılanı en, `locale/fallback="en"`, `config/name="Clothesline Sort"`; ilk açılış kuralı testi.
+
 ### Ses yeniden yapımı (orch/ci-audio)
 - Tüm müzik ve sesler ElevenLabs Starter planıyla yeniden üretildi (`docs/AUDIO_LICENSE.md`); 5 müzik parçası (menü, bahçe, sahil, çatı, gece),
   seviye hedefleri ölçülü miks (`docs/AUDIO.md`), Master sınırlayıcı, bus'lar, çapraz geçiş, kısma, dönüş sonrası toparlama.

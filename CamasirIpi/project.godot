@@ -14,7 +14,7 @@ general/ios/enabled=false
 
 [application]
 
-config/name="Çamaşır İpi"
+config/name="Clothesline Sort"
 config/name_localized={
 "de": "Clothesline Sort",
 "en": "Clothesline Sort",
@@ -53,7 +53,7 @@ window/handheld/orientation=1
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/admob/plugin.cfg")
+enabled=PackedStringArray("res://addons/GodotGooglePlayBilling/plugin.cfg", "res://addons/admob/plugin.cfg")
 
 [gui]
 

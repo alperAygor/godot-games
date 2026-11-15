@@ -3,18 +3,20 @@
 Bu işçi yalnız Gradle'ın standart Maven depolarından kendiliğinden çektiklerini indirdi (Gradle 8.11.1 dağıtımı, AndroidX, Google Mobile Ads
 Next-Gen SDK 1.4.0). Aşağıdakiler **yapılmadı**; onay verilirse komutlar aynen çalıştırılır.
 
-## 1. GodotGooglePlayBilling 3.3.0 eklentisi (Billing / "Reklamları kaldır")
-- Kaynak: https://github.com/godot-sdk-integrations/godot-google-play-billing/releases/tag/3.3.0 (yayın tarihi 2026-07-27, MIT)
-- Dosya: `godot-google-play-billing.zip` — **43 050 bayt** (GitHub API `assets[0].size`)
-- Hedef: zip içeriği `addons/GodotGooglePlayBilling/` altına (AssetLib kurulumunda "Ignore asset root" KAPALI). Zip'in tam dizin düzeni
-  indirilmediği için görülmedi; beklenen: `plugin.cfg`, `export_plugin.gd`, `BillingClient.gd`, `bin/debug|release/GodotGooglePlayBilling-*.aar`
-  (kaynak: `export_scripts/export_plugin.gd` AAR yollarını `GodotGooglePlayBilling/bin/<debug|release>/GodotGooglePlayBilling-<...>.aar` olarak verir).
-- Etkinleştirme: `project.godot` `[editor_plugins] enabled` listesine `res://addons/GodotGooglePlayBilling/plugin.cfg` eklenir
-  (Proje Ayarları > Eklentiler). Export ön ayarı Gradle'lı olduğundan ek ayar yok; plugin Gradle'a `com.android.billingclient:billing-ktx:9.1.0` ekler (Maven'den gelir).
-- Kurulduktan sonra: `exclude_filter`'da `addons/GodotGooglePlayBilling/*` YOK (BillingClient.gd pakete girmeli); `Android (test apk)` ön ayarı
-  Gradle'sız olduğundan eklentiyi içermez, dokunulmaz. `bash tools/release_check.sh` birleşik manifestte `com.android.vending.BILLING` izni ve
-  boyut farkını denetler (izin `ReleaseGuard.ALLOWED_PERMISSIONS`'ta zaten var).
-- Doğrulanacak (cihaz): `purchase()` boş `purchase_option_id` ile tek seçenekli üründe çalışıyor mu; `BillingClient.gd` zip'te hangi yolda.
+## 1. GodotGooglePlayBilling 3.3.0 eklentisi — TAMAM (2026-11-15, sahip onayıyla)
+- Kaynak: https://github.com/godot-sdk-integrations/godot-google-play-billing/releases/tag/3.3.0 (yayın 2026-07-27, MIT); tek dosya `godot-google-play-billing.zip`.
+- Doğrulama: **43 050 bayt** (GitHub API `assets[0].size` ile aynı), **SHA-256 `20d75623d6f337f08d8283c83098b73678d5f575e39247af5a8eb80588b18568`**
+  (GitHub API `digest` alanıyla aynı). Proje DIŞINDA, boş bir dizine indirildi; içerik çalıştırılmadan `unzip -Z -l` ile listelendi: yalnızca
+  `GodotGooglePlayBilling/` altında 10 giriş, yol atlama (`..`/mutlak yol) yok, çalıştırılabilir/betik yok.
+- Dosyalar (hepsi `addons/GodotGooglePlayBilling/` altına): `plugin.cfg` (v3.3.0), `export_plugin.gd`, `BillingClient.gd` (`class_name BillingClient`, zip kökünde —
+  `export_scripts/` DEĞİL), `LICENSE` (MIT, "Copyright (c) 2020 Godot Engine contributors"), `bin/debug/GodotGooglePlayBilling-debug.aar` (19 665 B),
+  `bin/release/GodotGooglePlayBilling-release.aar` (18 307 B). Zip kökü zaten `GodotGooglePlayBilling/` olduğundan "asset root" sorunu yok.
+- Etkinleştirildi: `project.godot` `[editor_plugins] enabled` listesinde `res://addons/GodotGooglePlayBilling/plugin.cfg`. Plugin Gradle'a
+  `com.android.billingclient:billing-ktx:9.1.0` ekler (Maven'den gelir; AAB'de doğrulandı). `exclude_filter`'da eklenti YOK: `BillingClient.gd` pakete `.gdc` olarak girer.
+  `Android (test apk)` ön ayarı Gradle'sızdır; native katman girmez (yalnız `BillingClient.gd` betiği pakete girer, masaüstünde/sürümsüz cihazda no-op).
+- Lisans bildirimi: oyunda "hakkında/lisanslar" ekranı yok; MIT metni `addons/GodotGooglePlayBilling/LICENSE` dosyasında depoda durur (sürüm paketine .md/lisans
+  filtresiyle değil, kaynak olarak girer). Play listesi/gizlilik sayfasında üçüncü taraf bildirimi istenirse bu dosya kaynak alınır.
+- Cihazda doğrulanacak (hâlâ): `purchase()` boş `purchase_option_id` ile tek seçenekli üründe çalışıyor mu; acknowledge zamanlaması (3 gün); lisans-test hesabıyla gerçek satın alma/geri yükleme.
 
 ## 2. Android SDK bileşenleri
 - **NDK gerekmedi**: şablon `ndkVersion 29.0.14206865` yazar ama debug AAB NDK olmadan başarıyla üretildi (strip yok, `debugSymbolLevel NONE`).

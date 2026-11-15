@@ -124,14 +124,15 @@ politika gereği KALDIRILDI). Eklentide `canRequestAds()` karşılığı yoktur;
 ### 4.1 Eklenti (resmi, v3.x — ESKİ tekil nesne API'si KALDIRILDI)
 Resmi eklenti **godot-sdk-integrations/godot-google-play-billing 3.3.0** (PBL 9.1.0, Godot ≥ 4.2): GDScript sınıfı **`BillingClient`** (Node,
 snake_case) + native tekil nesne `GodotGooglePlayBilling`. Eski camelCase API (`startConnection`, `purchases_updated`, `purchase_error`...) PBL ≤ 7
-içindi ve artık kabul edilmez. **Eklenti henüz kurulu DEĞİL** (indirme sahibin onayını bekliyor: `docs/store/PENDING_APPROVALS.md`).
+içindi ve artık kabul edilmez. **Eklenti 3.3.0 KURULU** (`addons/GodotGooglePlayBilling/`, `project.godot` `[editor_plugins]`; kayıt: `docs/store/PENDING_APPROVALS.md` §1).
+Gerçek `BillingClient.gd` yolu `res://addons/GodotGooglePlayBilling/BillingClient.gd`; `_init()` tekil nesneyi `Engine.get_singleton("GodotGooglePlayBilling")` ile bulur, `initPlugin()` çağırır.
 `PlayBillingProvider` kurulum olmadan da derlenir/çalışır: `plugin_present()` = Android + singleton + `BillingClient` global sınıfı.
 Akış: `start_connection` → `connected` → `query_product_details(["remove_ads"], INAPP)` (fiyat: `one_time_purchase_offer_details_list[0].formatted_price`)
 + `query_purchases(INAPP)` (**geri yükleme/yeniden kurulum buradan**) → `purchase("remove_ads")` → `on_purchase_updated` → yalnız `PURCHASED` sahiplik verir;
 `PENDING` vermez (`REASON_PENDING`); `is_acknowledged == false` ise `acknowledge_purchase(token)` **bir kez** (başarısızsa sonraki sorguda yeniden);
 kullanıcı iptali sessiz; bağlantı kodları `not_connected`; `ITEM_ALREADY_OWNED` → sahiplik sorgusu. Ürün ayrıntısı gelmeden satın alma başlatılmaz
 (Kotlin tarafı `DEVELOPER_ERROR` döner). Alan adlarının kaynak satırları `play_billing_provider.gd` başlığında; testler: `tests/unit/test_play_billing_provider.gd` (sahte istemci).
-`com.android.vending.BILLING` izni eklentinin AAR'ından gelir (kurulunca birleşik manifestte doğrulanacak).
+`com.android.vending.BILLING` izni eklentinin AAR'ından DEĞİL, bağımlılık `billing-ktx:9.1.0` kitaplığının manifestinden gelir; debug AAB'nin birleşik manifestinde doğrulandı.
 
 ### 4.2 Play Console'da ürün
 1. *Para kazanma > Ürünler > Uygulama içi ürünler > Ürün oluştur*.
@@ -166,6 +167,7 @@ Kod: satın alma sonrası `acknowledge_purchase` otomatik çağrılır (3 gün i
   ama gerçek native katman (AAR, UMP, Google SDK) cihazda **doğrulanmadı**. Eklentinin `skills/*.md` örnekleri (ör. `ConsentInformation.request_consent_info_update`, `OnConsentInfoUpdateListener`)
   v5.1.0 kaynağıyla UYUŞMUYOR; doğru API kaynak kodudur, köprü ona göre yazıldı.
 - Masaüstünde eklentinin kendi mock'u KULLANILMAZ (gerçek zamanlı 8 sn'lik sahte reklam penceresi açar; probe/testleri belirsizleştirir). Masaüstü = `MockAdsProvider`.
-- `PlayBillingProvider` yeni API'ye göre yeniden yazıldı ve sahte istemciyle test edildi; gerçek eklenti/cihazla DOĞRULANMADI. `purchase_option_id` boş bırakma ve release zip düzeni cihazda denenecek.
-- `REASON_PENDING` arayüzde genel "satın alma tamamlanamadı" balonuyla gösterilir (özel metin yok).
+- `PlayBillingProvider` gerçek eklenti betiğine karşı doğrulandı (sinyal/yöntem/enum testi `test_real_plugin_script_matches_provider_assumptions`; sözlük alan adları AAR dizgeleriyle) ve sahte istemciyle uçtan uca test edildi; gerçek native katman cihazda DOĞRULANMADI.
+  Cihazda denenecek: boş `purchase_option_id`, acknowledge zamanlaması, ürün ayrıntısı önkoşulu, gerçek `purchase_state` değerleri.
+- `REASON_PENDING` arayüzde özel metinle ("Ödeme beklemede...", `SHOP_PURCHASE_PENDING`) gösterilir; iptal sessiz; diğer hatalar "satın alma tamamlanmadı".
 - Banner reklam yoktur (ileride eklenirse `AdPacing` ile aynı "reklamları kaldır" kuralına bağlanmalıdır).
