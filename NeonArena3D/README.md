@@ -1,4 +1,4 @@
-# NEON ARENA 3D
+# NEON GRIDSTORM (iç ad: NeonArena3D)
 
 ![Ana menü](docs/screen_menu.png)
 
@@ -168,13 +168,13 @@ birlikte kare kare belirlenimli, bkz. `tools/sim/scene_probe.gd`).
 | Atölye / sinerji / dokunmatik testleri | ✓ 9 / 6 / 13 kontrol |
 | Bot, 4 gemi | her gemi dalga 5-9, boss yenildi |
 | Uzun koşu | dalga 21: Sentinel, Kızıl Dev, Buz Hükümdarı, Sentinel MK-2 yenildi |
-| APK | `com.neonarena.arena3d` 1.2.0, minSdk 24, arm64, v2+v3 imza, VIBRATE izni |
+| APK | `com.neongridstorm.game` 1.2.0, minSdk 24, arm64, v2+v3 imza, VIBRATE izni |
 
 ## Notlar
 
 - Renderer `mobile` (Vulkan). Vulkan olmayan cihazlarda Godot OpenGL'e düşer (manifestte Vulkan zorunlu değil).
 - Grafik kalitesi Ayarlar'dan: DÜŞÜK / ORTA / YÜKSEK (telefonda varsayılan ORTA).
 - Play Store'a yüklemek için: kalıcı bir yükleme anahtarı (keystore) oluştur, Godot'da Android ön ayarına
-  `Release` keystore'unu gir, `--export-release` ile AAB/APK üret. Paket adı `com.neonarena.arena3d`
+  `Release` keystore'unu gir, `--export-release` ile AAB/APK üret. Paket adı `com.neongridstorm.game`
   istersen değiştirilebilir; yayınlandıktan sonra değiştirilemez.
 - Oyunun 2B ilk sürümü ayrı bir proje olarak geliştirildi (`neon-arena`).

@@ -121,7 +121,7 @@ Başka üçüncü taraf varlık/eklenti yok (`addons/` yok). Ticari lisans sorus
 |---|---|---|---|
 | Export biçimi | `use_gradle_build=false` → yalnız APK; **AAB üretilemez** | `export_presets.cfg` `gradle_build/use_gradle_build=false`, `export_format=0` | Gradle + Android build şablonu + `export_format=1` (AAB). `android/` klasörü yok |
 | Mimari | Yalnız arm64-v8a | `architectures/arm64-v8a=true` diğerleri false | İyi (Play 64-bit şartı); x86_64 emülatör için isteğe bağlı |
-| Paket kimliği | `com.neonarena.arena3d` | `package/unique_name` | Yayından sonra değişmez → **sahip kararı**, marka adıyla uyumlu seçilmeli |
+| Paket kimliği | `com.neongridstorm.game` | `package/unique_name` | Yayından sonra değişmez → **sahip kararı**, marka adıyla uyumlu seçilmeli |
 | Sürüm | code 2 / "1.2.0" | `version/code`, `version/name`, `project.godot` `config/version` | Her yüklemede kod artırılmalı; otomasyon yok |
 | Min/hedef SDK | Boş → Godot 4.7.2 varsayılanı: min 24, hedef 36 (şablonun `config.gradle`: `minSdk 24`, `targetSdk 36`, `compileSdk 36`) | `export_presets.cfg` `min_sdk=""` `target_sdk=""`; `~/Library/Application Support/Godot/export_templates/4.7.2.stable/android_source.zip` | Açıkça yazılmamış; Play'in güncel hedef şartı kontrolü politika işçisinde |
 | İmza | `package/signed=true`, ön ayarda keystore alanı yok; README debug imzası anlatıyor | `export_presets.cfg`, `README.md` Android bölümü | Üretim keystore'u yok (`*.keystore`, `*.jks` `.gitignore`'da). Sahip: keystore + Play App Signing kararı |

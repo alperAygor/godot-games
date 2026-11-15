@@ -7,6 +7,8 @@ extends RefCounted
 const KIT = preload("res://scripts/ui/ui_kit.gd")
 
 class TitleArt extends Control:
+	const LINE1 := "NEON"
+	const LINE2 := "GRIDSTORM"
 	var _t := 0.0
 
 	func _init() -> void:
@@ -24,16 +26,15 @@ class TitleArt extends Control:
 			flicker = 0.55
 		var cyan := Color(KIT.CYAN, flicker)
 		var pink := KIT.MAGENTA
-		draw_string_outline(f, Vector2(0, 84), "NEON", HORIZONTAL_ALIGNMENT_LEFT, -1, 96, 22, Color(cyan.r, cyan.g, cyan.b, 0.12 * flicker))
-		draw_string_outline(f, Vector2(0, 84), "NEON", HORIZONTAL_ALIGNMENT_LEFT, -1, 96, 9, Color(cyan.r, cyan.g, cyan.b, 0.3 * flicker))
-		draw_string(f, Vector2(0, 84), "NEON", HORIZONTAL_ALIGNMENT_LEFT, -1, 96, Color(0.86, 0.99, 1.0, 0.55 + 0.45 * flicker))
-		draw_string_outline(f, Vector2(-6, 172), "ARENA", HORIZONTAL_ALIGNMENT_LEFT, -1, 96, 22, Color(pink.r, pink.g, pink.b, 0.12))
-		draw_string_outline(f, Vector2(-6, 172), "ARENA", HORIZONTAL_ALIGNMENT_LEFT, -1, 96, 9, Color(pink.r, pink.g, pink.b, 0.32))
-		draw_string(f, Vector2(-6, 172), "ARENA", HORIZONTAL_ALIGNMENT_LEFT, -1, 96, Color(1.0, 0.9, 0.97))
-		var w := f.get_string_size("ARENA", HORIZONTAL_ALIGNMENT_LEFT, -1, 96).x
-		var tag := Rect2(w + 10, 108, 78, 44)
-		draw_rect(tag, Color(KIT.GOLD, 0.95), true)
-		draw_string(KIT.bold(), Vector2(tag.position.x, tag.position.y + 33), "3D", HORIZONTAL_ALIGNMENT_CENTER, tag.size.x, 30, Color(0.05, 0.04, 0.1))
+		draw_string_outline(f, Vector2(0, 84), LINE1, HORIZONTAL_ALIGNMENT_LEFT, -1, 96, 22, Color(cyan.r, cyan.g, cyan.b, 0.12 * flicker))
+		draw_string_outline(f, Vector2(0, 84), LINE1, HORIZONTAL_ALIGNMENT_LEFT, -1, 96, 9, Color(cyan.r, cyan.g, cyan.b, 0.3 * flicker))
+		draw_string(f, Vector2(0, 84), LINE1, HORIZONTAL_ALIGNMENT_LEFT, -1, 96, Color(0.86, 0.99, 1.0, 0.55 + 0.45 * flicker))
+		# İkinci satır başlık genişliğine sığacak boyutta çizilir (ad değişirse yerleşim bozulmaz).
+		var size2 := mini(96, int(96.0 * 532.0 / maxf(1.0, f.get_string_size(LINE2, HORIZONTAL_ALIGNMENT_LEFT, -1, 96).x)))
+		var base2 := Vector2(-2, 98.0 + float(size2) * 0.86)
+		draw_string_outline(f, base2, LINE2, HORIZONTAL_ALIGNMENT_LEFT, -1, size2, maxi(4, 22 * size2 / 96), Color(pink.r, pink.g, pink.b, 0.12))
+		draw_string_outline(f, base2, LINE2, HORIZONTAL_ALIGNMENT_LEFT, -1, size2, maxi(2, 9 * size2 / 96), Color(pink.r, pink.g, pink.b, 0.32))
+		draw_string(f, base2, LINE2, HORIZONTAL_ALIGNMENT_LEFT, -1, size2, Color(1.0, 0.9, 0.97))
 		var sweep := fmod(_t * 0.5, 1.0)
 		draw_line(Vector2(0, 190), Vector2(540, 190), Color(KIT.CYAN, 0.25), 2.0)
 		draw_line(Vector2(540 * sweep - 60, 190), Vector2(540 * sweep, 190), Color(1, 1, 1, 0.9), 2.0)

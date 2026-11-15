@@ -126,7 +126,7 @@ Veri dosyaları F2 sonrası ayrık olduğu için çakışmaz.
 | Madde | Ne gerekiyor |
 |---|---|
 | Yayın adı | Aşağıdaki 3 öneriden biri veya kendi adın (kullanılabilirlik **kontrol edilmedi**) |
-| Paket kimliği | `com.neonarena.arena3d` mevcut; yayından sonra **değişmez**. Ad kararıyla birlikte netleştir |
+| Paket kimliği | `com.neongridstorm.game` mevcut; yayından sonra **değişmez**. Ad kararıyla birlikte netleştir |
 | Google Play geliştirici hesabı + uygulama kaydı | Hesap açma, uygulama oluşturma, Play Uygulama İmzalama |
 | Keystore | Yükleme anahtarı oluştur ve güvenle sakla (depoya konmaz: `.gitignore`'da `*.keystore`) |
 | AdMob hesabı | Uygulama kimliği + ödüllü + geçiş birim kimlikleri; GDPR/UMP iletisi yayını |
