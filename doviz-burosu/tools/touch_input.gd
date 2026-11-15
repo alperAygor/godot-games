@@ -43,6 +43,14 @@ static func tap_node(tree: SceneTree, node_name: String) -> bool:
 	var control := find_control(tree, node_name)
 	if control == null or not control.is_visible_in_tree():
 		return false
+	# Kaydırılan listedeki düğmeye (ör. Ayarlar) dokunmadan önce görünür alana getir.
+	var parent := control.get_parent()
+	while parent != null:
+		if parent is ScrollContainer:
+			(parent as ScrollContainer).ensure_control_visible(control)
+			await tree.process_frame
+			await tree.process_frame
+		parent = parent.get_parent()
 	await tap(tree, center_of(control))
 	return true
 

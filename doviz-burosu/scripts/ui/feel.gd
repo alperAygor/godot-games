@@ -46,7 +46,7 @@ static func blip(voice: float) -> void:
 
 ## Düğüm `to` konumuna (üst öğesine göre) kayar.
 static func slide_to(control: Control, to: Vector2, seconds := 0.25) -> void:
-	if instant or not control.is_inside_tree():
+	if instant or A11y.reduced_motion() or not control.is_inside_tree():
 		control.position = to
 		return
 	control.create_tween().tween_property(control, "position", to, seconds).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -62,7 +62,7 @@ static func haptic(milliseconds: int) -> void:
 
 ## Düğüm "pat" diye yerine oturur: hafif büyük + saydam başlar, merkezden küçülerek netleşir.
 static func pop_in(control: Control, delay := 0.0, from_scale := 1.12) -> void:
-	if instant or not control.is_inside_tree():
+	if instant or A11y.reduced_motion() or not control.is_inside_tree():
 		return
 	control.modulate.a = 0.0
 	var tween := control.create_tween()
@@ -76,6 +76,8 @@ static func pop_in(control: Control, delay := 0.0, from_scale := 1.12) -> void:
 
 ## Ekranı hafifçe sallar (damga vuruşu). Bitince konum tam sıfırlanır.
 static func shake(root: Control, strength := 6.0) -> void:
+	if A11y.reduced_motion():  # "Hareketi azalt" ayarı (T-A2)
+		return
 	var tween := root.create_tween()
 	for offset: Vector2 in [Vector2(strength, 0), Vector2(-strength, strength * 0.4), Vector2(strength * 0.5, 0), Vector2.ZERO]:
 		tween.tween_property(root, "position", offset, 0.04)

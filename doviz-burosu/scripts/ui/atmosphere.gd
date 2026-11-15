@@ -36,7 +36,7 @@ func _process(delta: float) -> void:
 	_time += delta
 	_next_flicker -= delta
 	if _next_flicker <= 0.0:
-		_flicker = 1.0
+		_flicker = 0.0 if A11y.reduced_motion() else 1.0  # titreme ("Hareketi azalt" açıkken yok)
 		if randi() % 5 == 0:
 			Feel.sfx("flicker")
 		_next_flicker = randf_range(2.5, 7.0)

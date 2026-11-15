@@ -59,7 +59,7 @@ static func splat(root: Control, at: Vector2, color: Color, count := 8) -> void:
 
 ## Tüm ekranı kısa süre boyar (hata: kırmızı, ödül: amber).
 static func flash(root: Control, color: Color, strength := 0.28, seconds := 0.3) -> void:
-	if Feel.instant or not root.is_inside_tree():
+	if Feel.instant or A11y.reduced_motion() or not root.is_inside_tree():  # parlama: "Hareketi azalt" açıkken yok
 		return
 	var layer := _layer(root)
 	var rect := ColorRect.new()

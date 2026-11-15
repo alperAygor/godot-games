@@ -426,8 +426,8 @@ GUIDE_CHIP_PIN,Pin,İğne
 GUIDE_T8,Orders from above,Yukarıdan emirler
 GUIDE_B8,"Each morning Head Office sends a directive: a target with a bonus or a penalty. It never changes what is right, only what pays. During the day notes drop through the tube: urgent bulletins add stolen serials, some change the directive, and the phone asks for small favours. Pin the rules you keep forgetting to your desk from the Rulebook.","Her sabah Merkez bir talimat gönderir: prim ya da kesintili bir hedef. Neyin doğru olduğunu değiştirmez, yalnızca neyin kazandırdığını. Gün içinde tüple notlar düşer: acil bültenler çalıntı seri ekler, bazıları talimatı değiştirir, telefon küçük iyilikler ister. Unuttuğun kuralları Kılavuz'dan masana iğnele."
 MON_PRIVACY_TITLE,Privacy and ads,Gizlilik ve reklamlar
-MON_NOTICE_TEXT,"This game is free and shows ads. The ads come from Google AdMob, which may use your device's advertising ID. Choose whether the ads you see may be tailored to you. The game itself has no account, collects no personal data and sends no analytics. You can change this later in Settings > Privacy options.","Bu oyun ücretsizdir ve reklam gösterir. Reklamlar Google AdMob'dan gelir; AdMob cihazının reklam kimliğini kullanabilir. Gördüğün reklamların sana göre uyarlanıp uyarlanmayacağını seç. Oyunun kendisinde hesap yoktur, kişisel veri toplanmaz ve analitik gönderilmez. Bunu sonra Ayarlar > Gizlilik seçenekleri'nden değiştirebilirsin."
-MON_FORM_TEXT,"In your region Google asks for your ad choices in its own form. You can review or change them here at any time. The game itself has no account, collects no personal data and sends no analytics.","Bölgende reklam tercihlerini Google kendi formunda sorar. Buradan istediğin zaman gözden geçirip değiştirebilirsin. Oyunun kendisinde hesap yoktur, kişisel veri toplanmaz ve analitik gönderilmez."
+MON_NOTICE_TEXT,"This game is free and shows ads from Google AdMob. AdMob may collect your device's advertising ID, IP address and ad interactions to show and measure ads. Choose whether the ads you see may be tailored to you. The game itself has no account and sends no analytics. You can change this any time in Settings > Privacy options.","Bu oyun ücretsizdir ve Google AdMob reklamları gösterir. AdMob, reklamları göstermek ve ölçmek için cihazının reklam kimliğini, IP adresini ve reklam etkileşimlerini toplayabilir. Gördüğün reklamların sana göre uyarlanıp uyarlanmayacağını seç. Oyunun kendisinde hesap yoktur ve analitik gönderilmez. İstediğin zaman Ayarlar > Gizlilik seçenekleri'nden değiştirebilirsin."
+MON_FORM_TEXT,"In your region Google asks for your ad choices in its own form. You can review or change them here at any time. The ads come from Google AdMob, which may use your advertising ID. The game itself has no account and sends no analytics.",Bölgende reklam tercihlerini Google kendi formunda sorar. Buradan istediğin zaman gözden geçirip değiştirebilirsin. Reklamlar Google AdMob'dan gelir; AdMob reklam kimliğini kullanabilir. Oyunun kendisinde hesap yoktur ve analitik gönderilmez.
 MON_PERSONAL,Personalised ads,Kişiselleştirilmiş reklamlar
 MON_NONPERSONAL,Non-personalised ads,Kişiselleştirilmemiş reklamlar
 MON_AD_CHOICES,Ad choices (Google form),Reklam seçenekleri (Google formu)
@@ -477,3 +477,28 @@ B1_RETRY_NOADS_NOTE,"You removed ads, so replays never cost you anything.","Rekl
 B1_NEW_GAME_NOTE,"New game starts again from day 1. Endings you found stay.","Yeni oyun 1. günden yeniden başlar. Bulduğun sonlar kalır."
 B1_EVENING_SERVED_LINE,Customers: %d (correct: %d) · Mistakes: %d,Müşteri: %d (doğru: %d) · Hata: %d
 B1_EVENING_PAY_LINE,Salary %s + bonus %s − fines %s,Maaş %s + prim %s − ceza %s
+ACC_SECTION_SOUND,Sound,Ses
+ACC_MASTER,Master volume,Ana ses
+ACC_SECTION_DISPLAY,Display and accessibility,Görünüm ve erişilebilirlik
+ACC_TEXT_SIZE,Text size,Yazı boyutu
+ACC_TEXT_NORMAL,Normal,Normal
+ACC_TEXT_LARGE,Large,Büyük
+ACC_COLOR_BLIND,Colour-blind friendly mode,Renk körlüğü dostu kip
+ACC_COLOR_BLIND_HELP,"Blue and orange colours, plus [+] [!] [x] marks next to coloured things.",Mavi ve turuncu renkler; renkli şeylerin yanında [+] [!] [x] işaretleri.
+ACC_REDUCED_MOTION,Reduced motion,Hareketi azalt
+ACC_REDUCED_MOTION_HELP,"No screen shake, flicker or screen flashes.","Ekran sallantısı, titreme ve ekran parlaması olmaz."
+ACC_SECTION_GAME,Game,Oyun
+ACC_SECTION_PRIVACY,Privacy and purchases,Gizlilik ve satın alımlar
+ACC_ABOUT,About and licences,Hakkında ve lisanslar
+ACC_ABOUT_TITLE,About,Hakkında
+ACC_ABOUT_VERSION,Version %s,Sürüm %s
+ACC_ABOUT_TAGLINE,"Stamp, count, decide: a currency exchange desk in a made-up country.","Damgala, say, karar ver: hayali bir ülkede döviz bürosu."
+ACC_ABOUT_SIM_TITLE,This is a simulation,Bu bir simülasyondur
+ACC_ABOUT_SIM_TEXT,"Exchange Desk is a game. Every country, currency and exchange rate in it is fictional. The in-game money has no real value and cannot be cashed out. Nothing in the game is financial or investment advice.","Döviz Bürosu bir oyundur. İçindeki ülkelerin, para birimlerinin ve kurların hepsi kurgusaldır. Oyundaki paranın gerçek değeri yoktur ve bozdurulamaz. Oyundaki hiçbir şey finansal ya da yatırım tavsiyesi değildir."
+ACC_ABOUT_CREDITS_TITLE,Credits,Emeği geçenler
+ACC_ABOUT_CREDITS,Music and sound effects were generated with ElevenLabs. Pixel font: VT323 by the VT323 Project Authors. Everything else is drawn and written for this game.,Müzik ve ses efektleri ElevenLabs ile üretildi. Piksel yazı tipi: VT323 (VT323 Project Authors). Geri kalan her şey bu oyun için çizildi ve yazıldı.
+ACC_ABOUT_LICENSES_TITLE,Licences of included software,Pakete giren yazılımların lisansları
+ACC_ABOUT_GOOGLE,"Google Mobile Ads SDK, User Messaging Platform and Google Play Billing Library are provided by Google under Google's own terms.","Google Mobile Ads SDK, User Messaging Platform ve Google Play Billing Library, Google'ın kendi koşullarıyla Google tarafından sunulur."
+ACC_LICENSE_BY,%s · %s,%s · %s
+ACC_LICENSE_NO_TEXT,The licence text is available at the source address.,Lisans metni kaynak adresinde bulunur.
+ACC_LICENSE_ENGINE_PARTS,Godot Engine also includes third-party components:,Godot Engine ayrıca üçüncü taraf bileşenler içerir:
