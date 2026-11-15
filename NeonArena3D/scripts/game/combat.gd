@@ -12,6 +12,7 @@ var _milestone_index := 0
 func reset_run() -> void:
 	_overheal = 0.0
 	_milestone_index = 0
+	ctx.effects.reset_run()
 
 # --- Çarpışmalar ------------------------------------------------------------------
 func resolve_collisions() -> void:
@@ -45,13 +46,14 @@ func resolve_collisions() -> void:
 						b.hits.append(e.get_instance_id())
 					else:
 						b.dead = true
+						ctx.effects.on_bullet_stopped(e, b)
 					break
 			if b.dead:
 				continue
 			if boss_hittable:
 				var br: float = boss.radius + b.radius
 				if b.pos2.distance_squared_to(boss.pos2) < br * br:
-					boss.take_damage(b.damage)
+					boss.take_damage(b.damage * ctx.effects.boss_damage_mult())
 					if b.blast > 0.0:
 						rocket_blast(b)
 					var at := ArenaSpace.to_world(b.pos2, BulletFieldScript.HEIGHT)
@@ -119,7 +121,7 @@ func hit_enemy(e, b) -> void:
 	var loadout := ctx.loadout
 	var dir: Vector2 = b.velocity2.normalized()
 	var push := dir * (t.hits_heavy_knockback if e.kind == "tank" or e.elite else t.hits_knockback)
-	e.take_damage(b.damage, push)
+	e.take_damage(b.damage * ctx.effects.enemy_damage_mult(e), push)
 	var at := ArenaSpace.to_world(b.pos2, BulletFieldScript.HEIGHT)
 	ctx.sparks.spray(at, -ArenaSpace.dir_to_world(dir), Color(1.0, 0.85, 0.45) if b.crit else e.color().lerp(Color(1, 1, 1), 0.45), 7 if b.crit else 4, 8.0, 0.28, 1.0 if b.crit else 0.8)
 	ctx.feedback.damage_number(e.position, b.damage, b.crit)
@@ -129,12 +131,13 @@ func hit_enemy(e, b) -> void:
 	if storm:
 		chain += t.hits_storm_jumps
 	if chain > 0 and b.chain == 0:
-		_chain_from(e, b.damage * (t.hits_storm_chain_damage if storm else t.hits_chain_damage), chain)
+		_chain_from(e, b.damage * (t.hits_storm_chain_damage if storm else t.hits_chain_damage + loadout.m("chain_power")), chain)
+	ctx.effects.on_hit(e, b)
 
 func _chain_from(source, damage: float, jumps: int) -> void:
 	var visited: Array = [source]
 	var current = source
-	var reach := ctx.tuning.hits_chain_range
+	var reach := ctx.tuning.hits_chain_range * ctx.effects.chain_range_mult()
 	for n in jumps:
 		var next = null
 		var best := reach
@@ -207,18 +210,19 @@ func tick_aftershocks(delta: float) -> void:
 		ctx.sparks.flash(w, Color(1.0, 0.4, 0.8), 6.0, 9.0, 0.2)
 		Sound.play("explode", -2.0, 0.8)
 		Fx.shake(6.0)
-		area_damage(at, ctx.tuning.nova_aftershock_radius, float(a["dmg"]))
+		area_damage(at, float(a.get("r", ctx.tuning.nova_aftershock_radius)), float(a["dmg"]))
 
 # --- İyileşme, kalkan, toplanabilirler ---------------------------------------------
 func heal(amount: float, show := true) -> void:
 	## Tüm iyileşmeler buradan geçer; Kan Hasadı taşan canı kalkana çevirir.
 	var player := ctx.player
+	amount *= ctx.effects.heal_mult()
 	var room := player.max_hp - player.hp
 	player.heal(amount)
 	if ctx.loadout.i("harvest") <= 0:
 		return
 	_overheal += maxf(0.0, amount - room)
-	if _overheal >= ctx.tuning.run_harvest_shield_at and player.shield <= 0:
+	if _overheal >= ctx.effects.harvest_threshold() and player.shield <= 0:
 		_overheal = 0.0
 		give_shield()
 		if show:
@@ -246,6 +250,7 @@ func apply_pickup(p) -> void:
 			player.overdrive = GameData.number("pickups.overdrive_time", 6.0)
 			hud.toast(tr("AŞIRI YÜK — ateş hızı ×2"), KIT.GOLD)
 			Sound.play("pickup_power")
+	ctx.effects.on_pickup(str(p.kind))
 	ctx.sparks.burst(p.position, p.color(), 18, 8.0, 0.55, 1.1)
 	ctx.sparks.ring(player.position, p.color(), 0.4, 3.2, 0.4, 0.2)
 	ctx.feedback.tint(p.color(), 0.35)
@@ -260,7 +265,7 @@ func try_nova() -> void:
 			Sound.play("deny")
 		return
 	ctx.nova = 0.0
-	var radius: float = GameData.number("player.nova_radius", 340.0)
+	var radius: float = GameData.number("player.nova_radius", 340.0) * ctx.effects.nova_radius_mult()
 	var damage: float = GameData.number("player.nova_damage", 70.0) * ctx.loadout.m("damage_mult") * (1.0 + t.nova_wave_scale * float(ctx.run.wave - 1))
 	if ctx.loadout.i("doom_nova") > 0:
 		radius *= t.nova_doom_radius_mult
@@ -269,6 +274,7 @@ func try_nova() -> void:
 			ctx.aftershocks.append({"pos2": at, "t": t.nova_doom_delay + t.nova_doom_delay_step * float(k), "dmg": damage * t.nova_doom_damage})
 	blast(radius, damage, Color(1.0, 0.4, 0.85))
 	player.invuln = maxf(player.invuln, t.nova_invuln)
+	ctx.effects.on_nova(radius, damage)
 	Sound.play("nova")
 	ctx.hud.show_banner(tr("NOVA"), "", 0.7, KIT.MAGENTA)
 
@@ -299,6 +305,7 @@ func add_nova(amount: float) -> void:
 func on_player_hurt(amount: float) -> void:
 	var t := ctx.tuning
 	var player := ctx.player
+	amount = ctx.effects.on_hurt(amount)
 	Sound.play("hurt")
 	if ctx.loadout.i("fortress") > 0 and player.alive:
 		var dmg: float = t.player_damage * ctx.loadout.m("damage_mult") * t.fortress_damage
@@ -332,8 +339,8 @@ func reap(e) -> void:
 	Fx.shake(8.0 if big else 3.5)
 	if big:
 		Fx.hitstop(0.04, 0.2)
-	add_nova(t.player_nova_per_kill * loadout.m("nova_rate_mult") * (t.nova_elite_kill_mult if elite else 1.0))
-	var vampire: float = loadout.m("vampire")
+	add_nova(t.player_nova_per_kill * loadout.m("nova_rate_mult") * (t.nova_elite_kill_mult if elite else 1.0) * ctx.effects.nova_kill_mult())
+	var vampire: float = loadout.m("vampire") * ctx.effects.vampire_mult()
 	if vampire > 0.0:
 		heal(vampire)
 	if e.kind == "tank" and ctx.state == "playing" and not ctx.bosses.dying:
@@ -350,6 +357,7 @@ func reap(e) -> void:
 		area_damage(e.pos2, er, t.player_damage * loadout.m("damage_mult") * (t.explosive_damage + t.explosive_damage_per_level * float(explosive)), e)
 	if elite or randf() < GameData.number("pickups.drop_chance", 0.14):
 		ctx.spawner.spawn_pickup(e.pos2, ctx.spawner.roll_pickup())
+	ctx.effects.on_kill(e)
 	_check_milestone()
 	ctx.control.forget_target(e)
 	ctx.events.enemy_killed.emit(str(e.kind), elite, run.score - before)

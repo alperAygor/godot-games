@@ -96,6 +96,16 @@ def render(rep):
         if c.get("endgame_ship_share"):
             L.append("Her şey alındıktan sonra (12 koşu): kullanım " + ", ".join(f"{k} %{100 * v:.0f}" for k, v in c["endgame_ship_share"].items()) +
                      " · ort. dalga " + ", ".join(f"{k} {f(v)}" for k, v in c["endgame_ship_mean_wave"].items()))
+    sc = rep.get("scan")
+    if sc:
+        L.append("")
+        L.append(f"## Kırık kombinasyon taraması ({sc['ship']}, atölye {sc['tier']}, {sc['seeds']} tohum; yapısız medyan {f(sc['baseline_median'])})")
+        L.append(table(["grup", "giriş", "en iyi", "en iyi IQM", "ort. IQM", "oran (kapı)", "düz medyan oranı", "sınır"],
+                       [[g, len(v["entries"]), v["best"], f(v["best_median"]), f(v["mean_median"]), f(v["ratio"], 2), f(v.get("median_ratio", 0), 2), f(v["max_ratio"], 2)] for g, v in sc["groups"].items()]))
+        for g, v in sc["groups"].items():
+            items = sorted(v["entries"].items(), key=lambda kv: -kv[1])
+            L.append("")
+            L.append(f"{g}: " + ", ".join(f"{k} {f(x)}" for k, x in items))
     a = rep["assertions"]
     L.append("")
     L.append("## Doğrulamalar")

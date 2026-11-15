@@ -1,0 +1,16 @@
+{
+ "YASAKLA": "BANISH",
+ "YASAKLA  (%d)": "BANISH  (%d)",
+ "YASAKLANDI: %s": "BANISHED: %s",
+ "EVRİM": "EVOLUTION",
+ "LANET": "CURSE",
+ "LANETLİ": "CURSED",
+ "EVRİM HAZIR: %s — bu seçimde!": "EVOLUTION READY: %s — in this pick!",
+ "EVRİM YOLU: %s": "EVOLUTION PATH: %s",
+ "maksimum can -40": "max HP -40",
+ "tüm iyileşme -%50": "all healing -50%",
+ "alınan hasar +%40": "damage taken +40%",
+ "hız -%25, atılma beklemesi +%60": "speed -25%, dash cooldown +60%",
+ "nova -%70 yavaş dolar": "nova charges 70% slower",
+ "seviyede yalnız 2 kart": "only 2 cards per level"
+}

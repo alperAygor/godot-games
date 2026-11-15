@@ -174,6 +174,8 @@ static func check(report: Dictionary, expect_full_cards := true) -> Array:
 	if expect_full_cards:
 		for id in report.get("cards", {}):
 			var c: Dictionary = report["cards"][id]
+			if str(c.get("tier", "")) in ["evolution", "cursed"]:
+				continue   # havuz dışı / yalnız tarif tamamlanınca: kırık kombinasyon taraması ölçer
 			if int(c["offered"]) == 0:
 				problems.append("kart %s hiç sunulmadı" % id)
 			elif int(c["picked"]) == 0 and int(c["offered"]) >= 20:
@@ -183,6 +185,45 @@ static func check(report: Dictionary, expect_full_cards := true) -> Array:
 		var b: Variant = report.get("by_tier", {}).get(tier_pair[1], null)
 		if a != null and b != null and float(b["wave"]["median"]) + 0.01 < float(a["wave"]["median"]):
 			problems.append("tam atölye (%.1f dalga) boş atölyeden (%.1f) daha kötü: yükseltmeler ters etki ediyor" % [float(b["wave"]["median"]), float(a["wave"]["median"])])
+	if report.has("scan"):
+		var sc: Dictionary = report["scan"]
+		if float(sc.get("ratio", 0.0)) > float(sc.get("max_ratio", 1.6)):
+			problems.append("kırık kombinasyon: %s sağlam medyan (IQM) dalga %.1f, ortalama %.1f (oran %.2f > %.2f)" % [str(sc.get("best", "?")), float(sc.get("best_median", 0.0)), float(sc.get("mean_median", 0.0)), float(sc["ratio"]), float(sc.get("max_ratio", 1.6))])
 	if report.has("determinism") and not bool(report["determinism"].get("same", true)):
 		problems.append("aynı tohum iki kez farklı sonuç verdi (belirlenimsizlik)")
 	return problems
+
+static func iqm(values: Array) -> float:
+	## Çeyrekler arası ortalama: sıralı listenin ortadaki yarısının ortalaması. Dalga sonuçları boss dalgalarında
+	## kümelendiği için (5/10/25…) az tohumda medyan bir kümeden ötekine sıçrar; IQM medyanın sağlam karşılığıdır.
+	if values.is_empty():
+		return 0.0
+	var sorted: Array = values.duplicate()
+	sorted.sort()
+	var cut := sorted.size() / 4
+	return mean(sorted.slice(cut, sorted.size() - cut))
+
+static func scan_summary(entries: Dictionary, max_ratio: float) -> Dictionary:
+	## Kırık kombinasyon taraması: entries = {ad: [dalga...]}. Kapı oranı = en iyi IQM / ortalama IQM (sağlam medyan);
+	## düz medyan oranı da raporlanır (median_ratio).
+	var medians := {}
+	var iqms := {}
+	var best := ""
+	var best_v := -1.0
+	var total := 0.0
+	var best_med := -1.0
+	var total_med := 0.0
+	for k in entries:
+		var md := quantile(entries[k], 0.5)
+		var q := iqm(entries[k])
+		medians[k] = _round(md)
+		iqms[k] = _round(q)
+		total += q
+		total_med += md
+		best_med = maxf(best_med, md)
+		if q > best_v or (q == best_v and str(k) < best):
+			best_v = q
+			best = k
+	var n := float(maxi(1, entries.size()))
+	return {"entries": iqms, "medians": medians, "best": best, "best_median": _round(best_v), "mean_median": _round(total / n),
+		"ratio": _round(best_v / maxf(0.001, total / n)), "median_ratio": _round(best_med / maxf(0.001, total_med / n)), "max_ratio": max_ratio}

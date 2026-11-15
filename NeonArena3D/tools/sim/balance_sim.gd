@@ -90,6 +90,14 @@ func _run() -> void:
 	var report := _build_report(data, runs, career_results, {
 		"seeds": seeds, "seed_base": seed_base, "ships": ships, "tiers": tier_names, "builds": build_names, "policies": policies, "careers": careers,
 	}, same)
+	if _flag("scan"):
+		var scan_started := Time.get_ticks_msec()
+		report["scan"] = _scan(sim, data, quick, seed_base)
+		var scn: Dictionary = report["scan"]
+		var parts := PackedStringArray()
+		for g in scn["groups"]:
+			parts.append("%s %.2f (%s)" % [g, float(scn["groups"][g]["ratio"]), str(scn["groups"][g]["best"])])
+		print("KIRIK KOMBİNASYON taraması: %d giriş × %d tohum, %.1f sn · en iyi/ort. sağlam medyan (IQM) dalga: %s · sınır %.2f" % [(scn["entries"] as Dictionary).size(), int(scn["seeds"]), float(Time.get_ticks_msec() - scan_started) / 1000.0, ", ".join(parts), float(scn["max_ratio"])])
 	var problems := SimReportScript.check(report, runs.size() >= 40)
 	report["assertions"] = {"failed": problems, "passed": problems.is_empty()}
 	var text := JSON.stringify(report, "  ", true)
@@ -114,6 +122,90 @@ func _run() -> void:
 			printerr("SIM HATA: " + str(p))
 		print("SİM SONUÇ: başarısız")
 		quit(1)
+
+func _scan(sim: RunSim, data: Dictionary, quick: bool, seed_base: int) -> Dictionary:
+	## Kırık kombinasyon taraması (C3). Üç grup, her biri kendi içinde karşılaştırılır (kart sayısı eşit olsun diye):
+	##   singles: her normal kart `stack` kez (sınırına kadar) ve her lanet tek başına
+	##   recipes: her sinerji/evrim tarifi (parçalarıyla)
+	##   pairs:   en iyi `top_pairs` tekil kartın ikili birleşimleri + (tam taramada) her kartın sıradaki kartla ikilisi
+	## Gemi/atölye sabit, kalan seçimler rastgele politika. Grup başına en iyi / ortalama medyan dalga ≤ max_ratio.
+	var sc: Dictionary = data["model"]["scan"]
+	var seeds := int(_arg("scan-seeds", str(sc["quick_seeds"] if quick else sc["seeds"])))
+	var meta := sim.meta_for_fraction(float(data["model"]["tiers"][str(sc["tier"])]["fraction"]))
+	var ship := str(sc["ship"])
+	var stack := int(sc["stack"])
+	var by_id := {}
+	for c in data["cards"]:
+		by_id[str(c["id"])] = c
+	var groups := {"singles": {}, "recipes": {}, "pairs": {}}
+	var normal: Array = []
+	for c in data["cards"]:
+		var id := str(c["id"])
+		var tier := str(c.get("tier", ""))
+		var group := "recipes" if tier in ["synergy", "evolution"] else "singles"
+		groups[group][id] = _scan_runs(sim, meta, _recipe_give(id, by_id, stack), ship, seeds, seed_base)
+		if tier in ["common", "rare", "epic"]:
+			normal.append(id)
+	var singles: Dictionary = groups["singles"]
+	var ranked: Array = normal.duplicate()
+	ranked.sort_custom(func(a, b): return SimReportScript.iqm(singles[a]) > SimReportScript.iqm(singles[b]) or (SimReportScript.iqm(singles[a]) == SimReportScript.iqm(singles[b]) and str(a) < str(b)))
+	var pair_list: Array = []
+	var top: Array = ranked.slice(0, int(sc["top_pairs"] if quick else sc.get("full_top_pairs", sc["top_pairs"])))
+	for i in top.size():
+		for j in range(i + 1, top.size()):
+			pair_list.append([top[i], top[j]])
+	if not quick or _flag("scan-ring"):
+		for i in normal.size():
+			pair_list.append([normal[i], normal[(i + 1) % normal.size()]])
+	for pr in pair_list:
+		var key := str(pr[0]) + "+" + str(pr[1])
+		if not groups["pairs"].has(key):
+			groups["pairs"][key] = _scan_runs(sim, meta, _recipe_give(pr[0], by_id, stack) + _recipe_give(pr[1], by_id, stack), ship, seeds, seed_base)
+	var out := {"seeds": seeds, "ship": ship, "tier": sc["tier"], "max_ratio": float(sc["max_ratio"]), "groups": {}, "entries": {}}
+	var worst := -1.0
+	for g in groups:
+		var summary := SimReportScript.scan_summary(groups[g], float(sc["max_ratio"]))
+		out["groups"][g] = summary
+		(out["entries"] as Dictionary).merge(summary["entries"])
+		if float(summary["ratio"]) > worst:
+			worst = float(summary["ratio"])
+			out["ratio"] = summary["ratio"]
+			out["best"] = g + ":" + str(summary["best"])
+			out["best_median"] = summary["best_median"]
+			out["mean_median"] = summary["mean_median"]
+			out["median_ratio"] = summary["median_ratio"]
+	var base := _scan_runs(sim, meta, [], ship, seeds, seed_base)
+	out["baseline_median"] = SimReportScript._round(SimReportScript.iqm(base))
+	return out
+
+func _scan_runs(sim: RunSim, meta: MetaProgress, give: Array, ship: String, seeds: int, seed_base: int) -> Array:
+	var waves: Array = []
+	for k in seeds:
+		waves.append(sim.play({"seed": seed_base + k, "ship": ship, "meta": meta, "give": give, "policy": "random"})["wave"])
+	return waves
+
+func _recipe_give(id: String, by_id: Dictionary, stack: int) -> Array:
+	## Kartı (ve sinerji/evrimse tarifini, iç içe) verilecek kimlik listesine açar.
+	var card: Dictionary = by_id.get(id, {})
+	var tier := str(card.get("tier", ""))
+	if tier == "cursed":
+		return [id]
+	if tier == "synergy" or tier == "evolution":
+		var out: Array = []
+		var need := Loadout.recipe_of(card)
+		for piece in need:
+			var sub := _recipe_give(str(piece), by_id, int(need[piece]))
+			for x in sub:
+				out.append(x)
+		out.append(id)
+		return out
+	var n := stack
+	if int(card.get("max", 0)) > 0:
+		n = mini(n, int(card["max"]))
+	var list: Array = []
+	for k in n:
+		list.append(id)
+	return list
 
 func _strip(r: Dictionary) -> Dictionary:
 	var c := r.duplicate(true)

@@ -7,7 +7,16 @@ const LETTERS := "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZQWXabcçdefgğhıijklmnoöp
 
 func _en() -> Dictionary:
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(EN_PATH))
-	return parsed if parsed is Dictionary else {}
+	var out: Dictionary = parsed if parsed is Dictionary else {}
+	# Görev başına ek dosyalar (data/lang/en_*.json) I18n'de birleşir; kapsam testi de onları sayar.
+	var dir := DirAccess.open("res://data/lang")
+	if dir != null:
+		for file_name in dir.get_files():
+			if file_name.begins_with("en_") and file_name.ends_with(".json"):
+				var extra: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/lang/" + file_name))
+				if extra is Dictionary:
+					out.merge(extra)
+	return out
 
 func _scripts(dir_path: String, out: Array) -> void:
 	var dir := DirAccess.open(dir_path)

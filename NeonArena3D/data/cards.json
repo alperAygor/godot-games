@@ -50,26 +50,28 @@
   {
     "id": "atilma",
     "name": "KISA DEVRE",
-    "desc": "Atılma beklemesi -%18",
+    "desc": "Atılma beklemesi -%30, her atılma +3 nova",
     "tier": "common",
     "effect": {
-      "dash_cd_mult": -0.18
+      "dash_cd_mult": -0.3,
+      "dash_nova": 3
     },
     "icon": "dash",
     "name_en": "SHORT CIRCUIT",
-    "desc_en": "Dash cooldown -18%"
+    "desc_en": "Dash cooldown -30%, each dash +3 nova",
+    "max": 2
   },
   {
     "id": "miknatis",
     "name": "MIKNATIS",
-    "desc": "Toplama menzili +%70",
+    "desc": "Toplama menzili +%100",
     "tier": "common",
     "effect": {
-      "magnet": 0.7
+      "magnet": 1.0
     },
     "icon": "magnet",
     "name_en": "MAGNET",
-    "desc_en": "Pickup range +70%"
+    "desc_en": "Pickup range +100%"
   },
   {
     "id": "devmermi",
@@ -87,26 +89,28 @@
   {
     "id": "coklu",
     "name": "ÇOKLU ATIŞ",
-    "desc": "+1 mermi (en fazla 3)",
+    "desc": "+1 mermi (en fazla 3), mermi hasarı -%25",
     "tier": "rare",
     "effect": {
-      "projectiles": 1
+      "projectiles": 1,
+      "projectile_damage_mult": -0.25
     },
     "icon": "multi",
     "name_en": "MULTI SHOT",
-    "desc_en": "+1 projectile (max 3)"
+    "desc_en": "+1 projectile (max 3), projectile damage -25%"
   },
   {
     "id": "delici",
     "name": "DELİCİ",
-    "desc": "Mermiler +1 düşmanı deler",
+    "desc": "Mermiler +1 düşmanı deler, hasar +%6",
     "tier": "rare",
     "effect": {
-      "pierce": 1
+      "pierce": 1,
+      "damage_mult": 0.06
     },
     "icon": "pierce",
     "name_en": "PIERCING",
-    "desc_en": "Bullets pierce +1 enemy"
+    "desc_en": "Bullets pierce +1 enemy, damage +6%"
   },
   {
     "id": "vampir",
@@ -147,14 +151,14 @@
   {
     "id": "diken",
     "name": "DİKEN ZIRH",
-    "desc": "Temas eden düşmana 16 hasar",
+    "desc": "Temas eden düşmana 40 hasar",
     "tier": "rare",
     "effect": {
-      "thorns": 16
+      "thorns": 40
     },
     "icon": "thorns",
     "name_en": "THORN ARMOR",
-    "desc_en": "Deal 16 damage to enemies that touch you"
+    "desc_en": "Deal 40 damage to enemies that touch you"
   },
   {
     "id": "drone",
@@ -171,26 +175,27 @@
   {
     "id": "zincir",
     "name": "ZİNCİR ŞİMŞEK",
-    "desc": "İsabetler yakındaki +1 düşmana sıçrar (en fazla 3)",
+    "desc": "İsabetler +1 düşmana sıçrar (en fazla 3), zincir hasarı +%35",
     "tier": "rare",
     "icon": "chain",
     "effect": {
-      "chain": 1
+      "chain": 1,
+      "chain_power": 0.35
     },
     "name_en": "CHAIN LIGHTNING",
-    "desc_en": "Hits arc to +1 nearby enemy (max 3)"
+    "desc_en": "Hits arc to +1 enemy (max 3), chain damage +35%"
   },
   {
     "id": "sok",
     "name": "ŞOK ATILMASI",
-    "desc": "Atılırken değdiğin düşmanlara 45 hasar",
+    "desc": "Atılırken değdiğin düşmanlara 80 hasar",
     "tier": "rare",
     "icon": "shock",
     "effect": {
-      "dash_damage": 45
+      "dash_damage": 80
     },
     "name_en": "SHOCK DASH",
-    "desc_en": "Dashing through enemies deals 45 damage"
+    "desc_en": "Dashing through enemies deals 80 damage"
   },
   {
     "id": "novacekirdek",
@@ -241,11 +246,319 @@
     "desc_en": "Revive once at half health"
   },
   {
+    "id": "yorunge",
+    "name": "YÖRÜNGE BIÇAKLARI",
+    "name_en": "ORBIT BLADES",
+    "desc": "Etrafında dönen bıçak, değdiğini keser (en fazla 3)",
+    "desc_en": "A blade circles you, cutting what it touches (max 3)",
+    "tier": "rare",
+    "icon": "crit",
+    "effect": {
+      "orbit_blades": 1
+    }
+  },
+  {
+    "id": "taret",
+    "name": "OTOMATİK TARET",
+    "name_en": "AUTO TURRET",
+    "desc": "Her atılmada 7 sn ateş eden taret bırakırsın",
+    "desc_en": "Each dash drops a turret that fires for 7 s",
+    "tier": "epic",
+    "icon": "drone",
+    "effect": {
+      "turret": 1
+    }
+  },
+  {
+    "id": "arka",
+    "name": "ARKA TOPLAR",
+    "name_en": "REAR GUNS",
+    "desc": "Her atış arkana da mermi yollar (%70 hasar)",
+    "desc_en": "Every shot also fires behind you (70% damage)",
+    "tier": "common",
+    "icon": "multi",
+    "effect": {
+      "rear_guns": 1
+    }
+  },
+  {
+    "id": "sekme",
+    "name": "SEKME",
+    "name_en": "RICOCHET",
+    "desc": "Duran mermi yakındaki düşmana tam hasarla seker",
+    "desc_en": "Stopped bullets bounce to a nearby enemy at full damage",
+    "tier": "rare",
+    "icon": "pierce",
+    "effect": {
+      "ricochet": 1
+    }
+  },
+  {
+    "id": "infaz",
+    "name": "İNFAZ",
+    "name_en": "EXECUTIONER",
+    "desc": "Canı %15 altına düşen düşmanı anında bitirir",
+    "desc_en": "Instantly finishes enemies below 15% health",
+    "tier": "rare",
+    "icon": "damage",
+    "effect": {
+      "execute": 1
+    },
+    "max": 2
+  },
+  {
+    "id": "kirilma",
+    "name": "KRİSTAL KIRILMA",
+    "name_en": "SHATTER",
+    "desc": "Kritik +%5; kritik isabet 4 parçaya bölünür",
+    "desc_en": "Crit +5%; critical hits shatter into 4 shards",
+    "tier": "rare",
+    "icon": "crit",
+    "effect": {
+      "crit_shards": 1,
+      "crit": 0.05
+    }
+  },
+  {
+    "id": "ivme",
+    "name": "İVME",
+    "name_en": "MOMENTUM",
+    "desc": "Hareket ederken hasar +%30'a kadar artar",
+    "desc_en": "Up to +30% damage while moving",
+    "tier": "common",
+    "icon": "speed",
+    "effect": {
+      "momentum": 0.3
+    },
+    "max": 2
+  },
+  {
+    "id": "karadelik",
+    "name": "KARA DELİK",
+    "name_en": "BLACK HOLE",
+    "desc": "Nova düşmanları çeker, ardından içe çöker",
+    "desc_en": "Nova pulls enemies in, then implodes",
+    "tier": "epic",
+    "icon": "nova",
+    "effect": {
+      "nova_vortex": 1
+    }
+  },
+  {
+    "id": "akim",
+    "name": "İYON AKIMI",
+    "name_en": "ION SURGE",
+    "desc": "Her atılma novayı +6 doldurur",
+    "desc_en": "Each dash charges nova +6",
+    "tier": "common",
+    "icon": "dash",
+    "effect": {
+      "dash_nova": 6
+    },
+    "max": 2
+  },
+  {
+    "id": "iz",
+    "name": "PLAZMA İZİ",
+    "name_en": "PLASMA TRAIL",
+    "desc": "Atılma ardında yakan bir iz bırakır",
+    "desc_en": "Dashing leaves a burning trail",
+    "tier": "rare",
+    "icon": "explosive",
+    "effect": {
+      "dash_trail": 1
+    }
+  },
+  {
+    "id": "adrenalin",
+    "name": "ADRENALİN",
+    "name_en": "ADRENALINE",
+    "desc": "Can %40 altındayken ateş hızı +%40, hız +%15",
+    "desc_en": "Below 40% HP: fire rate +40%, speed +15%",
+    "tier": "rare",
+    "icon": "rate",
+    "effect": {
+      "adrenaline": 1
+    }
+  },
+  {
+    "id": "ayna",
+    "name": "AYNA ATILMASI",
+    "name_en": "MIRROR DASH",
+    "desc": "Atılırken yakındaki düşman mermilerini geri yansıtırsın",
+    "desc_en": "Dashing reflects nearby enemy bullets back",
+    "tier": "epic",
+    "icon": "shield",
+    "effect": {
+      "reflect": 1
+    }
+  },
+  {
+    "id": "bariyer",
+    "name": "ÖLÜM BARİYERİ",
+    "name_en": "KILL BARRIER",
+    "desc": "Her 30 öldürmede kalkan (2. kart: 20)",
+    "desc_en": "A shield every 30 kills (2nd card: 20)",
+    "tier": "rare",
+    "icon": "armor",
+    "effect": {
+      "kill_shield": 1
+    }
+  },
+  {
+    "id": "sabit",
+    "name": "SABİT NİŞAN",
+    "name_en": "STEADY AIM",
+    "desc": "Dururken hasar +%40",
+    "desc_en": "+40% damage while standing still",
+    "tier": "common",
+    "icon": "heavy",
+    "effect": {
+      "steady": 0.4
+    },
+    "max": 2
+  },
+  {
+    "id": "toplayici",
+    "name": "ŞOK TOPLAYICI",
+    "name_en": "PICKUP SHOCK",
+    "desc": "Toplanan her güçlendirme şok dalgası salar",
+    "desc_en": "Every pickup releases a shockwave",
+    "tier": "common",
+    "icon": "magnet",
+    "effect": {
+      "pickup_blast": 1
+    }
+  },
+  {
+    "id": "avci",
+    "name": "AVCI",
+    "name_en": "HUNTER",
+    "desc": "Elit ve boss'a hasar +%25, elitler 2 ganimet düşürür",
+    "desc_en": "+25% damage to elites and bosses, elites drop 2 pickups",
+    "tier": "common",
+    "icon": "damage",
+    "effect": {
+      "hunter": 0.25
+    },
+    "max": 2
+  },
+  {
+    "id": "kombo",
+    "name": "KOMBO MOTORU",
+    "name_en": "COMBO ENGINE",
+    "desc": "Her kombo öldürmesi hasarı +%1 artırır (en fazla %45)",
+    "desc_en": "Each combo kill adds +1% damage (max 45%)",
+    "tier": "rare",
+    "icon": "rate",
+    "effect": {
+      "combo_power": 0.01
+    },
+    "max": 2
+  },
+  {
+    "id": "novakalkan",
+    "name": "NOVA KABUĞU",
+    "name_en": "NOVA SHELL",
+    "desc": "Nova kullanınca kalkan ve +25 can",
+    "desc_en": "Using nova grants a shield and +25 HP",
+    "tier": "common",
+    "icon": "shield",
+    "effect": {
+      "nova_shell": 1
+    }
+  },
+  {
+    "id": "bolunme",
+    "name": "BÖLÜNME",
+    "name_en": "SPLITTER",
+    "desc": "Öldüren mermi üç parçaya bölünür",
+    "desc_en": "Killing bullets split in three",
+    "tier": "rare",
+    "icon": "multi",
+    "effect": {
+      "split_shot": 1
+    }
+  },
+  {
+    "id": "statik",
+    "name": "STATİK ALAN",
+    "name_en": "STATIC FIELD",
+    "desc": "Her saniye yakındaki 2 düşmanı çarpar",
+    "desc_en": "Zaps 2 nearby enemies every second",
+    "tier": "rare",
+    "icon": "chain",
+    "effect": {
+      "static_field": 1
+    }
+  },
+  {
+    "id": "asiri",
+    "name": "AŞIRI YÜKLEME",
+    "name_en": "OVERLOAD",
+    "desc": "Aşırı yük 2 kat sürer, o sırada nova ×2 dolar",
+    "desc_en": "Overdrive lasts 2× longer and doubles nova gain",
+    "tier": "common",
+    "icon": "overdrive",
+    "effect": {
+      "overdrive_plus": 1
+    }
+  },
+  {
+    "id": "sismik",
+    "name": "SİSMİK İNİŞ",
+    "name_en": "SEISMIC DASH",
+    "desc": "Atılmanın sonunda yere çarpıp patlarsın",
+    "desc_en": "The end of a dash slams the ground",
+    "tier": "rare",
+    "icon": "explosive",
+    "effect": {
+      "dash_blast": 1
+    }
+  },
+  {
+    "id": "celik",
+    "name": "ÇELİK GÖVDE",
+    "name_en": "STEEL HULL",
+    "desc": "Her darbede alınan hasar -3",
+    "desc_en": "Take 3 less damage from every hit",
+    "tier": "common",
+    "icon": "armor",
+    "effect": {
+      "plating": 3
+    },
+    "max": 3
+  },
+  {
+    "id": "firlatici",
+    "name": "FÜZE KAPSÜLÜ",
+    "name_en": "MISSILE POD",
+    "desc": "2,2 sn'de bir güdümlü füze fırlatır",
+    "desc_en": "Launches a homing missile every 2.2 s",
+    "tier": "epic",
+    "icon": "explosive",
+    "effect": {
+      "missile_pod": 1
+    }
+  },
+  {
+    "id": "kalkancarp",
+    "name": "KALKAN ÇARPMASI",
+    "name_en": "SHIELD BASH",
+    "desc": "Kalkanın kırılınca çevreni patlatır",
+    "desc_en": "When your shield breaks, it explodes",
+    "tier": "rare",
+    "icon": "shield",
+    "effect": {
+      "shield_bash": 1
+    }
+  },
+  {
     "id": "s_firtina",
     "name": "FIRTINA AĞI",
     "name_en": "STORM NET",
-    "desc": "Kritik isabetler 2 düşmana daha sıçrar, zincir hasarı ×2",
-    "desc_en": "Crits arc to 2 more enemies, chain damage ×2",
+    "desc": "Kritik +%5; kritikler 2 düşmana daha sıçrar, zincir ×2",
+    "desc_en": "Crit +5%; crits arc to 2 more enemies, chain damage ×2",
     "tier": "synergy",
     "icon": "chain",
     "requires": [
@@ -253,7 +566,8 @@
       "kritik"
     ],
     "effect": {
-      "storm": 1
+      "storm": 1,
+      "crit": 0.05
     }
   },
   {
@@ -276,8 +590,8 @@
     "id": "s_kiyamet",
     "name": "KIYAMET NOVASI",
     "name_en": "DOOM NOVA",
-    "desc": "Nova %50 daha geniş ve ardından 3 artçı patlama bırakır",
-    "desc_en": "Nova is 50% wider and leaves 3 aftershock blasts",
+    "desc": "Nova %50 geniş, %40 hızlı dolar ve 3 artçı patlama bırakır",
+    "desc_en": "Nova is 50% wider, charges 40% faster and leaves 3 aftershocks",
     "tier": "synergy",
     "icon": "nova",
     "requires": [
@@ -285,15 +599,16 @@
       "patlayici"
     ],
     "effect": {
-      "doom_nova": 1
+      "doom_nova": 1,
+      "nova_rate_mult": 0.4
     }
   },
   {
     "id": "s_yildirim",
     "name": "YILDIRIM KOŞUSU",
     "name_en": "BLITZ RUN",
-    "desc": "Atılma hasarı ×2; atılırken öldürmek beklemeyi sıfırlar",
-    "desc_en": "Dash damage ×2; killing while dashing resets the cooldown",
+    "desc": "Atılma hasarı ×2, beklemesi -%15; atılırken öldürmek beklemeyi sıfırlar",
+    "desc_en": "Dash damage ×2, cooldown -15%; dash kills reset the cooldown",
     "tier": "synergy",
     "icon": "shock",
     "requires": [
@@ -301,7 +616,8 @@
       "atilma"
     ],
     "effect": {
-      "blitz": 1
+      "blitz": 1,
+      "dash_cd_mult": -0.15
     }
   },
   {
@@ -335,6 +651,218 @@
     ],
     "effect": {
       "fortress": 1
+    }
+  },
+  {
+    "id": "e_yildiz",
+    "name": "YILDIZ YAĞMURU",
+    "name_en": "STARFALL",
+    "desc": "EVRİM: +1 mermi (en fazla 4), mermiler +2 deler",
+    "desc_en": "EVOLUTION: +1 projectile (max 4), bullets pierce +2",
+    "tier": "evolution",
+    "icon": "multi",
+    "effect": {
+      "evo_starfall": 1,
+      "projectiles": 1,
+      "pierce": 2
+    },
+    "evolve": {
+      "coklu": 2,
+      "delici": 2
+    }
+  },
+  {
+    "id": "e_suru",
+    "name": "SÜRÜ KRALİÇESİ",
+    "name_en": "SWARM QUEEN",
+    "desc": "EVRİM: +1 drone (en fazla 4), drone mermileri deler ve ×1,5 vurur",
+    "desc_en": "EVOLUTION: +1 drone (max 4), drone shots pierce and hit ×1.5",
+    "tier": "evolution",
+    "icon": "drone",
+    "effect": {
+      "evo_swarm": 1,
+      "drones": 1
+    },
+    "evolve": {
+      "drone": 2,
+      "s_kovan": 1,
+      "taret": 1
+    }
+  },
+  {
+    "id": "e_tanri",
+    "name": "YILDIRIM TANRISI",
+    "name_en": "THUNDER GOD",
+    "desc": "EVRİM: statik alan 2 kat hızlı, +2 hedef; zincir en fazla 4",
+    "desc_en": "EVOLUTION: static field twice as fast, +2 targets; chain max 4",
+    "tier": "evolution",
+    "icon": "chain",
+    "effect": {
+      "evo_thunder": 1,
+      "chain": 1
+    },
+    "evolve": {
+      "zincir": 2,
+      "statik": 1
+    }
+  },
+  {
+    "id": "e_kanay",
+    "name": "KAN AYI",
+    "name_en": "BLOOD MOON",
+    "desc": "EVRİM: vampir ×1,5, her 35 fazla can bir kalkan",
+    "desc_en": "EVOLUTION: vampire ×1.5, every 35 overflow HP becomes a shield",
+    "tier": "evolution",
+    "icon": "vampire",
+    "effect": {
+      "evo_bloodmoon": 1
+    },
+    "evolve": {
+      "vampir": 2,
+      "s_hasat": 1
+    }
+  },
+  {
+    "id": "e_kuyruk",
+    "name": "KUYRUKLU YILDIZ",
+    "name_en": "COMET",
+    "desc": "EVRİM: atılma beklemesi -%20, iniş ×3 vurur ve iz bırakır",
+    "desc_en": "EVOLUTION: dash cooldown -20%, slam hits ×3 and leaves a trail",
+    "tier": "evolution",
+    "icon": "dash",
+    "effect": {
+      "evo_comet": 1,
+      "dash_cd_mult": -0.2
+    },
+    "evolve": {
+      "atilma": 2,
+      "sismik": 1
+    }
+  },
+  {
+    "id": "e_tekil",
+    "name": "TEKİLLİK",
+    "name_en": "SINGULARITY",
+    "desc": "EVRİM: nova %40 geniş, çöküş ×1,5; nova 30 iade eder",
+    "desc_en": "EVOLUTION: nova 40% wider, implosion ×1.5, refunds 30 nova",
+    "tier": "evolution",
+    "icon": "nova",
+    "effect": {
+      "evo_singularity": 1
+    },
+    "evolve": {
+      "novacekirdek": 2,
+      "karadelik": 1
+    }
+  },
+  {
+    "id": "l_cam",
+    "name": "CAM TOP",
+    "name_en": "GLASS CANNON",
+    "desc": "LANET: hasar +%60, maksimum can -40",
+    "desc_en": "CURSE: damage +60%, max HP -40",
+    "tier": "cursed",
+    "icon": "damage",
+    "effect": {
+      "damage_mult": 0.6,
+      "max_hp_bonus": -40
+    },
+    "curse": {
+      "reward_mult": 1.25,
+      "drawback": "maksimum can -40",
+      "drawback_en": "max HP -40"
+    }
+  },
+  {
+    "id": "l_kan",
+    "name": "KAN ANDI",
+    "name_en": "BLOOD OATH",
+    "desc": "LANET: ateş hızı +%35, tüm iyileşme -%50",
+    "desc_en": "CURSE: fire rate +35%, all healing -50%",
+    "tier": "cursed",
+    "icon": "vampire",
+    "effect": {
+      "fire_rate_mult": 0.35,
+      "heal_mult": -0.5
+    },
+    "curse": {
+      "reward_mult": 1.2,
+      "drawback": "tüm iyileşme -%50",
+      "drawback_en": "all healing -50%"
+    }
+  },
+  {
+    "id": "l_asiri",
+    "name": "AŞIRI HIZ",
+    "name_en": "OVERCLOCK",
+    "desc": "LANET: hasar +%20, ateş hızı +%30, alınan hasar +%40",
+    "desc_en": "CURSE: damage +20%, fire rate +30%, damage taken +40%",
+    "tier": "cursed",
+    "icon": "overdrive",
+    "effect": {
+      "damage_mult": 0.2,
+      "fire_rate_mult": 0.3,
+      "hurt_mult": 0.4
+    },
+    "curse": {
+      "reward_mult": 1.3,
+      "drawback": "alınan hasar +%40",
+      "drawback_en": "damage taken +40%"
+    }
+  },
+  {
+    "id": "l_agir",
+    "name": "DEMİR GÖVDE",
+    "name_en": "IRON HULL",
+    "desc": "LANET: +80 maksimum can, darbe -4; hız -%25, atılma beklemesi +%60",
+    "desc_en": "CURSE: +80 max HP, -4 per hit; speed -25%, dash cooldown +60%",
+    "tier": "cursed",
+    "icon": "armor",
+    "effect": {
+      "max_hp_bonus": 80,
+      "plating": 4,
+      "speed_mult": -0.25,
+      "dash_cd_mult": 0.6
+    },
+    "curse": {
+      "reward_mult": 1.15,
+      "drawback": "hız -%25, atılma beklemesi +%60",
+      "drawback_en": "speed -25%, dash cooldown +60%"
+    }
+  },
+  {
+    "id": "l_kor",
+    "name": "KÖR ÖFKE",
+    "name_en": "BLIND RAGE",
+    "desc": "LANET: kritik şansı +%30, nova -%70 yavaş dolar",
+    "desc_en": "CURSE: crit chance +30%, nova charges 70% slower",
+    "tier": "cursed",
+    "icon": "crit",
+    "effect": {
+      "crit": 0.3,
+      "nova_rate_mult": -0.7
+    },
+    "curse": {
+      "reward_mult": 1.2,
+      "drawback": "nova -%70 yavaş dolar",
+      "drawback_en": "nova charges 70% slower"
+    }
+  },
+  {
+    "id": "l_acgoz",
+    "name": "AÇGÖZLÜLÜK",
+    "name_en": "GREED",
+    "desc": "LANET: çekirdek ödülü ×1,5, seviyede yalnız 2 kart",
+    "desc_en": "CURSE: core reward ×1.5, only 2 cards per level",
+    "tier": "cursed",
+    "icon": "core",
+    "effect": {
+      "offer_size": -1
+    },
+    "curse": {
+      "reward_mult": 1.5,
+      "drawback": "seviyede yalnız 2 kart",
+      "drawback_en": "only 2 cards per level"
     }
   }
 ]

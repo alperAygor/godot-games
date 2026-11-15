@@ -33,6 +33,7 @@ Kural: modüller birbirine ve duruma yalnız `GameContext` (`ctx`) üzerinden er
 | `weapons.gd` | `WeaponSystem` | gemi silahları (atış topu/saçma/ray/roket), roket güdümü, düşman mermisi, refakat dronları | — |
 | `spawner.gd` | `Spawner` | düşman/toplanabilir doğurma, doğma noktası, elit şansı, av modu temposu, düşman adımı (engel kaçınma, itme, sınır, bombacı fitili), ayrılma | dalga süresi, av sayacı |
 | `boss_events.gd` | `BossEvents` | boss doğma, Boss3D sinyallerinin mermi/tehlike/ışın karşılıkları, yer tehlikeleri, lazerler, ölüm sekansı | iniş/ölüm bayrakları |
+| `card_effects.gd` | `CardEffects` | C3 kart etkileri (yeni 25 kart, 6 evrim, lanet bedelleri) — diğer modüller yalnız tek satırlık kanca çağırır (`shot_damage_mult`, `on_hit`, `on_kill`, `on_hurt`, `on_dash`, `on_nova`, `tick` …); kart ekranına yasaklama satırı + evrim ipucu (`cards.add_below_reroll`); lanetli kart için `apply_curse(id)` (C1 kapısı). Sayılar `data/card_rules.json` → `params` | bıçak/taret/iz/statik/füze sayaçları, öldürme sayacı |
 | `cards_flow.gd` | `CardsFlow` | seviye kartı aç/yenile/seç, duraklatma, arka arkaya bekleyen seviyeler | açık mı, bekleyen, kart çekiliş RNG |
 | `camera_rig.gd` | `CameraRig` | kamera (menü süzülmesi, öne bakış, boss yakınlaştırma, sarsıntı), fare nişanı, nişan halkası | kamera düğümleri, öne bakış, yakınlaştırma |
 | `feedback.gd` | `Feedback` | juice: dünya parıltıları, vinyet (hasar/düşük can/ton), hasar sayıları, kalp atışı, atılma/kalkan/hasar efektleri | vinyet değerleri |

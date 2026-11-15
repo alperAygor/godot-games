@@ -20,7 +20,7 @@ func on_player_shot(origin: Vector2, direction: Vector2) -> void:
 	var sparks := ctx.sparks
 	var w: Dictionary = ctx.weapon
 	var kind := str(w.get("type", "blaster"))
-	var damage: float = t.player_damage * loadout.m("damage_mult") * float(w.get("damage", 1.0))
+	var damage: float = t.player_damage * loadout.m("damage_mult") * float(w.get("damage", 1.0)) * ctx.effects.shot_damage_mult()
 	var speed := float(w.get("speed", 980.0))
 	var life := float(w.get("life", 0.85))
 	var spread := float(w.get("spread", 0.035))
@@ -78,6 +78,7 @@ func on_player_shot(origin: Vector2, direction: Vector2) -> void:
 			Sound.play("shoot", randf_range(-2.0, 0.0), 1.18 if player.overdrive > 0.0 else 1.0)
 			player.velocity2 -= direction * t.player_knockback * t.weapons_blaster_recoil_mult
 			Fx.punch(-direction, 0.9)
+	ctx.effects.on_shot(origin, direction, damage, size)
 
 func _nearest_hostile(from: Vector2, radius: float, heading: Vector2) -> Object:
 	var best: Object = null
@@ -189,3 +190,4 @@ func tick_drones(delta: float) -> void:
 				var dir: Vector2 = ((target_pos as Vector2) - at).normalized()
 				var b = ctx.field.spawn(at, dir, t.drones_bullet_speed, true, t.player_damage * ctx.loadout.m("damage_mult") * t.drones_damage, t.drones_life, t.drones_size)
 				b.chain = 1
+				ctx.effects.drone_bullet(b)
