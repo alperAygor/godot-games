@@ -13,6 +13,13 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/), sürümleme [Se
 - Ayarlar sayfasında TR/EN/ES hap düğmeleri (`UiLanguageRow`); dil değişince sahne baştan kurulur.
 - Araçlar `--lang=tr|en|es` alır; `tests/unit/test_loc.gd` tablo/yer tutucu/kullanılmayan anahtar denetimi yapar.
 
+### Dil genişlemesi (orch/ci-i18n) — pt, de, ja, ko
+- 245 anahtar x 4 yeni dil; oyun adı tr dışında "Clothesline Sort". Dil seçici yerel adlarla (Português, Deutsch, 日本語, 한국어).
+- `LocFonts`: ja/ko için SystemFont yedek zinciri (paket +0 bayt, Android cihazda doğrulanmadı); Korece kelime bağlama.
+- `Loc`: cihaz dili eşleme (`language_for_locale`), yedek zinciri en -> tr, `locale/fallback="en"`.
+- `tools/lang_probe.gd` yedi dil + ekran sığma denetimi; `test_loc` genişledi; `subset_font.py --check`.
+- İnceleme listesi: `docs/I18N.md` "Native gözden geçirme listesi".
+
 ### Eklenecek
 - Oyun mekaniği
 
