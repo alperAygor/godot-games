@@ -26,10 +26,13 @@
 reklamı ve "reklamları kaldır" akışları (sahte sağlayıcıyla); ajan oyun testi raporu; deneme APK'sı.
 
 - [ ] `sy-core` (Opus): kurallar (GDScript) + Python aynası, çözücü, üreteç, uygunluk vektörleri, metin arayüzü, ilk seviyeler
-- [ ] `sy-shell` (Sonnet): kabuk — seviye haritası, HUD, sonuç, reklam politikası, satın alma arayüzü, dil kuralı
+- [x] `sy-shell` (Sonnet): kabuk — seviye haritası, HUD, sonuç, reklam politikası, satın alma arayüzü, dil kuralı
 - [ ] `sy-view` (çekirdek birleşince): saha görünümü, girdi, canlandırma (`LevelSession` uygulaması)
 - [ ] `sy-playtest` (seviyeler gelince): kör oyun testi ajanları
-- [ ] `sy-android`: derleme şablonu, AdMob ve faturalandırma eklentileri, deneme APK'sı
+- [ ] `sy-ux` (Sonnet): arayüz/deneyim cilası, ana ekranda canlı saha yuvası, geçişler, seviye haritası
+- [ ] `sy-art` (Opus): Blender modelleri (lokomotif, vagonlar, ray parçaları, hedefler), dünya çevreleri, pişmiş ışık
+- [ ] `sy-android` (oyun+arayüz+seviyeler bitince): Android SDK, derleme şablonu, AdMob ve faturalandırma eklentileri, deneme APK'sı
+- [ ] `sy-opt` (EN SON): performans, paket boyutu, bellek, açılış süresi
 
 - [ ] `PlaceholderRun` yerine gerçek kural sınıfı (saf, testli)
 - [ ] `game.gd` YER TUTUCU bölümlerinin değişimi

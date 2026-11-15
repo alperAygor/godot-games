@@ -32,3 +32,12 @@ func show_hint() -> void:
 ## Sayfa/reklam açıkken girdi kapatılır.
 func set_input_enabled(_enabled: bool) -> void:
 	pass
+
+## Tanıtım kipi (ana ekran arka planı): seviyeyi kurar ve kayıtlı çözümünü döngüde kendi kendine oynatır.
+## Girdi kapalıdır, hiçbir sinyal yayılmaz, ses çıkmaz. Bilinmeyen kimlikte false döner.
+func start_demo(_level_id: String) -> bool:
+	return false
+
+## Tanıtım kipini durdurur (sahne değişirken).
+func stop_demo() -> void:
+	pass

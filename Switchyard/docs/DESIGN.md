@@ -118,11 +118,27 @@ Adaylar (çekirdek işçisi çözücüyle dener, en derin bulmaca verenleri öne
    kazanma algısı, sayaç, sonuç sayfası, reklam akışı (sahte sağlayıcı).
 4. **Görsel denetim:** ekran görüntüleri (her dünya, küçük/büyük saha) bir ajan ve lider tarafından gözden geçirilir.
 
-## 8. Görünüm
+## 8. Görünüm (kullanıcı kararı 2026-11-15: modeller Blender'da, kaliteli; arka plan ve çevre de iyi olmalı)
 
-Kuşbakışı 2B, pürüzsüz vektör çizim (kural 1: low-poly ve pikselli görüntü yok). Raylar yumuşak eğrilerle bağlanır,
-araçlar ray teğetine döner, hareket hücreler arasında akıcı ara değerle canlandırılır. Vagon rengi her zaman bir
-simgeyle birlikte gelir (renk körlüğü). Arayüz: şablonun UI kiti (minimal, düz, premium).
+**Minyatür saha dioraması, 3B.** Lokomotif, vagonlar, ray parçaları ve çevre Blender'da (betikle, `tools/blender/`)
+modellenir, GLB olarak Godot'a girer. Kural 1 geçerli: low-poly ve pikselli görüntü YOK; yuvarlatılmış kenarlar,
+pürüzsüz yüzeyler, temiz malzemeler. Kamera sabit, ortografik, kuşbakışına yakın eğik (bulmaca okunurluğu önce gelir:
+her hücre, her kanca, her hedef tek bakışta seçilmeli). Işık: sıcak gün ışığı, yumuşak gölge; mümkün olan her şey
+Blender'da dokuya pişirilir (sabit kamera sayesinde ucuz ve kaliteli; hedef düşük-orta Android cihazda 60 kare).
+Raylar yumuşak eğrilerle bağlanır, araçlar ray teğetine döner, hareket hücreler arasında akıcıdır.
+Vagon rengi her zaman bir simgeyle birlikte gelir (renk körlüğü). Hedef hücre: yerde aynı renk ve simgeyle işaret.
+
+**Çevre:** saha boş zeminde durmaz; her dünyanın bir yeri vardır (1: kır deposu; 2: liman; 3: dağ/kar; 4: fabrika;
+sonrakiler işçi önerisiyle). Çevre oyun alanını çerçeveler ama rakip olmaz (doygunluk ve kontrast sahada, çevrede değil).
+
+**Arayüz:** şablonun UI kiti (minimal, düz, premium, küçük simgeler). Ana ekranda arka planda **canlı saha** oynar:
+gerçek saha görünümü bir seviyenin çözümünü döngüde kendi kendine oynatır (`LevelSession.start_demo`); ayrı bir
+"tanıtım canlandırması" yazılmaz, oyunun kendisi gösterilir.
+
+**Platform:** Android (kullanıcı: "mobil derken Android"). iOS kapsam dışı.
+
+**Sıra (kullanıcı):** oyun + arayüz + seviyeler → Android SDK işi (derleme şablonu, AdMob, satın alma, APK) → en son
+optimizasyon işçileri.
 
 ## 9. Katmanlar ve sözleşmeler
 
@@ -131,7 +147,8 @@ simgeyle birlikte gelir (renk körlüğü). Arayüz: şablonun UI kiti (minimal,
 | `scripts/core/yard/` | Saf kurallar (RefCounted, sahnesiz, testli) | çekirdek |
 | `tools/yard/` | Python: kural aynası, çözücü, üreteç, metin arayüzü | çekirdek |
 | `data/levels/` | Seviye dosyaları + `index.json` | çekirdek |
-| `scripts/game/` | Saha görünümü, girdi, canlandırma; `LevelSession` uygulaması | görünüm |
+| `scripts/game/` | Saha görünümü (3B), girdi, canlandırma; `LevelSession` uygulaması | görünüm |
+| `tools/blender/`, `assets/models/`, `assets/textures/` | Blender betikleri, GLB modeller, pişmiş dokular | sanat |
 | `scripts/ui/`, `scripts/autoload/`, `scripts/services/` | Kabuk: menü, seviye haritası, sonuç, reklam, satın alma | kabuk |
 | `scripts/game/level_session.gd`, `scripts/core/level_catalog.gd` | SÖZLEŞME (yalnız lider değiştirir) | lider |
 
