@@ -102,24 +102,41 @@ func earn(amount: int) -> void:
 	lifetime_cores += maxi(0, amount)
 
 # --- Kayıt -----------------------------------------------------------------------
+const SAVE_VERSION := 1
+const MAX_AMOUNT := 1000000000
+
+static func _int_of(v: Variant, fallback := 0) -> int:
+	## Bozuk kayıt değerlerine karşı: yalnız sonlu sayılar kabul edilir (metin, NaN, sözlük → varsayılan).
+	if typeof(v) == TYPE_INT:
+		return v
+	if typeof(v) == TYPE_FLOAT and is_finite(float(v)):
+		return int(v)
+	return fallback
+
 func to_dict() -> Dictionary:
 	return {
-		"cores": cores, "lifetime": lifetime_cores, "levels": levels.duplicate(),
+		"v": SAVE_VERSION, "cores": cores, "lifetime": lifetime_cores, "levels": levels.duplicate(),
 		"ships": ships_owned.duplicate(), "ship": ship,
 	}
 
 func from_dict(data: Dictionary) -> void:
-	cores = maxi(0, int(data.get("cores", 0)))
-	lifetime_cores = maxi(0, int(data.get("lifetime", cores)))
+	## Kayıt sözlüğünü yükler; her alan doğrulanır (tür, aralık, bilinmeyen kimlik) ve ilerleme korunarak onarılır.
+	cores = clampi(_int_of(data.get("cores", 0)), 0, MAX_AMOUNT)
+	lifetime_cores = clampi(_int_of(data.get("lifetime", cores), cores), 0, MAX_AMOUNT)
+	lifetime_cores = maxi(lifetime_cores, cores)
 	levels = {}
-	var raw: Dictionary = data.get("levels", {})
-	for id in raw:
-		if not upgrade_def(str(id)).is_empty():
-			levels[str(id)] = clampi(int(raw[id]), 0, max_level(str(id)))
+	var raw: Variant = data.get("levels", {})
+	if typeof(raw) == TYPE_DICTIONARY:
+		for id in raw:
+			if typeof(id) == TYPE_STRING and not upgrade_def(str(id)).is_empty():
+				levels[str(id)] = clampi(_int_of(raw[id]), 0, max_level(str(id)))
 	ships_owned = [DEFAULT_SHIP]
-	for id in data.get("ships", []):
-		if not ships_owned.has(str(id)) and not ship_def(str(id)).is_empty():
-			ships_owned.append(str(id))
-	ship = str(data.get("ship", DEFAULT_SHIP))
+	var raw_ships: Variant = data.get("ships", [])
+	if typeof(raw_ships) == TYPE_ARRAY:
+		for id in raw_ships:
+			if typeof(id) == TYPE_STRING and not ships_owned.has(str(id)) and not ship_def(str(id)).is_empty():
+				ships_owned.append(str(id))
+	var raw_ship: Variant = data.get("ship", DEFAULT_SHIP)
+	ship = str(raw_ship) if typeof(raw_ship) == TYPE_STRING else DEFAULT_SHIP
 	if not owns_ship(ship):
 		ship = DEFAULT_SHIP
