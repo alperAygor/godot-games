@@ -100,22 +100,30 @@ func refill_booster(id: String, on_done: Callable = Callable(), on_failed: Calla
 			on_done.call(), on_failed)
 
 
-## Seviye geçişinde (Devam) geçiş reklamı gerekiyorsa gösterir, sonra `then` çalışır.
-## Karar saf `AdPacing`dedir: 4. seviyeden itibaren her geçişte; "reklamları kaldır" varsa asla;
-## bu geçişte ödüllü reklam izlendiyse asla. Reklam hazır değilse/zaman aşımında akış sessizce sürer.
+## Seviye geçişinde (Devam): `then` (sonraki seviyenin kurulumu) HEMEN çalışır; geçiş reklamı
+## gerekiyorsa kurulmuş seviyenin ÜSTÜNDE gösterilir. Neden bu sıra: eskiden reklam bitene dek
+## (sahte sağlayıcıda görünmez 1.2 sn, gerçek reklamda yükleme + gösterim) kazanma sayfası donuk
+## kalıyor, seviye ancak sonra kuruluyordu; reklam kapanınca tahta artık hazır bekliyor.
+## Karar (değişmedi) saf `AdPacing`dedir: 4. seviyeden itibaren her geçişte; "reklamları kaldır" varsa
+## asla; bu geçişte ödüllü reklam izlendiyse asla. Karar, seviye kurulumu bayrakları sıfırlamadan
+## ÖNCE verilir. Reklam hazır değilse/zaman aşımında akış zaten sürmektedir.
 func maybe_interstitial(next_level: int, then: Callable) -> void:
 	var pacing: Dictionary = Progress.balance_table().get("interstitial", {}) as Dictionary
 	var show: bool = AdPacing.should_show(next_level, Progress.remove_ads_owned(),
-		_rewarded_in_transition, pacing)
-	if not show or _pending_placement != -1:
-		then.call()
+		_rewarded_in_transition, pacing) and _pending_placement == -1
+	then.call()
+	if not show:
 		return
 	# Geri çağrı reklamdan ÖNCE kaydedilir: eşzamanlı biten sağlayıcıda sinyal show içinde gelir.
-	_pending_interstitial = then
+	_pending_interstitial = _after_interstitial
 	_pending_interstitial_level = next_level
 	if not AdManager.show_interstitial():
 		_pending_interstitial = Callable()
-		then.call()
+
+
+## Reklam kapandı: seviye süresi (analitik) reklamın süresini saymasın.
+func _after_interstitial() -> void:
+	_level_started_msec = Time.get_ticks_msec()
 
 
 func _on_rewarded_finished(placement: AdManager.Placement, success: bool) -> void:

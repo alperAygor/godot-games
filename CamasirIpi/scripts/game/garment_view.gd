@@ -97,6 +97,13 @@ var _tween: Tween = null
 var _show_pins: bool = true
 var _folded: bool = false
 var _badge: Node2D = null
+## Uçuşta mı (kalkıştan inişe kadar). Oyun "ekran durdu mu" ve sepet kapanışı için okur.
+var in_flight: bool = false
+## İpteki MANTIKSAL yeri: dokunma bununla sınanır (kayma/rüzgâr/ekran geçişi sürerken bile hedef yer).
+var line_home: Vector2 = Vector2.ZERO
+## İpte yer değiştirme (kayma, rüzgâr, ekran geçişi) Tween'i: uçuş başlarken öldürülür, iki Tween
+## aynı konumu yazıp çamaşırı yanlış yere bırakmasın.
+var _line_tween: Tween = null
 static var _circle: Texture2D = null
 static var _shader: Shader = null
 
@@ -367,7 +374,7 @@ func _spawn_falling_pin(host: Node, pin: Sprite2D) -> void:
 	var dir: float = -1.0 if pin.position.x < 0.0 else 1.0
 	var spin: float = deg_to_rad(Motion.PIN_SPIN_DEGREES) * dir
 	var total: float = Motion.PIN_POP_SECONDS + Motion.PIN_FALL_SECONDS
-	var tween: Tween = fall.create_tween().set_parallel(true)
+	var tween: Tween = Motion.track(fall.create_tween()).set_parallel(true)
 	tween.tween_property(fall, "position", origin + Vector2(dir * 8.0, -Motion.PIN_POP_HEIGHT), Motion.PIN_POP_SECONDS)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.tween_property(fall, "position", origin + Vector2(dir * 46.0, Motion.PIN_FALL_DISTANCE), Motion.PIN_FALL_SECONDS)\
@@ -388,6 +395,10 @@ func fly_to(target: Vector2, target_scale: float, folded_width: float, final_rot
 		_tween.kill()
 	if _flight_tween != null:
 		_flight_tween.kill()
+	if _line_tween != null:
+		_line_tween.kill()
+		_line_tween = null
+	in_flight = true
 	_kick_amp = 0.0
 	set_process(false)
 	_set_param(P_KICK, 0.0)
@@ -407,9 +418,41 @@ func fly_to(target: Vector2, target_scale: float, folded_width: float, final_rot
 	_begin_sheet_shrink()
 	_last_pos = _fly_start
 	_lag = 0.0
-	_flight_tween = create_tween()
+	_flight_tween = Motion.track(create_tween())
 	_flight_tween.tween_method(_fly_step, 0.0, 1.0, _fly_total)
 	_flight_tween.tween_callback(_land)
+
+
+## Uçuş sürerken hedef değişti (ör. askı genişledi): yay yeni hedefe kıvrılır; inmişse doğrudan oraya.
+func retarget(target: Vector2) -> void:
+	if in_flight:
+		_fly_target = target
+	else:
+		global_position = target
+
+
+## Uçuşu olduğu yerde keser (makineden çıkış: parça kapakta yeniden belirir, yeni uçuş oradan başlar).
+func stop_flight() -> void:
+	if _flight_tween != null:
+		_flight_tween.kill()
+		_flight_tween = null
+	in_flight = false
+
+
+## Uçuşu ve iniş oturmasını anında bitirir (güvenlik ağı: beklenen iniş hiç gelmezse).
+func finish_flight() -> void:
+	for _step: int in range(2):
+		if _flight_tween != null and _flight_tween.is_valid():
+			_flight_tween.custom_step(_fly_total + Motion.LAND_TOTAL_SECONDS + 1.0)
+
+
+## İpte yeni mantıksal yere yumuşakça kayar (kayma, ekran geçişi). Dokunma hemen yeni yerden sınanır.
+func move_on_line(target: Vector2, seconds: float, trans: Tween.TransitionType, ease_type: Tween.EaseType) -> void:
+	line_home = target
+	if _line_tween != null:
+		_line_tween.kill()
+	_line_tween = Motion.track(create_tween())
+	_line_tween.tween_property(self, "position", target, seconds).set_trans(trans).set_ease(ease_type)
 
 
 func _fly_step(progress: float) -> void:
@@ -505,6 +548,7 @@ func _fold_pose(sprite: Sprite2D, base_pos: Vector2, mx: float, my: float, cente
 
 ## İniş: kısa ezilme + yumuşak oturma. Sepet/askı bu anda tepki verir (`landed`).
 func _land() -> void:
+	in_flight = false
 	global_position = _fly_target
 	rotation_degrees = _fly_rotation
 	scale = Vector2.ONE * _fly_scale
@@ -512,7 +556,7 @@ func _land() -> void:
 	if _fly_fold:
 		_fold_step(1.0)
 	landed.emit()
-	_flight_tween = create_tween()
+	_flight_tween = Motion.track(create_tween())
 	_flight_tween.tween_property(self, "scale", Vector2.ONE * _fly_scale * Motion.LAND_SQUASH, Motion.LAND_SQUASH_SECONDS)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	_flight_tween.tween_property(self, "scale", Vector2.ONE * _fly_scale, Motion.LAND_SETTLE_SECONDS)\
@@ -547,7 +591,7 @@ func _restart_tween() -> void:
 	rotation_degrees = 0.0
 	modulate = Color.WHITE
 	scale = Vector2.ONE
-	_tween = create_tween()
+	_tween = Motion.track(create_tween())
 
 
 func _shown_color() -> Color:
@@ -785,7 +829,8 @@ func snap_to(target: Vector2, target_scale: float, folded_width: float, final_ro
 	if _drops != null:
 		_drops.emitting = false
 	fly_to(target, target_scale, folded_width, final_rotation_deg)
-	_flight_tween.custom_step(_fly_total + Motion.LAND_TOTAL_SECONDS)
+	# İki adım: uçuş Tween'i bitince `_land` iniş oturmasını yeni Tween olarak kurar; o da bitirilir.
+	finish_flight()
 
 
 func _pop(node: Node2D) -> void:
@@ -970,14 +1015,18 @@ func wind_pulse() -> void:
 
 ## Rüzgâr esti: çamaşır komşusunun üstüne kayar (yolun bir kısmı), üst katmana geçer.
 func blow_over(target: Vector2, target_z: int, animate: bool = true) -> void:
-	var landing: Vector2 = position.lerp(target, Motion.WIND_FLIP_SHARE) + Vector2(0.0, Motion.WIND_FLIP_DROP)
+	var landing: Vector2 = line_home.lerp(target, Motion.WIND_FLIP_SHARE) + Vector2(0.0, Motion.WIND_FLIP_DROP)
+	line_home = landing
 	# Örttüğü komşunun üstünde çizilsin (dokunma önceliği de katmanla gelir).
 	z_index = maxi(z_index, target_z + 1)
 	layer = maxi(layer, target_z + 1)
 	if not animate:
 		position = landing
 		return
-	var blow: Tween = create_tween().set_parallel(true)
+	if _line_tween != null:
+		_line_tween.kill()
+	var blow: Tween = Motion.track(create_tween()).set_parallel(true)
+	_line_tween = blow
 	blow.tween_property(self, "position", landing, Motion.WIND_FLIP_SECONDS)\
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	blow.tween_property(self, "rotation_degrees", WOBBLE_DEGREES * signf(target.x - position.x), Motion.WIND_FLIP_SECONDS * 0.4)

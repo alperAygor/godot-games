@@ -110,6 +110,21 @@ else
     echo "== 3/3 birim testleri = atlandi (tests/run_tests.gd yok) =="
 fi
 
+if [ -f "$PROJECT_DIR/tools/speed_probe.gd" ]; then
+    # Hızlı oyun stres probu (kısa kip): görünüm her zaman tahtayla eşleşmeli. Tam kip elle:
+    # godot --headless --path . -s res://tools/speed_probe.gd
+    echo "== + hizli oyun probu (kisa) =="
+    run_godot "speed" "${VERIFY_SPEED_TIMEOUT:-400}" "$GODOT" --headless --path "$PROJECT_DIR" -s res://tools/speed_probe.gd -- --quick
+    if grep -q "PROBE SONUC: gecti" "$LOG_DIR/speed.log" 2>/dev/null; then
+        echo "  + hizli oyun probu gecti"
+    else
+        echo "  x hizli oyun probu basarisiz (log: $LOG_DIR/speed.log)"
+        grep -m3 "PROBE HATA" "$LOG_DIR/speed.log" | sed 's/^/    /'
+        FAILED=1
+    fi
+    scan_errors "$LOG_DIR/speed.log" "hizli oyun probu"
+fi
+
 echo
 if [ "$FAILED" -eq 0 ]; then
     echo "SONUC: gecti"

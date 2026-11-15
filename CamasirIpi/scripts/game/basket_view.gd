@@ -86,6 +86,8 @@ var _rim_tween: Tween = null
 var _pile_tween: Tween = null
 var _move_tween: Tween = null
 var _leaving: bool = false
+## Tamamlanma (basma + çökme) sürüyor: yeni nesil parçalar ve yeni sepet bu bitene dek bekler.
+var _closing: bool = false
 var _pending_enter: bool = false
 var _pending_color: Color = Color.WHITE
 var _breath_phase: float = 0.0
@@ -95,6 +97,12 @@ var _carried: Array[Node2D] = []
 ## Sepet giderken/gelirken inen parça: sepet yerine oturunca yığına alınır.
 var _deferred: Array[Node2D] = []
 var _deferred_slots: Array[int] = []
+var _deferred_gens: Array[int] = []
+## Ekrandaki sepetin nesli (oyun her tamamlanmada mantıksal nesli artırır). Neden: hızlı oyunda yeni
+## neslin parçası eski neslin son parçasından ÖNCE inebilir; nesil tutmazsa parça beklemelidir, yoksa
+## eski yığınla birlikte taşınıp silinirdi.
+var visual_gen: int = 0
+var _pending_gen: int = 0
 
 
 func setup(pixel_size: float) -> void:
@@ -193,8 +201,58 @@ func adopt(piece: Node2D, index: int) -> void:
 		# Sepet yerinde değil: parça oturduğu yerde bekler, sepet gelince yığına katılır.
 		_deferred.append(piece)
 		_deferred_slots.append(index)
+		_deferred_gens.append(visual_gen)
 		return
 	_place_in_pile(piece, index)
+
+
+## Parça sepete indi (oyun iniş anında çağırır): sepet yerindeyse ağırlıkla zıplar, doluluk noktası
+## yanar ve parça yığına girer; sepet kapanıyor/gidiyor/geliyorsa parça bekler ve yeni sepet yerine
+## oturunca TEK bir zıplamayla hepsi birden katılır (hızlı oyunda iniş nabızları birleşir).
+func land(piece: Node2D, index: int, gen: int = 0) -> void:
+	if not is_instance_valid(piece):
+		return
+	if _leaving or _pending_enter or _closing or gen != visual_gen:
+		_deferred.append(piece)
+		_deferred_slots.append(index)
+		_deferred_gens.append(gen)
+		return
+	receive(1.0 - 0.2 * float(index))
+	set_filled(maxi(filled, index + 1))
+	_place_in_pile(piece, index)
+
+
+## Tamamlanma başladı: bundan sonra inen parçalar yeni nesle aittir, bekler.
+func begin_close() -> void:
+	_closing = true
+
+
+## Sepet yerinde ve sakin mi (kapanmıyor, gitmiyor, gelmiyor, bekleyen parça yok).
+## Sonraki nesillerin erken inmiş parçaları sayılmaz: onlar bu sepetin tamamlanmasını bekliyor
+## (saysaydık tamamlanma onları, onlar tamamlanmayı bekleyip kilitlenirdi).
+func is_settled() -> bool:
+	if _leaving or _pending_enter or _closing:
+		return false
+	for gen: int in _deferred_gens:
+		if gen <= visual_gen:
+			return false
+	return _move_tween == null or not _move_tween.is_running()
+
+
+## Parça bu sepetin yığınında mı (tamamlanma ancak tüm parçalar içerideyken başlar).
+func holds(piece: Node2D) -> bool:
+	return _pile != null and is_instance_valid(piece) and piece.get_parent() == _pile
+
+
+## Güvenlik ağı: bekleyen geliş/parçalar hemen yerine oturur (hiç gelmeyen bir sinyal kuyruğu kilitlemesin).
+func force_settle() -> void:
+	if _leaving:
+		_kill_move()
+		_after_leave()
+	if _pending_enter and not _closing:
+		_do_enter()
+	if _move_tween != null and _move_tween.is_valid():
+		_move_tween.custom_step(Motion.BASKET_ARRIVE_DELAY + Motion.BASKET_ARRIVE_SECONDS + 1.0)
 
 
 func _place_in_pile(piece: Node2D, index: int) -> void:
@@ -222,7 +280,7 @@ func receive(strength: float) -> void:
 	if _pile != null and _pile.get_child_count() > 0:
 		if _pile_tween != null:
 			_pile_tween.kill()
-		_pile_tween = create_tween()
+		_pile_tween = Motion.track(create_tween())
 		_pile_tween.tween_property(_pile, "scale", Vector2.ONE + (PILE_LAND_SQUASH - Vector2.ONE) * strength,
 			Motion.BASKET_BOUNCE_IN_SECONDS).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		_pile_tween.tween_property(_pile, "scale", Vector2.ONE, Motion.BASKET_BOUNCE_OUT_SECONDS)\
@@ -237,7 +295,7 @@ func hop() -> void:
 func _react(peak: Vector2) -> void:
 	if _react_tween != null:
 		_react_tween.kill()
-	_react_tween = create_tween()
+	_react_tween = Motion.track(create_tween())
 	_react_tween.tween_property(_visual, "scale", peak, Motion.BASKET_BOUNCE_IN_SECONDS)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	_react_tween.tween_property(_visual, "scale", Vector2.ONE, Motion.BASKET_BOUNCE_OUT_SECONDS)\
@@ -249,7 +307,7 @@ func _jiggle_rim(strength: float) -> void:
 		return
 	if _rim_tween != null:
 		_rim_tween.kill()
-	_rim_tween = create_tween()
+	_rim_tween = Motion.track(create_tween())
 	_rim_tween.tween_property(_rim, "scale", Vector2.ONE + (RIM_JIGGLE - Vector2.ONE) * strength,
 		RIM_JIGGLE_IN_SECONDS).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	_rim_tween.tween_property(_rim, "scale", Vector2.ONE, RIM_JIGGLE_OUT_SECONDS)\
@@ -260,7 +318,7 @@ func _jiggle_rim(strength: float) -> void:
 func press(seconds: float) -> void:
 	if _react_tween != null:
 		_react_tween.kill()
-	_react_tween = create_tween()
+	_react_tween = Motion.track(create_tween())
 	_react_tween.tween_property(_visual, "scale", Vector2(1.06, 0.9), seconds)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_react_tween.tween_property(_visual, "scale", Vector2.ONE, Motion.BASKET_BOUNCE_OUT_SECONDS)\
@@ -280,7 +338,7 @@ func _tween_pile(target_scale: Vector2, drop: float, seconds: float, trans: Twee
 		return
 	if _pile_tween != null:
 		_pile_tween.kill()
-	_pile_tween = create_tween().set_parallel(true)
+	_pile_tween = Motion.track(create_tween()).set_parallel(true)
 	_pile_tween.tween_property(_pile, "scale", target_scale, seconds).set_trans(trans).set_ease(ease_type)
 	_pile_tween.tween_property(_pile, "position:y", drop, seconds).set_trans(trans).set_ease(ease_type)
 
@@ -293,7 +351,7 @@ func pulse_band() -> void:
 		_band_tween.kill()
 	_set_band_modulate(color.lightened(Motion.COMPLETE_BAND_GLOW))
 	_rim.scale = Vector2.ONE * BAND_PULSE_SCALE
-	_band_tween = create_tween().set_parallel(true)
+	_band_tween = Motion.track(create_tween()).set_parallel(true)
 	_band_tween.tween_method(_set_band_modulate, _band_front.modulate, color, Motion.COMPLETE_BAND_SECONDS)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	_band_tween.tween_property(_rim, "scale", Vector2.ONE, Motion.COMPLETE_BAND_SECONDS)\
@@ -318,12 +376,13 @@ func _set_band_modulate(tint: Color) -> void:
 ## Yavaşça aşağı kayar (ease-in) ve gizlenir; içindeki yığını da taşır. Bitince bekleyen yeni
 ## sepet varsa gelir.
 func leave() -> void:
+	_closing = false
 	_leaving = true
 	_kill_move()
 	if _pile != null:
 		for child: Node in _pile.get_children():
 			_carried.append(child as Node2D)
-	_move_tween = create_tween()
+	_move_tween = Motion.track(create_tween())
 	_move_tween.tween_property(self, "position:y", rest_position.y + Motion.BASKET_SLIDE, Motion.BASKET_SLIDE_OUT_SECONDS)\
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	_move_tween.tween_callback(_after_leave)
@@ -331,12 +390,13 @@ func leave() -> void:
 
 ## Yeni sepet: kayma bitince alttan gelir ve hafif aşarak yerine oturur. Büyük/joker sepet de
 ## (kapasite ve gökkuşağı) yeni sepetle birlikte gelir.
-func enter(tint: Color, cap: int = LaundryBoard.BASKET_CAPACITY, is_joker: bool = false) -> void:
+func enter(tint: Color, cap: int = LaundryBoard.BASKET_CAPACITY, is_joker: bool = false, gen: int = -1) -> void:
+	_pending_gen = gen if gen >= 0 else visual_gen + 1
 	_pending_color = tint
 	_pending_cap = cap
 	_pending_joker = is_joker
 	_pending_enter = true
-	if not _leaving:
+	if not _leaving and not _closing:
 		_do_enter()
 
 
@@ -364,6 +424,7 @@ func _release_carried() -> void:
 
 func _do_enter() -> void:
 	_pending_enter = false
+	visual_gen = _pending_gen
 	_kill_move()
 	set_capacity(_pending_cap)
 	set_joker(_pending_joker)
@@ -371,7 +432,7 @@ func _do_enter() -> void:
 	position.y = rest_position.y + Motion.BASKET_SLIDE
 	_breath.modulate.a = 0.0
 	_visual.scale = Vector2.ONE * Motion.BASKET_ARRIVE_FROM_SCALE
-	_move_tween = create_tween().set_parallel(true)
+	_move_tween = Motion.track(create_tween()).set_parallel(true)
 	_move_tween.tween_property(self, "position:y", rest_position.y, Motion.BASKET_ARRIVE_SECONDS)\
 		.set_delay(Motion.BASKET_ARRIVE_DELAY).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	_move_tween.tween_property(_breath, "modulate:a", 1.0, Motion.BASKET_ARRIVE_SECONDS * 0.4)\
@@ -383,11 +444,21 @@ func _do_enter() -> void:
 
 ## Sepet gelmeden inen parçalar şimdi yığına katılır.
 func _adopt_deferred() -> void:
-	for at: int in range(_deferred.size()):
+	var top: int = -1
+	var at: int = 0
+	while at < _deferred.size():
+		if _deferred_gens[at] != visual_gen and is_instance_valid(_deferred[at]):
+			at += 1
+			continue
 		if is_instance_valid(_deferred[at]):
 			_place_in_pile(_deferred[at], _deferred_slots[at])
-	_deferred.clear()
-	_deferred_slots.clear()
+			top = maxi(top, _deferred_slots[at])
+		_deferred.remove_at(at)
+		_deferred_slots.remove_at(at)
+		_deferred_gens.remove_at(at)
+	if top >= 0:
+		set_filled(maxi(filled, top + 1))
+		receive(1.0 - 0.2 * float(top))
 
 
 func _kill_move() -> void:

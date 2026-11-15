@@ -171,6 +171,10 @@ func _run() -> void:
 		await process_frame
 	_check(ran[0] == ran_before + 1, "gelmeyen reklam zaman aşımıyla akışı serbest bırakmalı")
 	_check(Time.get_ticks_msec() - waited_ms < SILENT_WAIT_MSEC, "zaman aşımı kısa olmalı")
+	# [ci-flow] Sonraki seviye artık reklamı beklemeden kurulur; gelmeyen reklamın zaman aşımı arka planda
+	# biter. Sonraki adım (ödüllü reklam) bekleyen gösterim kapanana dek sunulamaz: zaman aşımı beklenir.
+	while not bool(ads.call("can_offer", ads.Placement.INTERSTITIAL)) and Time.get_ticks_msec() - waited_ms < SILENT_WAIT_MSEC:
+		await process_frame
 	ads.call("set_provider", _provider)
 	_check(AnalyticsLog.count("level_start") > 0 and AnalyticsLog.count("level_win") >= 4
 		and AnalyticsLog.count("level_lose") >= 1, "analitik olayları kaydedildi")

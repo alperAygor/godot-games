@@ -30,6 +30,8 @@ var _has_progress_coins: bool = false
 var _chain_pill: PanelContainer = null
 var _chain_label: Label = null
 var _chain_tween: Tween = null
+## Hapın gösterdiği zincir adımı (0 = gizli/sönüyor); prob görünümü tahtayla karşılaştırır.
+var _shown_step: int = 0
 
 
 func _ready() -> void:
@@ -124,6 +126,7 @@ func _build_chain_pill(view: Vector2, row_top: float) -> void:
 ## Zincir adımı `step` (>= 2): hap yumuşakça belirir ve her adımda küçük bir "pop" yapar.
 func show_chain(step: int) -> void:
 	_kill_chain_tween()
+	_shown_step = step
 	_chain_label.text = CHAIN_FORMAT % step
 	_chain_pill.visible = true
 	# Genişlik sayıyla değişir: merkez sabit kalsın diye boyut ve eksen her seferinde yenilenir.
@@ -141,6 +144,7 @@ func show_chain(step: int) -> void:
 
 ## Zincir koptu: hap yumuşakça söner.
 func fade_chain() -> void:
+	_shown_step = 0
 	if not _chain_pill.visible:
 		return
 	_kill_chain_tween()
@@ -152,10 +156,15 @@ func fade_chain() -> void:
 
 ## Seviye başı: hap anında gizlenir.
 func hide_chain() -> void:
+	_shown_step = 0
 	_kill_chain_tween()
 	_chain_pill.visible = false
 	_chain_pill.modulate.a = 0.0
 	_chain_pill.scale = Vector2.ONE
+
+
+func shown_chain() -> int:
+	return _shown_step
 
 
 func _kill_chain_tween() -> void:
