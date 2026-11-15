@@ -48,5 +48,6 @@
   "ONARIM": "REPAIR",
   "LANETLİ GÜÇ": "CURSED POWER",
   "AŞIRI GERİLİM": "OVERVOLTAGE",
-  "HURDA TOPLA": "SALVAGE"
+  "HURDA TOPLA": "SALVAGE",
+  "bedel: %s": "cost: %s"
 }

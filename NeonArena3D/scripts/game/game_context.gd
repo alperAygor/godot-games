@@ -61,6 +61,7 @@ var weapons: WeaponSystem
 var spawner: Spawner
 var bosses: BossEvents
 var cards: CardsFlow
+var effects: CardEffects            ## C3 kart etkileri + kart ekranı eklentileri (yasaklama, evrim ipucu)
 var feedback: Feedback
 var camera: CameraRig
 var hud_bridge: HudBridge

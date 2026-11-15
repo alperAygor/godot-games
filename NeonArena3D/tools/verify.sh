@@ -18,7 +18,7 @@ GODOT="${GODOT:-godot}"
 LOG="$ROOT/tests/results"
 STEP_TIMEOUT="${VERIFY_STEP_TIMEOUT:-120}"
 IMPORT_TIMEOUT="${VERIFY_IMPORT_TIMEOUT:-180}"
-SIM_TIMEOUT="${VERIFY_SIM_TIMEOUT:-300}"
+SIM_TIMEOUT="${VERIFY_SIM_TIMEOUT:-480}"   # C1+C2+C3 sonrası hızlı ızgara + tarama ~300 sn (tarama 6 tohumda ~250 sn)
 PCK_MAX_MB="${VERIFY_PCK_MAX_MB:-10}"
 FAST="${VERIFY_FAST:-0}"
 mkdir -p "$LOG" "$ROOT/build/verify"
@@ -145,10 +145,12 @@ if [ "$FAST" != "1" ]; then
 
   # 6. Denge simülasyonu (başsız, tohumlu): hızlı ızgara; VERIFY_FULL_SIM=1 ile tam ızgara
   echo "▸ 6. denge simülasyonu"; t0=$SECONDS
-  if [ "${VERIFY_FULL_SIM:-0}" = "1" ]; then sim_args="--seeds=20 --careers=3"; else sim_args="--quick"; fi
+  # --scan: kırık kombinasyon taraması (C3; tests/sim/sim_model.json → scan): grup başına en iyi/ortalama medyan dalga ≤ 1.6
+  if [ "${VERIFY_FULL_SIM:-0}" = "1" ]; then sim_args="--seeds=20 --careers=3 --scan"; else sim_args="--quick --scan"; fi
   if run_godot "$LOG/sim.log" "$SIM_TIMEOUT" "$GODOT" --headless --path . -s res://tools/sim/balance_sim.gd -- $sim_args --out=build/sim/balance_report.json \
      && grep -q "SİM SONUÇ: geçti" "$LOG/sim.log"; then
     ok "$(grep -m1 '^medyan dalga' "$LOG/sim.log") · $((SECONDS - t0)) sn"
+    grep -m1 '^KIRIK KOMBİNASYON' "$LOG/sim.log" | sed 's/^/    /'
     command -v python3 >/dev/null 2>&1 && python3 tools/sim/report.py build/sim/balance_report.json -o build/sim/balance_report.md >/dev/null 2>&1 && echo "    rapor: build/sim/balance_report.md"
   else
     fail "simülasyon doğrulaması başarısız"; grep -E "SIM HATA|SİM SONUÇ" "$LOG/sim.log" | head -8 | sed 's/^/      /'

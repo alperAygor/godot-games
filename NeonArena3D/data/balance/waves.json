@@ -21,7 +21,7 @@
     "speed_cap": 1.45
   },
   "run": {
-    "_comment": "C1 koşu yapısı (RunState). modes: koşu türleri; sectors 0 = sonsuz (zafer yok). waves_per_sector 0 = waves.boss_every. wave_scale: zorluk/dalga planı için 'etkin dalga' çarpanı (1 = değişmez). reward: koşu sonu çekirdek eğrisi (score_cap/cap/extra_cap < 0 = sınırsız); sector_clear[i] = i. sektör (son değer sonraki bosslarda tekrar). gates: sektör kapısı seçenekleri. sector_mix: sektör başına düşman ağırlık çarpanı (C2 kancası; boş = değişmez).",
+    "_comment": "C1 koşu yapısı (RunState). modes: koşu türleri; sectors 0 = sonsuz (zafer yok). waves_per_sector 0 = waves.boss_every. wave_scale: zorluk/dalga planı için 'etkin dalga' çarpanı (1 = değişmez; entegrasyon C1+C2+C3: standart 1,0→0,85, hızlı 1,6→1,45 — C2 türleri + 45 kartlık havuzla boş atölye zaferi %7/%12'ye düşmüştü, bkz. docs/reports/INT.md). reward: koşu sonu çekirdek eğrisi (score_cap/cap/extra_cap < 0 = sınırsız); sector_clear[i] = i. sektör (son değer sonraki bosslarda tekrar). gates: sektör kapısı seçenekleri. sector_mix: sektör başına düşman ağırlık çarpanı (C2 kancası; boş = değişmez).",
     "default_mode": "standard",
     "order": [
       "standard",
@@ -36,7 +36,7 @@
         "waves_per_sector": 5,
         "gates": true,
         "continue_endless": true,
-        "wave_scale": 1.0,
+        "wave_scale": 0.85,
         "intermission_mult": 1.0,
         "reward": {
           "per_wave": 3.0,
@@ -61,7 +61,7 @@
         "waves_per_sector": 3,
         "gates": false,
         "continue_endless": false,
-        "wave_scale": 1.6,
+        "wave_scale": 1.45,
         "intermission_mult": 0.6,
         "reward": {
           "per_wave": 3.0,
@@ -140,6 +140,30 @@
         }
       }
     },
-    "sector_mix": []
+    "sector_mix": [
+      {
+        "_comment": "S1 NEON ARENASI — öğrenme: 1-3. dalga yalnız kovalayıcı/nişancı/sürü (yeni türler 4. dalgadan; burada seyrek hücumcu, onarıcı/kalkancı yok)",
+        "charger": 0.6,
+        "shielder": 0.0,
+        "medic": 0.0
+      },
+      {
+        "_comment": "S2 KIZIL SEKTÖR — kale: kalkancı + onarıcı ikilisi, mayıncı (yalnız bu haritada), tank; uzaktan keskin nişancı biraz azalır",
+        "shielder": 1.8,
+        "medic": 1.6,
+        "minelayer": 1.5,
+        "tank": 1.2,
+        "sniper": 0.7
+      },
+      {
+        "_comment": "S3 BUZ TERMİNALİ — pusu: sıçrayıcı (yalnız bu haritada), hücumcu, kuluçka + sürü; kalkancı/onarıcı azalır",
+        "blinker": 1.8,
+        "charger": 1.4,
+        "brooder": 1.2,
+        "swarmer": 1.2,
+        "shielder": 0.6,
+        "medic": 0.7
+      }
+    ]
   }
 }

@@ -14,8 +14,8 @@ const ORANGE := Color(1.0, 0.6, 0.25)
 const TEXT := Color(0.88, 0.95, 1.0)
 const DIM := Color(0.56, 0.7, 0.88)
 const SYNERGY := Color(1.0, 0.45, 0.78)
-const TIER_COLOR := {"common": CYAN, "rare": VIOLET, "epic": ORANGE, "synergy": SYNERGY}
-const TIER_NAME := {"common": "YAYGIN", "rare": "NADİR", "epic": "DESTANSI", "synergy": "SİNERJİ"}
+const TIER_COLOR := {"common": CYAN, "rare": VIOLET, "epic": ORANGE, "synergy": SYNERGY, "evolution": GOLD, "cursed": RED}
+const TIER_NAME := {"common": "YAYGIN", "rare": "NADİR", "epic": "DESTANSI", "synergy": "SİNERJİ", "evolution": "EVRİM", "cursed": "LANETLİ"}
 
 static var _regular: Font
 static var _bold: Font

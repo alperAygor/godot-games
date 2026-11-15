@@ -81,6 +81,19 @@ func tick_low_hp(delta: float) -> void:
 func damage_number(at: Vector3, amount: float, crit: bool) -> void:
 	ctx.hud.float_text(at, str(int(round(amount))), KIT.GOLD if crit else Color(0.92, 0.97, 1.0), 26 if crit else 17, 0.75 if crit else 0.55)
 
+const BLOCK_COLOR := Color(0.5, 0.78, 1.0)
+const BLOCK_CUE_EVERY := 0.6
+
+func enemy_damage_number(e, dealt: float, crit: bool) -> void:
+	## Düşmana gerçekten geçen hasarın sayısı. Kalkana gelen vuruş: küçük mavi sayı + seyrek "ENGEL" işareti (C2 kalkancı).
+	if not e.last_blocked:
+		damage_number(e.position, dealt, crit)
+		return
+	ctx.hud.float_text(e.position, str(maxi(1, int(round(dealt)))), BLOCK_COLOR, 14, 0.45)
+	if e.block_cue_cd <= 0.0:
+		e.block_cue_cd = BLOCK_CUE_EVERY
+		ctx.hud.float_text(e.position + Vector3(0.0, 0.9, 0.0), tr("ENGEL"), BLOCK_COLOR, 13, 0.6)
+
 func on_player_dash(at: Vector2, direction: Vector2) -> void:
 	Sound.play("dash")
 	var world_at := ArenaSpace.to_world(at, 1.0)

@@ -129,6 +129,7 @@ func _make_modules() -> void:
 	ctx.spawner = _module(Spawner.new(), "Spawner")
 	ctx.bosses = _module(BossEvents.new(), "BossEvents")
 	ctx.cards = _module(CardsFlow.new(), "CardsFlow")
+	ctx.effects = _module(CardEffects.new(), "CardEffects")
 	ctx.hooks = _module(MonetizationHooks.new(), "MonetizationHooks")
 	ctx.feedback = _module(Feedback.new(), "Feedback")
 	ctx.camera = _module(CameraRig.new(), "CameraRig")
@@ -157,6 +158,8 @@ func _build_scene() -> void:
 	p.dashed_at.connect(ctx.feedback.on_player_dash)
 	p.hurt.connect(ctx.combat.on_player_hurt)
 	p.shield_broken.connect(ctx.feedback.on_shield_broken)
+	p.dashed_at.connect(ctx.effects.on_dash)
+	p.shield_broken.connect(ctx.effects.on_shield_broken)
 	ctx.camera.build(self)
 	ctx.feedback.build(self)
 
@@ -185,6 +188,7 @@ func _build_scene() -> void:
 	m.quality_changed.connect(ctx.flow.apply_quality)
 	m.ship_preview.connect(func(id: String): ctx.player.set_ship(Settings.meta.ship_def(id)))
 	ctx.hooks.build(self)
+	ctx.effects.build(self)
 
 # --- Kare -------------------------------------------------------------------------
 func _process(delta: float) -> void:
@@ -221,6 +225,7 @@ func _tick_game(delta: float) -> void:
 	ctx.field.tick(delta)
 	ctx.spawner.tick_pickups(delta)
 	ctx.weapons.tick_drones(delta)
+	ctx.effects.tick(delta)
 	ctx.spawner.separate_enemies()
 	ctx.combat.resolve_collisions()
 	ctx.feedback.tick_low_hp(delta)

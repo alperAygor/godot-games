@@ -26,7 +26,6 @@ var gate: GateScreen
 var victory: VictoryScreen
 var sector_hud: SectorHud
 var _wired := false
-var _gate_cards: Dictionary = {}
 var _mode_button: Button
 var _mode_note: Label
 var _result_label: Label
@@ -168,7 +167,6 @@ func start_game() -> void:
 	dead_timer = 0.0
 	_over_shown = false
 	outcome = ""
-	_gate_cards.clear()
 	ctx.cards.reset()
 	Sound.set_muffled(false)
 	Sound.music("battle")
@@ -442,35 +440,38 @@ func _fill_result_label() -> void:
 
 # --- C1: sektör kapısı -------------------------------------------------------------------
 func _resolve_gate(ids: Array) -> Array:
-	## Kimlik → ekran seçeneği. C3 kancası: kapı tanımında `card_tier` varsa ve kart verisinde o katmandan kart varsa
-	## (ör. "cursed"), o kart sunulur ve seçilince `loadout.apply(card)`; yoksa kapının kendi `effect`i kullanılır.
+	## Kimlik → ekran seçeneği. C3 lanetli kartı: `card_tier: "cursed"` seçeneğine RunState.assign_gate_cards alınmamış bir
+	## lanetli kart atar (Loadout.cursed_cards); kart sunulur (ad, artı, bedel, kartın ödülü — Loadout.curse_info) ve seçilince
+	## `ctx.effects.apply_curse(id)` ile BİR KEZ uygulanır. Lanetli kart kalmadıysa kapının kendi `effect`i (yedek).
 	var run := ctx.run
+	var cursed_ids: Array = []
+	for c in ctx.loadout.cursed_cards():
+		cursed_ids.append(str(c.get("id", "")))
+	run.assign_gate_cards(cursed_ids)
 	var out: Array = []
 	for id in ids:
 		var def := run.gate_def(str(id))
-		var card := {}
-		if def.has("card_tier"):
-			var pool: Array = []
-			for c in GameData.cards:
-				if str(c.get("tier", "")) == str(def["card_tier"]):
-					pool.append(c)
-			if not pool.is_empty():
-				card = pool[run.gate_rng.randi() % pool.size()]
-				_gate_cards[str(id)] = card
+		var card: Dictionary = GameData.card_by_id(str(run.gate_cards[id])) if run.gate_cards.has(id) else {}
 		out.append({
 			"id": str(id), "name": tr(str(card.get("name", def.get("name", id)))), "risk": int(def.get("risk", 0)),
-			"lines": GateScreen.describe(def, card),
+			"lines": GateScreen.describe(def, Loadout.curse_info(card) if not card.is_empty() else {}),
 		})
+	return out
+
+func gate_rewards() -> Dictionary:
+	## Açık kapıda kartlı seçeneklerin gerçek ödül payı (bot seçimi için): kartın reward_mult - 1.
+	var out := {}
+	for id in ctx.run.gate_cards:
+		out[id] = Loadout.curse_info(GameData.card_by_id(str(ctx.run.gate_cards[id])))["reward_mult"] - 1.0
 	return out
 
 func on_gate_opened(ids: Array) -> void:
 	var run := ctx.run
 	var player := ctx.player
-	_gate_cards.clear()
 	var opts := _resolve_gate(ids)
 	if ctx.options.demo and ctx.options.debug_screen != "gate":
 		# Bot: canı düşükse güvenli, değilse en ödüllü seçenek (simülasyonla aynı kural: RunState.bot_gate_choice).
-		on_gate_chosen.call_deferred(RunState.bot_gate_choice(ids, run.gate_defs(), player.hp / maxf(1.0, player.max_hp), "auto"))
+		on_gate_chosen.call_deferred(RunState.bot_gate_choice(ids, run.gate_defs(), player.hp / maxf(1.0, player.max_hp), "auto", gate_rewards()))
 		return
 	_hold_for_screen()
 	var next: Dictionary = GameData.map_theme(ctx.map_index + 1)
@@ -498,13 +499,13 @@ func _on_gate_closed(id: String) -> void:
 		ctx.combat.heal(player.max_hp * float(def["heal_ratio"]))
 	if int(def.get("rerolls", 0)) > 0:
 		ctx.cards.grant_reroll(int(def["rerolls"]))
-	if _gate_cards.has(id):
-		ctx.loadout.apply(_gate_cards[id])
-	elif def.has("effect"):
-		ctx.loadout.apply_effects(def["effect"])
+	var card_id := str(ctx.run.gate_cards.get(id, ""))
+	var applied := card_id != "" and ctx.effects.apply_curse(card_id)   # lanet + core_mult (ödül) + gemi istatistikleri, bir kez
+	if not applied and def.has("effect"):
+		ctx.loadout.apply_effects(def["effect"])   # yedek: lanetli kart yok
 	ctx.control.apply_loadout()
 	player.hp = clampf(maxf(player.hp, 1.0), 1.0, player.max_hp)
-	var name := tr(str((_gate_cards.get(id, {}) as Dictionary).get("name", def.get("name", id))))
+	var name := tr(str(GameData.card_by_id(card_id).get("name", def.get("name", id)))) if applied else tr(str(def.get("name", id)))
 	ctx.hud.toast(name, KIT.GOLD, 1.8)
 
 func _hold_for_screen() -> void:

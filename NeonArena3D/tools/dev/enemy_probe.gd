@@ -234,12 +234,20 @@ func _test_shielder(gd) -> void:
 	_clear()
 	e = _spawn("shielder", Vector2(1000, 840))
 	_step()
+	ctx.hud._floaters.clear()
 	var b = ctx.field.spawn(Vector2(1200, 840), Vector2(-1, 0), 900.0, true, base, 1.0, 1.0, false)
 	for i in 30:
 		_step()
 		if b.dead:
 			break
 	_check(e.blocked_hits >= 1 and (e.max_hp - e.hp) < base * 0.5, "gerçek mermi önden: engellendi (kaybedilen %.2f)" % (e.max_hp - e.hp))
+	# Entegrasyon: hasar sayısı GERÇEK hasarı gösterir (12 değil ~1) + küçük "ENGEL" işareti.
+	var texts: Array = []
+	for f in ctx.hud._floaters:
+		texts.append(str(f["t"]))
+	var real := str(maxi(1, int(round(e.max_hp - e.hp))))
+	_check(texts.has(real) and not texts.has(str(int(base))), "engellenen vuruşta sayı gerçek hasar (%s), tam hasar (%d) değil · %s" % [real, int(base), str(texts)])
+	_check(texts.has(ctx.hud.tr("ENGEL")), "engellenen vuruşta ENGEL işareti")
 	_check(await _kill_and_collect(e), "ölüm: düğüm serbest")
 
 # --- Onarıcı -----------------------------------------------------------------------------------

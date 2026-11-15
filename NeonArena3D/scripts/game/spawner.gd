@@ -260,10 +260,11 @@ func spawn_enemy(kind: String, at: Vector2, delay := 0.5, allow_elite := true):
 	var elite_def: Dictionary = {}
 	if allow_elite and kind != "swarmer":
 		var def: Dictionary = GameData.elite_def()
-		if not def.is_empty() and run.wave >= int(def.get("from_wave", 4)) and not run.is_boss_wave(run.wave):
-			var chance := minf(float(def.get("chance_max", 0.16)), float(def.get("chance", 0.05)) + float(def.get("chance_per_wave", 0.006)) * float(run.wave))
-			if randf() < chance:
-				elite_def = EnemyData.merged_elite(def, EnemyData.pick_prefix(def, kind, run.wave, randf()))
+		# Elit eşiği/şansı/ön ek "dalga N'den" kuralları ETKİN dalgayla (difficulty_wave): hızlı mod ve kapı ölçeği doğru işler.
+		var eff := run.difficulty_wave(run.wave)
+		var chance := EnemyData.elite_chance(def, eff, run.is_boss_wave(run.wave))
+		if chance >= 0.0 and randf() < chance:
+			elite_def = EnemyData.merged_elite(def, EnemyData.pick_prefix(def, kind, EnemyData.prefix_wave(eff), randf()))
 	var e = EnemyScript.new()
 	var stats: Dictionary = GameData.enemy_stats(kind)
 	stats["spawn_delay"] = delay

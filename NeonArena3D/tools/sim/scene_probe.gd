@@ -3,7 +3,8 @@ extends SceneTree
 ## bölünürken (F2) davranış kaymasını ölçmek için. Saf-mantık simülasyonundan farkı: gerçek dövüş kodu çalışır.
 ##
 ##   godot --headless --path . -s res://tools/sim/scene_probe.gd -- --demo --ship=sahin --seconds=60 --out=build/sim/scene_sahin.json
-## Oyun hızı 3x; `--seconds` örnekleme saatidir (oyun süresi = 3x). Kayıt dosyasına yazmaz (--demo zorunlu).
+## Oyun hızı 3x; `--seconds` gerçek saniye karşılığıdır (oyun süresi = 3x, kare deltalarından toplanır). Kayıt dosyasına yazmaz (--demo zorunlu).
+## Örnekleme sabit kare aralığıyla (`--sample-frames=6`); `--dump=yol` örnek başına iz satırlarını yazar (kayma nerede başladı?).
 ##
 ## Belirlenimli koşu (F2): `godot --headless --fixed-fps 60 --path . -s res://tools/sim/scene_probe.gd -- --demo --seed=7 ...`
 ## `--seed=N` sahnenin tüm rastgele akışlarını tohumlar; `--fixed-fps` kare süresini duvar saatinden ayırır. İkisi
@@ -58,9 +59,24 @@ func _run() -> void:
 	process_frame.connect(_on_frame)
 	var frames_start := Engine.get_process_frames()
 	var wall_start := Time.get_ticks_usec()
+	# Örnekleme SABİT KARE sayısıyla (duvar saati zamanlayıcısı değil): `--fixed-fps 60` + `--seed` ile her örnek aynı
+	# simülasyon karesine düşer → `trace_md5` çalıştırmalar arası kararlı. Oyun süresi kare deltalarından toplanır
+	# (Fx taban ölçeği dahil). `--sample-frames=N` (6 = 60 fps'te 0,1 gerçek sn). `--dump=yol`: örnek başına iz satırları.
+	var sample_frames := maxi(1, int(_arg("sample-frames", "6")))
+	var dump := PackedStringArray()
+	var want_dump := _arg("dump", "") != ""
+	var since := 0
+	var game_dt := 0.0
 	while t < seconds * SPEED:
-		await create_timer(0.1, true, false, true).timeout
-		t += 0.1 * SPEED
+		await process_frame
+		game_dt += root.get_process_delta_time()
+		since += 1
+		if since < sample_frames:
+			continue
+		since = 0
+		var step := game_dt
+		game_dt = 0.0
+		t += step
 		if not is_instance_valid(scene) or scene.run == null:
 			continue
 		var r = scene.run
@@ -74,7 +90,7 @@ func _run() -> void:
 				hp_lost_boss += last_hp - hp
 		last_hp = hp
 		if boss_up:
-			boss_time += 0.1 * SPEED
+			boss_time += step
 			if boss_first_seen < 0.0:
 				boss_first_seen = t
 		if r.bosses > prev_bosses:
@@ -83,8 +99,11 @@ func _run() -> void:
 		if not wave_time.has(str(r.wave)):
 			wave_time[str(r.wave)] = snappedf(t, 0.1)
 		var pp: Vector2 = scene.player.pos2
-		trace.update(("%d|%d|%d|%d|%.4f|%.3f|%.3f|%d|%d|%s;" % [r.wave, r.kills, r.score, r.level, hp, pp.x, pp.y, r.alive,
-			scene.field.bullets.size(), scene.state]).to_utf8_buffer())
+		var line := "%d|%d|%d|%d|%.4f|%.3f|%.3f|%d|%d|%s;" % [r.wave, r.kills, r.score, r.level, hp, pp.x, pp.y, r.alive,
+			scene.field.bullets.size(), scene.state]
+		trace.update(line.to_utf8_buffer())
+		if want_dump:
+			dump.append(line)
 		objects_max = maxi(objects_max, int(Performance.get_monitor(Performance.OBJECT_COUNT)))
 		if scene.state == "dead":
 			break
@@ -104,6 +123,15 @@ func _run() -> void:
 		"frame_ms_mean": snappedf(_mean(frame_ms), 0.001), "frame_ms_p95": snappedf(_pct(frame_ms, 0.95), 0.001),
 		"frame_ms_max": snappedf(_pct(frame_ms, 1.0), 0.001), "objects_max": objects_max,
 	}
+	if want_dump:
+		var dump_path := _arg("dump", "")
+		var dabs := dump_path if dump_path.is_absolute_path() else ProjectSettings.globalize_path("res://").path_join(dump_path)
+		DirAccess.make_dir_recursive_absolute(dabs.get_base_dir())
+		_protect_build_dir(dabs)
+		var df := FileAccess.open(dabs, FileAccess.WRITE)
+		if df != null:
+			df.store_string("\n".join(dump) + "\n")
+			df.close()
 	var text := JSON.stringify(out, "  ", true)
 	print("SAHNE: " + JSON.stringify(out, "", true))
 	var out_path := _arg("out", "")
