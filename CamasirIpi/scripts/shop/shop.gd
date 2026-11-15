@@ -30,6 +30,9 @@ const TITLE_SIZE: int = UiKit.TYPE_HEADING
 const NAME_SIZE: int = UiKit.TYPE_BODY + 4
 const SMALL_SIZE: int = UiKit.TYPE_CAPTION
 const TINY_SIZE: int = UiKit.TYPE_MICRO
+## Kilit simgesi yanındaki ülke adı için ayrılan genişlik ve en küçük yazı boyutu (px).
+const TILE_LOCK_TEXT_WIDTH: float = 124.0
+const TILE_LOCK_TEXT_MIN_SIZE: int = 17
 const HEADER_GAP: float = 36.0
 const EDGE_FADE: float = 40.0
 const SCROLL_BOTTOM_PAD: float = 80.0
@@ -481,7 +484,8 @@ func _skin_tile(id: String, kind: String) -> Button:
 		strip.add_child(_price_line(price, SMALL_SIZE, UiKit.TEXT if affordable else UiKit.TEXT_MUTED))
 	elif not available:
 		strip.add_child(MetaUi.lock_icon(LOCK_ICON, UiKit.TEXT_MUTED))
-		var set_label: Label = UiKit.label(MetaStrings.country_name(catalog.set_id(id)), TINY_SIZE, UiKit.TEXT_MUTED)
+		var country: String = MetaStrings.country_name(catalog.set_id(id))
+		var set_label: Label = UiKit.label(country, _fit_tile_text(country, TINY_SIZE), UiKit.TEXT_MUTED)
 		strip.add_child(set_label)
 	button.add_child(strip)
 	if selected:
@@ -491,6 +495,15 @@ func _skin_tile(id: String, kind: String) -> Button:
 	button.pressed.connect(_on_skin_pressed.bind(id))
 	_nodes["skin:" + id] = button
 	return button
+
+
+## Kilitli kutudaki ülke adı kutuya sığsın (uzun çeviri: "スコットランド" 7 harf): sığmazsa yazı küçülür.
+## Neden ölçüm: sığmayan ad komşu kutuya taşardı; tek bir sabit boyut en uzun dili cezalandırırdı.
+func _fit_tile_text(text: String, size: int) -> int:
+	var width: float = LocFonts.base_font().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, size).x
+	if width <= TILE_LOCK_TEXT_WIDTH:
+		return size
+	return maxi(TILE_LOCK_TEXT_MIN_SIZE, int(floorf(float(size) * TILE_LOCK_TEXT_WIDTH / width)))
 
 
 func _pin_preview(id: String) -> Control:

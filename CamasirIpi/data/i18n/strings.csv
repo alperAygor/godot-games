@@ -1,246 +1,246 @@
-keys,tr,en,es
-GAME_TITLE,Çamaşır İpi,Çamaşır İpi,Çamaşır İpi
-BOOT_LOADING,yükleniyor...,loading...,cargando...
-MENU_SKELETON,İskelet sürümü — oyun içeriği buraya gelir,Skeleton build — game content goes here,Versión base — aquí irá el contenido del juego
-MENU_PLAY,Oyna,Play,Jugar
-RESULT_DONE,Teslimat tamamlandı,Delivery complete,Entrega completada
-RESULT_FAILED,Teslimat hasarlı,Delivery damaged,Entrega dañada
-RESULT_STARS,Yıldız: %d / 3,Stars: %d / 3,Estrellas: %d / 3
-RESULT_DETAIL,Hasar: %%%d    Ücret: %d,Damage: %%%d    Fee: %d,Daño: %%%d    Tarifa: %d
-RESULT_RETRY,Tekrar oyna,Play again,Jugar de nuevo
-RESULT_MENU,Ana menü,Main menu,Menú principal
-LEVEL,Seviye %d,Level %d,Nivel %d
-SOON_TITLE,Yakında,Coming soon,Próximamente
-SOON_BODY,Çok yakında burada olacak.,This will be here soon.,Llegará muy pronto.
-OK,Tamam,OK,Listo
-SETTINGS_TITLE,Ayarlar,Settings,Ajustes
-SETTINGS_SOUND,Ses,Sound,Sonido
-SETTINGS_MUSIC,Müzik,Music,Música
-SETTINGS_VIBRATION,Titreşim,Vibration,Vibración
-SETTINGS_LANGUAGE,Dil,Language,Idioma
-PAUSED,Duraklatıldı,Paused,En pausa
-RESUME,Devam,Resume,Reanudar
-WIN_TITLE,Harika!,Great!,¡Genial!
-WIN_CONTINUE,Devam,Continue,Continuar
-WIN_PERFECT,Kusursuz,Flawless,Impecable
-WIN_COINS_ADDED_ONE,+%d jeton eklendi,+%d coin added,+%d moneda añadida
-WIN_COINS_ADDED_OTHER,+%d jeton eklendi,+%d coins added,+%d monedas añadidas
-LOSE_TITLE,Fırtına çıktı,Storm's here,Llegó la tormenta
-LOSE_TITLE_MOVES,Hamle bitti,Out of moves,Sin movimientos
-LOSE_LEFT_ONE,%s çamaşır kaldı,%s item left,Queda %s prenda
-LOSE_LEFT_OTHER,%s çamaşır kaldı,%s items left,Quedan %s prendas
-LOSE_LEFT_FEW_ONE,Sadece %s çamaşır kaldı,Only %s item left,Solo queda %s prenda
-LOSE_LEFT_FEW_OTHER,Sadece %s çamaşır kaldı,Only %s items left,Solo quedan %s prendas
-LOSE_REVIVE,+1 askı,+1 rack spot,+1 percha
-LOSE_REVIVE_MOVES,+5 hamle,+5 moves,+5 movimientos
-LOSE_RETRY,Tekrar dene,Try again,Reintentar
-DAILY_TITLE,Günlük,Daily,Diario
-DAILY_PUZZLE_TITLE,Günün bulmacası,Daily puzzle,Rompecabezas del día
-DAILY_PUZZLE_READY,Bugün seni bekliyor,Waiting for you today,Hoy te espera
-DAILY_PUZZLE_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d
-DAILY_PUZZLE_TOMORROW,Yarın yenisi gelecek,A new one tomorrow,Mañana habrá uno nuevo
-DAILY_PLAY,Oyna,Play,Jugar
-DAILY_WIN_TITLE,Bulmaca çözüldü!,Puzzle solved!,¡Rompecabezas resuelto!
-DAILY_WIN_AGAIN,Bugünün ödülünü zaten aldın,You already got today's reward,Ya reclamaste el premio de hoy
-DAILY_CALENDAR_TITLE,Günlük hediye,Daily gift,Regalo diario
-DAILY_CLAIM,Al,Claim,Reclamar
-DAILY_CLAIMED_TODAY,Yarın yine gel,Come back tomorrow,Vuelve mañana
-DAILY_CLOSE,Kapat,Close,Cerrar
-META_LOC_CORNER,Köşe Çamaşırhanesi,Corner Laundromat,Lavandería de la esquina
-META_LOC_SEASIDE,Sahil Çamaşırhanesi,Seaside Laundromat,Lavandería de la playa
-META_LOC_ATTIC,Çatı Katı,The Attic,El desván
-META_LOC_HOTEL,Otel,Hotel,Hotel
-META_TASK_FLOOR,Zemin,Floor,Suelo
-META_TASK_WALL,Duvar boyası,Wall paint,Pintura de pared
-META_TASK_MACHINE1,Çamaşır makinesi,Washing machine,Lavadora
-META_TASK_SHELF,Raf,Shelf,Estante
-META_TASK_SIGN,Tabela,Sign,Letrero
-META_TASK_PLANT,Saksı çiçeği,Potted plant,Planta en maceta
-META_TASK_LAMP,Lamba,Lamp,Lámpara
-META_TASK_WINDOW,Pencere,Window,Ventana
-META_TASK_COUNTER,Tezgâh,Counter,Mostrador
-META_TASK_MACHINE2,İkinci makine,Second machine,Segunda máquina
-META_TASK_RUG,Halı,Rug,Alfombra
-META_TASK_DOOR,Kapı,Door,Puerta
-META_NEED_STARS,"Seviye geç, yıldız kazan",Beat levels to earn stars,Supera niveles para ganar estrellas
-META_PICK_LOOK,Görünümü seç,Pick a look,Elige un estilo
-META_LOCATION_DONE,Tamamlandı,Completed,Completado
-META_SOON,Yakında,Soon,Pronto
-META_COLLECTION_TITLE,Koleksiyon,Collection,Colección
-META_SET_TURKIYE,Türkiye,Türkiye,Turquía
-META_SET_JAPONYA,Japonya,Japan,Japón
-META_SET_MEKSIKA,Meksika,Mexico,México
-META_SET_ISKOCYA,İskoçya,Scotland,Escocia
-META_SET_HINDISTAN,Hindistan,India,India
-META_SET_HOLLANDA,Hollanda,Netherlands,Países Bajos
-META_NEXT_PIECE_ONE,%d seviye sonra yeni parça,New piece in %d level,Nueva pieza en %d nivel
-META_NEXT_PIECE_OTHER,%d seviye sonra yeni parça,New piece in %d levels,Nueva pieza en %d niveles
-META_ALL_PIECES,Tüm parçalar toplandı,All pieces collected,Todas las piezas reunidas
-TUT_WET_TITLE,Islak,Wet,Mojada
-TUT_WET_LINE,"Islak çamaşır: önce sık, sonra al.","Wet laundry: wring it out first, then take it.",Ropa mojada: escúrrela primero y luego tómala.
-TUT_MYSTERY_TITLE,Gizemli,Mystery,Misteriosa
-TUT_MYSTERY_LINE,Üstü açılınca gerçek rengi belli olur.,Its true color shows once it's uncovered.,Su color real se ve al destaparla.
-TUT_LOCK_TITLE,Kilitli,Locked,Con candado
-TUT_LOCK_LINE,Anahtar renkli sepet dolunca kilit açılır.,The lock opens when the key-colored basket is full.,El candado se abre al llenar la cesta del color de la llave.
-TUT_SHEET_TITLE,Çarşaf,Bedsheet,Sábana
-TUT_SHEET_LINE,"Çarşaf büyüktür, altındakileri kapatır.",A bedsheet is big and covers what's under it.,La sábana es grande y tapa lo que hay debajo.
-TUT_SOCK_PAIR_TITLE,Çorap çifti,Sock pair,Par de calcetines
-TUT_SOCK_PAIR_LINE,İki çorabı birlikte sepete gönder.,Send both socks to the basket together.,Manda los dos calcetines juntos a la cesta.
-TUT_DYE_TITLE,Boya,Dye,Tinte
-TUT_DYE_LINE,Boyalı çamaşır yanındakilerin rengini değiştirir.,Dyed laundry changes the color of its neighbors.,La ropa teñida cambia el color de las prendas de al lado.
-TUT_JOKER_TITLE,Joker sepet,Joker basket,Cesta comodín
-TUT_JOKER_LINE,"Gökkuşağı sepet ilk konan rengi alır, o renkle dolar.",The rainbow basket takes the first color put in and fills with it.,La cesta arcoíris toma el primer color que entra y se llena con él.
-TUT_BIG_BASKET_TITLE,Büyük sepet,Big basket,Cesta grande
-TUT_BIG_BASKET_LINE,Bu sepet 3 değil 5 çamaşırla dolar.,"This basket takes 5 items, not 3.","Esta cesta se llena con 5 prendas, no 3."
-TUT_STAIN_TITLE,Lekeli,Stained,Manchada
-TUT_STAIN_LINE,"Lekeli çamaşır önce askıda bir hamle kurur, sonra sepete geçer.","A stained item dries on the rack for one move, then goes to the basket.",La mancha se seca un movimiento en la percha; luego la prenda va a la cesta.
-TUT_CHAIN_TITLE,Zincirli mandal,Chained peg,Pinza encadenada
-TUT_CHAIN_LINE,Birini alınca zincirli eşi de askıya düşer.,Take one and its chained partner drops onto the rack.,"Si recoges una, su pareja encadenada cae a la percha."
-TUT_WIND_TITLE,Rüzgâr,Wind,Viento
-TUT_WIND_LINE,Sayaç bitince işaretli çamaşır yanındakinin üstüne savrulur.,"When the counter runs out, the marked item blows onto its neighbor.","Cuando el contador llega a cero, la prenda marcada vuela sobre la de al lado."
-TUT_SLIDE_TITLE,Sürgülü ip,Sliding line,Cuerda deslizante
-TUT_SLIDE_LINE,"İşaretli sıra birkaç hamlede bir yana kayar, sonra geri gelir.","The marked row slides sideways every few moves, then slides back.",La fila marcada se desliza a un lado cada pocos movimientos y luego vuelve.
-TUT_MODE_MOVES_TITLE,Sınırlı hamle,Limited moves,Movimientos limitados
-TUT_MODE_MOVES_LINE,Hepsini sayaç bitmeden topla.,Collect everything before the counter runs out.,Recoge todo antes de que el contador llegue a cero.
-TUT_MODE_SHORT_RACK_TITLE,Kısa askı,Short rack,Percha corta
-TUT_MODE_SHORT_RACK_LINE,Bu seviyede askıda daha az yer var.,The rack has fewer spots this level.,En este nivel hay menos lugares en la percha.
-TUT_MODE_ORDERS_TITLE,Sipariş,Orders,Pedidos
-TUT_MODE_ORDERS_LINE,"Sepetleri gösterilen renk sırasıyla doldur, bonus kazan.",Fill the baskets in the color order shown to earn a bonus.,Llena las cestas en el orden de colores indicado y gana un bono.
-TUT_MODE_BOSS_TITLE,Büyük çamaşır günü,Big laundry day,Gran día de lavado
-TUT_MODE_BOSS_LINE,İlk ip boşalınca ikinci tahta gelir; askı ve sepetler sürer.,"When the first line is empty, a second board arrives; the rack and baskets carry over.",Al vaciarse la primera cuerda llega un segundo tablero; la percha y las cestas siguen.
-TUT_UNDO_TITLE,Geri al,Undo,Deshacer
-TUT_UNDO_LINE,Son hamleni geri alır.,Takes back your last move.,Deshace tu último movimiento.
-TUT_PIN_REMOVER_TITLE,Mandal çıkarıcı,Peg remover,Quitapinzas
-TUT_PIN_REMOVER_LINE,Seçtiğin çamaşırı hemen serbest bırakır.,Instantly frees the item you pick.,Libera al instante la prenda que elijas.
-TUT_EXTRA_SLOT_TITLE,+1 askı,+1 rack spot,+1 percha
-TUT_EXTRA_SLOT_LINE,Bekleme askısına bir yer daha ekler.,Adds one more spot to the waiting rack.,Agrega un lugar más a la percha de espera.
-RET_MISSIONS_TITLE,Günlük görevler,Daily missions,Misiones diarias
-RET_CHEST_BONUS,Bonus sandık,Bonus chest,Cofre extra
-RET_MILESTONES_TITLE,Ödül yolu,Reward path,Camino de premios
-RET_TO_GO,%d seviye kaldı,%d levels to go,Faltan %d niveles
-RET_TO_GO_ONE,1 seviye kaldı,1 level to go,Falta 1 nivel
-RET_CLAIM,Al,Claim,Reclamar
-RET_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d
-RET_DAYS_LEFT,%d gün kaldı,%d days left,Quedan %d días
-RET_LAST_DAY,Son gün,Last day,Último día
-RET_WEEK_NOTE,Geçen haftanın ödülleri verildi: +%d,Last week's rewards were granted: +%d,Se entregaron los premios de la semana pasada: +%d
-RET_W_BLUE,Mavi hafta,Blue week,Semana azul
-RET_G_BLUE,Mavi çamaşırları katla,Fold blue laundry,Dobla ropa azul
-RET_W_RED,Kırmızı hafta,Red week,Semana roja
-RET_G_RED,Kırmızı çamaşırları katla,Fold red laundry,Dobla ropa roja
-RET_W_GREEN,Yeşil hafta,Green week,Semana verde
-RET_G_GREEN,Yeşil çamaşırları katla,Fold green laundry,Dobla ropa verde
-RET_W_YELLOW,Sarı hafta,Yellow week,Semana amarilla
-RET_G_YELLOW,Sarı çamaşırları katla,Fold yellow laundry,Dobla ropa amarilla
-RET_W_PURPLE,Mor hafta,Purple week,Semana morada
-RET_G_PURPLE,Mor çamaşırları katla,Fold purple laundry,Dobla ropa morada
-RET_W_CHAIN,Zincir haftası,Chain week,Semana de cadenas
-RET_G_CHAIN,Zincirleme sepet doldur,Fill baskets in a chain,Llena cestas en cadena
-RET_W_BASKETS,Sepet haftası,Basket week,Semana de cestas
-RET_G_BASKETS,Sepet doldur,Fill baskets,Llena cestas
-RET_W_STARS,Yıldız haftası,Star week,Semana de estrellas
-RET_G_STARS,Seviyelerden yıldız topla,Earn stars in levels,Gana estrellas en los niveles
-RET_M_LEVELS,%d seviye bitir,Finish %d levels,Termina %d niveles
-RET_M_STARS3,%d seviyeyi 3 yıldızla bitir,Finish %d levels with 3 stars,Termina %d niveles con 3 estrellas
-RET_M_LOW_RACK,%d seviyeyi en çok %d askıyla bitir,Finish %d levels with %d rack spots or fewer,Termina %d niveles con %d perchas o menos
-RET_M_BASKETS,%d sepet doldur,Fill %d baskets,Llena %d cestas
-RET_M_CHAIN,×%d zincir yap,Make a ×%d chain,Haz una cadena ×%d
-RET_M_DAILY,Günlük bulmacayı çöz,Solve the daily puzzle,Resuelve el rompecabezas diario
-RET_M_BOOSTER,%d güçlendirici kullan,Use %d boosters,Usa %d potenciadores
-RET_M_BIRD,%d kuşu kov,Shoo %d birds,Espanta %d pájaros
-RET_M_CAT,Kediyi %d kez sev,Pet the cat %d times,Acaricia al gato %d veces
-RET_WELCOME_TITLE,Tekrar hoş geldin!,Welcome back!,¡Qué bueno verte de nuevo!
-RET_WELCOME_BODY,%d gündür yoktun. Küçük bir hediye hazırladık.,You were away for %d days. Here is a little gift.,Estuviste fuera %d días. Aquí tienes un pequeño regalo.
-RET_STREAK_TITLE,%d gün üst üste!,%d days in a row!,¡%d días seguidos!
-RET_STREAK_BODY,Her gün uğramanın küçük bir ödülü var.,Dropping by every day has a small reward.,Pasar cada día tiene un pequeño premio.
-RET_N_GIFT_T,Günlük hediyen hazır,Your daily gift is ready,Tu regalo diario está listo
-RET_N_GIFT_B,Çamaşırlar seni bekliyor.,The laundry is waiting for you.,La ropa te espera.
-RET_N_MISS_T,Görevlerin seni bekliyor,Your missions are waiting,Tus misiones te esperan
-RET_N_MISS_B,Bugünün görevleri hazır.,Today's missions are ready.,Las misiones de hoy están listas.
-RET_N_WEEK_T,Haftalık etkinlik yarın bitiyor,The weekly event ends tomorrow,El evento semanal termina mañana
-RET_N_WEEK_B,Kalan ödüllerini almayı unutma.,Don't forget your remaining rewards.,No olvides tus premios restantes.
-RET_WEEKLY_TITLE,Haftalık etkinlik,Weekly event,Evento semanal
-RET_M_STARS3_ONE,Bir seviyeyi 3 yıldızla bitir,Finish a level with 3 stars,Termina un nivel con 3 estrellas
-RET_M_LOW_RACK_ONE,Bir seviyeyi en çok %d askıyla bitir,Finish a level with %d rack spots or fewer,Termina un nivel con %d perchas o menos
-RET_M_BOOSTER_ONE,Bir güçlendirici kullan,Use a booster,Usa un potenciador
-PLACE_ARRIVE,Yeni durak: %s,New stop: %s,Nueva parada: %s
-PLACE_GARDEN,Bahçe,Garden,Jardín
-PLACE_BEACH,Sahil,Seaside,Playa
-PLACE_ROOFTOP,Çatı Terası,Rooftop,Azotea
-SHOP_TITLE,Mağaza,Shop,Tienda
-SHOP_BOOSTERS,Güçlendiriciler,Boosters,Potenciadores
-SHOP_SKINS,Görünümler,Looks,Estilos
-SHOP_PINS,Mandallar,Pegs,Pinzas
-SHOP_ROPES,İpler,Ropes,Cuerdas
-SHOP_REMOVE_ADS,Reklamları kaldır,Remove ads,Quitar anuncios
-SHOP_REMOVE_ADS_NOTE,Geçiş reklamları kapanır. İstersen ödüllü videolar kalır.,No more pop-up ads. Optional reward videos stay.,Sin anuncios entre niveles. Los videos con premio siguen.
-SHOP_OWNED,Satın alındı,Owned,Comprado
-SHOP_RESTORE,Satın alımları geri yükle,Restore purchases,Restaurar compras
-SHOP_RESTORED,Geri yüklendi,Restored,Restaurado
-SHOP_NOTHING_TO_RESTORE,Geri yüklenecek bir şey yok,Nothing to restore,No hay nada que restaurar
-SHOP_STORE_UNAVAILABLE,Mağaza şu an kullanılamıyor,Store unavailable right now,La tienda no está disponible ahora
-SHOP_PURCHASE_FAILED,Satın alma tamamlanmadı,Purchase did not go through,La compra no se completó
-SHOP_FREE_ONE,+1 bedava,+1 free,+1 gratis
-SHOP_NO_PRICE,Mağazaya bağlanıyor,Connecting to the store,Conectando con la tienda
-SHOP_AD_UNAVAILABLE,Reklam şu an hazır değil,Ad not available right now,Anuncio no disponible por ahora
-TUT_WASHER_TITLE,Çamaşır makinesi,Washing machine,Lavadora
-TUT_WASHER_LINE,"Çamurlu çamaşıra dokun: makinede birkaç hamlede yıkanır, temiz çıkar.",Tap a muddy item: the washer cleans it in a few moves.,Toca una prenda embarrada: la lavadora la limpia en unos movimientos.
-TUT_DRYER_TITLE,Kurutma makinesi,Dryer,Secadora
-TUT_DRYER_LINE,"Islak çamaşıra dokun: kurutucuya girer, birkaç hamlede kuru çıkar.",Tap a wet item: the dryer dries it in a few moves.,Toca una prenda mojada: la secadora la seca en unos movimientos.
-TUT_TYPED_TITLE,Seçici sepet,Picky basket,Cesta exigente
-TUT_TYPED_LINE,Bu sepet yalnız rozetindeki türü alır.,This basket only takes the item type on its badge.,Esta cesta solo acepta el tipo de prenda de su insignia.
-TUT_BIRDS_TITLE,Kuş,Bird,Pájaro
-TUT_BIRDS_LINE,"Kuş konunca ona dokun, uçup gider. Bırakırsan çamaşırı kirletir.","When a bird lands, tap it to shoo it away. Leave it and it soils the item.","Cuando se posa un pájaro, tócalo para espantarlo. Si lo dejas, ensucia la prenda."
-TUT_RAIN_TITLE,Yağmur bulutu,Rain cloud,Nube de lluvia
-TUT_RAIN_LINE,Sayaç bitince bulutun altındaki açık çamaşırlar ıslanır.,"When the counter runs out, uncovered items under the cloud get wet.","Cuando el contador llega a cero, las prendas descubiertas bajo la nube se mojan."
-TUT_CAT_TITLE,Çamaşırhane kedisi,Laundromat cat,Gato de la lavandería
-TUT_CAT_LINE,"Kedi bir sepette uyur; sevmek için dokun, sepet yeniden açılır.",The cat naps in a basket; tap to pet it and the basket opens again.,El gato duerme en una cesta; tócalo para acariciarlo y la cesta se libera.
-MACHINES_TITLE,Makineler,Machines,Máquinas
-MACHINES_SUB,Yükseltmeler her seviyede geçerlidir.,Upgrades apply to every level.,Las mejoras sirven en todos los niveles.
-MACHINE_WASHER,Çamaşır makinesi,Washing machine,Lavadora
-MACHINE_DRYER,Kurutma makinesi,Dryer,Secadora
-MACHINE_CAPACITY,Kapasite,Capacity,Capacidad
-MACHINE_SPEED,Süre,Cycle time,Duración
-MACHINE_CAPACITY_VALUE,%d parça,%d items,%d prendas
-MACHINE_MOVES_ONE,%d hamle,%d move,%d movimiento
-MACHINE_MOVES_OTHER,%d hamle,%d moves,%d movimientos
-MACHINE_MAX,En üst seviye,Max level,Nivel máximo
-MACHINE_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d
-MAP_REPLAY,Tekrar oyna,Play again,Jugar de nuevo
-MAP_REPLAY_NOTE,Yalnızca yeni yıldızlar ödül getirir,Only new stars bring rewards,Solo las estrellas nuevas dan premio
-MAP_SEASON_SUMMER,Yaz,Summer,Verano
-MAP_SEASON_AUTUMN,Sonbahar,Autumn,Otoño
-MAP_SEASON_WINTER,Kış,Winter,Invierno
-MAP_SEASON_SPRING,İlkbahar,Spring,Primavera
-MAP_DIVIDER_JOIN,%s · %s,%s · %s,%s · %s
-ZEN_TITLE,Zen,Zen,Zen
-ZEN_SUB,Sakin ve bitmeyen çamaşırlar,"Calm, endless laundry","Ropa tendida, tranquila y sin fin"
-ZEN_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d
-ZEN_START,Başla,Start,Empezar
-ZEN_TOTAL_ONE,Toplam %d tahta temizlendi,%d board cleared in total,%d tablero completado en total
-ZEN_TOTAL_OTHER,Toplam %d tahta temizlendi,%d boards cleared in total,%d tableros completados en total
-ZEN_STEP_BACK,Bir adım geri aldık,We took back one move,Retrocedimos un movimiento
-ZEN_EXTRA_PEG,Bir askı daha ekledik,We added one more rack spot,Añadimos una percha más
-NET_TITLE,Bağlantı gerekli,Connection required,Necesitas conexión
-NET_BODY,Oynamak için internete bağlan.,Connect to the internet to play.,Conéctate a internet para jugar.
-NET_RETRY,Tekrar dene,Try again,Reintentar
-NET_CHECKING,Bağlantı denetleniyor...,Checking connection...,Comprobando la conexión...
-PATTERN_SETTING,Renk desenleri,Color patterns,Patrones de color
-PATTERN_SETTING_HINT,Her rengin kendi deseni olur (renk körlüğü için),Each color gets its own pattern (colorblind-friendly),Cada color tiene su propio patrón (útil para el daltonismo)
-UI_SETTING_NOTIFICATIONS,Bildirimler,Notifications,Notificaciones
-UI_SETTING_PATTERNS,Desenler,Patterns,Patrones
-UI_PRIVACY_OPTIONS,Gizlilik seçenekleri,Privacy options,Opciones de privacidad
-SEASON_ARRIVE_SUMMER,Yaz geldi,Summer is here,Llegó el verano
-SEASON_ARRIVE_AUTUMN,Sonbahar geldi,Autumn is here,Llegó el otoño
-SEASON_ARRIVE_WINTER,Kış geldi,Winter is here,Llegó el invierno
-SEASON_ARRIVE_SPRING,İlkbahar geldi,Spring is here,Llegó la primavera
-TUT_DUAL_TITLE,Çift renkli çamaşır,Two-color item,Prenda bicolor
-TUT_DUAL_LINE,İki rengin sepetine de gider; ikizi ise kalan rengi alır.,It fits either color's basket; its twin takes the other color.,Va a la cesta de cualquiera de sus colores; su gemela toma el otro color.
-TUT_SUN_FADE_TITLE,Güneşte solma,Sun fade,Decolorado al sol
-TUT_SUN_FADE_LINE,Sayaç bitmeden al; solarsa almadan önce bir kez silkelemen gerekir.,"Take it before the counter ends; if it fades, shake it out once first.","Recógela antes de que el contador llegue a cero; si se decolora, sacúdela una vez antes."
-TUT_LEAVES_TITLE,Düşen yapraklar,Falling leaves,Hojas que caen
-TUT_LEAVES_LINE,"Yapraklı çamaşıra bir dokun, yaprak süpürülür; hamle sayılmaz.",Tap a leafy item once to brush the leaf off; it costs no move.,Toca una vez la prenda con hoja para quitarla; no cuesta movimiento.
-TUT_FROST_TITLE,Don,Frost,Escarcha
-TUT_FROST_LINE,"Donmuş çamaşır önce askıda bir hamle ısınır, sonra sepete geçer.","A frozen item warms up on the rack for one move, then goes to its basket.",Una prenda helada se calienta un movimiento en la percha y luego va a su cesta.
-TUT_POLLEN_TITLE,Polen,Pollen,Polen
-TUT_POLLEN_LINE,Polen bir ipin renklerini birkaç hamle örter; çamaşırlar yine de alınır.,Pollen hides one line's colors for a few moves; you can still take them.,El polen oculta los colores de una cuerda unos movimientos; aún puedes recogerlas.
+keys,tr,en,es,pt,de,ja,ko
+GAME_TITLE,Çamaşır İpi,Clothesline Sort,Clothesline Sort,Clothesline Sort,Clothesline Sort,Clothesline Sort,Clothesline Sort
+BOOT_LOADING,yükleniyor...,loading...,cargando...,carregando...,lädt...,読み込み中…,불러오는 중...
+MENU_SKELETON,İskelet sürümü — oyun içeriği buraya gelir,Skeleton build — game content goes here,Versión base — aquí irá el contenido del juego,Versão base — o conteúdo do jogo virá aqui,Grundversion — hier kommt der Spielinhalt hin,骨組みバージョン — ゲームの中身はここに入ります,골격 버전 — 게임 콘텐츠가 여기에 들어갑니다
+MENU_PLAY,Oyna,Play,Jugar,Jogar,Spielen,プレイ,플레이
+RESULT_DONE,Teslimat tamamlandı,Delivery complete,Entrega completada,Entrega concluída,Lieferung abgeschlossen,お届け完了,배달 완료
+RESULT_FAILED,Teslimat hasarlı,Delivery damaged,Entrega dañada,Entrega danificada,Lieferung beschädigt,お届け品が破損,배달 물품 파손
+RESULT_STARS,Yıldız: %d / 3,Stars: %d / 3,Estrellas: %d / 3,Estrelas: %d / 3,Sterne: %d / 3,スター：%d / 3,별: %d / 3
+RESULT_DETAIL,Hasar: %%%d    Ücret: %d,Damage: %%%d    Fee: %d,Daño: %%%d    Tarifa: %d,Dano: %%%d    Taxa: %d,Schaden: %%%d    Gebühr: %d,ダメージ：%%%d    料金：%d,손상: %%%d    요금: %d
+RESULT_RETRY,Tekrar oyna,Play again,Jugar de nuevo,Jogar de novo,Nochmal spielen,もう一度,다시 하기
+RESULT_MENU,Ana menü,Main menu,Menú principal,Menu principal,Hauptmenü,メインメニュー,메인 메뉴
+LEVEL,Seviye %d,Level %d,Nivel %d,Nível %d,Level %d,レベル%d,레벨 %d
+SOON_TITLE,Yakında,Coming soon,Próximamente,Em breve,Bald verfügbar,近日公開,곧 공개
+SOON_BODY,Çok yakında burada olacak.,This will be here soon.,Llegará muy pronto.,"Logo, logo estará aqui.",Das gibt es bald hier.,もうすぐ登場します。,곧 만나볼 수 있어요.
+OK,Tamam,OK,Listo,OK,OK,OK,확인
+SETTINGS_TITLE,Ayarlar,Settings,Ajustes,Ajustes,Einstellungen,設定,설정
+SETTINGS_SOUND,Ses,Sound,Sonido,Som,Sound,サウンド,사운드
+SETTINGS_MUSIC,Müzik,Music,Música,Música,Musik,音楽,음악
+SETTINGS_VIBRATION,Titreşim,Vibration,Vibración,Vibração,Vibration,振動,진동
+SETTINGS_LANGUAGE,Dil,Language,Idioma,Idioma,Sprache,言語,언어
+PAUSED,Duraklatıldı,Paused,En pausa,Pausado,Pausiert,一時停止中,일시정지
+RESUME,Devam,Resume,Reanudar,Continuar,Weiter,再開,계속
+WIN_TITLE,Harika!,Great!,¡Genial!,Ótimo!,Super!,すばらしい！,대단해요!
+WIN_CONTINUE,Devam,Continue,Continuar,Continuar,Weiter,次へ,계속
+WIN_PERFECT,Kusursuz,Flawless,Impecable,Impecável,Makellos,パーフェクト,완벽해요
+WIN_COINS_ADDED_ONE,+%d jeton eklendi,+%d coin added,+%d moneda añadida,+%d moeda adicionada,+%d Münze erhalten,コイン+%d獲得,코인 +%d 획득
+WIN_COINS_ADDED_OTHER,+%d jeton eklendi,+%d coins added,+%d monedas añadidas,+%d moedas adicionadas,+%d Münzen erhalten,コイン+%d獲得,코인 +%d 획득
+LOSE_TITLE,Fırtına çıktı,Storm's here,Llegó la tormenta,A tempestade chegou,Der Sturm ist da,嵐が来ました,폭풍이 왔어요
+LOSE_TITLE_MOVES,Hamle bitti,Out of moves,Sin movimientos,Sem jogadas,Keine Züge mehr,手数切れ,이동 횟수 소진
+LOSE_LEFT_ONE,%s çamaşır kaldı,%s item left,Queda %s prenda,Falta %s peça,%s Teil übrig,洗濯物があと%s点,빨래 %s개 남음
+LOSE_LEFT_OTHER,%s çamaşır kaldı,%s items left,Quedan %s prendas,Faltam %s peças,%s Teile übrig,洗濯物があと%s点,빨래 %s개 남음
+LOSE_LEFT_FEW_ONE,Sadece %s çamaşır kaldı,Only %s item left,Solo queda %s prenda,Só falta %s peça,Nur noch %s Teil,洗濯物があと%s点だけ,빨래가 %s개만 남았어요
+LOSE_LEFT_FEW_OTHER,Sadece %s çamaşır kaldı,Only %s items left,Solo quedan %s prendas,Só faltam %s peças,Nur noch %s Teile,洗濯物があと%s点だけ,빨래가 %s개만 남았어요
+LOSE_REVIVE,+1 askı,+1 rack spot,+1 percha,+1 cabide,+1 Bügel,+1 ハンガー,+1 옷걸이
+LOSE_REVIVE_MOVES,+5 hamle,+5 moves,+5 movimientos,+5 jogadas,+5 Züge,+5手,+5 이동
+LOSE_RETRY,Tekrar dene,Try again,Reintentar,Tentar de novo,Nochmal versuchen,再挑戦,다시 도전
+DAILY_TITLE,Günlük,Daily,Diario,Diário,Täglich,デイリー,데일리
+DAILY_PUZZLE_TITLE,Günün bulmacası,Daily puzzle,Rompecabezas del día,Quebra-cabeça do dia,Tagesrätsel,今日のパズル,오늘의 퍼즐
+DAILY_PUZZLE_READY,Bugün seni bekliyor,Waiting for you today,Hoy te espera,Ele espera por você hoje,Heute wartet es auf dich,今日も待っています,오늘도 기다리고 있어요
+DAILY_PUZZLE_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d,Desbloqueia no nível %d,Ab Level %d freigeschaltet,レベル%dで解放,레벨 %d에서 열려요
+DAILY_PUZZLE_TOMORROW,Yarın yenisi gelecek,A new one tomorrow,Mañana habrá uno nuevo,Amanhã tem um novo,Morgen gibt es ein neues,明日、新しいパズルが届きます,내일 새 퍼즐이 나와요
+DAILY_PLAY,Oyna,Play,Jugar,Jogar,Spielen,プレイ,플레이
+DAILY_WIN_TITLE,Bulmaca çözüldü!,Puzzle solved!,¡Rompecabezas resuelto!,Quebra-cabeça resolvido!,Rätsel gelöst!,パズルクリア！,퍼즐 해결!
+DAILY_WIN_AGAIN,Bugünün ödülünü zaten aldın,You already got today's reward,Ya reclamaste el premio de hoy,Você já pegou a recompensa de hoje,Die heutige Belohnung hast du schon,今日のごほうびは受け取り済みです,오늘의 보상은 이미 받았어요
+DAILY_CALENDAR_TITLE,Günlük hediye,Daily gift,Regalo diario,Presente diário,Tagesgeschenk,デイリーギフト,일일 선물
+DAILY_CLAIM,Al,Claim,Reclamar,Resgatar,Abholen,受け取る,받기
+DAILY_CLAIMED_TODAY,Yarın yine gel,Come back tomorrow,Vuelve mañana,Volte amanhã,Komm morgen wieder,また明日来てください,내일 또 오세요
+DAILY_CLOSE,Kapat,Close,Cerrar,Fechar,Schließen,閉じる,닫기
+META_LOC_CORNER,Köşe Çamaşırhanesi,Corner Laundromat,Lavandería de la esquina,Lavanderia da Esquina,Waschsalon an der Ecke,街角コインランドリー,모퉁이 빨래방
+META_LOC_SEASIDE,Sahil Çamaşırhanesi,Seaside Laundromat,Lavandería de la playa,Lavanderia da Praia,Strand-Waschsalon,海辺のコインランドリー,해변 빨래방
+META_LOC_ATTIC,Çatı Katı,The Attic,El desván,Sótão,Dachboden,屋根裏部屋,다락방
+META_LOC_HOTEL,Otel,Hotel,Hotel,Hotel,Hotel,ホテル,호텔
+META_TASK_FLOOR,Zemin,Floor,Suelo,Piso,Boden,床,바닥
+META_TASK_WALL,Duvar boyası,Wall paint,Pintura de pared,Pintura da parede,Wandfarbe,壁のペンキ,벽 페인트
+META_TASK_MACHINE1,Çamaşır makinesi,Washing machine,Lavadora,Máquina de lavar,Waschmaschine,洗濯機,세탁기
+META_TASK_SHELF,Raf,Shelf,Estante,Prateleira,Regal,棚,선반
+META_TASK_SIGN,Tabela,Sign,Letrero,Placa,Schild,看板,간판
+META_TASK_PLANT,Saksı çiçeği,Potted plant,Planta en maceta,Planta em vaso,Topfpflanze,観葉植物,화분
+META_TASK_LAMP,Lamba,Lamp,Lámpara,Luminária,Lampe,ランプ,램프
+META_TASK_WINDOW,Pencere,Window,Ventana,Janela,Fenster,窓,창문
+META_TASK_COUNTER,Tezgâh,Counter,Mostrador,Balcão,Theke,カウンター,카운터
+META_TASK_MACHINE2,İkinci makine,Second machine,Segunda máquina,Segunda máquina,Zweite Maschine,2台目のマシン,두 번째 기계
+META_TASK_RUG,Halı,Rug,Alfombra,Tapete,Teppich,ラグ,러그
+META_TASK_DOOR,Kapı,Door,Puerta,Porta,Tür,ドア,문
+META_NEED_STARS,"Seviye geç, yıldız kazan",Beat levels to earn stars,Supera niveles para ganar estrellas,Passe de nível e ganhe estrelas,"Schaffe Level, sammle Sterne",レベルを進めてスターを集めましょう,레벨을 깨고 별을 모아요
+META_PICK_LOOK,Görünümü seç,Pick a look,Elige un estilo,Escolha um visual,Look wählen,見た目を選ぶ,스타일 선택
+META_LOCATION_DONE,Tamamlandı,Completed,Completado,Concluído,Fertig,完了,완료
+META_SOON,Yakında,Soon,Pronto,Em breve,Bald,近日,곧
+META_COLLECTION_TITLE,Koleksiyon,Collection,Colección,Coleção,Sammlung,コレクション,컬렉션
+META_SET_TURKIYE,Türkiye,Türkiye,Turquía,Turquia,Türkei,トルコ,튀르키예
+META_SET_JAPONYA,Japonya,Japan,Japón,Japão,Japan,日本,일본
+META_SET_MEKSIKA,Meksika,Mexico,México,México,Mexiko,メキシコ,멕시코
+META_SET_ISKOCYA,İskoçya,Scotland,Escocia,Escócia,Schottland,スコットランド,스코틀랜드
+META_SET_HINDISTAN,Hindistan,India,India,Índia,Indien,インド,인도
+META_SET_HOLLANDA,Hollanda,Netherlands,Países Bajos,Países Baixos,Niederlande,オランダ,네덜란드
+META_NEXT_PIECE_ONE,%d seviye sonra yeni parça,New piece in %d level,Nueva pieza en %d nivel,Nova peça em %d nível,Neues Teil in %d Level,あと%dレベルで新しいピース,%d레벨 후 새 조각
+META_NEXT_PIECE_OTHER,%d seviye sonra yeni parça,New piece in %d levels,Nueva pieza en %d niveles,Nova peça em %d níveis,Neues Teil in %d Leveln,あと%dレベルで新しいピース,%d레벨 후 새 조각
+META_ALL_PIECES,Tüm parçalar toplandı,All pieces collected,Todas las piezas reunidas,Todas as peças reunidas,Alle Teile gesammelt,すべてのピースを集めました,모든 조각을 모았어요
+TUT_WET_TITLE,Islak,Wet,Mojada,Molhada,Nass,濡れた洗濯物,젖은 빨래
+TUT_WET_LINE,"Islak çamaşır: önce sık, sonra al.","Wet laundry: wring it out first, then take it.",Ropa mojada: escúrrela primero y luego tómala.,Roupa molhada: torça primeiro e depois pegue.,"Nasse Wäsche: erst auswringen, dann nehmen.",濡れた洗濯物は、先に絞ってから取りましょう。,젖은 빨래는 먼저 짜고 나서 가져가세요.
+TUT_MYSTERY_TITLE,Gizemli,Mystery,Misteriosa,Misteriosa,Geheimnisvoll,ミステリー,미스터리
+TUT_MYSTERY_LINE,Üstü açılınca gerçek rengi belli olur.,Its true color shows once it's uncovered.,Su color real se ve al destaparla.,A cor de verdade aparece quando ela é descoberta.,"Die echte Farbe zeigt sich, sobald sie aufgedeckt ist.",上が開くと本当の色が分かります。,위가 열리면 진짜 색이 드러나요.
+TUT_LOCK_TITLE,Kilitli,Locked,Con candado,Com cadeado,Verschlossen,ロック,잠김
+TUT_LOCK_LINE,Anahtar renkli sepet dolunca kilit açılır.,The lock opens when the key-colored basket is full.,El candado se abre al llenar la cesta del color de la llave.,O cadeado abre quando o cesto da cor da chave enche.,"Das Schloss öffnet sich, wenn der Korb in der Schlüsselfarbe voll ist.",鍵と同じ色のかごがいっぱいになると、ロックが外れます。,열쇠와 같은 색 바구니가 가득 차면 잠금이 풀려요.
+TUT_SHEET_TITLE,Çarşaf,Bedsheet,Sábana,Lençol,Laken,シーツ,시트
+TUT_SHEET_LINE,"Çarşaf büyüktür, altındakileri kapatır.",A bedsheet is big and covers what's under it.,La sábana es grande y tapa lo que hay debajo.,O lençol é grande e cobre o que está embaixo.,Das Laken ist groß und verdeckt alles darunter.,シーツは大きくて、下にあるものを隠します。,시트는 커서 아래에 있는 것을 가려요.
+TUT_SOCK_PAIR_TITLE,Çorap çifti,Sock pair,Par de calcetines,Par de meias,Sockenpaar,靴下のペア,양말 한 쌍
+TUT_SOCK_PAIR_LINE,İki çorabı birlikte sepete gönder.,Send both socks to the basket together.,Manda los dos calcetines juntos a la cesta.,Mande as duas meias juntas para o cesto.,Schick beide Socken zusammen in den Korb.,2つの靴下をいっしょにかごへ入れましょう。,양말 두 짝을 함께 바구니에 보내세요.
+TUT_DYE_TITLE,Boya,Dye,Tinte,Tinta,Farbe,染料,염료
+TUT_DYE_LINE,Boyalı çamaşır yanındakilerin rengini değiştirir.,Dyed laundry changes the color of its neighbors.,La ropa teñida cambia el color de las prendas de al lado.,A roupa tingida muda a cor das vizinhas.,Gefärbte Wäsche ändert die Farbe ihrer Nachbarn.,染まった洗濯物は、隣の洗濯物の色を変えます。,물든 빨래는 옆에 있는 빨래의 색을 바꿔요.
+TUT_JOKER_TITLE,Joker sepet,Joker basket,Cesta comodín,Cesto curinga,Joker-Korb,ジョーカーかご,조커 바구니
+TUT_JOKER_LINE,"Gökkuşağı sepet ilk konan rengi alır, o renkle dolar.",The rainbow basket takes the first color put in and fills with it.,La cesta arcoíris toma el primer color que entra y se llena con él.,O cesto arco-íris assume a primeira cor colocada e enche com ela.,Der Regenbogenkorb nimmt die erste Farbe an und füllt sich damit.,虹色のかごは最初に入れた色になり、その色で満たされます。,"무지개 바구니는 처음 넣은 색이 되고, 그 색으로 채워져요."
+TUT_BIG_BASKET_TITLE,Büyük sepet,Big basket,Cesta grande,Cesto grande,Großer Korb,大きなかご,큰 바구니
+TUT_BIG_BASKET_LINE,Bu sepet 3 değil 5 çamaşırla dolar.,"This basket takes 5 items, not 3.","Esta cesta se llena con 5 prendas, no 3.","Este cesto enche com 5 peças, não 3.",Dieser Korb füllt sich mit 5 statt 3 Teilen.,このかごは3点ではなく5点でいっぱいになります。,이 바구니는 3개가 아니라 5개로 가득 차요.
+TUT_STAIN_TITLE,Lekeli,Stained,Manchada,Manchada,Fleckig,汚れ,얼룩
+TUT_STAIN_LINE,"Lekeli çamaşır önce askıda bir hamle kurur, sonra sepete geçer.","A stained item dries on the rack for one move, then goes to the basket.",La mancha se seca un movimiento en la percha; luego la prenda va a la cesta.,A peça manchada seca no cabide por uma jogada e depois vai para o cesto.,"Fleckige Wäsche trocknet einen Zug lang am Bügel, dann kommt sie in den Korb.",汚れた洗濯物はハンガーで1手乾かしてから、かごへ移ります。,얼룩진 빨래는 옷걸이에서 한 번 이동하는 동안 말린 뒤 바구니로 가요.
+TUT_CHAIN_TITLE,Zincirli mandal,Chained peg,Pinza encadenada,Prendedor acorrentado,Gekettete Klammer,鎖つき洗濯ばさみ,사슬 집게
+TUT_CHAIN_LINE,Birini alınca zincirli eşi de askıya düşer.,Take one and its chained partner drops onto the rack.,"Si recoges una, su pareja encadenada cae a la percha.","Ao pegar um, o par acorrentado cai no cabide.","Nimmst du eine, fällt ihr gekettetes Gegenstück auf den Bügel.",片方を取ると、鎖でつながった相方がハンガーに落ちます。,하나를 가져가면 사슬로 연결된 짝도 옷걸이로 떨어져요.
+TUT_WIND_TITLE,Rüzgâr,Wind,Viento,Vento,Wind,風,바람
+TUT_WIND_LINE,Sayaç bitince işaretli çamaşır yanındakinin üstüne savrulur.,"When the counter runs out, the marked item blows onto its neighbor.","Cuando el contador llega a cero, la prenda marcada vuela sobre la de al lado.","Quando o contador zera, a peça marcada voa para cima da vizinha.","Wenn der Zähler abläuft, weht die markierte Wäsche auf ihre Nachbarin.",カウンターが0になると、印のついた洗濯物が隣の上に飛ばされます。,카운터가 끝나면 표시된 빨래가 옆 빨래 위로 날아가요.
+TUT_SLIDE_TITLE,Sürgülü ip,Sliding line,Cuerda deslizante,Varal deslizante,Gleitende Leine,スライドロープ,움직이는 줄
+TUT_SLIDE_LINE,"İşaretli sıra birkaç hamlede bir yana kayar, sonra geri gelir.","The marked row slides sideways every few moves, then slides back.",La fila marcada se desliza a un lado cada pocos movimientos y luego vuelve.,A fila marcada desliza para o lado a cada poucas jogadas e depois volta.,Die markierte Reihe gleitet alle paar Züge zur Seite und kommt dann zurück.,印のついた列は数手ごとに横へスライドし、その後戻ってきます。,표시된 줄은 몇 번 이동할 때마다 옆으로 밀렸다가 다시 돌아와요.
+TUT_MODE_MOVES_TITLE,Sınırlı hamle,Limited moves,Movimientos limitados,Jogadas limitadas,Begrenzte Züge,手数制限,이동 횟수 제한
+TUT_MODE_MOVES_LINE,Hepsini sayaç bitmeden topla.,Collect everything before the counter runs out.,Recoge todo antes de que el contador llegue a cero.,Pegue tudo antes que o contador acabe.,"Sammle alles, bevor der Zähler abläuft.",カウンターが0になる前にすべて集めましょう。,카운터가 끝나기 전에 모두 모으세요.
+TUT_MODE_SHORT_RACK_TITLE,Kısa askı,Short rack,Percha corta,Cabide curto,Kurzer Bügel,短いハンガー,짧은 옷걸이
+TUT_MODE_SHORT_RACK_LINE,Bu seviyede askıda daha az yer var.,The rack has fewer spots this level.,En este nivel hay menos lugares en la percha.,Neste nível há menos vagas no cabide.,In diesem Level hat der Bügel weniger Plätze.,このレベルはハンガーの空きが少なめです。,이 레벨은 옷걸이 자리가 적어요.
+TUT_MODE_ORDERS_TITLE,Sipariş,Orders,Pedidos,Pedidos,Aufträge,注文,주문
+TUT_MODE_ORDERS_LINE,"Sepetleri gösterilen renk sırasıyla doldur, bonus kazan.",Fill the baskets in the color order shown to earn a bonus.,Llena las cestas en el orden de colores indicado y gana un bono.,Encha os cestos na ordem de cores indicada e ganhe um bônus.,Fülle die Körbe in der gezeigten Farbfolge und erhalte einen Bonus.,表示された色の順にかごを満たすと、ボーナスがもらえます。,표시된 색 순서대로 바구니를 채우면 보너스를 받아요.
+TUT_MODE_BOSS_TITLE,Büyük çamaşır günü,Big laundry day,Gran día de lavado,Grande dia de lavar,Großer Waschtag,大洗濯の日,대빨래의 날
+TUT_MODE_BOSS_LINE,İlk ip boşalınca ikinci tahta gelir; askı ve sepetler sürer.,"When the first line is empty, a second board arrives; the rack and baskets carry over.",Al vaciarse la primera cuerda llega un segundo tablero; la percha y las cestas siguen.,"Quando o primeiro varal esvazia, chega um segundo tabuleiro; cabide e cestos continuam.","Ist die erste Leine leer, kommt ein zweites Brett; Bügel und Körbe bleiben.",最初のロープが空になると2枚目のボードが登場。ハンガーとかごは引き継がれます。,첫 번째 줄이 비면 두 번째 판이 나와요. 옷걸이와 바구니는 그대로 이어져요.
+TUT_UNDO_TITLE,Geri al,Undo,Deshacer,Desfazer,Zurück,元に戻す,되돌리기
+TUT_UNDO_LINE,Son hamleni geri alır.,Takes back your last move.,Deshace tu último movimiento.,Desfaz a sua última jogada.,Nimmt deinen letzten Zug zurück.,直前の手を取り消します。,마지막 이동을 되돌려요.
+TUT_PIN_REMOVER_TITLE,Mandal çıkarıcı,Peg remover,Quitapinzas,Tira-prendedor,Klammerlöser,洗濯ばさみ外し,집게 제거
+TUT_PIN_REMOVER_LINE,Seçtiğin çamaşırı hemen serbest bırakır.,Instantly frees the item you pick.,Libera al instante la prenda que elijas.,Solta na hora a peça que você escolher.,"Befreit sofort das Teil, das du wählst.",選んだ洗濯物をすぐに外します。,고른 빨래를 바로 풀어 줘요.
+TUT_EXTRA_SLOT_TITLE,+1 askı,+1 rack spot,+1 percha,+1 cabide,+1 Bügel,+1 ハンガー,+1 옷걸이
+TUT_EXTRA_SLOT_LINE,Bekleme askısına bir yer daha ekler.,Adds one more spot to the waiting rack.,Agrega un lugar más a la percha de espera.,Adiciona mais uma vaga ao cabide de espera.,Fügt dem Warte-Bügel einen weiteren Platz hinzu.,待機用ハンガーに空きを1つ増やします。,대기 옷걸이에 자리를 하나 더해요.
+RET_MISSIONS_TITLE,Günlük görevler,Daily missions,Misiones diarias,Missões diárias,Tagesmissionen,デイリーミッション,일일 미션
+RET_CHEST_BONUS,Bonus sandık,Bonus chest,Cofre extra,Baú bônus,Bonustruhe,ボーナス宝箱,보너스 상자
+RET_MILESTONES_TITLE,Ödül yolu,Reward path,Camino de premios,Caminho de recompensas,Belohnungspfad,ごほうびロード,보상 로드
+RET_TO_GO,%d seviye kaldı,%d levels to go,Faltan %d niveles,Faltam %d níveis,Noch %d Level,あと%dレベル,%d레벨 남음
+RET_TO_GO_ONE,1 seviye kaldı,1 level to go,Falta 1 nivel,Falta 1 nível,Noch 1 Level,あと1レベル,1레벨 남음
+RET_CLAIM,Al,Claim,Reclamar,Resgatar,Abholen,受け取る,받기
+RET_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d,Desbloqueia no nível %d,Ab Level %d freigeschaltet,レベル%dで解放,레벨 %d에서 열려요
+RET_DAYS_LEFT,%d gün kaldı,%d days left,Quedan %d días,Faltam %d dias,Noch %d Tage,あと%d日,%d일 남음
+RET_LAST_DAY,Son gün,Last day,Último día,Último dia,Letzter Tag,最終日,마지막 날
+RET_WEEK_NOTE,Geçen haftanın ödülleri verildi: +%d,Last week's rewards were granted: +%d,Se entregaron los premios de la semana pasada: +%d,As recompensas da semana passada foram entregues: +%d,Die Belohnungen der letzten Woche wurden vergeben: +%d,先週のごほうびを付与しました：+%d,지난주 보상이 지급됐어요: +%d
+RET_W_BLUE,Mavi hafta,Blue week,Semana azul,Semana azul,Blaue Woche,青の週,파랑 주간
+RET_G_BLUE,Mavi çamaşırları katla,Fold blue laundry,Dobla ropa azul,Dobre roupas azuis,Falte blaue Wäsche,青い洗濯物をたたむ,파란 빨래 개기
+RET_W_RED,Kırmızı hafta,Red week,Semana roja,Semana vermelha,Rote Woche,赤の週,빨강 주간
+RET_G_RED,Kırmızı çamaşırları katla,Fold red laundry,Dobla ropa roja,Dobre roupas vermelhas,Falte rote Wäsche,赤い洗濯物をたたむ,빨간 빨래 개기
+RET_W_GREEN,Yeşil hafta,Green week,Semana verde,Semana verde,Grüne Woche,緑の週,초록 주간
+RET_G_GREEN,Yeşil çamaşırları katla,Fold green laundry,Dobla ropa verde,Dobre roupas verdes,Falte grüne Wäsche,緑の洗濯物をたたむ,초록 빨래 개기
+RET_W_YELLOW,Sarı hafta,Yellow week,Semana amarilla,Semana amarela,Gelbe Woche,黄色の週,노랑 주간
+RET_G_YELLOW,Sarı çamaşırları katla,Fold yellow laundry,Dobla ropa amarilla,Dobre roupas amarelas,Falte gelbe Wäsche,黄色い洗濯物をたたむ,노란 빨래 개기
+RET_W_PURPLE,Mor hafta,Purple week,Semana morada,Semana roxa,Lila Woche,紫の週,보라 주간
+RET_G_PURPLE,Mor çamaşırları katla,Fold purple laundry,Dobla ropa morada,Dobre roupas roxas,Falte lila Wäsche,紫の洗濯物をたたむ,보라색 빨래 개기
+RET_W_CHAIN,Zincir haftası,Chain week,Semana de cadenas,Semana das sequências,Serienwoche,連鎖の週,연쇄 주간
+RET_G_CHAIN,Zincirleme sepet doldur,Fill baskets in a chain,Llena cestas en cadena,Encha cestos em sequência,Fülle Körbe in Serie,連続でかごを満たす,연속으로 바구니 채우기
+RET_W_BASKETS,Sepet haftası,Basket week,Semana de cestas,Semana dos cestos,Korbwoche,かごの週,바구니 주간
+RET_G_BASKETS,Sepet doldur,Fill baskets,Llena cestas,Encha cestos,Fülle Körbe,かごを満たす,바구니 채우기
+RET_W_STARS,Yıldız haftası,Star week,Semana de estrellas,Semana das estrelas,Sternenwoche,スターの週,별 주간
+RET_G_STARS,Seviyelerden yıldız topla,Earn stars in levels,Gana estrellas en los niveles,Ganhe estrelas nos níveis,Sammle Sterne in Leveln,レベルでスターを集める,레벨에서 별 모으기
+RET_M_LEVELS,%d seviye bitir,Finish %d levels,Termina %d niveles,Termine %d níveis,Schließe %d Level ab,%dレベルをクリア,%d레벨 클리어
+RET_M_STARS3,%d seviyeyi 3 yıldızla bitir,Finish %d levels with 3 stars,Termina %d niveles con 3 estrellas,Termine %d níveis com 3 estrelas,Schließe %d Level mit 3 Sternen ab,%dレベルをスター3つでクリア,%d레벨을 별 3개로 클리어
+RET_M_LOW_RACK,%d seviyeyi en çok %d askıyla bitir,Finish %d levels with %d rack spots or fewer,Termina %d niveles con %d perchas o menos,Termine %d níveis com até %d cabides,Schließe %d Level mit höchstens %d Bügeln ab,%dレベルをハンガー%d個以内でクリア,%d레벨을 옷걸이 %d개 이하로 클리어
+RET_M_BASKETS,%d sepet doldur,Fill %d baskets,Llena %d cestas,Encha %d cestos,Fülle %d Körbe,かごを%d個満たす,바구니 %d개 채우기
+RET_M_CHAIN,×%d zincir yap,Make a ×%d chain,Haz una cadena ×%d,Faça uma sequência ×%d,Schaffe eine ×%d-Serie,×%d連鎖を決める,×%d 연쇄 달성
+RET_M_DAILY,Günlük bulmacayı çöz,Solve the daily puzzle,Resuelve el rompecabezas diario,Resolva o quebra-cabeça do dia,Löse das Tagesrätsel,今日のパズルをクリア,오늘의 퍼즐 해결하기
+RET_M_BOOSTER,%d güçlendirici kullan,Use %d boosters,Usa %d potenciadores,Use %d boosters,Nutze %d Booster,ブースターを%d回使う,부스터 %d번 사용하기
+RET_M_BIRD,%d kuşu kov,Shoo %d birds,Espanta %d pájaros,Espante %d pássaros,Verscheuche %d Vögel,鳥を%d羽追い払う,새 %d마리 쫓아내기
+RET_M_CAT,Kediyi %d kez sev,Pet the cat %d times,Acaricia al gato %d veces,Faça carinho no gato %d vezes,Streichle die Katze %d-mal,ネコを%d回なでる,고양이를 %d번 쓰다듬기
+RET_WELCOME_TITLE,Tekrar hoş geldin!,Welcome back!,¡Qué bueno verte de nuevo!,Que bom ver você de novo!,Willkommen zurück!,おかえりなさい！,다시 만나서 반가워요!
+RET_WELCOME_BODY,%d gündür yoktun. Küçük bir hediye hazırladık.,You were away for %d days. Here is a little gift.,Estuviste fuera %d días. Aquí tienes un pequeño regalo.,Você ficou fora por %d dias. Preparamos um presentinho.,Du warst %d Tage weg. Hier ist ein kleines Geschenk.,%d日ぶりですね。ささやかなプレゼントを用意しました。,%d일 동안 못 만났네요. 작은 선물을 준비했어요.
+RET_STREAK_TITLE,%d gün üst üste!,%d days in a row!,¡%d días seguidos!,%d dias seguidos!,%d Tage in Folge!,%d日連続！,%d일 연속!
+RET_STREAK_BODY,Her gün uğramanın küçük bir ödülü var.,Dropping by every day has a small reward.,Pasar cada día tiene un pequeño premio.,Passar por aqui todo dia rende uma recompensinha.,Jeden Tag vorbeischauen bringt eine kleine Belohnung.,毎日来るとささやかなごほうびがもらえます。,매일 들르면 작은 보상이 있어요.
+RET_N_GIFT_T,Günlük hediyen hazır,Your daily gift is ready,Tu regalo diario está listo,Seu presente diário está pronto,Dein Tagesgeschenk wartet,デイリーギフトの準備ができました,일일 선물이 준비됐어요
+RET_N_GIFT_B,Çamaşırlar seni bekliyor.,The laundry is waiting for you.,La ropa te espera.,A roupa está esperando por você.,Die Wäsche wartet auf dich.,洗濯物が待っています。,빨래가 기다리고 있어요.
+RET_N_MISS_T,Görevlerin seni bekliyor,Your missions are waiting,Tus misiones te esperan,Suas missões estão esperando,Deine Missionen warten,ミッションが待っています,미션이 기다리고 있어요
+RET_N_MISS_B,Bugünün görevleri hazır.,Today's missions are ready.,Las misiones de hoy están listas.,As missões de hoje estão prontas.,Die heutigen Missionen sind bereit.,今日のミッションの準備ができました。,오늘의 미션이 준비됐어요.
+RET_N_WEEK_T,Haftalık etkinlik yarın bitiyor,The weekly event ends tomorrow,El evento semanal termina mañana,O evento semanal termina amanhã,Das Wochenevent endet morgen,週間イベントは明日終了です,주간 이벤트가 내일 끝나요
+RET_N_WEEK_B,Kalan ödüllerini almayı unutma.,Don't forget your remaining rewards.,No olvides tus premios restantes.,Não esqueça de pegar as recompensas restantes.,Vergiss deine restlichen Belohnungen nicht.,残りのごほうびをお忘れなく。,남은 보상을 잊지 말고 받아 가세요.
+RET_WEEKLY_TITLE,Haftalık etkinlik,Weekly event,Evento semanal,Evento semanal,Wochenevent,週間イベント,주간 이벤트
+RET_M_STARS3_ONE,Bir seviyeyi 3 yıldızla bitir,Finish a level with 3 stars,Termina un nivel con 3 estrellas,Termine um nível com 3 estrelas,Schließe ein Level mit 3 Sternen ab,1レベルをスター3つでクリア,1레벨을 별 3개로 클리어
+RET_M_LOW_RACK_ONE,Bir seviyeyi en çok %d askıyla bitir,Finish a level with %d rack spots or fewer,Termina un nivel con %d perchas o menos,Termine um nível com até %d cabides,Schließe ein Level mit höchstens %d Bügeln ab,1レベルをハンガー%d個以内でクリア,1레벨을 옷걸이 %d개 이하로 클리어
+RET_M_BOOSTER_ONE,Bir güçlendirici kullan,Use a booster,Usa un potenciador,Use um booster,Nutze einen Booster,ブースターを1回使う,부스터 1번 사용하기
+PLACE_ARRIVE,Yeni durak: %s,New stop: %s,Nueva parada: %s,Nova parada: %s,Neue Station: %s,新しい場所：%s,새 장소: %s
+PLACE_GARDEN,Bahçe,Garden,Jardín,Jardim,Garten,庭,정원
+PLACE_BEACH,Sahil,Seaside,Playa,Praia,Strand,海辺,해변
+PLACE_ROOFTOP,Çatı Terası,Rooftop,Azotea,Terraço,Dachterrasse,屋上テラス,옥상 테라스
+SHOP_TITLE,Mağaza,Shop,Tienda,Loja,Shop,ショップ,상점
+SHOP_BOOSTERS,Güçlendiriciler,Boosters,Potenciadores,Boosters,Booster,ブースター,부스터
+SHOP_SKINS,Görünümler,Looks,Estilos,Visuais,Looks,見た目,스타일
+SHOP_PINS,Mandallar,Pegs,Pinzas,Prendedores,Klammern,洗濯ばさみ,집게
+SHOP_ROPES,İpler,Ropes,Cuerdas,Varais,Leinen,ロープ,빨랫줄
+SHOP_REMOVE_ADS,Reklamları kaldır,Remove ads,Quitar anuncios,Remover anúncios,Werbung entfernen,広告を削除,광고 제거
+SHOP_REMOVE_ADS_NOTE,Geçiş reklamları kapanır. İstersen ödüllü videolar kalır.,No more pop-up ads. Optional reward videos stay.,Sin anuncios entre niveles. Los videos con premio siguen.,Sem anúncios entre níveis. Vídeos com prêmio continuam.,Keine Zwischenwerbung mehr. Belohnungsvideos bleiben.,ステージ間の広告が消えます。報酬つき動画は残ります。,중간 광고가 사라져요. 보상 영상은 그대로 볼 수 있어요.
+SHOP_OWNED,Satın alındı,Owned,Comprado,Comprado,Gekauft,購入済み,구매함
+SHOP_RESTORE,Satın alımları geri yükle,Restore purchases,Restaurar compras,Restaurar compras,Käufe wiederherstellen,購入を復元,구매 복원
+SHOP_RESTORED,Geri yüklendi,Restored,Restaurado,Restaurado,Wiederhergestellt,復元しました,복원됨
+SHOP_NOTHING_TO_RESTORE,Geri yüklenecek bir şey yok,Nothing to restore,No hay nada que restaurar,Nada para restaurar,Nichts wiederherzustellen,復元できるものはありません,복원할 항목이 없어요
+SHOP_STORE_UNAVAILABLE,Mağaza şu an kullanılamıyor,Store unavailable right now,La tienda no está disponible ahora,Loja indisponível no momento,Shop gerade nicht verfügbar,ただいまショップを利用できません,지금은 상점을 이용할 수 없어요
+SHOP_PURCHASE_FAILED,Satın alma tamamlanmadı,Purchase did not go through,La compra no se completó,A compra não foi concluída,Kauf nicht abgeschlossen,購入が完了しませんでした,구매가 완료되지 않았어요
+SHOP_FREE_ONE,+1 bedava,+1 free,+1 gratis,+1 grátis,+1 gratis,+1 無料,+1 무료
+SHOP_NO_PRICE,Mağazaya bağlanıyor,Connecting to the store,Conectando con la tienda,Conectando à loja,Verbinde mit dem Shop,ショップに接続中,상점에 연결 중
+SHOP_AD_UNAVAILABLE,Reklam şu an hazır değil,Ad not available right now,Anuncio no disponible por ahora,Anúncio indisponível no momento,Werbung gerade nicht verfügbar,ただいま広告を表示できません,지금은 광고를 볼 수 없어요
+TUT_WASHER_TITLE,Çamaşır makinesi,Washing machine,Lavadora,Máquina de lavar,Waschmaschine,洗濯機,세탁기
+TUT_WASHER_LINE,"Çamurlu çamaşıra dokun: makinede birkaç hamlede yıkanır, temiz çıkar.",Tap a muddy item: the washer cleans it in a few moves.,Toca una prenda embarrada: la lavadora la limpia en unos movimientos.,Toque numa peça enlameada: a máquina a limpa em algumas jogadas.,Tippe auf ein schlammiges Teil: Die Maschine wäscht es in ein paar Zügen sauber.,泥だらけの洗濯物をタップ。洗濯機が数手できれいにします。,흙투성이 빨래를 탭하면 세탁기가 몇 번 이동하는 동안 깨끗하게 빨아 줘요.
+TUT_DRYER_TITLE,Kurutma makinesi,Dryer,Secadora,Secadora,Trockner,乾燥機,건조기
+TUT_DRYER_LINE,"Islak çamaşıra dokun: kurutucuya girer, birkaç hamlede kuru çıkar.",Tap a wet item: the dryer dries it in a few moves.,Toca una prenda mojada: la secadora la seca en unos movimientos.,Toque numa peça molhada: a secadora a seca em algumas jogadas.,Tippe auf ein nasses Teil: Der Trockner macht es in ein paar Zügen trocken.,濡れた洗濯物をタップ。乾燥機に入り、数手で乾きます。,젖은 빨래를 탭하면 건조기에 들어가 몇 번 이동 후 보송하게 말라요.
+TUT_TYPED_TITLE,Seçici sepet,Picky basket,Cesta exigente,Cesto exigente,Wählerischer Korb,こだわりかご,까다로운 바구니
+TUT_TYPED_LINE,Bu sepet yalnız rozetindeki türü alır.,This basket only takes the item type on its badge.,Esta cesta solo acepta el tipo de prenda de su insignia.,Este cesto só aceita o tipo de peça indicado no selo.,Dieser Korb nimmt nur die Teileart auf seinem Abzeichen.,このかごはバッジに描かれた種類だけを受け付けます。,이 바구니는 배지에 표시된 종류만 받아요.
+TUT_BIRDS_TITLE,Kuş,Bird,Pájaro,Pássaro,Vogel,鳥,새
+TUT_BIRDS_LINE,"Kuş konunca ona dokun, uçup gider. Bırakırsan çamaşırı kirletir.","When a bird lands, tap it to shoo it away. Leave it and it soils the item.","Cuando se posa un pájaro, tócalo para espantarlo. Si lo dejas, ensucia la prenda.","Quando um pássaro pousar, toque nele para espantá-lo. Se deixar, ele suja a peça.","Landet ein Vogel, tippe ihn an, dann fliegt er weg. Sonst beschmutzt er das Teil.",鳥が止まったらタップして追い払いましょう。放っておくと洗濯物を汚します。,새가 앉으면 탭해서 쫓아내세요. 그냥 두면 빨래를 더럽혀요.
+TUT_RAIN_TITLE,Yağmur bulutu,Rain cloud,Nube de lluvia,Nuvem de chuva,Regenwolke,雨雲,비구름
+TUT_RAIN_LINE,Sayaç bitince bulutun altındaki açık çamaşırlar ıslanır.,"When the counter runs out, uncovered items under the cloud get wet.","Cuando el contador llega a cero, las prendas descubiertas bajo la nube se mojan.","Quando o contador zera, as peças descobertas sob a nuvem ficam molhadas.","Läuft der Zähler ab, werden offene Teile unter der Wolke nass.",カウンターが0になると、雲の下の見えている洗濯物が濡れます。,카운터가 끝나면 구름 아래의 드러난 빨래가 젖어요.
+TUT_CAT_TITLE,Çamaşırhane kedisi,Laundromat cat,Gato de la lavandería,Gato da lavanderia,Waschsalon-Katze,コインランドリーのネコ,빨래방 고양이
+TUT_CAT_LINE,"Kedi bir sepette uyur; sevmek için dokun, sepet yeniden açılır.",The cat naps in a basket; tap to pet it and the basket opens again.,El gato duerme en una cesta; tócalo para acariciarlo y la cesta se libera.,O gato cochila num cesto; toque para fazer carinho e o cesto abre de novo.,"Die Katze schläft in einem Korb; tippe zum Streicheln, dann ist er wieder frei.",ネコがかごで昼寝中。タップしてなでると、かごがまた使えます。,고양이가 바구니에서 자고 있어요. 탭해서 쓰다듬으면 바구니가 다시 열려요.
+MACHINES_TITLE,Makineler,Machines,Máquinas,Máquinas,Maschinen,マシン,기계
+MACHINES_SUB,Yükseltmeler her seviyede geçerlidir.,Upgrades apply to every level.,Las mejoras sirven en todos los niveles.,As melhorias valem em todos os níveis.,Verbesserungen gelten in jedem Level.,アップグレードはすべてのレベルで有効です。,업그레이드는 모든 레벨에서 적용돼요.
+MACHINE_WASHER,Çamaşır makinesi,Washing machine,Lavadora,Máquina de lavar,Waschmaschine,洗濯機,세탁기
+MACHINE_DRYER,Kurutma makinesi,Dryer,Secadora,Secadora,Trockner,乾燥機,건조기
+MACHINE_CAPACITY,Kapasite,Capacity,Capacidad,Capacidade,Kapazität,容量,용량
+MACHINE_SPEED,Süre,Cycle time,Duración,Duração,Dauer,所要時間,소요 시간
+MACHINE_CAPACITY_VALUE,%d parça,%d items,%d prendas,%d peças,%d Teile,%d点,%d개
+MACHINE_MOVES_ONE,%d hamle,%d move,%d movimiento,%d jogada,%d Zug,%d手,%d회 이동
+MACHINE_MOVES_OTHER,%d hamle,%d moves,%d movimientos,%d jogadas,%d Züge,%d手,%d회 이동
+MACHINE_MAX,En üst seviye,Max level,Nivel máximo,Nível máximo,Höchststufe,最大レベル,최대 레벨
+MACHINE_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d,Desbloqueia no nível %d,Ab Level %d freigeschaltet,レベル%dで解放,레벨 %d에서 열려요
+MAP_REPLAY,Tekrar oyna,Play again,Jugar de nuevo,Jogar de novo,Nochmal spielen,もう一度プレイ,다시 플레이
+MAP_REPLAY_NOTE,Yalnızca yeni yıldızlar ödül getirir,Only new stars bring rewards,Solo las estrellas nuevas dan premio,Só estrelas novas dão recompensa,Nur neue Sterne bringen Belohnungen,新しいスターだけがごほうびになります,새로 얻은 별만 보상을 줘요
+MAP_SEASON_SUMMER,Yaz,Summer,Verano,Verão,Sommer,夏,여름
+MAP_SEASON_AUTUMN,Sonbahar,Autumn,Otoño,Outono,Herbst,秋,가을
+MAP_SEASON_WINTER,Kış,Winter,Invierno,Inverno,Winter,冬,겨울
+MAP_SEASON_SPRING,İlkbahar,Spring,Primavera,Primavera,Frühling,春,봄
+MAP_DIVIDER_JOIN,%s · %s,%s · %s,%s · %s,%s · %s,%s · %s,%s · %s,%s · %s
+ZEN_TITLE,Zen,Zen,Zen,Zen,Zen,ゼン,젠
+ZEN_SUB,Sakin ve bitmeyen çamaşırlar,"Calm, endless laundry","Ropa tendida, tranquila y sin fin",Roupa tranquila e sem fim,"Ruhige, endlose Wäsche",のんびり、終わりのない洗濯物,느긋하고 끝없는 빨래
+ZEN_LOCKED,%d. seviyede açılır,Unlocks at level %d,Se desbloquea en el nivel %d,Desbloqueia no nível %d,Ab Level %d freigeschaltet,レベル%dで解放,레벨 %d에서 열려요
+ZEN_START,Başla,Start,Empezar,Começar,Start,スタート,시작
+ZEN_TOTAL_ONE,Toplam %d tahta temizlendi,%d board cleared in total,%d tablero completado en total,%d tabuleiro concluído no total,%d Brett insgesamt geschafft,合計%d枚のボードをクリア,총 %d판 클리어
+ZEN_TOTAL_OTHER,Toplam %d tahta temizlendi,%d boards cleared in total,%d tableros completados en total,%d tabuleiros concluídos no total,%d Bretter insgesamt geschafft,合計%d枚のボードをクリア,총 %d판 클리어
+ZEN_STEP_BACK,Bir adım geri aldık,We took back one move,Retrocedimos un movimiento,Voltamos uma jogada,Wir haben einen Zug zurückgenommen,1手戻しました,한 번 되돌렸어요
+ZEN_EXTRA_PEG,Bir askı daha ekledik,We added one more rack spot,Añadimos una percha más,Adicionamos mais um cabide,Wir haben einen Bügel hinzugefügt,ハンガーを1つ追加しました,옷걸이를 하나 더했어요
+NET_TITLE,Bağlantı gerekli,Connection required,Necesitas conexión,Conexão necessária,Verbindung nötig,接続が必要です,연결이 필요해요
+NET_BODY,Oynamak için internete bağlan.,Connect to the internet to play.,Conéctate a internet para jugar.,Conecte-se à internet para jogar.,"Verbinde dich mit dem Internet, um zu spielen.",プレイするにはインターネットに接続してください。,플레이하려면 인터넷에 연결하세요.
+NET_RETRY,Tekrar dene,Try again,Reintentar,Tentar de novo,Nochmal versuchen,再試行,다시 시도
+NET_CHECKING,Bağlantı denetleniyor...,Checking connection...,Comprobando la conexión...,Verificando a conexão...,Verbindung wird geprüft...,接続を確認中…,연결 확인 중...
+PATTERN_SETTING,Renk desenleri,Color patterns,Patrones de color,Padrões de cor,Farbmuster,カラーパターン,색상 패턴
+PATTERN_SETTING_HINT,Her rengin kendi deseni olur (renk körlüğü için),Each color gets its own pattern (colorblind-friendly),Cada color tiene su propio patrón (útil para el daltonismo),Cada cor tem seu próprio padrão (bom para daltonismo),Jede Farbe bekommt ein eigenes Muster (für Farbfehlsichtigkeit),色ごとに専用の模様がつきます（色覚サポート）,색마다 고유한 패턴이 생겨요 (색각 이상 지원)
+UI_SETTING_NOTIFICATIONS,Bildirimler,Notifications,Notificaciones,Notificações,Mitteilungen,通知,알림
+UI_SETTING_PATTERNS,Desenler,Patterns,Patrones,Padrões,Muster,模様,패턴
+UI_PRIVACY_OPTIONS,Gizlilik seçenekleri,Privacy options,Opciones de privacidad,Opções de privacidade,Datenschutzoptionen,プライバシー設定,개인정보 설정
+SEASON_ARRIVE_SUMMER,Yaz geldi,Summer is here,Llegó el verano,O verão chegou,Der Sommer ist da,夏がやってきました,여름이 왔어요
+SEASON_ARRIVE_AUTUMN,Sonbahar geldi,Autumn is here,Llegó el otoño,O outono chegou,Der Herbst ist da,秋がやってきました,가을이 왔어요
+SEASON_ARRIVE_WINTER,Kış geldi,Winter is here,Llegó el invierno,O inverno chegou,Der Winter ist da,冬がやってきました,겨울이 왔어요
+SEASON_ARRIVE_SPRING,İlkbahar geldi,Spring is here,Llegó la primavera,A primavera chegou,Der Frühling ist da,春がやってきました,봄이 왔어요
+TUT_DUAL_TITLE,Çift renkli çamaşır,Two-color item,Prenda bicolor,Peça bicolor,Zweifarbiges Teil,2色の洗濯物,두 가지 색 빨래
+TUT_DUAL_LINE,İki rengin sepetine de gider; ikizi ise kalan rengi alır.,It fits either color's basket; its twin takes the other color.,Va a la cesta de cualquiera de sus colores; su gemela toma el otro color.,Vai para o cesto de qualquer uma das duas cores; a gêmea fica com a outra.,Passt in beide Farbkörbe; sein Zwilling nimmt die andere Farbe.,どちらの色のかごにも入れられます。双子の片方は残りの色になります。,두 색 중 어느 바구니에든 들어가요. 쌍둥이는 나머지 색이 돼요.
+TUT_SUN_FADE_TITLE,Güneşte solma,Sun fade,Decolorado al sol,Desbotando ao sol,Verblassen in der Sonne,日焼けで色あせ,햇빛에 바램
+TUT_SUN_FADE_LINE,Sayaç bitmeden al; solarsa almadan önce bir kez silkelemen gerekir.,"Take it before the counter ends; if it fades, shake it out once first.","Recógela antes de que el contador llegue a cero; si se decolora, sacúdela una vez antes.","Pegue antes que o contador acabe; se desbotar, sacuda uma vez antes de pegar.","Nimm es, bevor der Zähler abläuft; ist es verblasst, erst einmal ausschütteln.",カウンターが0になる前に取りましょう。色あせたら、取る前に一度振ってください。,카운터가 끝나기 전에 가져가세요. 색이 바랬다면 가져가기 전에 한 번 털어야 해요.
+TUT_LEAVES_TITLE,Düşen yapraklar,Falling leaves,Hojas que caen,Folhas caindo,Fallende Blätter,落ち葉,떨어지는 낙엽
+TUT_LEAVES_LINE,"Yapraklı çamaşıra bir dokun, yaprak süpürülür; hamle sayılmaz.",Tap a leafy item once to brush the leaf off; it costs no move.,Toca una vez la prenda con hoja para quitarla; no cuesta movimiento.,Toque uma vez numa peça com folha para tirá-la; isso não gasta jogada.,"Tippe einmal auf ein Teil mit Blatt, um es abzuwischen; das kostet keinen Zug.",葉っぱのついた洗濯物を1回タップすると払えます。手数は減りません。,나뭇잎이 붙은 빨래를 한 번 탭하면 잎이 털려요. 이동 횟수는 줄지 않아요.
+TUT_FROST_TITLE,Don,Frost,Escarcha,Gelo,Frost,霜,서리
+TUT_FROST_LINE,"Donmuş çamaşır önce askıda bir hamle ısınır, sonra sepete geçer.","A frozen item warms up on the rack for one move, then goes to its basket.",Una prenda helada se calienta un movimiento en la percha y luego va a su cesta.,A peça congelada esquenta no cabide por uma jogada e depois vai para o cesto.,"Gefrorene Wäsche taut einen Zug lang am Bügel auf, dann kommt sie in den Korb.",凍った洗濯物はハンガーで1手温めてから、かごへ移ります。,얼어붙은 빨래는 옷걸이에서 한 번 이동하는 동안 녹은 뒤 바구니로 가요.
+TUT_POLLEN_TITLE,Polen,Pollen,Polen,Pólen,Pollen,花粉,꽃가루
+TUT_POLLEN_LINE,Polen bir ipin renklerini birkaç hamle örter; çamaşırlar yine de alınır.,Pollen hides one line's colors for a few moves; you can still take them.,El polen oculta los colores de una cuerda unos movimientos; aún puedes recogerlas.,O pólen esconde as cores de um varal por algumas jogadas; você ainda pode pegar as peças.,Pollen verdeckt die Farben einer Leine für ein paar Züge; nehmen kannst du sie trotzdem.,花粉でロープの色が数手のあいだ隠れます。洗濯物は取れます。,꽃가루가 한 줄의 색을 몇 번 이동하는 동안 가려요. 그래도 빨래는 가져갈 수 있어요.

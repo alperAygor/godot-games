@@ -2,12 +2,29 @@ extends TestCase
 
 ## Yerelleştirme testleri: tablo tam mı, biçim yer tutucuları dillerde uyuşuyor mu,
 ## koddaki anahtarların hepsi tabloda mı, kullanılmayan anahtar var mı, dil değişince çıktı değişiyor mu.
+## Yedi dil: tr (kaynak), en, es, pt, de, ja, ko. CSV biçimi, Türkçe kalıntısı, yazım/noktalama, yerel ayar eşlemesi,
+## yedek zinciri ve yazı tipi kapsamı da burada denetlenir.
 
 const CSV_PATH: String = "res://data/i18n/strings.csv"
 const SCAN_ROOTS: Array[String] = ["res://scripts", "res://scenes"]
 ## `%%` düz yüzde işaretidir; yer tutucu sayılmaz.
 const PLACEHOLDER_PATTERN: String = "%[ds]"
 const KEY_PATTERN: String = "^[A-Z][A-Z0-9_]*$"
+const COLUMNS: PackedStringArray = ["keys", "tr", "en", "es", "pt", "de", "ja", "ko"]
+## Türkçe'ye özgü harfler (ş ğ ı İ); başka dillerde geçmemeli. ç ö ü pt/de/es'te meşrudur, bu yüzden aranmaz.
+const TURKISH_ONLY_PATTERN: String = "[şŞğĞıİ]"
+## Kaynakla aynı kalabilen (çevrilmeyen) hücreler: [anahtar, dil kodları ("*" = hepsi)].
+const SAME_AS_SOURCE_OK: Dictionary = {
+	"MAP_DIVIDER_JOIN": "*", "ZEN_TITLE": "en pt de es", "META_SET_TURKIYE": "en", "TUT_POLLEN_TITLE": "es",
+}
+const CJK_PATTERN: String = "[\u3040-\u30ff\u4e00-\u9fff\uac00-\ud7a3]"
+## ja/ko'da CJK harf taşımayabilen hücreler (marka adı, "OK", ayraç).
+const NO_CJK_OK: Array[String] = ["GAME_TITLE", "MAP_DIVIDER_JOIN", "OK"]
+const DEVICE_LOCALES: Dictionary = {
+	"pt_BR": "pt", "pt-BR": "pt", "pt_PT": "pt", "pt-PT": "pt", "pt": "pt", "de_DE": "de", "de-AT": "de", "de_CH": "de",
+	"ja_JP": "ja", "ja": "ja", "ko_KR": "ko", "ko-KR": "ko", "tr_TR": "tr", "es_MX": "es", "es-419": "es", "en_GB": "en",
+	"zh_Hans_CN": "en", "fr_FR": "en", "": "en", "PT_br": "pt",
+}
 const MIN_KEYS: int = 50
 ## Kodda anahtar gibi görünen (aile önekli) her sabit metin tabloda olmalı: sözlükte tutulan
 ## (`Loc.t(DEĞİŞKEN)` ile çözülen) anahtarlar da yakalansın.
@@ -45,7 +62,7 @@ func _load_table() -> void:
 	if file == null:
 		return
 	var header: PackedStringArray = file.get_csv_line()
-	assert_true(header == PackedStringArray(["keys", "tr", "en", "es"]), "başlık keys,tr,en,es olmalı")
+	assert_true(header == COLUMNS, "başlık keys,tr,en,es,pt,de,ja,ko olmalı")
 	while not file.eof_reached():
 		var row: PackedStringArray = file.get_csv_line()
 		if row.size() < 2 or row[0].is_empty():
@@ -99,7 +116,7 @@ func test_every_key_has_all_languages() -> void:
 	for key: String in _table.keys():
 		var row: PackedStringArray = _table[key]
 		assert_true(key_regex.search(key) != null, "anahtar UPPER_SNAKE olmalı: %s" % key)
-		assert_eq(row.size(), 4, "%s dört sütun" % key)
+		assert_eq(row.size(), COLUMNS.size(), "%s sütun sayısı" % key)
 		for column: int in range(1, row.size()):
 			assert_false(row[column].strip_edges().is_empty(), "%s sütun %d boş" % [key, column])
 
@@ -108,11 +125,11 @@ func test_placeholders_match_across_languages() -> void:
 	_load_table()
 	for key: String in _table.keys():
 		var row: PackedStringArray = _table[key]
-		if row.size() < 4:
+		if row.size() < COLUMNS.size():
 			continue
 		var reference: Array[String] = _placeholders(row[1])
-		assert_eq(_placeholders(row[2]), reference, "%s en yer tutucuları" % key)
-		assert_eq(_placeholders(row[3]), reference, "%s es yer tutucuları" % key)
+		for column: int in range(2, COLUMNS.size()):
+			assert_eq(_placeholders(row[column]), reference, "%s %s yer tutucuları" % [key, COLUMNS[column]])
 
 
 func test_code_keys_exist_in_table() -> void:
@@ -159,8 +176,17 @@ func test_language_switch_changes_output() -> void:
 	assert_eq(Loc.language(), "en")
 	Loc.set_language(Loc.LANG_ES)
 	assert_eq(Loc.t("LOSE_RETRY"), "Reintentar")
-	Loc.set_language("de")
+	Loc.set_language("fr")
 	assert_eq(Loc.language(), "en", "bilinmeyen dil İngilizce olur")
+	Loc.set_language(Loc.LANG_PT)
+	assert_eq(Loc.t("LOSE_RETRY"), "Tentar de novo")
+	Loc.set_language(Loc.LANG_DE)
+	assert_eq(Loc.t("LOSE_RETRY"), "Nochmal versuchen")
+	Loc.set_language(Loc.LANG_JA)
+	assert_eq(Loc.t("LOSE_RETRY"), "再挑戦")
+	Loc.set_language(Loc.LANG_KO)
+	assert_eq(Loc.language(), "ko")
+	assert_eq(Loc.t("LOSE_RETRY").replace("\u2060", ""), "다시 도전")
 	Loc.set_language(Loc.LANG_TR)
 
 
@@ -172,6 +198,16 @@ func test_plural_and_format() -> void:
 	Loc.set_language(Loc.LANG_ES)
 	assert_eq(Loc.n("LOSE_LEFT_FEW_ONE", "LOSE_LEFT_FEW_OTHER", 1) % "1", "Solo queda 1 prenda")
 	assert_eq(Loc.n("LOSE_LEFT_FEW_ONE", "LOSE_LEFT_FEW_OTHER", 30) % "30", "Solo quedan 30 prendas")
+	Loc.set_language(Loc.LANG_PT)
+	assert_eq(Loc.n("LOSE_LEFT_FEW_ONE", "LOSE_LEFT_FEW_OTHER", 1) % "1", "Só falta 1 peça")
+	assert_eq(Loc.n("LOSE_LEFT_FEW_ONE", "LOSE_LEFT_FEW_OTHER", 3) % "3", "Só faltam 3 peças")
+	Loc.set_language(Loc.LANG_DE)
+	assert_eq(Loc.n("LOSE_LEFT_FEW_ONE", "LOSE_LEFT_FEW_OTHER", 1) % "1", "Nur noch 1 Teil")
+	assert_eq(Loc.n("LOSE_LEFT_FEW_ONE", "LOSE_LEFT_FEW_OTHER", 5) % "5", "Nur noch 5 Teile")
+	# ja/ko'da çoğul biçimi yok: iki satır aynı metni taşır.
+	for code: String in [Loc.LANG_JA, Loc.LANG_KO]:
+		Loc.set_language(code)
+		assert_eq(Loc.n("LOSE_LEFT_FEW_ONE", "LOSE_LEFT_FEW_OTHER", 1), Loc.n("LOSE_LEFT_FEW_ONE", "LOSE_LEFT_FEW_OTHER", 4), "%s: çoğul yok" % code)
 	Loc.set_language(Loc.LANG_TR)
 	assert_eq(Loc.n("LOSE_LEFT_FEW_ONE", "LOSE_LEFT_FEW_OTHER", 1) % "1", "Sadece 1 çamaşır kaldı")
 
@@ -249,7 +285,11 @@ func test_plural_pairs_present() -> void:
 		if key.ends_with("_ONE"):
 			var other: String = key.trim_suffix("_ONE") + "_OTHER"
 			if _table.has(other):
-				assert_eq(_placeholders(_table[key][2]), _placeholders(_table[other][2]), "%s/%s en yer tutucu" % [key, other])
+				for column: int in range(1, COLUMNS.size()):
+					assert_eq(_placeholders(_table[key][column]), _placeholders(_table[other][column]), "%s/%s %s yer tutucu" % [key, other, COLUMNS[column]])
+				# Çoğul biçimi olmayan diller iki anahtarda aynı metni taşır.
+				for column: int in [1, 6, 7]:
+					assert_eq(_table[key][column], _table[other][column], "%s/%s %s çoğulsuz dil aynı olmalı" % [key, other, COLUMNS[column]])
 	Loc.set_language(Loc.LANG_EN)
 	assert_eq(Loc.n("ZEN_TOTAL_ONE", "ZEN_TOTAL_OTHER", 1) % 1, "1 board cleared in total")
 	assert_eq(Loc.n("ZEN_TOTAL_ONE", "ZEN_TOTAL_OTHER", 5) % 5, "5 boards cleared in total")
@@ -266,3 +306,153 @@ func test_language_persists_across_restart() -> void:
 	assert_eq(Loc.language(), "es", "kayıtlı dil yeniden açılışta uygulanır")
 	Loc.choose(Loc.LANG_TR)
 	progress.set("persist", was_persist)
+
+
+## Çeviri hücrelerinde Türkçe'ye özgü harf (ş ğ ı İ) ve kaynakla birebir aynı metin kalıntısı olmamalı.
+func test_no_leftover_turkish() -> void:
+	_load_table()
+	var turkish: RegEx = RegEx.new()
+	turkish.compile(TURKISH_ONLY_PATTERN)
+	for key: String in _table.keys():
+		var row: PackedStringArray = _table[key]
+		for column: int in range(2, COLUMNS.size()):
+			var code: String = COLUMNS[column]
+			assert_true(turkish.search(row[column]) == null, "%s: %s hücresinde Türkçe harf kalmış: %s" % [key, code, row[column]])
+			if row[column] == row[1]:
+				var allowed: String = String(SAME_AS_SOURCE_OK.get(key, ""))
+				assert_true(allowed == "*" or allowed.split(" ").has(code), "%s: %s hücresi Türkçe ile birebir aynı" % [key, code])
+
+
+## ja/ko hücreleri gerçekten CJK harf taşır (Latin/İngilizce metin kalmamış).
+func test_cjk_columns_contain_cjk() -> void:
+	_load_table()
+	var cjk: RegEx = RegEx.new()
+	cjk.compile(CJK_PATTERN)
+	for key: String in _table.keys():
+		if NO_CJK_OK.has(key):
+			continue
+		var row: PackedStringArray = _table[key]
+		for column: int in [6, 7]:
+			assert_true(cjk.search(row[column]) != null, "%s: %s hücresinde CJK harf yok: %s" % [key, COLUMNS[column], row[column]])
+
+
+## Japonca: tam genişlikli noktalama (、。！？：（）), CJK harfler arasında boşluk yok, ASCII ! ? yok.
+func test_japanese_typography() -> void:
+	_load_table()
+	var gap: RegEx = RegEx.new()
+	gap.compile(CJK_PATTERN + " " + CJK_PATTERN)
+	for key: String in _table.keys():
+		var ja: String = _table[key][6]
+		assert_true(gap.search(ja) == null, "%s: ja CJK harfler arasında boşluk: %s" % [key, ja])
+		assert_false(ja.contains("!") or ja.contains("?") or ja.contains(", ") or ja.ends_with("."), "%s: ja noktalama tam genişlikli olmalı: %s" % [key, ja])
+
+
+## Korece: ! ve ? kalır (Korece'de ASCII kullanılır); virgül/nokta sonrası boşluk var; Japon noktalaması yok.
+func test_korean_typography() -> void:
+	_load_table()
+	for key: String in _table.keys():
+		var ko: String = _table[key][7]
+		for japanese: String in ["。", "、", "！", "？"]:
+			assert_false(ko.contains(japanese), "%s: ko'da Japon noktalaması: %s" % [key, ko])
+
+
+## Almanca: samimi "du" (resmi "Sie"/"Ihre" yok); Portekizce: Brezilya yazımı ve "você".
+func test_german_and_portuguese_register() -> void:
+	_load_table()
+	var formal_de: RegEx = RegEx.new()
+	formal_de.compile("(^|[ .:;!?])(Sie|Ihr|Ihre|Ihnen|Ihren)( |$)")
+	for key: String in _table.keys():
+		var row: PackedStringArray = _table[key]
+		assert_true(formal_de.search(row[5]) == null, "%s: de resmi hitap: %s" % [key, row[5]])
+		for european: String in ["ecrã", "equipa", "telemóvel", "utilizador", "ficheiro", "estás", "tens ", "ligação"]:
+			assert_false(row[4].contains(european), "%s: pt Brezilya yazımı bekleniyor (%s)" % [key, european])
+		assert_false(row[4].contains(" tu ") or row[4].begins_with("Tu "), "%s: pt 'você' beklenir" % key)
+
+
+## CSV biçimi: BOM yok, CR yok, hücrede satır sonu/başta-sonda boşluk yok, alıntı yalnız gerektiğinde, kayıt sayısı = satır sayısı.
+func test_csv_is_well_formed() -> void:
+	var raw: String = FileAccess.get_file_as_string(CSV_PATH)
+	assert_false(raw.begins_with("\ufeff"), "BOM olmamalı")
+	assert_false(raw.contains("\r"), "CR (Windows satır sonu) olmamalı")
+	assert_true(raw.ends_with("\n") and not raw.ends_with("\n\n"), "dosya tek satır sonuyla bitmeli")
+	var lines: PackedStringArray = raw.trim_suffix("\n").split("\n")
+	var file: FileAccess = FileAccess.open(CSV_PATH, FileAccess.READ)
+	var index: int = 0
+	while not file.eof_reached() and index < lines.size():
+		var row: PackedStringArray = file.get_csv_line()
+		assert_eq(row.size(), COLUMNS.size(), "satır %d sütun sayısı" % (index + 1))
+		var rebuilt: PackedStringArray = []
+		for cell: String in row:
+			assert_eq(cell, cell.strip_edges(), "satır %d: hücre başında/sonunda boşluk: '%s'" % [index + 1, cell])
+			assert_false(cell.contains("\n") or cell.contains("\t"), "satır %d: hücrede satır sonu/sekme" % (index + 1))
+			if cell.contains(",") or cell.contains("\""):
+				rebuilt.append("\"" + cell.replace("\"", "\"\"") + "\"")
+			else:
+				rebuilt.append(cell)
+		assert_eq(",".join(rebuilt), lines[index], "satır %d: alıntı biçimi" % (index + 1))
+		index += 1
+	assert_eq(index, lines.size(), "kayıt sayısı satır sayısına eşit olmalı (çok satırlı hücre yok)")
+
+
+func test_language_for_locale_mapping() -> void:
+	for locale: String in DEVICE_LOCALES.keys():
+		assert_eq(Loc.language_for_locale(locale), String(DEVICE_LOCALES[locale]), "yerel ayar eşlemesi: '%s'" % locale)
+	for code: String in Loc.LANGUAGES:
+		assert_true(Loc.NATIVE_NAMES.has(code), "yerel ad tanımlı olmalı: %s" % code)
+		assert_eq(Loc.language_for_locale(code), code)
+
+
+## Eksik anahtar önce İngilizceye, sonra Türkçeye düşer; hiçbirinde yoksa anahtarın kendisi döner.
+func test_missing_key_falls_back_to_english() -> void:
+	var extra: Translation = Translation.new()
+	extra.locale = "en"
+	extra.add_message("ZZ_ONLY_IN_ENGLISH", "english text")
+	TranslationServer.add_translation(extra)
+	for code: String in [Loc.LANG_JA, Loc.LANG_KO, Loc.LANG_PT, Loc.LANG_DE]:
+		Loc.set_language(code)
+		assert_eq(Loc.t("ZZ_ONLY_IN_ENGLISH").replace("\u2060", ""), "english text", "%s: eksik anahtar en'e düşer" % code)
+		assert_eq(Loc.t("ZZ_NOWHERE"), "ZZ_NOWHERE", "%s: hiçbirinde yoksa anahtar" % code)
+	TranslationServer.remove_translation(extra)
+	Loc.set_language(Loc.LANG_TR)
+	assert_eq(Loc.KEY_FALLBACK, [Loc.LANG_EN, Loc.LANG_TR] as Array[String], "yedek sırası en -> tr")
+
+
+## Korece satırlarda Hangul heceleri arasına WORD JOINER konur; diğer dillerde metin değişmez.
+func test_korean_keeps_words_together() -> void:
+	Loc.set_language(Loc.LANG_KO)
+	var text: String = Loc.t("TUT_UNDO_LINE")
+	assert_true(text.contains("\u2060"), "ko: kelime bağlayıcı bulunmalı")
+	assert_eq(text.replace("\u2060", ""), _table_cell("TUT_UNDO_LINE", 7), "ko: bağlayıcı çıkarılınca CSV metni")
+	Loc.set_language(Loc.LANG_JA)
+	assert_false(Loc.t("TUT_UNDO_LINE").contains("\u2060"), "ja: bağlayıcı yok")
+	Loc.set_language(Loc.LANG_TR)
+
+
+func _table_cell(key: String, column: int) -> String:
+	_load_table()
+	return String((_table[key] as PackedStringArray)[column])
+
+
+## Yazı tipi: Latin dillerin (tr/en/es/pt/de) her karakteri paketli Baloo alt kümesinde var; CJK yedek zinciri
+## yalnız ja/ko'da kurulur ve Latin dillerde boştur.
+func test_latin_columns_covered_by_bundled_font() -> void:
+	_load_table()
+	Loc.set_language(Loc.LANG_TR)
+	var font: Font = LocFonts.base_font()
+	assert_eq(font.fallbacks.size(), 0, "tr: yedek zinciri boş")
+	var missing: String = ""
+	for key: String in _table.keys():
+		for column: int in range(1, 6):
+			for index: int in (_table[key] as PackedStringArray)[column].length():
+				var code: int = (_table[key] as PackedStringArray)[column].unicode_at(index)
+				if code > 0x20 and not font.has_char(code) and not missing.contains(char(code)):
+					missing += char(code)
+	assert_eq(missing, "", "Baloo alt kümesinde olmayan Latin karakterler: %s" % missing)
+	Loc.set_language(Loc.LANG_JA)
+	assert_eq(font.fallbacks.size(), 2, "ja: CJK yedek zinciri kurulu")
+	Loc.set_language(Loc.LANG_KO)
+	assert_eq(font.fallbacks.size(), 2, "ko: CJK yedek zinciri kurulu")
+	Loc.set_language(Loc.LANG_DE)
+	assert_eq(font.fallbacks.size(), 0, "de: yedek zinciri boş")
+	assert_true(LocFonts.selector_font(Loc.LANG_JA) != font and LocFonts.selector_font(Loc.LANG_KO) != font, "seçici ja/ko adları sistem yazı tipiyle çizilir")
+	Loc.set_language(Loc.LANG_TR)

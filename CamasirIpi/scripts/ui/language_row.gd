@@ -1,13 +1,16 @@
 class_name UiLanguageRow
 extends VBoxContainer
 
-## Ayarlar sayfasındaki dil satırı: TR / EN / ES üç küçük düz hap düğme, seçili olan vurgulu.
+## Ayarlar sayfasındaki dil satırı: yedi dil, her biri KENDİ adıyla (Türkçe, English, Español, Português, Deutsch,
+## 日本語, 한국어) küçük düz hap düğme; seçili olan vurgulu. Sığmayanlar alt satıra akar (HFlowContainer).
+## Japonca/Korece adlar Baloo'da yoktur: bu etiketler HER dilde sistem CJK zincirini kullanır (`LocFonts`).
 ## Stil `UiKit` ile aynı çizgide: düz, çizgisiz, yumuşak renk. Seçim `Loc.choose` ile kaydedilir.
 
 signal language_changed
 
 const PILL_FONT_SIZE: int = UiKit.TYPE_CAPTION + 4
-const PILL_WIDTH: float = 132.0
+const PILL_MIN_WIDTH: float = 132.0
+const PILL_PAD: float = 36.0
 const PILL_HEIGHT: float = 84.0
 const PILL_GAP: int = UiTokens.SPACE_MD
 const PILL_STATES: Array[String] = ["normal", "hover", "pressed", "focus", "disabled"]
@@ -17,10 +20,11 @@ const PILL_OFF_FILL: Color = Color(0.0, 0.0, 0.0, 0.06)
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Altyazı yok: TR/EN/ES hapları kendini açıklar (az metin kuralı).
-	var row: HBoxContainer = HBoxContainer.new()
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", PILL_GAP)
+	# Altyazı yok: yerel adlar kendini açıklar (az metin kuralı).
+	var row: HFlowContainer = HFlowContainer.new()
+	row.alignment = FlowContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("h_separation", PILL_GAP)
+	row.add_theme_constant_override("v_separation", 0)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(row)
 	for code: String in Loc.LANGUAGES:
@@ -33,7 +37,12 @@ func _pill(code: String) -> Button:
 	var selected: bool = code == Loc.language()
 	var button: Button = Button.new()
 	button.focus_mode = Control.FOCUS_NONE
-	button.custom_minimum_size = Vector2(PILL_WIDTH, UiKit.MIN_TOUCH)
+	button.name = "Lang_" + code
+	button.set_meta(&"language", code)
+	var font: Font = LocFonts.selector_font(code)
+	var name_text: String = String(Loc.NATIVE_NAMES[code])
+	var text_width: float = font.get_string_size(name_text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, PILL_FONT_SIZE).x
+	button.custom_minimum_size = Vector2(maxf(PILL_MIN_WIDTH, text_width + PILL_PAD * 2.0), UiKit.MIN_TOUCH)
 	button.disabled = selected
 	button.flat = true
 	var none: StyleBoxEmpty = StyleBoxEmpty.new()
@@ -51,7 +60,10 @@ func _pill(code: String) -> Button:
 	plate.offset_bottom = -inset
 	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	button.add_child(plate)
-	var caption: Label = UiKit.label(code.to_upper(), PILL_FONT_SIZE, Color.WHITE if selected else UiKit.TEXT)
+	var caption: Label = UiKit.label(name_text, PILL_FONT_SIZE, Color.WHITE if selected else UiKit.TEXT)
+	caption.add_theme_font_override("font", font)
+	# Han birleştirmesi: kanji/hangul etiketi kendi dilinin biçimiyle çizilsin.
+	caption.language = code
 	caption.set_anchors_preset(Control.PRESET_FULL_RECT)
 	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	plate.add_child(caption)
