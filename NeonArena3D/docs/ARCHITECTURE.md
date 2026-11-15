@@ -36,6 +36,7 @@ Kural: modüller birbirine ve duruma yalnız `GameContext` (`ctx`) üzerinden er
 | `cards_flow.gd` | `CardsFlow` | seviye kartı aç/yenile/seç, duraklatma, arka arkaya bekleyen seviyeler | açık mı, bekleyen, kart çekiliş RNG |
 | `camera_rig.gd` | `CameraRig` | kamera (menü süzülmesi, öne bakış, boss yakınlaştırma, sarsıntı), fare nişanı, nişan halkası | kamera düğümleri, öne bakış, yakınlaştırma |
 | `feedback.gd` | `Feedback` | juice: dünya parıltıları, vinyet (hasar/düşük can/ton), hasar sayıları, kalp atışı, atılma/kalkan/hasar efektleri | vinyet değerleri |
+| `monetization_hooks.gd` | `MonetizationHooks` | reklam akışı (C8): `events` + menü seam'lerini `Ads` cephesine bağlar; ölümde diriltme teklifi, ×2 çekirdek, +1 yenileme, günlük bonus, gizlilik satırı, TEKRAR OYNA/ANA MENÜ'de geçiş reklamı; reklam sürerken duraklat + sustur + önceki durumu geri getir (bkz. docs/MONETIZATION.md §4) | `ad_active`, koşu bayrakları, düğmeler |
 | `hud_bridge.gd` | `HudBridge` | güvenli alan kenar boşlukları, her kare `hud.update_state` + dokunmatik oranları | son görünüm boyutu |
 | `arena_geometry.gd` | `ArenaGeometry` (saf) | engel itme/kaçınma, nokta/çizgi engeli | — |
 | `launch_options.gd` | `LaunchOptions` (saf) | `--demo --wave --hp --die --cards --nova --map --give --boss --ship --screen --seed` | — |
@@ -45,6 +46,10 @@ Kural: modüller birbirine ve duruma yalnız `GameContext` (`ctx`) üzerinden er
 
 `scripts/ui/game3d.gd` (≈225 satır): modülleri kurar, sinyalleri bağlar, kare sırasını yönetir ve araçların
 kullandığı dış arayüzü (aşağıda) sağlar. Yeni oynanış kodu buraya değil ilgili modüle girer.
+
+Ek: `scripts/ui/ad_overlay.gd` (`AdOverlay`: teklif + reklam perdesi, menülerin üstünde), `scripts/core/ad_flow.gd` (`AdFlow`: saf kurallar +
+`data/ads_flow.json`), `scripts/core/time_scale.gd` (`TimeScale`: oyun hızının tek sahibi; `Fx` autoload'ı `Engine.time_scale`e YALNIZ buradan yazar —
+`Fx.hitstop`, `Fx.slow_motion` (ölüm), `Fx.settle_time` (duraklat/devam/reklam/yeni koşu), `Fx.set_base_scale` (araçlar)). Araçlar `Engine.time_scale`e doğrudan yazmaz.
 
 ### Kare sırası (`game3d._process` → `_tick_game`)
 ```
@@ -100,12 +105,12 @@ _resolve_collisions() _spawn_enemy() _try_nova()`. Yeni araçlar `scene.ctx` ve 
 `scene.events` (`GameEvents`): `run_started(ship_id, run_seed)`, `enemy_killed(kind, elite, points)`,
 `player_hurt(amount)`, `player_died(revive_card)`, `player_revived(source)`, `boss_spawned(kind)`, `boss_killed(kind)`,
 `cards_shown(cards, rerolls)`, `card_picked(card)`, `reward_computed(cores)`, `run_ended(summary)`.
-Dinleyici yokken davranış değişmez. Kodda `SEAM(...)` yorumuyla işaretli kanca noktaları (C8 reklam akışı için):
+Dinleyici yokken davranış değişmez. Kodda `SEAM(...)` yorumuyla işaretli kanca noktaları; C8'de `MonetizationHooks` ile BAĞLANDI (aşağıdaki "Not" sütunu eski tasarım, güncel akış docs/MONETIZATION.md §4):
 
 | Kanca | Yer | Not |
 |---|---|---|
-| koşu bitti / geçiş reklamı | `RunFlow.on_player_died` sonu → `events.run_ended(summary)` | oyun sonu ekranı 1,5 sn sonra `RunFlow.tick_dead` içinde açılır |
-| oyuncu öldü, diriltme mümkün | `RunFlow.on_player_died` başı → `events.player_died(revive_card)`; `RunFlow.revive(source)` | kart diriltmesi `revive("card")` kullanır; reklam akışı ölüm sekansını bekletip `revive("ad")` çağırmalı |
+| koşu bitti / geçiş reklamı | `RunFlow.finish_death` sonu → `events.run_ended(summary)` | oyun sonu ekranı 1,5 sn sonra `RunFlow.tick_dead` içinde açılır; geçiş reklamı TEKRAR OYNA/ANA MENÜ basışında (`hooks.on_restart/on_menu`) |
+| oyuncu öldü, diriltme mümkün | `RunFlow.on_player_died` → `events.player_died(revive_card)` → kart yoksa `hooks.offer_revive()`; vazgeçilirse `RunFlow.finish_death()`; `RunFlow.revive(source)` | kart diriltmesi `revive("card")` kullanır; reklam akışı ölüm sekansını bekletip `revive("ad")` çağırmalı |
 | kart seçimi gösterildi, yenileme mümkün | `CardsFlow.open` → `events.cards_shown(cards, rerolls)`; `CardsFlow.grant_reroll()` + `reroll()` | `rerolls == 0` iken reklamla yenileme |
 | koşu sonu ödülü hesaplandı | `RunFlow.on_player_died` → `events.reward_computed(cores)` | ödül `Settings.record_run` ile işlendi; çift çekirdek `Settings.meta` üzerinden eklenir |
 
@@ -120,7 +125,7 @@ Not: roadmap C13'ün `scripts/game/events.gd` dosyası (koşu içi rastgele olay
 | C3 kartlar/evrim | yeni `card_effects.gd`, `cards.json`, `loadout.gd` | sinerji okumaları şu an `combat.gd`/`weapons.gd`/`player_control.gd` içinde (`loadout.i("storm")` vb.); C3 bunları card_effects'e taşır |
 | C4 tehlikeler | yeni `scripts/world/hazards.gd` | boss tehlikeleri `boss_events.gd`'de; çevre tehlikesi ayrı modül + `_tick_game`'e tek satır |
 | C5 juice | `feedback.gd` (+ fx/sound/sparks) | savaş içi efekt çağrıları yerinde; taşırken rastgele akış sırası değişir → yeni baseline |
-| C8 reklam akışı | yeni `monetization_hooks.gd` (events dinler) | §4 kancaları; F5 `AdManager` |
+| C8 reklam akışı (yapıldı) | `monetization_hooks.gd` (events dinler) | §4 kancaları; F5 `AdManager`; `tools/dev/ads_probe.gd` kapıda |
 | A3 performans | tüm modüller | kare başına `GameData.number()` (dize bölme) çağrıları kaldı: `spawn_point`, `roll_pickup`, `reap`, `try_nova`, `apply_loadout` → GameTuning'e taşınabilir |
 
 `game3d.gd`'ye dokunan görev yalnız kare sırasına satır ekler; aynı anda iki görev ekliyorsa sırayla birleştirilir.

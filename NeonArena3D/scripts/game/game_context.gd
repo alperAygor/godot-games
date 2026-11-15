@@ -64,3 +64,4 @@ var cards: CardsFlow
 var feedback: Feedback
 var camera: CameraRig
 var hud_bridge: HudBridge
+var hooks: MonetizationHooks        ## reklam akışı (C8): teklifler, duraklatma, geçiş; olayları dinler

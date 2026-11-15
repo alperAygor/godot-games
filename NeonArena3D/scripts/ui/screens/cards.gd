@@ -1,7 +1,7 @@
 extends MenuScreen
 ## Seviye atlama kart seçimi: 3 kart (1/2/3 tuşları), YENİLE (reroll) düğmesi.
 ##
-## EKLENECEK YER (reklam görevi C8): yenileme hakkı bitince "REKLAM İZLE -> +1 YENİLE" düğmesi.
+## REKLAM (C8, MonetizationHooks bağlar): yenileme hakkı bitince "REKLAM İZLE -> +1 YENİLE" düğmesi.
 ##  * `reroll_button`: mevcut YENİLE düğmesi (metni/görünürlüğü `show_cards` her açılışta ayarlar).
 ##  * `add_below_reroll(düğme)`: ek düğmeyi YENİLE'nin altına koyar; görünürlüğünü `Ads.can_show(REROLL)` belirler.
 
@@ -64,10 +64,15 @@ func present(cards: Array, level: int, rerolls: int, counts: Dictionary) -> void
 		tw.tween_property(b, "modulate:a", 1.0, 0.22)
 		tw.tween_interval(0.12)
 		tw.tween_callback(func(): b.disabled = false)
-	reroll_button.text = tr("YENİLE  (%d)") % rerolls
-	reroll_button.disabled = rerolls <= 0
+	set_rerolls(rerolls)
 	reroll_button.visible = true
 	host.show_screen("cards")
+
+
+## YENİLE düğmesinin sayısını/kilidini eşitler (reklamla +1 yenileme sonrası ekran yeniden kurulmadan).
+func set_rerolls(rerolls: int) -> void:
+	reroll_button.text = tr("YENİLE  (%d)") % rerolls
+	reroll_button.disabled = rerolls <= 0
 
 
 ## SEAM: YENİLE düğmesinin altına ek denetim (reklamla +1 yenileme vb.) ekler.

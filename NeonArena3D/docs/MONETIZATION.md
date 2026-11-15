@@ -1,6 +1,6 @@
 # Neon Arena 3D — Para kazanma (reklam servisleri)
 
-Durum: **servis katmanı hazır ve test edilmiş; oyun akışına BAĞLANMADI** (bağlama: C8, `game3d.gd` bölünmesi F2 birleştikten sonra).
+Durum: **servis katmanı hazır ve oyun akışına BAĞLI** (C8: `scripts/game/monetization_hooks.gd`, `scripts/ui/ad_overlay.gd`, `scripts/core/ad_flow.gd`; probe: `tools/dev/ads_probe.gd`, `tools/verify.sh` içinde). Oyun tarafı sayıları: `data/ads_flow.json` (ilk koşu temiz, teklif geri sayımı 5 sn, günlük bonus 50 çekirdek, ×2, +1 yenileme). Aşağıdaki §4 bağlama öncesi tasarımdır; güncel eşleme: diriltme `RunFlow.on_player_died` → `hooks.offer_revive()` / `RunFlow.finish_death()`; ×2 `gameover.add_reward_action`; yenileme `events.cards_shown` + `cards.add_below_reroll`; günlük bonus `main.add_entry`; geçiş reklamı `hooks.on_restart/on_menu` (yalnız oyun sonu ekranından); gizlilik `settings.add_row`; `Ads.begin_run()` `events.run_started`.
 AdMob eklentisi projede **YOK** (A1 görevi); reklam kodu Android'de yerel tekil nesneler bulunana dek kendiliğinden pasiftir.
 Tasarım gerekçesi: `docs/IDEAS.md` (Bölüm C). Bu belge uygulanan kuralları, API'yi ve bağlanacak çağrı noktalarını tanımlar.
 
