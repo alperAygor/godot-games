@@ -533,11 +533,20 @@ func _place_robot(target: Transform3D) -> void:
 	_cargo.reset_sway()
 
 
+## Robottan teslimat alanına yatay (XZ) uzaklık; HUD'daki "Teslimata N m" sayacı için.
+func _goal_distance() -> float:
+	if _robot == null or _delivery_zone == null:
+		return 0.0
+	var offset: Vector3 = _delivery_zone.global_position - _robot.global_position
+	return Vector2(offset.x, offset.z).length()
+
+
 func _refresh_hud() -> void:
 	if _hud == null or _health == null or _battery == null:
 		return
 	_hud.set_cargo_health(_health.integrity() * PERCENT_SCALE)
 	_hud.set_battery(_battery.level() * PERCENT_SCALE)
+	_hud.set_goal_distance(_goal_distance())
 	_update_recharge_availability()
 	_hud.set_ad_pending(_revive_pending or _recharge_pending)
 	_hud.set_revive_offered(_revive_offered)

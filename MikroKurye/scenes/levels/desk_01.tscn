@@ -183,6 +183,16 @@ height = 0.32
 radial_segments = 4
 rings = 2
 
+[sub_resource type="ShaderMaterial" id="BeaconMat"]
+shader = ExtResource("beam_shader")
+shader_parameter/beam_color = Color(0.3, 1, 0.62, 0.9)
+shader_parameter/edge_fade = 0.7
+shader_parameter/top_brightness = 1.0
+
+[sub_resource type="QuadMesh" id="BeaconMesh"]
+material = SubResource("BeaconMat")
+size = Vector2(3.4, 14)
+
 [node name="Desk01" type="Node3D"]
 script = ExtResource("level")
 level_id = "desk_01"
@@ -261,6 +271,14 @@ shape = SubResource("DeliveryShape")
 [node name="Pad" type="MeshInstance3D" parent="DeliveryZone"]
 position = Vector3(0, -0.99, 0)
 mesh = SubResource("PadMesh")
+
+[node name="BeaconA" type="MeshInstance3D" parent="DeliveryZone"]
+transform = Transform3D(1, 0, 0, 0, -1, 0, 0, 0, 1, 0, 7, 0)
+mesh = SubResource("BeaconMesh")
+
+[node name="BeaconB" type="MeshInstance3D" parent="DeliveryZone"]
+transform = Transform3D(0, 0, 1, 0, -1, 0, 1, 0, 0, 0, 7, 0)
+mesh = SubResource("BeaconMesh")
 
 [node name="RulerRamp" type="StaticBody3D" parent="."]
 position = Vector3(3.2, 0.57, -12)

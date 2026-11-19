@@ -12,6 +12,9 @@ extends CanvasLayer
 const MIN_PERCENT: float = 0.0
 const MAX_PERCENT: float = 100.0
 const LOW_BATTERY: float = 30.0
+## Hedef bandı: oyun başında kısa süre görünür, sonra yumuşakça kaybolur.
+const OBJECTIVE_HOLD_SECONDS: float = 4.5
+const OBJECTIVE_FADE_SECONDS: float = 0.6
 ## Kalp ikonu hasar anında 1.25'e büyür, kısa sürede geri oturur (kırmızı flaş).
 const HEART_HIT_SCALE: float = 1.25
 const HEART_HIT_SECONDS: float = 0.24
@@ -29,6 +32,10 @@ signal recharge_requested()
 @onready var _battery_bar: ProgressBar = %BatteryBar
 @onready var _cargo_percent: Label = %CargoPercent
 @onready var _battery_percent: Label = %BatteryPercent
+@onready var _goal_icon: TextureRect = %GoalIcon
+@onready var _goal_label: Label = %GoalLabel
+@onready var _objective_banner: Control = %ObjectiveBanner
+@onready var _objective_text: Label = %Text
 @onready var _cargo_icon: TextureRect = %CargoIcon
 @onready var _battery_icon: TextureRect = %BatteryIcon
 @onready var _battery_hap: Control = %BatteryHap
@@ -65,6 +72,10 @@ func _ready() -> void:
 	_cargo_bar.add_child(_cargo_smooth)
 	_battery_bar.add_child(_battery_smooth)
 	# İkonlar tek ailede; renk `modulate` ile verilir.
+	_goal_icon.texture = Icons.texture("lucide/house")
+	_goal_icon.modulate = UiTheme.color("primary")
+	_objective_text.text = UiStrings.OBJECTIVE
+	_show_objective()
 	_cargo_icon.texture = Icons.texture("lucide/heart")
 	_battery_icon.texture = Icons.texture("lucide/zap")
 	_battery_icon.modulate = UiTheme.color("secondary")
@@ -98,6 +109,20 @@ func _process(delta: float) -> void:
 		var weight: float = 1.0 - exp(-BAR_SMOOTH_SPEED * delta)
 		_cargo_smooth.value = lerpf(_cargo_smooth.value, _cargo_bar.value, weight)
 		_battery_smooth.value = lerpf(_battery_smooth.value, _battery_bar.value, weight)
+
+
+## Hedefe kalan mesafe (metre); GameController her fizik karesinde iter.
+func set_goal_distance(meters: float) -> void:
+	_goal_label.text = UiStrings.GOAL_FORMAT % int(ceilf(maxf(meters, 0.0)))
+
+
+func _show_objective() -> void:
+	_objective_banner.visible = true
+	_objective_banner.modulate.a = 1.0
+	var tween: Tween = _objective_banner.create_tween()
+	tween.tween_interval(OBJECTIVE_HOLD_SECONDS)
+	tween.tween_property(_objective_banner, "modulate:a", 0.0, OBJECTIVE_FADE_SECONDS)
+	tween.tween_callback(_objective_banner.hide)
 
 
 func set_cargo_health(percent: float) -> void:

@@ -19,10 +19,13 @@ const TUTORIAL_NEXT: String = "Devam"
 const TUTORIAL_START: String = "Başla"
 const TUTORIAL_SKIP: String = "Atla"
 ## İlk açılış rehberi: kısa, dikey ekranda tek bakışta okunur üç sayfa.
+const OBJECTIVE: String = "Kargoyu masanın sonundaki yeşil teslimat alanına götür!"
+const GOAL_FORMAT: String = "Teslimata %d m"
+
 const TUTORIAL_PAGES: Array[String] = [
-	"Sürüş: sol alttaki joystick ile kuryeni yönlendir. Dengeli sür, gereksiz çarpmadan kaçın.",
-	"Kargo: sallanma ve çarpmalar kargoyu yorar. Sağlık çubuğu biterse teslimat başarısız olur.",
-	"Garaj: altın ve hurdayla şasi, tekerlek, batarya ve şok jeli yükselt. Kazandıkça ilerle.",
+	"Amaç: kargoyu masanın sonundaki yeşil teslimat alanına sağlam ulaştır. Üstteki sayaç kalan mesafeyi gösterir.",
+	"Sürüş: sol alttaki joystick ile yönlendir. Klavye tuşları, fanlar ve kalemlerden kaçın; çarpmalar kargoyu yorar, sağlık biterse teslimat başarısız olur.",
+	"Garaj: teslimatlardan kazandığın altın ve hurdayla robotunu yükselt, daha değerli kargolar taşı.",
 ]
 const ORDER_TITLE: String = "Sipariş Seç"
 const ORDER_HINT: String = "Taşımak istediğin kargoyu seç."
